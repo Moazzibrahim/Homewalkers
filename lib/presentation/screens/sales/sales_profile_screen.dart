@@ -1,8 +1,9 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/presentation/screens/login_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/theme/theme_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
@@ -174,8 +175,15 @@ class SalesProfileScreen extends StatelessWidget {
                   "Sign Out",
                   style: TextStyle(fontWeight: FontWeight.w400, fontSize: 16),
                 ),
-                onTap: () {
-                  // Sign out logic
+                onTap: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.remove('token');
+                  await prefs.remove('role');
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                    (route) => false, // 🔄 Remove all previous routes
+                  );
                 },
               ),
             ),

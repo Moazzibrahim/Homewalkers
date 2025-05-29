@@ -37,6 +37,8 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
       _cachedLeads = data;
       final prefs = await SharedPreferences.getInstance();
       final String? teamleaderId = data.data?.first.sales?.teamleader?.id;
+      final String? salesId = data.data?.first.sales?.id;
+      await prefs.setString("salesIDD", salesId ?? '');
       await prefs.setString('teamLeaderId', teamleaderId ?? '');
 
       final lastCount = prefs.getInt('lastLeadCount') ?? 0;

@@ -1,5 +1,4 @@
 // ignore_for_file: unused_local_variable, use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -27,7 +26,7 @@ class CustomChangeStageDialog {
     String? unitPriceValue;
     DateTime? selectedDateTime;
     final prefs = await SharedPreferences.getInstance();
-    final salesId = prefs.getString('salesId');
+    final salesId = prefs.getString('salesIDD');
 
     Future<void> pickDateTime(
       BuildContext context,
@@ -56,7 +55,6 @@ class CustomChangeStageDialog {
         }
       }
     }
-
     showDialog(
       context: context,
       builder:
@@ -214,6 +212,7 @@ class CustomChangeStageDialog {
                                 ),
                               ),
                               SizedBox(width: 10.w),
+
                               /// Apply Button
                               Expanded(
                                 child: ElevatedButton(
@@ -240,8 +239,10 @@ class CustomChangeStageDialog {
                                           DateTime.now().toIso8601String(),
                                       unitPrice: unitPriceValue,
                                       stagedateupdated:
-                                          selectedDateTime?.toIso8601String() ??
-                                          DateTime.now().toIso8601String(),
+                                          selectedDateTime
+                                              ?.toUtc()
+                                              .toIso8601String() ??
+                                          DateTime.now().toUtc().toIso8601String(),
                                       stage: selectedStageId!,
                                     );
                                     // بعد ما يتم التغيير بنجاح

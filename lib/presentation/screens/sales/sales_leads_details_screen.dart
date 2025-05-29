@@ -237,7 +237,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                   final prefs =
                                       await SharedPreferences.getInstance();
                                   final String salesId =
-                                      prefs.getString('salesId') ?? '';
+                                      prefs.getString('salesIdD') ?? '';
                                   CustomChangeStageDialog.showChangeDialog(
                                     context: context,
                                     leadStage: widget.leadStage,
