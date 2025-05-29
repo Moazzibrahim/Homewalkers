@@ -1,7 +1,5 @@
 // ignore_for_file: library_private_types_in_public_api
-
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -138,7 +136,7 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
                 } else if (state is GetLeadsError) {
                   return Center(child: Text(" ${state.message}"));
                 } else {
-                  return Center(child: Text("لا يوجد بيانات حالياً"));
+                  return Center(child: Text("no data found"));
                 }
               },
             ),
@@ -158,15 +156,18 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
             .toList();
 
     if (selectedIndices.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("يرجى تحديد Lead واحد على الأقل")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(" please select at least one lead")),
+      );
       return;
     }
 
     final selectedLeads = selectedIndices.map((i) => _leads[i]).toList();
+    log(
+      "Selected Leads: ${selectedLeads.map((e) => 'ID: ${e.id}, Name: ${e.name}').join(', ')}",
+    );
 
-    final result = await showDialog(
+    await showDialog(
       context: context,
       builder:
           (context) => BlocBuilder<GetLeadsCubit, GetLeadsState>(
@@ -196,8 +197,6 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
             },
           ),
     );
-    log("lead id: $leadIdd");
-    log("Selected leads: $result");
   }
 
   void _showAssignMenu(BuildContext context, Offset position) async {

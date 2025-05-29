@@ -10,8 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 part 'get_leads_state.dart';
 
-
-
 class GetLeadsCubit extends Cubit<GetLeadsState> {
   final GetLeadsService apiService;
   Timer? _timer;
@@ -21,7 +19,7 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     _startPolling(); // تحديث كل دقيقتين بدون شريط تحميل
   }
   void _startPolling() {
-    _timer = Timer.periodic(Duration(minutes: 2), (_) {
+    _timer = Timer.periodic(Duration(minutes: 1), (_) {
       fetchLeads(showLoading: false);
     });
   }
@@ -31,68 +29,64 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     _timer?.cancel(); // إلغاء التايمر عند التخلص من Cubit
     return super.close();
   }
-Future<void> fetchLeads({bool showLoading = true}) async {
-  if (showLoading) emit(GetLeadsLoading());
-  try {
-    final data = await apiService.getAssignedData();
-    _cachedLeads = data;
-    final prefs = await SharedPreferences.getInstance();
-    final String? teamleaderId = data.data?.first.sales?.teamleader?.id;
-    await prefs.setString('teamLeaderId', teamleaderId ?? '');
-    
-    final lastCount = prefs.getInt('lastLeadCount') ?? 0;
-    final newCount = data.count ?? 0;
 
-    if (newCount > lastCount) {
-      await prefs.setInt('lastLeadCount', newCount);
+  Future<void> fetchLeads({bool showLoading = true}) async {
+    if (showLoading) emit(GetLeadsLoading());
+    try {
+      final data = await apiService.getAssignedData();
+      _cachedLeads = data;
+      final prefs = await SharedPreferences.getInstance();
+      final String? teamleaderId = data.data?.first.sales?.teamleader?.id;
+      await prefs.setString('teamLeaderId', teamleaderId ?? '');
 
-      // إشعار محلي
-      flutterLocalNotificationsPlugin.show(
-        DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        '📥 Lead جديد',
-        '${newCount - lastCount} عميل جديد تم تعيينه لك!',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'high_importance_channel',
-            'High Importance Notifications',
-            importance: Importance.max,
-            priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
+      final lastCount = prefs.getInt('lastLeadCount') ?? 0;
+      final newCount = data.count ?? 0;
+
+      if (newCount > lastCount) {
+        await prefs.setInt('lastLeadCount', newCount);
+
+        // إشعار محلي
+        flutterLocalNotificationsPlugin.show(
+          DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          '📥 Lead جديد',
+          '${newCount - lastCount} عميل جديد تم تعيينه لك!',
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'high_importance_channel',
+              'High Importance Notifications',
+              importance: Importance.max,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+            ),
           ),
-        ),
-      );
+        );
+        // ********* إضافة تخزين في Firestore *********
+        final firestore = FirebaseFirestore.instance;
+        // لو عايز تخزن كل الـ leads الجديدة
+        final newLeads = data.data?.take(newCount - lastCount);
+        if (newLeads != null) {
+          for (var lead in newLeads) {
+            // ممكن تستخدم معرف الـ lead أو أي ID فريد
+            final docId = lead.id ?? firestore.collection('leads').doc().id;
 
-      // ********* إضافة تخزين في Firestore *********
-
-      final firestore = FirebaseFirestore.instance;
-
-      // لو عايز تخزن كل الـ leads الجديدة
-      final newLeads = data.data?.take(newCount - lastCount);
-
-      if (newLeads != null) {
-        for (var lead in newLeads) {
-          // ممكن تستخدم معرف الـ lead أو أي ID فريد
-          final docId = lead.id ?? firestore.collection('leads').doc().id;
-
-          await firestore.collection('leads').doc(docId).set({
-            'name': lead.name ?? '',
-            'phone': lead.phone ?? '',
-            'project': lead.project?.name ?? '',
-            'developer': lead.project?.developer?.name ?? '',
-            'stage': lead.stage?.name ?? '',
-            'sales_teamleader_id': teamleaderId ?? '',
-            'assigned_at': DateTime.now(),  // وقت التعيين
-            // أضف حقول أخرى مهمة حسب الحاجة
-          });
+            await firestore.collection('leads').doc(docId).set({
+              'name': lead.name ?? '',
+              'phone': lead.phone ?? '',
+              'project': lead.project?.name ?? '',
+              'developer': lead.project?.developer?.name ?? '',
+              'stage': lead.stage?.name ?? '',
+              'sales_teamleader_id': teamleaderId ?? '',
+              'assigned_at': DateTime.now(), // وقت التعيين
+              // أضف حقول أخرى مهمة حسب الحاجة
+            });
+          }
         }
       }
+      emit(GetLeadsSuccess(data));
+    } catch (e) {
+      emit(GetLeadsError("No Leads Data Found"));
     }
-    emit(GetLeadsSuccess(data));
-  } catch (e) {
-    emit(GetLeadsError("No Leads Data Found"));
   }
-}
-
 
   String? getPhoneCodeFromPhone(String phone) {
     String cleanedPhone = phone.replaceAll(RegExp(r'\D'), '');

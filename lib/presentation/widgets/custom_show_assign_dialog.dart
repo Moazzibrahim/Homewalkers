@@ -1,11 +1,14 @@
 // ignore_for_file: non_constant_identifier_names
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/assign_lead/assign_lead_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_sales/get_all_sales_cubit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:homewalkers_app/presentation/viewModels/get_all_sales/get_all_sales_cubit.dart';
 
 class AssignDialog extends StatefulWidget {
@@ -31,21 +34,34 @@ class _AssignDialogState extends State<AssignDialog> {
   bool isTeamLeaderChecked =
       false; // Simplified for the single team leader checkbox
   LeadData? _LeadData; // To store the found team leader data
+  String? teamLeaderId;
 
   @override
   void initState() {
     super.initState();
-    // 🔥 احصل على SalesCubit واستدعي الفنكشن مباشرة
+    _initialize();
+  }
+
+  void _initialize() async {
     final salesCubit = BlocProvider.of<SalesCubit>(context);
     salesCubit.fetchSales();
+
+    final prefs = await SharedPreferences.getInstance();
+    final userlogId = prefs.getString('teamLeaderId') ?? '';
+    salesCubit.salesRepository.fetchSalesData(userlogId);
+
+    teamLeaderId = prefs.getString('saved_id');
+
     final leads = widget.leadResponse?.data ?? [];
     try {
       _LeadData = leads.firstWhere((leadData) => leadData.id != null);
       if (_LeadData != null) {}
     } catch (e) {
       _LeadData = null;
-      print("No team leader found or error: $e");
+      log("No team leader found or error: $e");
     }
+    // تحديث واجهة المستخدم بعد جلب البيانات
+    setState(() {});
   }
 
   @override
@@ -127,7 +143,10 @@ class _AssignDialogState extends State<AssignDialog> {
                         children: [
                           ElevatedButton(
                             onPressed: () {
-                              Navigator.pop(dialogContext); // Use dialogContext
+                              Navigator.pop(dialogContext);
+                              log(
+                                "Team Leader ID: $teamLeaderId",
+                              ); // Use dialogContext
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
@@ -148,20 +167,25 @@ class _AssignDialogState extends State<AssignDialog> {
                           ElevatedButton(
                             onPressed: () {
                               if (isTeamLeaderChecked && _LeadData != null) {
-                                // Format date as "YYYY-MM-DD"
+                                // ✅ اطبع كل الـ lead IDs
+                                final leadIds =
+                                    widget.leadIds != null
+                                        ? List<String>.from(widget.leadIds!)
+                                        : [widget.leadId!];
+                                log("Selected Lead IDs: $leadIds");
+                                log("Team Leader ID: $teamLeaderId");
                                 final String lastDateAssign =
                                     DateTime.now().toUtc().toIso8601String();
                                 // Call the cubit method using the context from BlocProvider
                                 BlocProvider.of<AssignleadCubit>(
                                   dialogContext,
-                                ).putAssignUser(
-                                  leadId: [
-                                    widget.leadId!,
-                                  ], // This is the salesperson's ID
+                                ).assignUserAndLead(
+                                  leadIds: leadIds,
                                   lastDateAssign: lastDateAssign,
+                                  dateAssigned:
+                                      "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}",
+                                  teamleadersId: teamLeaderId!,
                                 );
-                                // Reminder: The cubit will try to get the actual lead's ID
-                                // from SharedPreferences ('saved_id').
                               } else {
                                 ScaffoldMessenger.of(
                                   dialogContext,
