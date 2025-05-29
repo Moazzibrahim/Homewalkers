@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
-import 'package:homewalkers_app/presentation/viewModels/get_leads_sales/get_leads_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SalesdashboardScreen extends StatelessWidget {

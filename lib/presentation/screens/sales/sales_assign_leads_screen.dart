@@ -6,8 +6,8 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
-import 'package:homewalkers_app/presentation/viewModels/get_all_sales/get_all_sales_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/get_leads_sales/get_leads_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_show_assign_dialog.dart';
 

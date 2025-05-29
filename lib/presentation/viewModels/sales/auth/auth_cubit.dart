@@ -1,7 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
-import 'package:homewalkers_app/presentation/viewModels/auth/auth_cubit_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final LoginApiService apiService;

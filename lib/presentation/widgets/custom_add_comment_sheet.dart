@@ -3,8 +3,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/presentation/viewModels/add_comment/add_comment_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/add_comment/add_comment_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_state.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

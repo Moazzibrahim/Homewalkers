@@ -5,8 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
-import 'package:homewalkers_app/presentation/viewModels/auth/auth_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/auth/auth_cubit_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {

@@ -2,9 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/presentation/viewModels/change_stage/change_stage_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/change_stage/change_stage_state.dart';
-import 'package:homewalkers_app/presentation/viewModels/stages/stages_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/change_stage/change_stage_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/change_stage/change_stage_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';

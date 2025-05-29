@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
-import 'package:homewalkers_app/presentation/viewModels/get_all_sales/get_all_sales_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';// مسار صحيح حسب مشروعك
 
 class SalesCubit extends Cubit<SalesState> {
