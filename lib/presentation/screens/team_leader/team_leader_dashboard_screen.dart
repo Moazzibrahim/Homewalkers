@@ -6,15 +6,14 @@ import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_s
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SalesdashboardScreen extends StatelessWidget {
-  const SalesdashboardScreen({super.key});
+class TeamLeaderDashboardScreen extends StatelessWidget {
+  const TeamLeaderDashboardScreen({super.key});
 
   Future<String> checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('name');
     return name ?? 'User';
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,7 +46,7 @@ class SalesdashboardScreen extends StatelessWidget {
                         ),
                       ),
                       const Text(
-                        'Sales',
+                        'Team Leader',
                         style: TextStyle(
                           color: Colors.grey,
                           fontSize: 14,
@@ -175,94 +174,6 @@ class SalesdashboardScreen extends StatelessWidget {
               ],
             ),
             SizedBox(height: 25),
-            // Stack(
-            //   children: [
-            //     Container(
-            //       padding: EdgeInsets.all(20),
-            //       decoration: BoxDecoration(
-            //         color: Color(0xff2D6A78),
-            //         borderRadius: BorderRadius.circular(20),
-            //       ),
-            //       child: Column(
-            //         crossAxisAlignment: CrossAxisAlignment.start,
-            //         children: [
-            //           Row(
-            //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //             children: const [
-            //               Text(
-            //                 'Next Appointment',
-            //                 style: TextStyle(
-            //                   color: Colors.white,
-            //                   fontSize: 16,
-            //                   fontWeight: FontWeight.w600,
-            //                 ),
-            //               ),
-            //               Chip(
-            //                 label: Text('See Detail'),
-            //                 backgroundColor: Colors.white,
-            //                 labelStyle: TextStyle(color: Color(0xff2D6A78)),
-            //               ),
-            //             ],
-            //           ),
-            //           SizedBox(height: 20),
-            //           Row(
-            //             children: [
-            //               CircleAvatar(
-            //                 backgroundImage: AssetImage(
-            //                   'assets/images/appointment.png',
-            //                 ),
-            //                 radius: 20,
-            //               ),
-            //               SizedBox(width: 10),
-            //               Column(
-            //                 crossAxisAlignment: CrossAxisAlignment.start,
-            //                 children: const [
-            //                   Text(
-            //                     '319 Haul Road',
-            //                     style: TextStyle(
-            //                       color: Colors.white,
-            //                       fontWeight: FontWeight.bold,
-            //                     ),
-            //                   ),
-            //                   Text(
-            //                     'Glenrock, WY 12345',
-            //                     style: TextStyle(color: Colors.white70),
-            //                   ),
-            //                 ],
-            //               ),
-            //             ],
-            //           ),
-            //           SizedBox(height: 20),
-            //           Wrap(
-            //             spacing: 50,
-            //             runSpacing: 10,
-            //             children: const [
-            //               _infoItem('Appointment Date', 'Nov 18 2021, 17:00'),
-            //               _infoItem('Room Area', '100 M²'),
-            //               _infoItem('People', '10'),
-            //               _infoItem('Price', '\$5750'),
-            //             ],
-            //           ),
-            //         ],
-            //       ),
-            //     ),
-            //     // الديكور الأبيض المنحني
-            //     Positioned(
-            //       bottom: 0,
-            //       right: 0,
-            //       child: Container(
-            //         width: 140,
-            //         height: 130,
-            //         decoration: BoxDecoration(
-            //           color: Colors.white.withOpacity(0.3),
-            //           borderRadius: const BorderRadius.only(
-            //             topLeft: Radius.circular(110),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //   ],
-            // ),
           ],
         ),
       ),
@@ -329,25 +240,3 @@ class SalesdashboardScreen extends StatelessWidget {
     );
   }
 }
-
-// class _infoItem extends StatelessWidget {
-//   final String label;
-//   final String value;
-
-//   const _infoItem(this.label, this.value);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return SizedBox(
-//       width: 130,
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Text(label, style: TextStyle(color: Colors.white70, fontSize: 12)),
-//           SizedBox(height: 4),
-//           Text(value, style: TextStyle(color: Colors.white, fontSize: 14)),
-//         ],
-//       ),
-//     );
-//   }
-// }

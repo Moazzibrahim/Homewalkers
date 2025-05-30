@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
+import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:homewalkers_app/presentation/screens/login_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
@@ -32,6 +33,8 @@ class DeciderScreen extends StatelessWidget {
 
           if (hasToken && role == 'Sales') {
             return const SalesTabsScreen(); // ✅ إذا كان الدور "sales"
+          } else if (hasToken && role == 'Team Leader') {
+            return const TeamLeaderTabsScreen();
           } else {
             return const LoginScreen(); // ❌ إذا لم يوجد توكن أو الدور ليس "sales"
           }
