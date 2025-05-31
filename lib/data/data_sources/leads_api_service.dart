@@ -47,4 +47,33 @@ class GetLeadsService {
       rethrow;
     }
   }
+  Future<LeadResponse> getLeadsDataByTeamLeader() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? savedEmail = prefs.getString('email');
+
+      if (savedEmail == null) {
+        throw Exception("No saved email found.");
+      }
+
+      final url = Uri.parse(
+        '${Constants.baseUrl}/users/teamleader-leads?email=$savedEmail',
+      );
+
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final jsonBody = json.decode(response.body);
+        final leadsResponse = LeadResponse.fromJson(jsonBody);
+        log("✅ Get leads successfully by team leader");
+        return leadsResponse;
+      } else {
+        throw Exception(
+          '❌ Failed to load assigned data: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      log('❌ Error in getAssignedData: $e');
+      rethrow;
+    }
+  }
 }

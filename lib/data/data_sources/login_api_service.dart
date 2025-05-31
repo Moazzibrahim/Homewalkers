@@ -1,9 +1,12 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, use_build_context_synchronously
 
 import 'dart:convert';
 import 'dart:developer';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/login_model.dart';
@@ -18,7 +21,11 @@ class LoginApiService {
 
   final String baseUrl = Constants.baseUrl;
 
-  Future<LoginResponse> login(String email, String password) async {
+  Future<LoginResponse> login(
+    String email,
+    String password,
+    BuildContext context,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/Signup/login"),
@@ -63,6 +70,23 @@ class LoginApiService {
         await prefs.setString('createdAt', createdAt);
         await prefs.setString('updatedAt', updatedAt);
         await prefs.setBool('active', active);
+        if (role == "Sales") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SalesTabsScreen()),
+          );
+        } else if (role == "Team Leader") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TeamLeaderTabsScreen()),
+          );
+        } else if (role == "Admin") {
+          Navigator.pushNamed(context, '/adminHome');
+        } else if (role == "Manager") {
+          Navigator.pushNamed(context, '/managerHome');
+        } else {
+          log('❌ Unknown role: $role');
+        }
 
         return loginResponse;
       } else {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 // ignore_for_file: deprecated_member_use
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
-import 'package:homewalkers_app/presentation/screens/sales/sales_assign_leads_screen.dart';
+import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_profile_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_sales_screen.dart';
@@ -58,7 +58,7 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
                 children: [
                   TeamLeaderDashboardScreen(),
                   TeamLeaderSalesScreen(),
-                  SalesAssignLeadsScreen(),
+                  TeamLeaderAssignScreen(),
                   TeamLeaderProfileScreen(),
                 ],
               ),

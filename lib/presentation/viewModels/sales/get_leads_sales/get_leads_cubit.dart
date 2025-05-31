@@ -13,7 +13,7 @@ part 'get_leads_state.dart';
 class GetLeadsCubit extends Cubit<GetLeadsState> {
   final GetLeadsService apiService;
   Timer? _timer;
-  LeadResponse? _cachedLeads; // لتخزين البيانات داخليًا
+  LeadResponse? _cachedLeads;   
   GetLeadsCubit(this.apiService) : super(GetLeadsInitial()) {
     fetchLeads(showLoading: true); // تحميل أولي مع شريط تحميل
     _startPolling(); // تحديث كل دقيقتين بدون شريط تحميل
@@ -70,7 +70,6 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
           for (var lead in newLeads) {
             // ممكن تستخدم معرف الـ lead أو أي ID فريد
             final docId = lead.id ?? firestore.collection('leads').doc().id;
-
             await firestore.collection('leads').doc(docId).set({
               'name': lead.name ?? '',
               'phone': lead.phone ?? '',
@@ -89,7 +88,6 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
       emit(GetLeadsError("No Leads Data Found"));
     }
   }
-
   String? getPhoneCodeFromPhone(String phone) {
     String cleanedPhone = phone.replaceAll(RegExp(r'\D'), '');
     for (int i = 4; i >= 1; i--) {
@@ -99,13 +97,15 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     }
     return null;
   }
-
   void filterLeads({
     String? name,
-    String? country, // هنا country هو كود الدولة، مثال: "20"
+    String? email,
+    String? phone,
+    String? country,
     String? developer,
     String? project,
     String? stage,
+    String? query,
   }) {
     if (_cachedLeads == null || _cachedLeads!.data == null) {
       emit(GetLeadsError("لا توجد بيانات Leads لفلترتها."));
@@ -113,9 +113,12 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     }
     final filtered =
         _cachedLeads!.data!.where((lead) {
-          final matchName =
-              name == null ||
-              (lead.name?.toLowerCase().contains(name.toLowerCase()) ?? false);
+          final q = query?.toLowerCase() ?? '';
+          final matchName = lead.name?.toLowerCase().contains(q) ?? false;
+          final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
+          final matchPhone = lead.phone?.contains(q) ?? false;
+          // matchQuery يبحث في الـ 3 مع بعض
+          final matchQuery = q.isEmpty || matchName || matchEmail || matchPhone;
           final leadPhoneCode =
               lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
           final matchCountry =
@@ -124,7 +127,7 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
               developer == null || lead.project?.developer?.name == developer;
           final matchProject = project == null || lead.project?.name == project;
           final matchStage = stage == null || lead.stage?.name == stage;
-          return matchName &&
+          return matchQuery &&
               matchCountry &&
               matchDev &&
               matchProject &&

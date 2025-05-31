@@ -36,7 +36,7 @@ class SalesdashboardScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Hello $name',
+                        name,
                         style: TextStyle(
                           color:
                               Theme.of(context).brightness == Brightness.light

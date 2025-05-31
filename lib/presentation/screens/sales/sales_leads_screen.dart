@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks
+// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,6 +47,14 @@ class SalesLeadsScreen extends StatelessWidget {
                     ? Constants.maincolor
                     : Constants.mainDarkmodecolor,
           );
+        case 'Follow':
+          return Icon(
+            Icons.mark_email_unread_outlined,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
         case 'Meeting':
           return Icon(
             Icons.chat_bubble_outline,
@@ -55,7 +63,7 @@ class SalesLeadsScreen extends StatelessWidget {
                     ? Constants.maincolor
                     : Constants.mainDarkmodecolor,
           );
-        case 'Deal Done':
+        case 'Done Deal':
           return Icon(
             Icons.check_box_outlined,
             color:
@@ -65,7 +73,31 @@ class SalesLeadsScreen extends StatelessWidget {
           );
         case 'Interested':
           return Icon(
-            Icons.interests_sharp,
+            FontAwesomeIcons.check,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Not Interested':
+          return Icon(
+            FontAwesomeIcons.timesCircle,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Fresh':
+          return Icon(
+            Icons.new_releases,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Transfer':
+          return Icon(
+            Icons.no_transfer,
             color:
                 Theme.of(context).brightness == Brightness.light
                     ? Constants.maincolor
@@ -114,11 +146,8 @@ class SalesLeadsScreen extends StatelessWidget {
                         controller: nameController,
                         onChanged: (value) {
                           context.read<GetLeadsCubit>().filterLeads(
-                                name:
-                                    nameController.text.trim().isEmpty
-                                        ? null
-                                        : nameController.text.trim(),
-                              );
+                            query: value.trim(),
+                          );
                         },
                         decoration: InputDecoration(
                           hintText: 'Search',
@@ -130,8 +159,7 @@ class SalesLeadsScreen extends StatelessWidget {
                           prefixIcon: Icon(
                             Icons.search,
                             color:
-                                Theme.of(context).brightness ==
-                                        Brightness.light
+                                Theme.of(context).brightness == Brightness.light
                                     ? Constants.maincolor
                                     : Constants.mainDarkmodecolor,
                           ),
@@ -246,6 +274,32 @@ class SalesLeadsScreen extends StatelessWidget {
                         itemCount: leads.length,
                         itemBuilder: (context, index) {
                           final lead = leads[index];
+                          final leadstageupdated = lead.stagedateupdated;
+                          final leadStagetype = lead.stage?.name ?? "";
+                          // تحويل التاريخ من String إلى DateTime
+                          DateTime? stageUpdatedDate;
+                          if (leadstageupdated != null) {
+                            try {
+                              stageUpdatedDate = DateTime.parse(
+                                leadstageupdated,
+                              );
+                            } catch (_) {
+                              stageUpdatedDate = null;
+                            }
+                          }
+                          bool isOutdated = false;
+                          if (stageUpdatedDate != null &&
+                              (leadStagetype == "Done Deal" ||
+                                  leadStagetype == "Transfer" ||
+                                  leadStagetype == "Fresh" ||
+                                  leadStagetype == "Not Interested")) {
+                            final now = DateTime.now();
+                            final difference =
+                                now.difference(stageUpdatedDate).inMinutes;
+                            isOutdated =
+                                difference >
+                                1; // اعتبره قديم إذا مرّ أكثر من يوم
+                          }
                           return Card(
                             margin: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -471,6 +525,24 @@ class SalesLeadsScreen extends StatelessWidget {
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
+                                      (stageUpdatedDate != null &&
+                                              (leadStagetype == "Done Deal" ||
+                                                  leadStagetype == "Transfer" ||
+                                                  leadStagetype == "Fresh" ||
+                                                  leadStagetype ==
+                                                      "Not Interested"))
+                                          ? SizedBox()
+                                          : Icon(
+                                            isOutdated
+                                                ? Icons.close
+                                                : Icons.check_circle,
+                                            color:
+                                                isOutdated
+                                                    ? Colors.red
+                                                    : Colors.green,
+                                            size: 24,
+                                          ),
+                                      const SizedBox(height: 3),
                                       InkWell(
                                         onTap: () async {
                                           await Navigator.push(

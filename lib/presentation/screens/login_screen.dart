@@ -324,6 +324,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     context.read<AuthCubit>().login(
                                       emailController.text,
                                       passwordController.text,
+                                      context
                                     );
                                   },
                                   child:

@@ -55,6 +55,7 @@ class CustomChangeStageDialog {
         }
       }
     }
+
     showDialog(
       context: context,
       builder:
@@ -139,7 +140,9 @@ class CustomChangeStageDialog {
                                     });
                                     if (value == "Meeting" ||
                                         value == "Follow" ||
-                                        value == "Cancel Meeting") {
+                                        value == "Interested" ||
+                                        value == "Follow Up" ||
+                                        value == "Long Follow") {
                                       await pickDateTime(context, (
                                         pickedDateTime,
                                       ) {
@@ -242,7 +245,9 @@ class CustomChangeStageDialog {
                                           selectedDateTime
                                               ?.toUtc()
                                               .toIso8601String() ??
-                                          DateTime.now().toUtc().toIso8601String(),
+                                          DateTime.now()
+                                              .toUtc()
+                                              .toIso8601String(),
                                       stage: selectedStageId!,
                                     );
                                     // بعد ما يتم التغيير بنجاح

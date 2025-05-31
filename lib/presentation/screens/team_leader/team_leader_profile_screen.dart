@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/login_screen.dart';
-import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/theme/theme_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,7 +59,7 @@ class TeamLeaderProfileScreen extends StatelessWidget {
         onBack: () {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => SalesTabsScreen()),
+            MaterialPageRoute(builder: (context) => TeamLeaderTabsScreen()),
           );
         },
       ),
