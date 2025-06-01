@@ -14,6 +14,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/ge
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/theme/theme_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -74,6 +75,12 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (_) => GetLeadsCubit(GetLeadsService())..fetchLeads(),
+        ),
+        BlocProvider<GetLeadsTeamLeaderCubit>(
+          create:
+              (_) => GetLeadsTeamLeaderCubit(
+                GetLeadsService()..getLeadsDataByTeamLeader(),
+              ),
         ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(

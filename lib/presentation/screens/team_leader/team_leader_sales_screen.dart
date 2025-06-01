@@ -155,7 +155,7 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                // color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(

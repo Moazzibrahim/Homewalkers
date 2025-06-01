@@ -64,7 +64,7 @@ class ChangeStageCubit extends Cubit<ChangeStageState> {
         log("stage: $stage");
         emit(
           ChangeStageSuccess(
-            data['message'] ?? 'Lead stage posted successfully',
+            data['message'] ?? 'Lead stage changed successfully',
           ),
         );
       } else {

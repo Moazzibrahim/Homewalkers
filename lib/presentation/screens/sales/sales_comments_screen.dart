@@ -7,7 +7,6 @@ import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
-import 'package:homewalkers_app/presentation/widgets/custom_add_comment_sheet.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,6 +26,12 @@ class SalesCommentsScreen extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('name');
     return name ?? 'User';
+  }
+
+  Future<String> checkRoleName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('role');
+    return role ?? 'User';
   }
 
   @override
@@ -135,7 +140,28 @@ class SalesCommentsScreen extends StatelessWidget {
                         }
                       },
                     ),
-                    Text('Sales', style: TextStyle(color: Colors.grey)),
+                    FutureBuilder(
+                      future: checkRoleName(), // ✅ جلب الاسم
+                      builder: (BuildContext context, AsyncSnapshot snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Text(" ....");
+                        } else if (snapshot.hasError) {
+                          return const Text('Error fetching name');
+                        } else {
+                          return Text(
+                            '${snapshot.data}',
+                            style: TextStyle(
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? const Color(0xff080719)
+                                      : Colors.grey,
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   ],
                 ),
               ],
@@ -163,37 +189,37 @@ class SalesCommentsScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
             SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder:
-                          (_) => AddCommentBottomSheet(
-                            buttonName: "Edit comment",
-                            optionalName: "Edit",
-                          ),
-                    );
-                  },
-                  style: TextButton.styleFrom(
-                    minimumSize: Size(60, 32),
-                    backgroundColor:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  child: Text('Edit', style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            ),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     TextButton(
+            //       onPressed: () {
+            //         showModalBottomSheet(
+            //           context: context,
+            //           isScrollControlled: true,
+            //           backgroundColor: Colors.transparent,
+            //           builder:
+            //               (_) => AddCommentBottomSheet(
+            //                 buttonName: "Edit comment",
+            //                 optionalName: "Edit",
+            //               ),
+            //         );
+            //       },
+            //       style: TextButton.styleFrom(
+            //         minimumSize: Size(60, 32),
+            //         backgroundColor:
+            //             Theme.of(context).brightness == Brightness.light
+            //                 ? Constants.maincolor
+            //                 : Constants.mainDarkmodecolor,
+            //         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            //         shape: RoundedRectangleBorder(
+            //           borderRadius: BorderRadius.circular(6),
+            //         ),
+            //       ),
+            //       child: Text('Edit', style: TextStyle(color: Colors.white)),
+            //     ),
+            //   ],
+            // ),
           ],
         ),
       ),

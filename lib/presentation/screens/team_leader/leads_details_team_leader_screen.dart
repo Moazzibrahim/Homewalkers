@@ -4,11 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
-import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
@@ -17,10 +15,9 @@ import 'package:homewalkers_app/presentation/widgets/custom_add_comment_sheet.da
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_change_stage_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart';
-import 'package:homewalkers_app/presentation/widgets/custom_show_assign_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SalesLeadsDetailsScreen extends StatefulWidget {
+class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
   final String leedId;
   final String? leadName;
   final String? leadEmail;
@@ -35,7 +32,10 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
   final String? leadLastComment;
   final String? leadNotes;
   final String? leaddeveloper;
-  SalesLeadsDetailsScreen({
+  final String? userlogname;
+  final String? teamleadername;
+
+  LeadsDetailsTeamLeaderScreen({
     super.key,
     required this.leedId,
     this.leadName,
@@ -51,13 +51,16 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
     this.leadLastComment,
     this.leadNotes,
     this.leaddeveloper,
+    this.userlogname,
+    this.teamleadername,
   });
   @override
-  State<SalesLeadsDetailsScreen> createState() =>
+  State<LeadsDetailsTeamLeaderScreen> createState() =>
       _SalesLeadsDetailsScreenState();
 }
 
-class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
+class _SalesLeadsDetailsScreenState
+    extends State<LeadsDetailsTeamLeaderScreen> {
   String userRole = '';
   @override
   void initState() {
@@ -153,131 +156,120 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                           ),
                           SizedBox(height: 12.h),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              BlocBuilder<GetLeadsCubit, GetLeadsState>(
-                                builder: (context, state) {
-                                  return ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          4.r,
+                              if (widget.teamleadername != null &&
+                                  widget.userlogname != null &&
+                                  widget.teamleadername == widget.userlogname)
+                                BlocBuilder<GetLeadsCubit, GetLeadsState>(
+                                  builder: (context, state) {
+                                    return ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                         ),
-                                      ),
-                                      backgroundColor:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Color(0xffFFFFFF)
-                                              : Color(0xff080719),
-                                      side: const BorderSide(
-                                        color: Color.fromRGBO(
-                                          15,
-                                          118,
-                                          135,
-                                          0.5,
-                                        ),
-                                      ),
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 20.w,
-                                        vertical: 9.h,
-                                      ),
-                                    ),
-                                    onPressed:
-                                        state is GetLeadsSuccess
-                                            ? () async {
-                                              await showDialog(
-                                                context: context,
-                                                builder:
-                                                    (context) => BlocProvider(
-                                                      create:
-                                                          (_) => SalesCubit(
-                                                            GetAllSalesApiService(),
-                                                          ),
-                                                      child: AssignDialog(
-                                                        leadIds: [
-                                                          widget.leedId,
-                                                        ],
-                                                        leadId: widget.leedId,
-                                                        mainColor:
-                                                            Theme.of(
-                                                                      context,
-                                                                    ).brightness ==
-                                                                    Brightness
-                                                                        .light
-                                                                ? Constants
-                                                                    .maincolor
-                                                                : Constants
-                                                                    .mainDarkmodecolor,
-                                                        leadResponse:
-                                                            state.assignedModel,
-                                                      ),
-                                                    ),
-                                              );
-                                            }
-                                            : null,
-                                    child: Text(
-                                      'Assign Lead',
-                                      style: TextStyle(
-                                        fontSize: 15.sp,
-                                        fontWeight: FontWeight.w500,
-                                        color:
+                                        backgroundColor:
                                             Theme.of(context).brightness ==
                                                     Brightness.light
-                                                ? Constants.maincolor
-                                                : Constants.mainDarkmodecolor,
+                                                ? Color(0xffFFFFFF)
+                                                : Color(0xff080719),
+                                        side: const BorderSide(
+                                          color: Color.fromRGBO(
+                                            15,
+                                            118,
+                                            135,
+                                            0.5,
+                                          ),
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 16.w,
+                                          vertical: 9.h,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              SizedBox(width: 22.w),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  backgroundColor:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Color(0xffFFFFFF)
-                                          : Color(0xff080719),
-                                  side: const BorderSide(
-                                    color: Color.fromRGBO(15, 118, 135, 0.5),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16.w,
-                                    vertical: 9.h,
-                                  ),
+                                      onPressed: () async {
+                                        final prefs =
+                                            await SharedPreferences.getInstance();
+                                        final String salesId =
+                                            prefs.getString('salesIdD') ?? '';
+                                        CustomChangeStageDialog.showChangeDialog(
+                                          context: context,
+                                          leadStage: widget.leadStage,
+                                          leedId: widget.leedId,
+                                          salesId: salesId,
+                                          onStageChanged: (newStage) {
+                                            setState(() {
+                                              widget.leadStage = newStage;
+                                            });
+                                          },
+                                        );
+                                      },
+                                      child: Text(
+                                        'Change stage ',
+                                        style: TextStyle(
+                                          fontSize: 15.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color:
+                                              Theme.of(context).brightness ==
+                                                      Brightness.light
+                                                  ? Constants.maincolor
+                                                  : Constants.mainDarkmodecolor,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                                onPressed: () async {
-                                  final prefs =
-                                      await SharedPreferences.getInstance();
-                                  final String salesId =
-                                      prefs.getString('salesIdD') ?? '';
-                                  CustomChangeStageDialog.showChangeDialog(
-                                    context: context,
-                                    leadStage: widget.leadStage,
-                                    leedId: widget.leedId,
-                                    salesId: salesId,
-                                    onStageChanged: (newStage) {
-                                      setState(() {
-                                        widget.leadStage = newStage;
-                                      });
-                                    },
-                                  );
-                                },
-                                child: Text(
-                                  'Change stage ',
-                                  style: TextStyle(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
-                                  ),
-                                ),
-                              ),
+                              // SizedBox(width: 80.w),
+
+                              // ElevatedButton(
+                              //   style: ElevatedButton.styleFrom(
+                              //     shape: RoundedRectangleBorder(
+                              //       borderRadius: BorderRadius.circular(4),
+                              //     ),
+                              //     backgroundColor:
+                              //         Theme.of(context).brightness ==
+                              //                 Brightness.light
+                              //             ? Color(0xffFFFFFF)
+                              //             : Color(0xff080719),
+                              //     side: const BorderSide(
+                              //       color: Color.fromRGBO(15, 118, 135, 0.5),
+                              //     ),
+                              //     padding: EdgeInsets.symmetric(
+                              //       horizontal: 16.w,
+                              //       vertical: 9.h,
+                              //     ),
+                              //   ),
+                              //   onPressed: () async {
+                              //     final prefs =
+                              //         await SharedPreferences.getInstance();
+                              //     final String salesId =
+                              //         prefs.getString('salesIdD') ?? '';
+                              //     CustomChangeStageDialog.showChangeDialog(
+                              //       context: context,
+                              //       leadStage: widget.leadStage,
+                              //       leedId: widget.leedId,
+                              //       salesId: salesId,
+                              //       onStageChanged: (newStage) {
+                              //         setState(() {
+                              //           widget.leadStage = newStage;
+                              //         });
+                              //       },
+                              //     );
+                              //   },
+                              //   child: Text(
+                              //     'Change stage ',
+                              //     style: TextStyle(
+                              //       fontSize: 15.sp,
+                              //       fontWeight: FontWeight.w500,
+                              //       color:
+                              //           Theme.of(context).brightness ==
+                              //                   Brightness.light
+                              //               ? Constants.maincolor
+                              //               : Constants.mainDarkmodecolor,
+                              //     ),
+                              //   ),
+                              // ),
                             ],
                           ),
                         ],
