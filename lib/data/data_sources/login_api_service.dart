@@ -5,6 +5,7 @@ import 'dart:developer';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:http/http.dart' as http;
@@ -83,7 +84,10 @@ class LoginApiService {
         } else if (role == "Admin") {
           Navigator.pushNamed(context, '/adminHome');
         } else if (role == "Manager") {
-          Navigator.pushNamed(context, '/managerHome');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TabsScreenManager()),
+          );
         } else {
           log('❌ Unknown role: $role');
         }

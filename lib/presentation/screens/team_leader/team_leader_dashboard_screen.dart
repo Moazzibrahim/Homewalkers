@@ -208,6 +208,18 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                                     entry.value.toString(),
                                     Icons.timeline,
                                     context,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) =>
+                                                  TeamLeaderAssignScreen(
+                                                    stageName: entry.key,
+                                                  ),
+                                        ),
+                                      );
+                                    },
                                   );
                                 }).toList(),
                           ),

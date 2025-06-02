@@ -15,7 +15,8 @@ import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/custom_assign_dialog_team_leader_widget.dart';
 
 class TeamLeaderAssignScreen extends StatefulWidget {
-  const TeamLeaderAssignScreen({super.key});
+  final String? stageName;
+  const TeamLeaderAssignScreen({super.key, this.stageName});
 
   @override
   _SalesAssignLeadsScreenState createState() => _SalesAssignLeadsScreenState();
@@ -44,10 +45,15 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create:
-          (_) =>
-              GetLeadsTeamLeaderCubit(GetLeadsService())
-                ..getLeadsByTeamLeader(),
+      create: (_) {
+        final cubit = GetLeadsTeamLeaderCubit(GetLeadsService());
+        cubit.getLeadsByTeamLeader().then((_) {
+          if (widget.stageName != null && widget.stageName!.isNotEmpty) {
+            cubit.filterLeadsByStage(widget.stageName!);
+          }
+        });
+        return cubit;
+      },
       child: Builder(
         builder: (context) {
           return Scaffold(
@@ -199,8 +205,11 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 leaddeveloper:
                                     lead.project?.developer?.name ??
                                     'No Developer',
-                                userlogname: lead.sales?.userlog?.name ?? 'No User',
-                                teamleadername:lead.sales?.teamleader?.name ?? 'No Team Leader', 
+                                userlogname:
+                                    lead.sales?.userlog?.name ?? 'No User',
+                                teamleadername:
+                                    lead.sales?.teamleader?.name ??
+                                    'No Team Leader',
                               );
                             },
                           ),

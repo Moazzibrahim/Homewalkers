@@ -47,6 +47,23 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
   }
 
+  void filterLeadsByStage(String query) {
+    if (_originalLeadsResponse?.data == null) return;
+    if (query.isEmpty) {
+      emit(GetLeadsTeamLeaderSuccess(_originalLeadsResponse!));
+      return;
+    }
+    final filtered =
+        _originalLeadsResponse!.data!
+            .where(
+              (lead) =>
+                  lead.stage?.name != null &&
+                  lead.stage!.name!.toLowerCase().contains(query.toLowerCase()),
+            )
+            .toList();
+    emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
+  }
+
   Future<void> loadStageCounts() async {
     try {
       _salesLeadCount = await _getLeadsService.getLeadCountPerStage();
