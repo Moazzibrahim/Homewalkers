@@ -189,6 +189,18 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                                   '${doneDeals.length}',
                                   Icons.work_outline,
                                   context,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) =>
+                                                const TeamLeaderAssignScreen(
+                                                  stageName: "Done Deal",
+                                                ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ],

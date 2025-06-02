@@ -1,5 +1,4 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -18,7 +17,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SalesLeadsScreen extends StatelessWidget {
-  const SalesLeadsScreen({super.key});
+  final String? stageName;
+  const SalesLeadsScreen({super.key, this.stageName});
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +120,12 @@ class SalesLeadsScreen extends StatelessWidget {
 
     return BlocBuilder<GetLeadsCubit, GetLeadsState>(
       builder: (context, state) {
+        if (state is GetLeadsSuccess && stageName != null) {
+          // نفلتر مرة واحدة فقط
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<GetLeadsCubit>().filterLeadsByStageName(stageName!);
+          });
+        }
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: CustomAppBar(

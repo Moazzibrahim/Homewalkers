@@ -147,4 +147,20 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     log("❌ Failed to get stage counts for sales: $e");
   }
 }
+
+void filterLeadsByStageName(String stageName) {
+  if (_cachedLeads == null || _cachedLeads!.data == null) {
+    emit(GetLeadsError("لا توجد بيانات Leads لفلترتها."));
+    return;
+  }
+
+  final filtered = _cachedLeads!.data!
+      .where((lead) =>
+          lead.stage?.name != null &&
+          lead.stage!.name!.toLowerCase() == stageName.toLowerCase())
+      .toList();
+
+  emit(GetLeadsSuccess(LeadResponse(data: filtered)));
+}
+
 }

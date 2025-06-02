@@ -182,6 +182,17 @@ class SalesdashboardScreen extends StatelessWidget {
                                 '${doneDeals.length}',
                                 Icons.work_outline,
                                 context,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => const SalesLeadsScreen(
+                                            stageName: "Done Deal",
+                                          ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ],
@@ -201,6 +212,17 @@ class SalesdashboardScreen extends StatelessWidget {
                                   entry.value.toString(),
                                   Icons.timeline,
                                   context,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => SalesLeadsScreen(
+                                              stageName: entry.key,
+                                            ),
+                                      ),
+                                    );
+                                  },
                                 );
                               }).toList(),
                         ),
