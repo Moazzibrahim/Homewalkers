@@ -1,5 +1,6 @@
 // ignore_for_file: unused_local_variable
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
@@ -135,4 +136,15 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
         }).toList();
     emit(GetLeadsSuccess(LeadResponse(data: filtered)));
   }
+
+  Future<void> getLeadStageCountsForSales() async {
+  try {
+    final stageCounts = await apiService.getLeadCountPerStageInSales();
+    log("✅ Stage counts for sales: $stageCounts");
+    // تقدر تستخدم emit هنا لو عايز تعرض النتيجة في الواجهة
+    emit(GetStageCountSuccess(stageCounts));
+  } catch (e) {
+    log("❌ Failed to get stage counts for sales: $e");
+  }
+}
 }

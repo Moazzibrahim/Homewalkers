@@ -79,33 +79,52 @@ class GetLeadsService {
         );
       }
     } catch (e) {
-      log('❌ Error in getAssignedData: $e');
+      log('❌ Error in getLeadsDataByTeamLeader: $e');
       rethrow;
     }
   }
 
-  Future<Map<String, int>> getLeadCountPerSales() async {
+  Future<Map<String, int>> getLeadCountPerStage() async {
     try {
       LeadResponse leadResponse =
-          await getLeadsDataByTeamLeader(); // أو getAssignedData لو بتشتغل على الداتا دي
+          await getLeadsDataByTeamLeader(); // أو getLeadsDataByTeamLeader لو عايز من هناك
+      final Map<String, int> stageCounts = {};
 
-      List<LeadData> leads = leadResponse.data ?? [];
+      for (var lead in leadResponse.data!) {
+        String stageName = lead.stage?.name ?? "Unknown";
 
-      Map<String, int> salesLeadCount = {};
-
-      for (var lead in leads) {
-        String? salesName = lead.sales?.name ?? 'Unknown';
-
-        if (salesLeadCount.containsKey(salesName)) {
-          salesLeadCount[salesName] = salesLeadCount[salesName]! + 1;
+        if (stageCounts.containsKey(stageName)) {
+          stageCounts[stageName] = stageCounts[stageName]! + 1;
         } else {
-          salesLeadCount[salesName] = 1;
+          stageCounts[stageName] = 1;
         }
       }
-
-      return salesLeadCount;
+      log("📊 Lead count per stage: $stageCounts");
+      return stageCounts;
     } catch (e) {
-      log('❌ Error in getLeadCountPerSales: $e');
+      log("❌ Error while counting leads per stage: $e");
+      return {};
+    }
+  }
+  Future<Map<String, int>> getLeadCountPerStageInSales() async {
+    try {
+      LeadResponse leadResponse =
+          await getAssignedData(); // أو  لو عايز من هناك
+      final Map<String, int> stageCounts = {};
+
+      for (var lead in leadResponse.data!) {
+        String stageName = lead.stage?.name ?? "Unknown";
+
+        if (stageCounts.containsKey(stageName)) {
+          stageCounts[stageName] = stageCounts[stageName]! + 1;
+        } else {
+          stageCounts[stageName] = 1;
+        }
+      }
+      log("📊 Lead count per stage: $stageCounts");
+      return stageCounts;
+    } catch (e) {
+      log("❌ Error while counting leads per stage: $e");
       return {};
     }
   }

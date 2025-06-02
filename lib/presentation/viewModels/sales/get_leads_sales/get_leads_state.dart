@@ -18,3 +18,9 @@ final class GetLeadsError extends GetLeadsState {
 
   GetLeadsError(this.message);
 }
+
+class GetStageCountSuccess extends GetLeadsState {
+  final Map<String, int> stageCounts;
+
+  GetStageCountSuccess(this.stageCounts);
+}

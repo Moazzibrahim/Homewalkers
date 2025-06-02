@@ -29,10 +29,12 @@ final class GetLeadsTeamLeaderError extends GetLeadsTeamLeaderState {
   List<Object> get props => [message];
 }
 
-class GetLeadsTeamLeaderCountSuccess extends GetLeadsTeamLeaderState {
-  final Map<String, int> countMap;
-  const GetLeadsTeamLeaderCountSuccess(this.countMap);
+class GetLeadsTeamLeaderStageCountLoaded extends GetLeadsTeamLeaderState {
+  final Map<String, int> stageCounts;
+
+  const GetLeadsTeamLeaderStageCountLoaded(this.stageCounts);
 
   @override
-  List<Object> get props => [countMap];
+  List<Object> get props => [stageCounts];
 }
+
