@@ -42,8 +42,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   Theme.of(context).brightness == Brightness.light
                       ? Color(0xff080719)
                       : Color(0xffFFFFFF),
-              fontSize: 20,
-              fontWeight: FontWeight.w400,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
