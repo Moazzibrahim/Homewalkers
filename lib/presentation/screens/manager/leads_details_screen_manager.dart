@@ -4,12 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
-import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
@@ -17,7 +15,7 @@ import 'package:homewalkers_app/presentation/widgets/custom_add_comment_sheet.da
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_change_stage_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart';
-import 'package:homewalkers_app/presentation/widgets/custom_show_assign_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/manager/assign_lead_dialog_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LeadsDetailsScreenManager extends StatefulWidget {
@@ -154,7 +152,10 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                           SizedBox(height: 12.h),
                           Row(
                             children: [
-                              BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
+                              BlocBuilder<
+                                GetManagerLeadsCubit,
+                                GetManagerLeadsState
+                              >(
                                 builder: (context, state) {
                                   return ElevatedButton(
                                     style: ElevatedButton.styleFrom(
@@ -187,29 +188,22 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                               await showDialog(
                                                 context: context,
                                                 builder:
-                                                    (context) => BlocProvider(
-                                                      create:
-                                                          (_) => SalesCubit(
-                                                            GetAllSalesApiService(),
-                                                          ),
-                                                      child: AssignDialog(
-                                                        leadIds: [
-                                                          widget.leedId,
-                                                        ],
-                                                        leadId: widget.leedId,
-                                                        mainColor:
-                                                            Theme.of(
-                                                                      context,
-                                                                    ).brightness ==
-                                                                    Brightness
-                                                                        .light
-                                                                ? Constants
-                                                                    .maincolor
-                                                                : Constants
-                                                                    .mainDarkmodecolor,
-                                                        leadResponse:
-                                                            state.leads,
-                                                      ),
+                                                    (
+                                                      context,
+                                                    ) => AssignLeadDialogManager(
+                                                      leadIds: [widget.leedId],
+                                                      leadId: widget.leedId,
+                                                      mainColor:
+                                                          Theme.of(
+                                                                    context,
+                                                                  ).brightness ==
+                                                                  Brightness
+                                                                      .light
+                                                              ? Constants
+                                                                  .maincolor
+                                                              : Constants
+                                                                  .mainDarkmodecolor,
+                                                      leadResponse: state.leads,
                                                     ),
                                               );
                                             }

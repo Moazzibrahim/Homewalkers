@@ -208,8 +208,9 @@ class User {
   final String? id;
   final String? name;
   final String? email;
+  final String? role;
 
-  User({this.id, this.name,this.email});
+  User({this.id, this.name,this.email,this.role});
 
   factory User.fromJson(Map<String, dynamic>? json) {
     if (json == null) return User();
@@ -217,6 +218,7 @@ class User {
       id: json['_id'],
       name: json['name'],
       email: json['email'],
+      role: json['role'],
     );
   }
 }

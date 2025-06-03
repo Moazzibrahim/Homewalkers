@@ -109,4 +109,19 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
     }
     return null;
   }
+
+  void filterTeamLeadersAndSales() {
+  if (_originalLeadsResponse == null || _originalLeadsResponse!.data == null) {
+    emit(GetManagerLeadsFailure("لا توجد بيانات Leads لفلترتها."));
+    return;
+  }
+
+  final filtered = _originalLeadsResponse!.data!.where((lead) {
+    final sales = lead.sales;
+    final isSales = sales?.userlog?.role?.toLowerCase() == "sales";
+    final isTeamLeader = sales?.teamleader?.role?.toLowerCase() == "team leader";
+    return isSales || isTeamLeader;
+  }).toList();
+  emit(GetManagerLeadsSuccess(LeadResponse(data: filtered)));
+}
 }

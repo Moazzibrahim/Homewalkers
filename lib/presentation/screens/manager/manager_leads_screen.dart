@@ -167,8 +167,7 @@ class ManagerLeadsScreen extends StatelessWidget {
                           prefixIcon: Icon(
                             Icons.search,
                             color:
-                                Theme.of(context).brightness ==
-                                        Brightness.light
+                                Theme.of(context).brightness == Brightness.light
                                     ? Constants.maincolor
                                     : Constants.mainDarkmodecolor,
                           ),
@@ -231,10 +230,7 @@ class ManagerLeadsScreen extends StatelessWidget {
               ),
               // Create Lead Button
               Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16.w,
-                  vertical: 10.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: ElevatedButton.icon(
@@ -259,11 +255,7 @@ class ManagerLeadsScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    icon: const Icon(
-                      Icons.add,
-                      size: 20,
-                      color: Colors.white,
-                    ),
+                    icon: const Icon(Icons.add, size: 20, color: Colors.white),
                     label: Text(
                       'Create Lead',
                       style: GoogleFonts.montserrat(
@@ -361,12 +353,18 @@ class ManagerLeadsScreen extends StatelessWidget {
                                           ],
                                         ),
                                         const SizedBox(height: 6),
+                                        Text(
+                                          "sales: ${lead.sales?.name ?? ""}",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor:
-                                                Theme.of(
-                                                          context,
-                                                        ).brightness ==
+                                                Theme.of(context).brightness ==
                                                         Brightness.light
                                                     ? Constants.maincolor
                                                     : Constants
@@ -434,8 +432,7 @@ class ManagerLeadsScreen extends StatelessWidget {
                                                                 state
                                                                     .leadComments
                                                                     .data;
-                                                            if (data ==
-                                                                    null ||
+                                                            if (data == null ||
                                                                 data.isEmpty) {
                                                               return const Text(
                                                                 'No comments available.',
@@ -444,7 +441,9 @@ class ManagerLeadsScreen extends StatelessWidget {
                                                             final firstItem =
                                                                 data.first;
                                                             final firstComment =
-                                                                firstItem.comments?.isNotEmpty ==
+                                                                firstItem
+                                                                            .comments
+                                                                            ?.isNotEmpty ==
                                                                         true
                                                                     ? firstItem
                                                                         .comments!
@@ -540,13 +539,11 @@ class ManagerLeadsScreen extends StatelessWidget {
                                   ),
                                   // الجهة اليمنى: View More + phone + WhatsApp
                                   Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.end,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       (stageUpdatedDate != null &&
                                               (leadStagetype == "Done Deal" ||
-                                                  leadStagetype ==
-                                                      "Transfer" ||
+                                                  leadStagetype == "Transfer" ||
                                                   leadStagetype == "Fresh" ||
                                                   leadStagetype ==
                                                       "Not Interested"))
@@ -573,18 +570,14 @@ class ManagerLeadsScreen extends StatelessWidget {
                                                   ) => LeadsDetailsScreenManager(
                                                     leedId: lead.id!,
                                                     leadName: lead.name ?? '',
-                                                    leadPhone:
-                                                        lead.phone ?? '',
-                                                    leadEmail:
-                                                        lead.email ?? '',
+                                                    leadPhone: lead.phone ?? '',
+                                                    leadEmail: lead.email ?? '',
                                                     leadStage:
-                                                        lead.stage?.name ??
-                                                        '',
+                                                        lead.stage?.name ?? '',
                                                     leadStageId:
                                                         lead.stage?.id ?? '',
                                                     leadChannel:
-                                                        lead.chanel?.name ??
-                                                        '',
+                                                        lead.chanel?.name ?? '',
                                                     leadCreationDate:
                                                         lead.createdAt != null
                                                             ? formatDateTime(
@@ -622,9 +615,7 @@ class ManagerLeadsScreen extends StatelessWidget {
                                             fontSize: 14,
                                             fontWeight: FontWeight.w500,
                                             color:
-                                                Theme.of(
-                                                          context,
-                                                        ).brightness ==
+                                                Theme.of(context).brightness ==
                                                         Brightness.light
                                                     ? Constants.maincolor
                                                     : Constants
@@ -637,9 +628,8 @@ class ManagerLeadsScreen extends StatelessWidget {
                                       const SizedBox(height: 8),
                                       InkWell(
                                         onTap:
-                                            () => makePhoneCall(
-                                              lead.phone ?? '',
-                                            ),
+                                            () =>
+                                                makePhoneCall(lead.phone ?? ''),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
