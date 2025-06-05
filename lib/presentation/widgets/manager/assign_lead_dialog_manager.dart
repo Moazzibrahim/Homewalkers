@@ -26,10 +26,9 @@ class AssignLeadDialogManager extends StatefulWidget {
 }
 
 class _AssignDialogState extends State<AssignLeadDialogManager> {
-  bool isTeamLeaderChecked = false;
-  String? savedIdassignedfrom;
   String? selectedSalesId;
   Map<String, bool> selectedSales = {};
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -46,7 +45,6 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // ✅ عرض بيانات السيلز إذا متاحة
                     BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
                       builder: (context, state) {
                         if (state is GetManagerLeadsLoading) {
@@ -55,43 +53,51 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                           );
                         } else if (state is GetManagerLeadsSuccess &&
                             state.leads.data != null) {
-                          final salesOnly =
-                              state.leads.data!
-                                  .where(
-                                    (sale) =>
-                                        sale.sales?.userlog?.role == "Sales" ||
-                                        sale.sales?.userlog?.role ==
-                                            "Team Leader",
-                                  )
-                                  .toList();
+                          // ✅ إزالة التكرار حسب userlog.id
+                          final uniqueSalesMap = <String, LeadData>{};
+                          for (var sale in state.leads.data!) {
+                            final user = sale.sales?.userlog;
+                            if (user != null &&
+                                (user.role == "Sales" ||
+                                    user.role == "Team Leader")) {
+                              uniqueSalesMap[sale.sales!.id!] = sale;
+                            }
+                          }
+                          final salesOnly = uniqueSalesMap.values.toList();
                           if (salesOnly.isEmpty) {
-                            return const Text("No sales available.");
+                            return const Text(
+                              "No sales or team leaders available.",
+                            );
                           }
                           return Column(
                             children:
                                 salesOnly.map((sale) {
+                                  final userId = sale.sales!.id!;
                                   return ListTile(
-                                    title: Text(sale.name ?? "Unnamed Sales"),
+                                    title: Text(
+                                      sale.sales?.userlog?.name ??
+                                          "Unnamed Sales",
+                                    ),
                                     subtitle: Text(
                                       "${sale.sales?.userlog?.role}",
                                       style: TextStyle(color: widget.mainColor),
                                     ),
                                     trailing: Checkbox(
                                       activeColor: widget.mainColor,
-                                      value: selectedSales[sale.id] ?? false,
+                                      value: selectedSales[userId] ?? false,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       onChanged: (val) {
                                         setState(() {
                                           selectedSales
-                                              .clear(); // للسماح باختيار واحد فقط
-                                          selectedSales[sale.id!] =
-                                              val ?? false;
+                                              .clear(); // اختيار واحد فقط
+                                          selectedSales[userId] = val ?? false;
                                           selectedSalesId =
-                                              val == true
-                                                  ? sale.id.toString()
-                                                  : null;
+                                              val == true ? userId : null;
+                                          log(
+                                            "selectedSalesId: $selectedSalesId",
+                                          );
                                         });
                                       },
                                     ),
@@ -108,7 +114,6 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    // ✅ الاستماع لحالة التعيين
                     BlocListener<AssignleadCubit, AssignState>(
                       listener: (context, state) {
                         if (state is AssignSuccess) {
@@ -158,15 +163,14 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                     widget.leadIds != null
                                         ? List<String>.from(widget.leadIds!)
                                         : [widget.leadId!];
-
-                                log("Selected Lead IDs: $leadIds");
-
-                                final String lastDateAssign =
+                                final lastDateAssign =
                                     DateTime.now().toUtc().toIso8601String();
-
-                                BlocProvider.of<AssignleadCubit>(
-                                  dialogContext,
-                                ).assignLeadFromManager(
+                                final assignCubit =
+                                    BlocProvider.of<AssignleadCubit>(
+                                      dialogContext,
+                                      listen: false,
+                                    );
+                                assignCubit.assignLeadFromManager(
                                   leadIds: leadIds,
                                   lastDateAssign: lastDateAssign,
                                   dateAssigned:
@@ -179,7 +183,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                 ).showSnackBar(
                                   const SnackBar(
                                     content: Text(
-                                      "Please select the Team Leader to assign. ⚠️",
+                                      "Please select the Team Leader or Sales to assign. ⚠️",
                                     ),
                                   ),
                                 );

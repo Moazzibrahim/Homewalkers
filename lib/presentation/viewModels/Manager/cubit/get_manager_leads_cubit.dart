@@ -10,6 +10,9 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
   LeadResponse? _originalLeadsResponse; // 🟡 حفظ البيانات الأصلية
   Map<String, int> _salesLeadCount = {};
   Map<String, int> get salesLeadCount => _salesLeadCount;
+  List<String> salesNames = [];
+  List<String> teamLeaderNames = [];
+
   GetManagerLeadsCubit(this._getLeadsService) : super(GetManagerLeadsInitial());
 
   Future<void> getLeadsByManager() async {
@@ -20,6 +23,22 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
       _originalLeadsResponse = leadsResponse; // 🟡 حفظ البيانات الأصلية
       // تحميل عدد الـ leads لكل مرحلة
       _salesLeadCount = await _getLeadsService.getLeadCountPerStageInManager();
+
+      // ⬇️ استخراج الأسماء الحقيقية
+      final salesSet = <String>{};
+      final teamLeaderSet = <String>{};
+
+      for (var lead in leadsResponse.data ?? []) {
+        final salesName = lead.sales?.userlog?.name;
+        final teamLeaderName = lead.sales?.teamleader?.name;
+
+        if (salesName != null && salesName.isNotEmpty) salesSet.add(salesName);
+        if (teamLeaderName != null && teamLeaderName.isNotEmpty) {
+          teamLeaderSet.add(teamLeaderName);
+        }
+      }
+      salesNames = salesSet.toList();
+      teamLeaderNames = teamLeaderSet.toList();
       log("✅ تم جلب البيانات بنجاح.");
       emit(GetManagerLeadsSuccess(leadsResponse));
     } catch (e) {
@@ -68,6 +87,8 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
     String? developer,
     String? project,
     String? stage,
+    String? sales,
+    String? teamleader,
     String? query,
   }) {
     if (_originalLeadsResponse == null ||
@@ -91,11 +112,17 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
               developer == null || lead.project?.developer?.name == developer;
           final matchProject = project == null || lead.project?.name == project;
           final matchStage = stage == null || lead.stage?.name == stage;
+          final matchSales =
+              sales == null || lead.sales?.userlog?.name == sales;
+          final matchTeamLeader =
+              teamleader == null || lead.sales?.teamleader?.name == teamleader;
           return matchQuery &&
               matchCountry &&
               matchDev &&
               matchProject &&
-              matchStage;
+              matchStage &&
+              matchSales &&
+              matchTeamLeader;
         }).toList();
     emit(GetManagerLeadsSuccess(LeadResponse(data: filtered)));
   }
@@ -110,18 +137,26 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
     return null;
   }
 
-  void filterTeamLeadersAndSales() {
-  if (_originalLeadsResponse == null || _originalLeadsResponse!.data == null) {
-    emit(GetManagerLeadsFailure("لا توجد بيانات Leads لفلترتها."));
-    return;
+  Map<String, List<LeadData>> getSalesGroupedByTeamLeader() {
+    final Map<String, List<LeadData>> grouped = {};
+    if (_originalLeadsResponse?.data == null) return {};
+    for (final lead in _originalLeadsResponse!.data!) {
+      final sales = lead.sales;
+      final teamLeaderName = sales?.teamleader?.name;
+      log(
+        "👀 Lead: ${lead.name}, Sales: ${sales?.name}, TeamLeader: $teamLeaderName",
+      );
+      if (teamLeaderName != null && sales?.name != null) {
+        grouped.putIfAbsent(teamLeaderName, () => []);
+        grouped[teamLeaderName]!.add(lead);
+      }
+    }
+    for (final entry in grouped.entries) {
+      log('Team Leader: ${entry.key}, Leads Count: ${entry.value.length}');
+      for (final lead in entry.value) {
+        log('  → Lead: ${lead.name}, Sales: ${lead.sales?.name}');
+      }
+    }
+    return grouped;
   }
-
-  final filtered = _originalLeadsResponse!.data!.where((lead) {
-    final sales = lead.sales;
-    final isSales = sales?.userlog?.role?.toLowerCase() == "sales";
-    final isTeamLeader = sales?.teamleader?.role?.toLowerCase() == "team leader";
-    return isSales || isTeamLeader;
-  }).toList();
-  emit(GetManagerLeadsSuccess(LeadResponse(data: filtered)));
-}
 }

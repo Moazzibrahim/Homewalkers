@@ -50,6 +50,14 @@ class _FilterDialogState extends State<FilterDialog> {
   String? selectedProject;
   String? selectedStage;
   List<Country> countries = [];
+  String? selectedSales;
+  String? selectedTeamLeader;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<GetManagerLeadsCubit>().getLeadsByManager();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +130,37 @@ class _FilterDialogState extends State<FilterDialog> {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 12),
+
+              BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
+                builder: (context, state) {
+                  final salesList =
+                      context.read<GetManagerLeadsCubit>().salesNames;
+                  return CustomDropdownField(
+                    hint: "Choose Sales",
+                    items: salesList,
+                    value: selectedSales,
+                    onChanged: (value) {
+                      setState(() => selectedSales = value);
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
+                builder: (context, state) {
+                  final teamLeaderList =
+                      context.read<GetManagerLeadsCubit>().teamLeaderNames;
+                  return CustomDropdownField(
+                    hint: "Choose Team Leader",
+                    items: teamLeaderList,
+                    value: selectedTeamLeader,
+                    onChanged: (value) {
+                      setState(() => selectedTeamLeader = value);
+                    },
+                  );
+                },
               ),
               const SizedBox(height: 12),
               // 👇 Developer Dropdown باستخدام BlocBuilder
@@ -255,6 +294,8 @@ class _FilterDialogState extends State<FilterDialog> {
                           developer: selectedDeveloper,
                           project: selectedProject,
                           stage: selectedStage,
+                          teamleader: selectedTeamLeader,
+                          sales: selectedSales,
                         );
                         Navigator.pop(context); // ✅ اقفل الـDialog بعد التطبيق
                       },

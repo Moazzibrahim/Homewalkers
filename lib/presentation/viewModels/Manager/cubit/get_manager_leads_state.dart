@@ -28,3 +28,5 @@ final class GetManagerLeadsFailure extends GetManagerLeadsState {
   @override
   List<Object> get props => [message];
 }
+
+

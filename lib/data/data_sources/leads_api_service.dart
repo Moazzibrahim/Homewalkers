@@ -140,7 +140,7 @@ class GetLeadsService {
       }
 
       final url = Uri.parse(
-        '${Constants.baseUrl}/users/managers-leads?email=$savedEmail',
+        '${Constants.baseUrl}/users/managers-leads?email=$savedEmail&leadisactive=true',
       );
 
       final response = await http.get(url);
@@ -152,7 +152,7 @@ class GetLeadsService {
           'managerIdspecific',
           manageridSpecific ?? '',
         );
-        log("✅ Get leads successfully by team leader");
+        log("✅ Get leads successfully by Manager");
         return leadsResponse;
       } else {
         throw Exception(

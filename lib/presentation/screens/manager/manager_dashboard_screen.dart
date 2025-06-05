@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
+import 'package:homewalkers_app/presentation/screens/manager/manager_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
-import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
-import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ManagerDashboardScreen extends StatelessWidget {
@@ -22,8 +22,8 @@ class ManagerDashboardScreen extends StatelessWidget {
     return BlocProvider(
       create:
           (_) =>
-              GetLeadsTeamLeaderCubit(GetLeadsService())
-                ..getLeadsByTeamLeader(),
+              GetManagerLeadsCubit(GetLeadsService())
+                ..getLeadsByManager(),
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
@@ -116,9 +116,9 @@ class ManagerDashboardScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 20),
-                BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
+                BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
                   builder: (context, state) {
-                    if (state is GetLeadsTeamLeaderLoading) {
+                    if (state is GetManagerLeadsLoading) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -147,8 +147,8 @@ class ManagerDashboardScreen extends StatelessWidget {
                           const Center(child: CircularProgressIndicator()),
                         ],
                       );
-                    } else if (state is GetLeadsTeamLeaderSuccess) {
-                      final allLeads = state.leadsData.data ?? [];
+                    } else if (state is GetManagerLeadsSuccess) {
+                      final allLeads = state.leads.data ?? [];
                       final doneDeals =
                           allLeads
                               .where((lead) => lead.stage?.name == "Done Deal")
@@ -176,7 +176,7 @@ class ManagerDashboardScreen extends StatelessWidget {
                                       MaterialPageRoute(
                                         builder:
                                             (context) =>
-                                                const TeamLeaderAssignScreen(),
+                                                const ManagerLeadsScreen(),
                                       ),
                                     );
                                   },
@@ -195,7 +195,7 @@ class ManagerDashboardScreen extends StatelessWidget {
                                       MaterialPageRoute(
                                         builder:
                                             (context) =>
-                                                const TeamLeaderAssignScreen(
+                                                const ManagerLeadsScreen(
                                                   stageName: "Done Deal",
                                                 ),
                                       ),
@@ -226,7 +226,7 @@ class ManagerDashboardScreen extends StatelessWidget {
                                         MaterialPageRoute(
                                           builder:
                                               (context) =>
-                                                  TeamLeaderAssignScreen(
+                                                  ManagerLeadsScreen(
                                                     stageName: entry.key,
                                                   ),
                                         ),

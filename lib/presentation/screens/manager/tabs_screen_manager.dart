@@ -58,7 +58,7 @@ class _TabsScreenState extends State<TabsScreenManager> {
                 children: [
                   ManagerDashboardScreen(),
                   ManagerLeadsScreen(),
-                  managerTeamLeaderScreen(),
+                  ManagerTeamLeaderScreen(),
                   ManagerProfileScreen(),
                 ],
               ),
