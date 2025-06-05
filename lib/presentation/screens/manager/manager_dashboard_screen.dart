@@ -1,5 +1,6 @@
 // ignore_for_file: file_names, camel_case_types, deprecated_member_use
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
@@ -21,9 +22,7 @@ class ManagerDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create:
-          (_) =>
-              GetManagerLeadsCubit(GetLeadsService())
-                ..getLeadsByManager(),
+          (_) => GetManagerLeadsCubit(GetLeadsService())..getLeadsByManager(),
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
@@ -116,6 +115,10 @@ class ManagerDashboardScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 20),
+
+                // تم استبدال PieChart بـ BarChart في هذا التعديل
+
+                // ... (نفس الكود السابق حتى BlocBuilder)
                 BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
                   builder: (context, state) {
                     if (state is GetManagerLeadsLoading) {
@@ -132,7 +135,7 @@ class ManagerDashboardScreen extends StatelessWidget {
                                   context,
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: _dashboardCard(
                                   'Deals',
@@ -143,8 +146,8 @@ class ManagerDashboardScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 24),
-                          const Center(child: CircularProgressIndicator()),
+                          SizedBox(height: 24),
+                          Center(child: CircularProgressIndicator()),
                         ],
                       );
                     } else if (state is GetManagerLeadsSuccess) {
@@ -159,6 +162,9 @@ class ManagerDashboardScreen extends StatelessWidget {
                         stageCounts[stageName] =
                             (stageCounts[stageName] ?? 0) + 1;
                       }
+                      final stages = stageCounts.keys.toList();
+                      final values = stageCounts.values.toList();
+
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -182,7 +188,7 @@ class ManagerDashboardScreen extends StatelessWidget {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: _dashboardCard(
                                   'Deals',
@@ -205,14 +211,14 @@ class ManagerDashboardScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 18),
+                          SizedBox(height: 18),
                           GridView.count(
                             crossAxisCount: 2,
                             shrinkWrap: true,
                             crossAxisSpacing: 8,
                             mainAxisSpacing: 8,
                             childAspectRatio: 1.5,
-                            physics: const NeverScrollableScrollPhysics(),
+                            physics: NeverScrollableScrollPhysics(),
                             children:
                                 stageCounts.entries.map((entry) {
                                   return _dashboardCard(
@@ -225,15 +231,110 @@ class ManagerDashboardScreen extends StatelessWidget {
                                         context,
                                         MaterialPageRoute(
                                           builder:
-                                              (context) =>
-                                                  ManagerLeadsScreen(
-                                                    stageName: entry.key,
-                                                  ),
+                                              (context) => ManagerLeadsScreen(
+                                                stageName: entry.key,
+                                              ),
                                         ),
                                       );
                                     },
                                   );
                                 }).toList(),
+                          ),
+                          SizedBox(height: 24),
+                          Text(
+                            'Leads by Stage',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Color(0xff080719)
+                                      : Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          Container(
+                            height: 300,
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Color(0xffF5F8F9)
+                                      : Color(0xff1e1e1e),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: BarChart(
+                              BarChartData(
+                                alignment: BarChartAlignment.center,
+                                maxY:
+                                    values.isNotEmpty
+                                        ? values
+                                                .reduce((a, b) => a > b ? a : b)
+                                                .toDouble() +
+                                            1
+                                        : 1,
+                                barGroups: List.generate(stageCounts.length, (
+                                  index,
+                                ) {
+                                  return BarChartGroupData(
+                                    x: index,
+                                    barRods: [
+                                      BarChartRodData(
+                                        toY: values[index].toDouble(),
+                                        width:
+                                            stageCounts.length > 10 ? 10 : 20,
+
+                                        color: Colors.teal,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ],
+                                  );
+                                }),
+                                titlesData: FlTitlesData(
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      interval: 1,
+                                      reservedSize: 40,
+                                      getTitlesWidget: (value, meta) {
+                                        return Text(
+                                          value
+                                              .toInt()
+                                              .toString(), // عدد الـ leads
+                                          style: TextStyle(fontSize: 10),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      getTitlesWidget: (value, meta) {
+                                        int index = value.toInt();
+                                        if (index >= 0 &&
+                                            index < stages.length) {
+                                          return Text(
+                                            stages[index], // اسم المرحلة
+                                            style: TextStyle(fontSize: 10),
+                                          );
+                                        }
+                                        return Container();
+                                      },
+                                    ),
+                                  ),
+                                  rightTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  topTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                ),
+                                gridData: FlGridData(show: true),
+                                barTouchData: BarTouchData(enabled: true),
+                              ),
+                            ),
                           ),
                         ],
                       );
@@ -248,7 +349,7 @@ class ManagerDashboardScreen extends StatelessWidget {
                               context,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: _dashboardCard(
                               'Deals',
