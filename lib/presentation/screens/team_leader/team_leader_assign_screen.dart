@@ -2,6 +2,7 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
@@ -13,6 +14,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/custom_assign_dialog_team_leader_widget.dart';
+import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/custom_filter_teamleader_dialog.dart';
 
 class TeamLeaderAssignScreen extends StatefulWidget {
   final String? stageName;
@@ -70,47 +72,109 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
             ),
             body: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: searchController,
-                          onChanged: (value) {
-                            context
-                                .read<GetLeadsTeamLeaderCubit>()
-                                .filterLeadsByName(value);
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'Search',
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 0,
+                BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
+                  builder: (context, state) {
+                    return Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: searchController,
+                              onChanged: (value) {
+                                context
+                                    .read<GetLeadsTeamLeaderCubit>()
+                                    .filterLeadsByName(value);
+                              },
+                              decoration: InputDecoration(
+                                hintText: 'Search',
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 0,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                ),
+                              ),
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
+                          ),
+                          const SizedBox(width: 10),
+                          Container(
+                            height: 50.h,
+                            width: 50.w,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F1F2),
+                              border: Border.all(
                                 color:
                                     Theme.of(context).brightness ==
                                             Brightness.light
                                         ? Constants.maincolor
                                         : Constants.mainDarkmodecolor,
                               ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.filter_list,
                                 color:
                                     Theme.of(context).brightness ==
                                             Brightness.light
                                         ? Constants.maincolor
                                         : Constants.mainDarkmodecolor,
                               ),
+                              onPressed: () {
+                                showFilterDialogTeamLeader(context);
+                              },
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
+                          ),
+                          SizedBox(width: 10),
+                          GestureDetector(
+                            onTapDown:
+                                (details) => _showAssignMenu(
+                                  context,
+                                  details.globalPosition,
+                                ),
+                            child: Container(
+                              padding: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.more_vert,
                                 color:
                                     Theme.of(context).brightness ==
                                             Brightness.light
@@ -119,38 +183,10 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                      SizedBox(width: 10),
-                      GestureDetector(
-                        onTapDown:
-                            (details) => _showAssignMenu(
-                              context,
-                              details.globalPosition,
-                            ),
-                        child: Container(
-                          padding: EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Constants.maincolor
-                                      : Constants.mainDarkmodecolor,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.more_vert,
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Constants.maincolor
-                                    : Constants.mainDarkmodecolor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
                 Expanded(
                   child: BlocBuilder<
@@ -169,50 +205,43 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             (index) => false,
                           );
                         }
-                        return RefreshIndicator(
-                          onRefresh: () async {
-                            context
-                                .read<GetLeadsTeamLeaderCubit>()
-                                .getLeadsByTeamLeader();
+                        return ListView.builder(
+                          itemCount: _leads.length,
+                          itemBuilder: (context, index) {
+                            final lead = _leads[index];
+                            leadIdd = lead.id.toString();
+                            return buildUserTile(
+                              name: lead.name ?? 'No Name',
+                              status: lead.stage?.name ?? 'No Status',
+                              index: index,
+                              id: lead.id.toString(),
+                              phone: lead.phone ?? 'No Phone',
+                              email: lead.email ?? 'No Email',
+                              stage: lead.stage?.name ?? 'No Stage',
+                              stageid:
+                                  lead.stage?.id.toString() ?? 'No Stage ID',
+                              channel: lead.chanel?.name ?? 'No Channel',
+                              creationdate:
+                                  lead.createdAt != null
+                                      ? formatDateTime(lead.createdAt!)
+                                      : '',
+                              project: lead.project?.name ?? 'No Project',
+                              lastcomment:
+                                  lead.lastcommentdate ?? 'No Last Comment',
+                              lead: lead,
+                              leadcampaign:
+                                  lead.campaign?.campaoignType ?? 'No Campaign',
+                              leadNotes: lead.notes ?? 'No Notes',
+                              leaddeveloper:
+                                  lead.project?.developer?.name ??
+                                  'No Developer',
+                              userlogname:
+                                  lead.sales?.userlog?.name ?? 'No User',
+                              teamleadername:
+                                  lead.sales?.teamleader?.name ??
+                                  'No Team Leader',
+                            );
                           },
-                          child: ListView.builder(
-                            itemCount: _leads.length,
-                            itemBuilder: (context, index) {
-                              final lead = _leads[index];
-                              leadIdd = lead.id.toString();
-                              return buildUserTile(
-                                name: lead.name ?? 'No Name',
-                                status: lead.stage?.name ?? 'No Status',
-                                index: index,
-                                id: lead.id.toString(),
-                                phone: lead.phone ?? 'No Phone',
-                                email: lead.email ?? 'No Email',
-                                stage: lead.stage?.name ?? 'No Stage',
-                                stageid:
-                                    lead.stage?.id.toString() ?? 'No Stage ID',
-                                channel: lead.chanel?.name ?? 'No Channel',
-                                creationdate:
-                                    lead.createdAt != null
-                                        ? formatDateTime(lead.createdAt!)
-                                        : '',
-                                project: lead.project?.name ?? 'No Project',
-                                lastcomment:
-                                    lead.lastcommentdate ?? 'No Last Comment',
-                                lead: lead,
-                                leadcampaign:
-                                    lead.campaign?.name ?? 'No Campaign',
-                                leadNotes: lead.notes ?? 'No Notes',
-                                leaddeveloper:
-                                    lead.project?.developer?.name ??
-                                    'No Developer',
-                                userlogname:
-                                    lead.sales?.userlog?.name ?? 'No User',
-                                teamleadername:
-                                    lead.sales?.teamleader?.name ??
-                                    'No Team Leader',
-                              );
-                            },
-                          ),
                         );
                       } else if (state is GetLeadsTeamLeaderError) {
                         return Center(child: Text(" ${state.message}"));

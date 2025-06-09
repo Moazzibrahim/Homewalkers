@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/data/data_sources/team_leader/get_sales_by_team_leader_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/team_leader/get_leads_count.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
-import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_sales_team_leader_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_sales_team_leader_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_count_in_team_leader_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 
 class TeamLeaderSalesScreen extends StatelessWidget {
@@ -18,8 +17,12 @@ class TeamLeaderSalesScreen extends StatelessWidget {
     return BlocProvider(
       create:
           (context) =>
-              SalesTeamCubit(GetSalesTeamLeaderApiService())..fetchSalesTeam(),
-      child: BlocBuilder<SalesTeamCubit, SalesTeamState>(
+              GetLeadsCountInTeamLeaderCubit(GetLeadsCountApiService())
+                ..fetchLeadsCount(),
+      child: BlocBuilder<
+        GetLeadsCountInTeamLeaderCubit,
+        GetLeadsCountInTeamLeaderState
+      >(
         builder: (context, state) {
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -48,10 +51,10 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                         child: TextField(
                           controller: nameController,
                           onChanged: (value) {
-                            // implement local filtering if needed
-                            context.read<SalesTeamCubit>().filterSalesByName(
-                              value,
-                            );
+                            // optional: local filter
+                            context
+                                .read<GetLeadsCountInTeamLeaderCubit>()
+                                .filterSalesByName(value);
                           },
                           decoration: InputDecoration(
                             hintText: 'Search',
@@ -136,15 +139,13 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                 Expanded(
                   child: Builder(
                     builder: (context) {
-                      if (state is SalesTeamLoading) {
+                      if (state is GetLeadsCountInTeamLeaderLoading) {
                         return const Center(child: CircularProgressIndicator());
-                      } else if (state is SalesTeamLoaded) {
-                        final salesList =
-                            (state.salesTeam.data ?? [])
-                                .where((item) => item.userlog?.role == 'Sales')
-                                .toList();
+                      } else if (state is GetLeadsCountInTeamLeaderLoaded) {
+                        final salesList = state.data.data;
+
                         return ListView.builder(
-                          itemCount: salesList.length,
+                          itemCount: salesList!.length,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemBuilder: (context, index) {
                             final item = salesList[index];
@@ -155,7 +156,6 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                // color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
@@ -166,7 +166,7 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          item.name ?? 'No Name',
+                                          item.salesName ?? 'No Name',
                                           style: GoogleFonts.montserrat(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
@@ -203,7 +203,7 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      '${item.assignedLeads ?? 0}',
+                                      '${item.totalLeads ?? 0}',
                                       style: GoogleFonts.montserrat(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 14,
@@ -220,8 +220,8 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                             );
                           },
                         );
-                      } else if (state is SalesTeamError) {
-                        return Center(child: Text(state.error));
+                      } else if (state is GetLeadsCountInTeamLeaderError) {
+                        return Center(child: Text(state.message));
                       }
 
                       return const SizedBox.shrink();

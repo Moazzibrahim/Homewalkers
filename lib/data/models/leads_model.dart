@@ -290,14 +290,16 @@ class CommunicationWay {
 class Campaign {
   final String? id;
   final String? name;
+  final String? campaoignType;
 
-  Campaign({this.id, this.name});
+  Campaign({this.id, this.name,this.campaoignType});
 
   factory Campaign.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Campaign();
     return Campaign(
       id: json['_id'],
       name: json['name'],
+      campaoignType: json['CampainName'],
     );
   }
 }
