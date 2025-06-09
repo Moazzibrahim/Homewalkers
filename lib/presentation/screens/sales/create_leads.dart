@@ -31,7 +31,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2000), // أقل تاريخ ممكن تختاره
+      firstDate: DateTime.now(), // أقل تاريخ ممكن تختاره
       lastDate: DateTime(2050), // أكبر تاريخ ممكن تختاره
     );
 

@@ -88,7 +88,7 @@ class Comment {
   dynamic sales;
   String? id;
   DateTime? stageDate;
-  List<dynamic>? replies;
+  List<Reply>? replies;
 
   Comment({
     this.firstcomment,
@@ -105,7 +105,7 @@ class Comment {
         sales: json["sales"],
         id: json["_id"],
         stageDate: json["stageDate"] == null ? null : DateTime.parse(json["stageDate"]),
-        replies: json["replies"] == null ? null : List<dynamic>.from(json["replies"].map((x) => x)),
+                replies: json["replies"] == null ? null : List<Reply>.from(json["replies"].map((x) => Reply.fromJson(x))),
       );
 
   Map<String, dynamic> toJson() => {
@@ -155,5 +155,24 @@ class SecondComment {
   Map<String, dynamic> toJson() => {
         "text": text,
         "date": date?.toIso8601String(),
+      };
+}
+class Reply {
+  String? text;
+  DateTime? date;
+  String? id;
+
+  Reply({ this.text, this.date, this.id});
+
+  factory Reply.fromJson(Map<String, dynamic> json) => Reply(
+        text: json["text"],
+        date: json["date"] == null ? null : DateTime.parse(json["date"]),
+        id: json["_id"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "text": text,
+        "date": date?.toIso8601String(),
+        "_id": id,
       };
 }

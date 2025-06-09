@@ -148,6 +148,8 @@ class GetLeadsService {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
         final manageridSpecific = leadsResponse.data?.first.sales?.manager?.id;
+        final managerName = leadsResponse.data?.first.sales?.manager?.name;
+        bool res = await prefs.setString('managerName', managerName ?? '');
         bool result = await prefs.setString(
           'managerIdspecific',
           manageridSpecific ?? '',

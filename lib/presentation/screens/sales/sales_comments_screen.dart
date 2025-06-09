@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -90,6 +92,7 @@ class SalesCommentsScreen extends StatelessWidget {
 
     final firstComment = dataItem.comments?.first.firstcomment;
     final secondComment = dataItem.comments?.first.secondcomment;
+    final reply = dataItem.comments?.first.replies;
     // final commentDate = dataItem.comments?.first.stageDate;
 
     String formatDate(DateTime? date) {
@@ -108,11 +111,6 @@ class SalesCommentsScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                // CircleAvatar(
-                //   backgroundImage: AssetImage('assets/images/avatar.png'),
-                //   radius: 20,
-                // ),
-                // SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -183,6 +181,43 @@ class SalesCommentsScreen extends StatelessWidget {
               secondComment?.text ?? 'No Second Comment',
               style: TextStyle(fontSize: 14),
             ),
+            SizedBox(height: 8),
+            if (reply != null && reply.isNotEmpty) ...[
+              Text('Replies:', style: commentTitleStyle),
+              SizedBox(height: 6),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children:
+                    reply.map((r) {
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 8),
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              r.text ?? 'No Reply Text',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                            if (r.date != null)
+                              Text(
+                                "replied at: ${formatDate(r.date)}",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+              ),
+            ],
+
             if (secondComment?.date != null)
               Text(
                 "comment at : ${formatDate(secondComment!.date)}",

@@ -1,5 +1,4 @@
 // ignore_for_file: file_names, camel_case_types, deprecated_member_use
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,6 +15,120 @@ class ManagerDashboardScreen extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('name');
     return name ?? 'User';
+  }
+
+  BarChartData _buildBarChartData(
+    Map<String, int> stageCounts,
+    List<int> values,
+    List<String> stages,
+    BuildContext context,
+  ) {
+    return BarChartData(
+      alignment: BarChartAlignment.start,
+      maxY:
+          (values.isNotEmpty ? values.reduce((a, b) => a > b ? a : b) : 1)
+              .toDouble() +
+          0.5,
+      barGroups: List.generate(stageCounts.length, (index) {
+        return BarChartGroupData(
+          x: index,
+          barRods: [
+            BarChartRodData(
+              toY: values[index].toDouble(),
+              width: 20,
+              color: Color(0xFF2E8B8A),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ],
+        );
+      }),
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            interval: 1,
+            reservedSize: 28,
+            getTitlesWidget: (value, meta) {
+              if (value % 1 == 0) {
+                return Text(
+                  value.toInt().toString(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Colors.grey[800]
+                            : Colors.grey[400],
+                  ),
+                );
+              }
+              return SizedBox.shrink();
+            },
+          ),
+        ),
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (value, meta) {
+              int i = value.toInt();
+              if (i >= 0 && i < stages.length) {
+                return SideTitleWidget(
+                  meta: meta,
+                  space: 8.0,
+                  child: Transform.rotate(
+                    angle: -0.5, // تقريبًا 45 درجة (بالراديان)
+                    child: Text(
+                      stages[i],
+                      style: TextStyle(
+                        fontSize: 10,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.grey[800]
+                                : Colors.grey[400],
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return SizedBox.shrink();
+            },
+          ),
+        ),
+        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      gridData: FlGridData(
+        show: true,
+        drawVerticalLine: false,
+        getDrawingHorizontalLine:
+            (y) => FlLine(
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Colors.grey[300]!
+                      : Colors.grey[700]!,
+              strokeWidth: 1,
+            ),
+      ),
+      borderData: FlBorderData(
+        show: true,
+        border: Border(
+          left: BorderSide(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey[500]!
+                    : Colors.grey[600]!,
+          ),
+          bottom: BorderSide(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey[500]!
+                    : Colors.grey[600]!,
+          ),
+          top: BorderSide(color: Colors.transparent),
+          right: BorderSide(color: Colors.transparent),
+        ),
+      ),
+      barTouchData: BarTouchData(enabled: false),
+    );
   }
 
   @override
@@ -117,7 +230,6 @@ class ManagerDashboardScreen extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // تم استبدال PieChart بـ BarChart في هذا التعديل
-
                 // ... (نفس الكود السابق حتى BlocBuilder)
                 BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
                   builder: (context, state) {
@@ -266,73 +378,11 @@ class ManagerDashboardScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: BarChart(
-                              BarChartData(
-                                alignment: BarChartAlignment.center,
-                                maxY:
-                                    values.isNotEmpty
-                                        ? values
-                                                .reduce((a, b) => a > b ? a : b)
-                                                .toDouble() +
-                                            1
-                                        : 1,
-                                barGroups: List.generate(stageCounts.length, (
-                                  index,
-                                ) {
-                                  return BarChartGroupData(
-                                    x: index,
-                                    barRods: [
-                                      BarChartRodData(
-                                        toY: values[index].toDouble(),
-                                        width:
-                                            stageCounts.length > 10 ? 10 : 20,
-
-                                        color: Colors.teal,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ],
-                                  );
-                                }),
-                                titlesData: FlTitlesData(
-                                  leftTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      interval: 1,
-                                      reservedSize: 40,
-                                      getTitlesWidget: (value, meta) {
-                                        return Text(
-                                          value
-                                              .toInt()
-                                              .toString(), // عدد الـ leads
-                                          style: TextStyle(fontSize: 10),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  bottomTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      getTitlesWidget: (value, meta) {
-                                        int index = value.toInt();
-                                        if (index >= 0 &&
-                                            index < stages.length) {
-                                          return Text(
-                                            stages[index], // اسم المرحلة
-                                            style: TextStyle(fontSize: 10),
-                                          );
-                                        }
-                                        return Container();
-                                      },
-                                    ),
-                                  ),
-                                  rightTitles: AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false),
-                                  ),
-                                  topTitles: AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false),
-                                  ),
-                                ),
-                                gridData: FlGridData(show: true),
-                                barTouchData: BarTouchData(enabled: true),
+                              _buildBarChartData(
+                                stageCounts,
+                                values,
+                                stages,
+                                context,
                               ),
                             ),
                           ),

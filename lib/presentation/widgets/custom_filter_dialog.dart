@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
+import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
@@ -30,6 +33,10 @@ void showFilterDialog(BuildContext context) {
             BlocProvider(
               create: (_) => StagesCubit(StagesApiService())..fetchStages(),
             ),
+            BlocProvider(
+              create:
+                  (_) => ChannelCubit(GetChannelsApiService())..fetchChannels(),
+            ),
           ],
           child: const FilterDialog(),
         ),
@@ -49,6 +56,7 @@ class _FilterDialogState extends State<FilterDialog> {
   String? selectedDeveloper;
   String? selectedProject;
   String? selectedStage;
+  String? selectedChannel;
   List<Country> countries = [];
 
   @override
@@ -178,6 +186,32 @@ class _FilterDialogState extends State<FilterDialog> {
                 },
               ),
               const SizedBox(height: 12),
+              BlocBuilder<ChannelCubit, ChannelState>(
+                builder: (context, state) {
+                  if (state is ChannelLoading) {
+                    return const CircularProgressIndicator();
+                  } else if (state is ChannelLoaded) {
+                    final items =
+                        state.channelResponse.data
+                            .map((dev) => dev.name)
+                            .toList();
+                    return CustomDropdownField(
+                      hint: "Choose channel",
+                      items: items,
+                      value: selectedChannel,
+                      onChanged: (val) => setState(() => selectedChannel = val),
+                    );
+                  } else if (state is ChannelError) {
+                    return Text(
+                      "خطأ: ${state.message}",
+                      style: const TextStyle(color: Colors.red),
+                    );
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
               BlocBuilder<StagesCubit, StagesState>(
                 builder: (context, state) {
                   if (state is StagesLoading) {
@@ -230,6 +264,7 @@ class _FilterDialogState extends State<FilterDialog> {
                           selectedDeveloper = null;
                           selectedProject = null;
                           selectedStage = null;
+                          selectedChannel = null;
                         });
                       },
                       child: const Text(
@@ -255,6 +290,7 @@ class _FilterDialogState extends State<FilterDialog> {
                           developer: selectedDeveloper,
                           project: selectedProject,
                           stage: selectedStage,
+                          channel: selectedChannel,
                         );
                         Navigator.pop(context); // ✅ اقفل الـDialog بعد التطبيق
                       },

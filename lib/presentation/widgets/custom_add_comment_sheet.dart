@@ -21,6 +21,7 @@ class AddCommentBottomSheet extends StatefulWidget {
   @override
   State<AddCommentBottomSheet> createState() => _AddCommentBottomSheetState();
 }
+
 class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
   final TextEditingController _firstCommentController = TextEditingController();
   final TextEditingController _secondCommentController =
@@ -34,6 +35,7 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
     super.initState();
     _loadUserData(); // تحميل بيانات المستخدم
   }
+
   void _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -43,6 +45,7 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
       log("Sales ID: $salesId");
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -204,7 +207,7 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                                       ).pop(); // Close dialog
                                       Navigator.of(
                                         context,
-                                      ).pop(); // Close bottom sheet
+                                      ).pop(true); // Close bottom sheet
                                     },
                                     child: const Text("OK"),
                                   ),
@@ -250,10 +253,15 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                               usernamelog: userlogId!,
                             );
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Please fill all fields"),
-                              ),
+                            showDialog(
+                              context: context,
+                              builder:
+                                  (context) => const AlertDialog(
+                                    title: Text("warning"),
+                                    content: Text(
+                                      " Please fill in all the required fields.",
+                                    ),
+                                  ),
                             );
                           }
                         },

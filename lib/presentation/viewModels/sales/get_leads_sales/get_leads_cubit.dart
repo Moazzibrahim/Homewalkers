@@ -14,7 +14,7 @@ part 'get_leads_state.dart';
 class GetLeadsCubit extends Cubit<GetLeadsState> {
   final GetLeadsService apiService;
   Timer? _timer;
-  LeadResponse? _cachedLeads;   
+  LeadResponse? _cachedLeads;
   GetLeadsCubit(this.apiService) : super(GetLeadsInitial()) {
     fetchLeads(showLoading: true); // تحميل أولي مع شريط تحميل
     _startPolling(); // تحديث كل دقيقتين بدون شريط تحميل
@@ -89,6 +89,7 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
       emit(GetLeadsError("No Leads Data Found"));
     }
   }
+
   String? getPhoneCodeFromPhone(String phone) {
     String cleanedPhone = phone.replaceAll(RegExp(r'\D'), '');
     for (int i = 4; i >= 1; i--) {
@@ -98,6 +99,7 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     }
     return null;
   }
+
   void filterLeads({
     String? name,
     String? email,
@@ -106,6 +108,7 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     String? developer,
     String? project,
     String? stage,
+    String? channel,
     String? query,
   }) {
     if (_cachedLeads == null || _cachedLeads!.data == null) {
@@ -127,40 +130,44 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
           final matchDev =
               developer == null || lead.project?.developer?.name == developer;
           final matchProject = project == null || lead.project?.name == project;
+          final matchChannel = channel == null || lead.chanel?.name == channel;
           final matchStage = stage == null || lead.stage?.name == stage;
           return matchQuery &&
               matchCountry &&
               matchDev &&
               matchProject &&
+              matchChannel &&
               matchStage;
         }).toList();
     emit(GetLeadsSuccess(LeadResponse(data: filtered)));
   }
 
   Future<void> getLeadStageCountsForSales() async {
-  try {
-    final stageCounts = await apiService.getLeadCountPerStageInSales();
-    log("✅ Stage counts for sales: $stageCounts");
-    // تقدر تستخدم emit هنا لو عايز تعرض النتيجة في الواجهة
-    emit(GetStageCountSuccess(stageCounts));
-  } catch (e) {
-    log("❌ Failed to get stage counts for sales: $e");
-  }
-}
-
-void filterLeadsByStageName(String stageName) {
-  if (_cachedLeads == null || _cachedLeads!.data == null) {
-    emit(GetLeadsError("لا توجد بيانات Leads لفلترتها."));
-    return;
+    try {
+      final stageCounts = await apiService.getLeadCountPerStageInSales();
+      log("✅ Stage counts for sales: $stageCounts");
+      // تقدر تستخدم emit هنا لو عايز تعرض النتيجة في الواجهة
+      emit(GetStageCountSuccess(stageCounts));
+    } catch (e) {
+      log("❌ Failed to get stage counts for sales: $e");
+    }
   }
 
-  final filtered = _cachedLeads!.data!
-      .where((lead) =>
-          lead.stage?.name != null &&
-          lead.stage!.name!.toLowerCase() == stageName.toLowerCase())
-      .toList();
+  void filterLeadsByStageName(String stageName) {
+    if (_cachedLeads == null || _cachedLeads!.data == null) {
+      emit(GetLeadsError("لا توجد بيانات Leads لفلترتها."));
+      return;
+    }
 
-  emit(GetLeadsSuccess(LeadResponse(data: filtered)));
-}
+    final filtered =
+        _cachedLeads!.data!
+            .where(
+              (lead) =>
+                  lead.stage?.name != null &&
+                  lead.stage!.name!.toLowerCase() == stageName.toLowerCase(),
+            )
+            .toList();
 
+    emit(GetLeadsSuccess(LeadResponse(data: filtered)));
+  }
 }

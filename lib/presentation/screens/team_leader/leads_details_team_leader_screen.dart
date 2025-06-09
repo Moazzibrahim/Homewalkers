@@ -78,8 +78,16 @@ class _SalesLeadsDetailsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => StagesCubit(StagesApiService()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => StagesCubit(StagesApiService())),
+        BlocProvider(
+          create:
+              (context) =>
+                  LeadCommentsCubit(GetAllLeadCommentsApiService())
+                    ..fetchLeadComments(widget.leedId),
+        ),
+      ],
       child: Builder(
         builder: (context) {
           return Scaffold(
@@ -324,95 +332,89 @@ class _SalesLeadsDetailsScreenState
                       ),
                     ),
                     SizedBox(height: 12.h),
-                    BlocProvider(
-                      create:
-                          (_) =>
-                              LeadCommentsCubit(GetAllLeadCommentsApiService())
-                                ..fetchLeadComments(widget.leedId),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: BlocBuilder<
-                          LeadCommentsCubit,
-                          LeadCommentsState
-                        >(
-                          builder: (context, state) {
-                            if (state is LeadCommentsLoading) {
-                              return Center(child: CircularProgressIndicator());
-                            } else if (state is LeadCommentsError) {
-                              return Center(
-                                child: Text('Error: ${state.message}'),
-                              );
-                            } else if (state is LeadCommentsLoaded) {
-                              final leadComments = state.leadComments;
-                              if (leadComments.data == null ||
-                                  leadComments.data!.isEmpty) {
-                                return Center(child: Text('No comments found'));
-                              }
-                              // استخراج أول DataItem
-                              final firstItem = leadComments.data!.first;
-                              final firstComment = firstItem.comments?.first;
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Last Comment",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14.sp,
-                                      color: Color(0xff6A6A75),
-                                    ),
-                                  ),
-                                  SizedBox(height: 10.h),
-                                  // First Comment Title
-                                  Text(
-                                    "Comment",
-                                    style: TextStyle(
-                                      color: Constants.maincolor,
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SizedBox(height: 7.h),
-                                  // First Comment Text
-                                  Text(
-                                    firstComment?.firstcomment?.text ??
-                                        'No first comment available.',
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                  SizedBox(height: 7.h),
-                                  // Second Comment Title
-                                  Text(
-                                    "Action (Plan)",
-                                    style: TextStyle(
-                                      color: Constants.maincolor,
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SizedBox(height: 7.h),
-                                  // Second Comment Text
-                                  Text(
-                                    firstComment?.secondcomment?.text ??
-                                        'No second comment available.',
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            } else {
-                              return SizedBox(); // أو Placeholder
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: BlocBuilder<
+                        LeadCommentsCubit,
+                        LeadCommentsState
+                      >(
+                        builder: (context, state) {
+                          if (state is LeadCommentsLoading) {
+                            return Center(child: CircularProgressIndicator());
+                          } else if (state is LeadCommentsError) {
+                            return Center(
+                              child: Text('Error: ${state.message}'),
+                            );
+                          } else if (state is LeadCommentsLoaded) {
+                            final leadComments = state.leadComments;
+                            if (leadComments.data == null ||
+                                leadComments.data!.isEmpty) {
+                              return Center(child: Text('No comments found'));
                             }
-                          },
-                        ),
+                            // استخراج أول DataItem
+                            final firstItem = leadComments.data!.first;
+                            final firstComment = firstItem.comments?.first;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Last Comment",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14.sp,
+                                    color: Color(0xff6A6A75),
+                                  ),
+                                ),
+                                SizedBox(height: 10.h),
+                                // First Comment Title
+                                Text(
+                                  "Comment",
+                                  style: TextStyle(
+                                    color: Constants.maincolor,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 7.h),
+                                // First Comment Text
+                                Text(
+                                  firstComment?.firstcomment?.text ??
+                                      'No first comment available.',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                SizedBox(height: 7.h),
+                                // Second Comment Title
+                                Text(
+                                  "Action (Plan)",
+                                  style: TextStyle(
+                                    color: Constants.maincolor,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 7.h),
+                                // Second Comment Text
+                                Text(
+                                  firstComment?.secondcomment?.text ??
+                                      'No second comment available.',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            );
+                          } else {
+                            return SizedBox(); // أو Placeholder
+                          }
+                        },
                       ),
                     ),
                     Container(
@@ -505,8 +507,8 @@ class _SalesLeadsDetailsScreenState
                                       ? Constants.maincolor
                                       : Constants.mainDarkmodecolor,
                             ),
-                            onPressed: () {
-                              showModalBottomSheet(
+                            onPressed: () async {
+                              final result = await showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
                                 backgroundColor: Colors.transparent,
@@ -520,6 +522,13 @@ class _SalesLeadsDetailsScreenState
                                       ),
                                     ),
                               );
+                              if (result == true) {
+                                // THIS WILL NOW WORK!
+                                // The context has access to the LeadCommentsCubit from MultiBlocProvider.
+                                context
+                                    .read<LeadCommentsCubit>()
+                                    .fetchLeadComments(widget.leedId);
+                              }
                             },
                             child: Text(
                               'Add Comment',

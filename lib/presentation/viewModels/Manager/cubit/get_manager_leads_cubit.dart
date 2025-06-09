@@ -1,8 +1,11 @@
+// ignore_for_file: avoid_print
+
 import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 part 'get_manager_leads_state.dart';
 
 class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
@@ -23,18 +26,23 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
       _originalLeadsResponse = leadsResponse; // 🟡 حفظ البيانات الأصلية
       // تحميل عدد الـ leads لكل مرحلة
       _salesLeadCount = await _getLeadsService.getLeadCountPerStageInManager();
-
+      final prefs = await SharedPreferences.getInstance();
+      final managerName = prefs.getString("managerName");
       // ⬇️ استخراج الأسماء الحقيقية
       final salesSet = <String>{};
       final teamLeaderSet = <String>{};
 
       for (var lead in leadsResponse.data ?? []) {
-        final salesName = lead.sales?.userlog?.name;
-        final teamLeaderName = lead.sales?.teamleader?.name;
+        if (lead.sales?.manager?.name == managerName) {
+          final salesName = lead.sales?.name;
+          final teamLeaderName = lead.sales?.teamleader?.name;
 
-        if (salesName != null && salesName.isNotEmpty) salesSet.add(salesName);
-        if (teamLeaderName != null && teamLeaderName.isNotEmpty) {
-          teamLeaderSet.add(teamLeaderName);
+          if (salesName != null && salesName.isNotEmpty) {
+            salesSet.add(salesName);
+          }
+          if (teamLeaderName != null && teamLeaderName.isNotEmpty) {
+            teamLeaderSet.add(teamLeaderName);
+          }
         }
       }
       salesNames = salesSet.toList();
@@ -43,7 +51,7 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
       emit(GetManagerLeadsSuccess(leadsResponse));
     } catch (e) {
       log('❌ خطأ في getLeadsByManager: $e');
-      emit(const GetManagerLeadsFailure(" error in loading leads."));
+      emit(const GetManagerLeadsFailure(" No leads found"));
     }
   }
 
@@ -87,8 +95,8 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
     String? developer,
     String? project,
     String? stage,
+    String? channel,
     String? sales,
-    String? teamleader,
     String? query,
   }) {
     if (_originalLeadsResponse == null ||
@@ -111,18 +119,16 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
           final matchDev =
               developer == null || lead.project?.developer?.name == developer;
           final matchProject = project == null || lead.project?.name == project;
+          final matchChannel = channel == null || lead.chanel?.name == channel;
           final matchStage = stage == null || lead.stage?.name == stage;
-          final matchSales =
-              sales == null || lead.sales?.userlog?.name == sales;
-          final matchTeamLeader =
-              teamleader == null || lead.sales?.teamleader?.name == teamleader;
+          final matchSales = sales == null || lead.sales?.name == sales;
           return matchQuery &&
               matchCountry &&
               matchDev &&
               matchProject &&
               matchStage &&
-              matchSales &&
-              matchTeamLeader;
+              matchChannel &&
+              matchSales;
         }).toList();
     emit(GetManagerLeadsSuccess(LeadResponse(data: filtered)));
   }

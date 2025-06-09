@@ -91,7 +91,7 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
     }
   }
 
-  void filterLeadsManager({
+  void filterLeadsTeamleader({
     String? name,
     String? email,
     String? phone,
@@ -100,7 +100,6 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
     String? project,
     String? stage,
     String? sales,
-    String? teamleader,
     String? query,
   }) {
     if (_originalLeadsResponse == null ||
@@ -126,15 +125,12 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
           final matchStage = stage == null || lead.stage?.name == stage;
           final matchSales =
               sales == null || lead.sales?.userlog?.name == sales;
-          final matchTeamLeader =
-              teamleader == null || lead.sales?.teamleader?.name == teamleader;
           return matchQuery &&
               matchCountry &&
               matchDev &&
               matchProject &&
               matchStage &&
-              matchSales &&
-              matchTeamLeader;
+              matchSales;
         }).toList();
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
   }
