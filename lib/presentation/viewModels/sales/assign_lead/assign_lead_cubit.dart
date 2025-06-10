@@ -79,6 +79,7 @@ class AssignleadCubit extends Cubit<AssignState> {
     required String lastDateAssign,
     required String teamleadersId,
     required String salesId,
+    bool? clearhistory,
   }) async {
     emit(AssignLoading());
 
@@ -105,6 +106,7 @@ class AssignleadCubit extends Cubit<AssignState> {
           "date_Assigned": dateAssigned,
           "Assigned_From": teamleadersId,
           "Assigned_to": salesId,
+          "clearHistory": clearhistory,
         };
 
         final postResponse = await dio.post(
@@ -126,17 +128,19 @@ class AssignleadCubit extends Cubit<AssignState> {
       emit(AssignFailure('❌ Error during combined assignment: $e'));
     }
   }
+
   Future<void> assignLeadFromManager({
     required List<String> leadIds,
     required String dateAssigned,
     required String lastDateAssign,
     required String salesId,
+    bool? isClearhistory,
   }) async {
     emit(AssignLoading());
 
     final dio = Dio();
     final prefs = await SharedPreferences.getInstance();
-    final managerId=prefs.getString('managerIdspecific');
+    final managerId = prefs.getString('managerIdspecific');
 
     try {
       for (String leadId in leadIds) {
@@ -159,6 +163,7 @@ class AssignleadCubit extends Cubit<AssignState> {
           "date_Assigned": dateAssigned,
           "Assigned_From": managerId,
           "Assigned_to": salesId,
+          "clearHistory": isClearhistory,
         };
 
         final postResponse = await dio.post(

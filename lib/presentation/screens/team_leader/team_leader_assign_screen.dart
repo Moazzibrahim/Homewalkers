@@ -209,45 +209,53 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             (index) => false,
                           );
                         }
-                        return ListView.builder(
-                          itemCount: _leads.length,
-                          itemBuilder: (context, index) {
-                            final lead = _leads[index];
-                            leadIdd = lead.id.toString();
-                            return buildUserTile(
-                              name: lead.name ?? 'No Name',
-                              status: lead.stage?.name ?? 'No Status',
-                              index: index,
-                              id: lead.id.toString(),
-                              phone: lead.phone ?? 'No Phone',
-                              email: lead.email ?? 'No Email',
-                              stage: lead.stage?.name ?? 'No Stage',
-                              stageid:
-                                  lead.stage?.id.toString() ?? 'No Stage ID',
-                              channel: lead.chanel?.name ?? 'No Channel',
-                              creationdate:
-                                  lead.createdAt != null
-                                      ? formatDateTime(lead.createdAt!)
-                                      : '',
-                              project: lead.project?.name ?? 'No Project',
-                              lastcomment:
-                                  lead.lastcommentdate ?? 'No Last Comment',
-                              lead: lead,
-                              leadcampaign:
-                                  lead.campaign?.campaoignType ?? 'No Campaign',
-                              leadNotes: lead.notes ?? 'No Notes',
-                              leaddeveloper:
-                                  lead.project?.developer?.name ??
-                                  'No Developer',
-                              userlogname:
-                                  lead.sales?.userlog?.name ?? 'No User',
-                              teamleadername:
-                                  lead.sales?.teamleader?.name ??
-                                  'No Team Leader',
-                              salesName:
-                                  lead.sales?.userlog?.name ?? 'No Sales',
-                            );
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            context
+                                .read<GetLeadsTeamLeaderCubit>()
+                                .getLeadsByTeamLeader();
                           },
+                          child: ListView.builder(
+                            itemCount: _leads.length,
+                            itemBuilder: (context, index) {
+                              final lead = _leads[index];
+                              leadIdd = lead.id.toString();
+                              return buildUserTile(
+                                name: lead.name ?? 'No Name',
+                                status: lead.stage?.name ?? 'No Status',
+                                index: index,
+                                id: lead.id.toString(),
+                                phone: lead.phone ?? 'No Phone',
+                                email: lead.email ?? 'No Email',
+                                stage: lead.stage?.name ?? 'No Stage',
+                                stageid:
+                                    lead.stage?.id.toString() ?? 'No Stage ID',
+                                channel: lead.chanel?.name ?? 'No Channel',
+                                creationdate:
+                                    lead.createdAt != null
+                                        ? formatDateTime(lead.createdAt!)
+                                        : '',
+                                project: lead.project?.name ?? 'No Project',
+                                lastcomment:
+                                    lead.lastcommentdate ?? 'No Last Comment',
+                                lead: lead,
+                                leadcampaign:
+                                    lead.campaign?.campaoignType ??
+                                    'No Campaign',
+                                leadNotes: lead.notes ?? 'No Notes',
+                                leaddeveloper:
+                                    lead.project?.developer?.name ??
+                                    'No Developer',
+                                userlogname:
+                                    lead.sales?.userlog?.name ?? 'No User',
+                                teamleadername:
+                                    lead.sales?.teamleader?.name ??
+                                    'No Team Leader',
+                                salesName:
+                                    lead.sales?.userlog?.name ?? 'No Sales',
+                              );
+                            },
+                          ),
                         );
                       } else if (state is GetLeadsTeamLeaderError) {
                         return Center(child: Text(" ${state.message}"));

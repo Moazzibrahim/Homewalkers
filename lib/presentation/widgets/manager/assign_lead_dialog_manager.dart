@@ -29,6 +29,9 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
   String? selectedSalesId;
   Map<String, bool> selectedSales = {};
 
+  // 1. إضافة متغير الحالة للـ Checkbox
+  bool clearHistory = false;
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -53,7 +56,6 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                           );
                         } else if (state is GetManagerLeadsSuccess &&
                             state.leads.data != null) {
-                          // ✅ إزالة التكرار حسب userlog.id
                           final uniqueSalesMap = <String, LeadData>{};
                           for (var sale in state.leads.data!) {
                             final user = sale.sales?.userlog;
@@ -70,39 +72,36 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                             );
                           }
                           return Column(
-                            children:
-                                salesOnly.map((sale) {
-                                  final userId = sale.sales!.id!;
-                                  return ListTile(
-                                    title: Text(
-                                      sale.sales?.userlog?.name ??
-                                          "Unnamed Sales",
-                                    ),
-                                    subtitle: Text(
-                                      "${sale.sales?.userlog?.role}",
-                                      style: TextStyle(color: widget.mainColor),
-                                    ),
-                                    trailing: Checkbox(
-                                      activeColor: widget.mainColor,
-                                      value: selectedSales[userId] ?? false,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      onChanged: (val) {
-                                        setState(() {
-                                          selectedSales
-                                              .clear(); // اختيار واحد فقط
-                                          selectedSales[userId] = val ?? false;
-                                          selectedSalesId =
-                                              val == true ? userId : null;
-                                          log(
-                                            "selectedSalesId: $selectedSalesId",
-                                          );
-                                        });
-                                      },
-                                    ),
-                                  );
-                                }).toList(),
+                            children: salesOnly.map((sale) {
+                              final userId = sale.sales!.id!;
+                              return ListTile(
+                                title: Text(
+                                  sale.sales?.userlog?.name ?? "Unnamed Sales",
+                                ),
+                                subtitle: Text(
+                                  "${sale.sales?.userlog?.role}",
+                                  style: TextStyle(color: widget.mainColor),
+                                ),
+                                trailing: Checkbox(
+                                  activeColor: widget.mainColor,
+                                  value: selectedSales[userId] ?? false,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  onChanged: (val) {
+                                    setState(() {
+                                      selectedSales.clear(); 
+                                      selectedSales[userId] = val ?? false;
+                                      selectedSalesId =
+                                          val == true ? userId : null;
+                                      log(
+                                        "selectedSalesId: $selectedSalesId",
+                                      );
+                                    });
+                                  },
+                                ),
+                              );
+                            }).toList(),
                           );
                         } else if (state is GetManagerLeadsFailure) {
                           return Text(state.message);
@@ -113,6 +112,21 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                         }
                       },
                     ),
+
+                    // 2. إضافة واجهة المستخدم للـ Checkbox هنا
+                    CheckboxListTile(
+                      title: const Text("Clear History"),
+                      value: clearHistory,
+                      onChanged: (newValue) {
+                        setState(() {
+                          clearHistory = newValue ?? false;
+                        });
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                      activeColor: widget.mainColor,
+                    ),
+                    
                     const SizedBox(height: 16),
                     BlocListener<AssignleadCubit, AssignState>(
                       listener: (context, state) {
@@ -159,23 +173,26 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                           ElevatedButton(
                             onPressed: () {
                               if (selectedSalesId != null) {
-                                final leadIds =
-                                    widget.leadIds != null
-                                        ? List<String>.from(widget.leadIds!)
-                                        : [widget.leadId!];
+                                final leadIds = widget.leadIds != null
+                                    ? List<String>.from(widget.leadIds!)
+                                    : [widget.leadId!];
+                                // 3. يمكنك الآن استخدام قيمة clearHistory
+                                log("Clear History value: $clearHistory");
                                 final lastDateAssign =
                                     DateTime.now().toUtc().toIso8601String();
                                 final assignCubit =
                                     BlocProvider.of<AssignleadCubit>(
-                                      dialogContext,
-                                      listen: false,
-                                    );
+                                  dialogContext,
+                                  listen: false,
+                                );
                                 assignCubit.assignLeadFromManager(
                                   leadIds: leadIds,
                                   lastDateAssign: lastDateAssign,
                                   dateAssigned:
                                       "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}",
                                   salesId: selectedSalesId!,
+                                  isClearhistory: clearHistory,
+                                  // يمكنك إضافة clearHistory هنا إذا كانت الدالة تدعمها
                                 );
                               } else {
                                 ScaffoldMessenger.of(
