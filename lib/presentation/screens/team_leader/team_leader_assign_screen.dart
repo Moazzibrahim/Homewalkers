@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api, avoid_print
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,6 +15,7 @@ import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_le
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/custom_assign_dialog_team_leader_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/custom_filter_teamleader_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TeamLeaderAssignScreen extends StatefulWidget {
   final String? stageName;
@@ -150,7 +151,10 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                         : Constants.mainDarkmodecolor,
                               ),
                               onPressed: () {
-                                showFilterDialogTeamLeader(context);
+                                showFilterDialogTeamLeader(
+                                  context,
+                                  context.read<GetLeadsTeamLeaderCubit>(),
+                                );
                               },
                             ),
                           ),
@@ -240,6 +244,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                               teamleadername:
                                   lead.sales?.teamleader?.name ??
                                   'No Team Leader',
+                              salesName:
+                                  lead.sales?.userlog?.name ?? 'No Sales',
                             );
                           },
                         );
@@ -351,6 +357,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     required String leaddeveloper,
     required String userlogname,
     required String teamleadername,
+    required String salesName,
     required dynamic lead,
   }) {
     return Container(
@@ -371,6 +378,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                SizedBox(height: 4),
                 Text(
                   status,
                   style: TextStyle(
@@ -378,6 +386,27 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                         Theme.of(context).brightness == Brightness.light
                             ? Constants.maincolor
                             : Constants.mainDarkmodecolor,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  "sales : $salesName",
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                SizedBox(height: 4),
+                InkWell(
+                  onTap: () {
+                    makePhoneCall(phone);
+                  },
+                  child: Text(
+                    phone,
+                    style: TextStyle(
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
               ],
@@ -438,5 +467,15 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
         ],
       ),
     );
+  }
+
+  void makePhoneCall(String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri, mode: LaunchMode.platformDefault);
+    } else {
+      print('Could not launch $phoneUri');
+    }
   }
 }

@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -17,12 +16,16 @@ import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
 import 'package:country_picker/country_picker.dart';
 
-void showFilterDialogTeamLeader(BuildContext context) {
+void showFilterDialogTeamLeader(
+  BuildContext context,
+  GetLeadsTeamLeaderCubit leadsCubit,
+) {
   showDialog(
     context: context,
     builder:
         (context) => MultiBlocProvider(
           providers: [
+            BlocProvider.value(value: leadsCubit),
             BlocProvider(
               create:
                   (_) =>

@@ -17,7 +17,7 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
   List<String> teamLeaderNames = [];
 
   GetLeadsTeamLeaderCubit(this._getLeadsService)
-      : super(GetLeadsTeamLeaderInitial());
+    : super(GetLeadsTeamLeaderInitial());
 
   /// جلب البيانات مع حساب عدد الـ leads حسب كل مرحلة
   Future<void> getLeadsByTeamLeader() async {
@@ -37,7 +37,8 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
         final teamLeaderName = lead.sales?.teamleader?.name;
 
         if (salesName?.isNotEmpty == true) salesSet.add(salesName!);
-        if (teamLeaderName?.isNotEmpty == true) teamLeaderSet.add(teamLeaderName!);
+        if (teamLeaderName?.isNotEmpty == true)
+          teamLeaderSet.add(teamLeaderName!);
       }
 
       salesNames = salesSet.toList();
@@ -55,10 +56,14 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
   void filterLeadsByName(String query) {
     if (_originalLeadsResponse == null) return;
 
-    final filtered = _originalLeadsResponse!.data!
-        .where((lead) =>
-            lead.name?.toLowerCase().contains(query.toLowerCase()) ?? false)
-        .toList();
+    final filtered =
+        _originalLeadsResponse!.data!
+            .where(
+              (lead) =>
+                  lead.name?.toLowerCase().contains(query.toLowerCase()) ??
+                  false,
+            )
+            .toList();
 
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
   }
@@ -72,13 +77,20 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
       return;
     }
 
-    final filtered = _originalLeadsResponse!.data!
-        .where((lead) =>
-            lead.stage?.name?.toLowerCase().contains(query.toLowerCase()) ?? false)
-        .toList();
+    final filtered =
+        _originalLeadsResponse!.data!
+            .where(
+              (lead) =>
+                  lead.stage?.name?.toLowerCase().contains(
+                    query.toLowerCase(),
+                  ) ??
+                  false,
+            )
+            .toList();
 
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
   }
+
   /// تحميل عدد الـ leads حسب المرحلة
   Future<void> loadStageCounts() async {
     try {
@@ -90,6 +102,7 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
       emit(const GetLeadsTeamLeaderError("فشل في تحميل عدد المراحل."));
     }
   }
+
   /// فلترة leads بناءً على عدة معايير
   void filterLeadsTeamLeader({
     String? name,
@@ -110,29 +123,34 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
 
     final q = query?.toLowerCase() ?? '';
 
-    final filtered = _originalLeadsResponse!.data!.where((lead) {
-      final matchName = lead.name?.toLowerCase().contains(q) ?? false;
-      final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
-      final matchPhone = lead.phone?.contains(q) ?? false;
-      final matchQuery = q.isEmpty || matchName || matchEmail || matchPhone;
+    final filtered =
+        _originalLeadsResponse!.data!.where((lead) {
+          final matchName = lead.name?.toLowerCase().contains(q) ?? false;
+          final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
+          final matchPhone = lead.phone?.contains(q) ?? false;
+          final matchQuery = q.isEmpty || matchName || matchEmail || matchPhone;
 
-      final leadPhoneCode = lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
-      final matchCountry = country == null || leadPhoneCode?.startsWith(country) == true;
+          final leadPhoneCode =
+              lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
+          final matchCountry =
+              country == null || leadPhoneCode?.startsWith(country) == true;
 
-      final matchDeveloper = developer == null || lead.project?.developer?.name == developer;
-      final matchProject = project == null || lead.project?.name == project;
-      final matchStage = stage == null || lead.stage?.name == stage;
-      final matchChannel = channel == null || lead.chanel?.name == channel;
-      final matchSales = sales == null || lead.sales?.name == sales;
+          final matchDeveloper =
+              developer == null || lead.project?.developer?.name == developer;
+          final matchProject = project == null || lead.project?.name == project;
+          final matchStage = stage == null || lead.stage?.name == stage;
+          final matchChannel = channel == null || lead.chanel?.name == channel;
+          final matchSales =
+              sales == null || lead.sales?.userlog?.name == sales;
 
-      return matchQuery &&
-          matchCountry &&
-          matchDeveloper &&
-          matchProject &&
-          matchStage &&
-          matchChannel &&
-          matchSales;
-    }).toList();
+          return matchQuery &&
+              matchCountry &&
+              matchDeveloper &&
+              matchProject &&
+              matchStage &&
+              matchChannel &&
+              matchSales;
+        }).toList();
 
     log("🔍 عدد النتائج بعد الفلترة: ${filtered.length}");
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
@@ -149,12 +167,8 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
     return null;
   }
 
-  void filterLeadsByStageInManager(String query) {
+  void filterLeadsByStageInTeamLeader(String query) {
     if (_originalLeadsResponse?.data == null) return;
-    if (query.isEmpty) {
-      emit(GetLeadsTeamLeaderSuccess(_originalLeadsResponse!));
-      return;
-    }
     final filtered =
         _originalLeadsResponse!.data!
             .where(
