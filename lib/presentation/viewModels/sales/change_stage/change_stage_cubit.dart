@@ -14,6 +14,11 @@ class ChangeStageCubit extends Cubit<ChangeStageState> {
     required String stagedateupdated,
     required String stage,
     String? unitPrice,
+    String? commissionratio,
+    String? commissionmoney,
+    String? cashbackratio,
+    String? cashbackmoney,
+    String? unitnumber,
   }) async {
     emit(ChangeStageLoading());
     try {
@@ -23,12 +28,17 @@ class ChangeStageCubit extends Cubit<ChangeStageState> {
         stage: stage,
         dateupdated: stagedateupdated,
         unitPrice: unitPrice,
+        commissionratio: commissionratio,
+        commissionmoney: commissionmoney,
+        cashbackratio: cashbackratio,
+        cashbackmoney: cashbackmoney,
+        unitnumber: unitnumber,
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         log('Stage changed successfully');
-        log("message:$stage");
-
+        log("cashbackmoney: $cashbackmoney");
+        log("commissionmoney: $commissionmoney");
         emit(
           ChangeStageSuccess(data['message'] ?? 'Stage updated successfully'),
         );

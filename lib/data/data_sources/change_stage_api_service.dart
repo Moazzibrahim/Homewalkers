@@ -8,7 +8,12 @@ class ChangeStageApiService {
     required String datebydayonly,
     required String stage,
     required String dateupdated,
+    String? unitnumber,
     String? unitPrice,
+    String? commissionratio,
+    String? commissionmoney,
+    String? cashbackratio,
+    String? cashbackmoney,
   }) async {
     final url = Uri.parse('${Constants.baseUrl}/users/$leadId');
 
@@ -17,6 +22,12 @@ class ChangeStageApiService {
       "stage": stage,
       "stagedateupdated": dateupdated,
       "unitPrice":unitPrice,
+      "unitnumber": unitnumber,
+      "review":false,
+      "commissionration":commissionratio,
+      "commissionmoney":commissionmoney,
+      "cashbackratio":cashbackratio,
+      "cashbackmoney":cashbackmoney,
     };
 
     try {

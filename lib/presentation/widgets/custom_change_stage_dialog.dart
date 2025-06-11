@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable, use_build_context_synchronously
+// ignore_for_file: unused_local_variable, use_build_context_synchronously, non_constant_identifier_names, avoid_print
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -20,13 +20,19 @@ class CustomChangeStageDialog {
   }) async {
     final stagesCubit = context.read<StagesCubit>();
     stagesCubit.fetchStages();
-    final nameController = TextEditingController(text: leadStage ?? '');
+    final oldStageController = TextEditingController(text: leadStage ?? '');
+    final unitPriceController = TextEditingController();
+    final commissionRatioController = TextEditingController();
+    final cashbackRatioController = TextEditingController();
+    final unitnumberController = TextEditingController();
     String? selectedStageName;
     String? selectedStageId;
-    String? unitPriceValue;
+    String commissionMoney = '0.00';
+    String cashbackMoney = '0.00';
     DateTime? selectedDateTime;
     final prefs = await SharedPreferences.getInstance();
-    final salesId = prefs.getString('salesIDD');
+    final savedSalesId =
+        prefs.getString('salesIDD') ?? 'default_sales_id'; // Provide a default
 
     Future<void> pickDateTime(
       BuildContext context,
@@ -55,7 +61,6 @@ class CustomChangeStageDialog {
         }
       }
     }
-
     showDialog(
       context: context,
       builder:
@@ -71,6 +76,45 @@ class CustomChangeStageDialog {
               ),
               child: StatefulBuilder(
                 builder: (context, setState) {
+                  // --- Start of Changes ---
+                  // Calculation logic
+                  void calculateValues() {
+                    final double unitPrice =
+                        double.tryParse(unitPriceController.text) ?? 0.0;
+                    final double commissionRatio =
+                        double.tryParse(commissionRatioController.text) ?? 0.0;
+                    final double cashbackRatio =
+                        double.tryParse(cashbackRatioController.text) ?? 0.0;
+                    final double calculatedCommission =
+                        (unitPrice * commissionRatio) / 100;
+                    // **Important**: Decide how cashback is calculated.
+                    // Option 1: Cashback as a percentage of the commission
+                    final double calculatedCashback =
+                        (calculatedCommission * cashbackRatio) / 100;
+                    // Option 2 (alternative): Cashback as a percentage of the unit price
+                    // final double calculatedCashback = (unitPrice * cashbackRatio) / 100;
+                    // Use setState here to trigger a rebuild of the dialog's content
+                    setState(() {
+                      commissionMoney = calculatedCommission.toStringAsFixed(2);
+                      cashbackMoney = calculatedCashback.toStringAsFixed(2);
+                    });
+                    print(
+                      "Commission: $commissionMoney, Cashback: $cashbackMoney",
+                    );
+                  }
+                  // Add listeners to controllers to automatically recalculate
+                  void setupListeners() {
+                    unitPriceController.addListener(calculateValues);
+                    commissionRatioController.addListener(calculateValues);
+                    cashbackRatioController.addListener(calculateValues);
+                  }
+                  // A flag to ensure listeners are set up only once
+                  bool areListenersSetup = false;
+                  if (!areListenersSetup) {
+                    setupListeners();
+                    areListenersSetup = true;
+                  }
+                  // --- End of Changes ---
                   return Padding(
                     padding: EdgeInsets.all(16.w),
                     child: SingleChildScrollView(
@@ -102,19 +146,29 @@ class CustomChangeStageDialog {
                               const Spacer(),
                               IconButton(
                                 icon: const Icon(Icons.close),
-                                onPressed: () => Navigator.pop(context),
+                                onPressed: () {
+                                  // **Important**: Remove listeners to avoid memory leaks
+                                  unitPriceController.removeListener(
+                                    calculateValues,
+                                  );
+                                  commissionRatioController.removeListener(
+                                    calculateValues,
+                                  );
+                                  cashbackRatioController.removeListener(
+                                    calculateValues,
+                                  );
+                                  Navigator.pop(context);
+                                },
                               ),
                             ],
                           ),
                           SizedBox(height: 12.h),
-
                           /// Old Stage Field
                           CustomTextField(
                             hint: "Old stage",
-                            controller: nameController,
+                            controller: oldStageController,
                           ),
                           SizedBox(height: 12.h),
-
                           /// Dropdown for Stages
                           BlocBuilder<StagesCubit, StagesState>(
                             builder: (context, state) {
@@ -138,6 +192,7 @@ class CustomChangeStageDialog {
                                               )
                                               .id;
                                     });
+                                    // Logic for picking date
                                     if (value == "Meeting" ||
                                         value == "Follow" ||
                                         value == "Interested" ||
@@ -166,15 +221,75 @@ class CustomChangeStageDialog {
                               return const SizedBox.shrink();
                             },
                           ),
+                          /// Fields for "Done Deal" stage
                           if (selectedStageName == "Done Deal")
-                            CustomTextField(
-                              hint: "Unit Price",
-                              controller: TextEditingController(
-                                text: unitPriceValue ?? '',
-                              ),
+                            Column(
+                              children: [
+                                SizedBox(height: 12.h),
+                                CustomTextField(
+                                  hint: "Unit Price",
+                                  controller: unitPriceController,
+                                  textInputType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  // onChanged is no longer needed here as we use a listener
+                                ),
+                                SizedBox(height: 12.h),
+                                CustomTextField(
+                                  hint: "Unit number",
+                                  controller: unitnumberController,
+                                  textInputType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal:
+                                            false, // Unit number is likely an integer
+                                      ),
+                                ),
+                                SizedBox(height: 12.h),
+                                CustomTextField(
+                                  hint: "Commission Ratio (%)",
+                                  controller: commissionRatioController,
+                                  textInputType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  // onChanged is no longer needed here
+                                ),
+                                SizedBox(height: 12.h),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    "Commission Money:$commissionMoney",
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 12.h),
+                                CustomTextField(
+                                  hint: "Cashback Ratio (%)",
+                                  controller: cashbackRatioController,
+                                  textInputType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  // onChanged is no longer needed here
+                                ),
+                                SizedBox(height: 12.h),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    "Cashback Money:$cashbackMoney",
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           SizedBox(height: 20.h),
-
                           /// Action Buttons
                           Row(
                             children: [
@@ -183,9 +298,14 @@ class CustomChangeStageDialog {
                                 child: ElevatedButton(
                                   onPressed: () {
                                     setState(() {
-                                      nameController.clear();
                                       selectedStageName = null;
                                       selectedStageId = null;
+                                      unitPriceController.clear();
+                                      commissionRatioController.clear();
+                                      cashbackRatioController.clear();
+                                      unitnumberController.clear();
+                                      // No need to call calculateValues() here,
+                                      // the listeners will do it automatically when controllers are cleared.
                                     });
                                   },
                                   style: ElevatedButton.styleFrom(
@@ -215,7 +335,6 @@ class CustomChangeStageDialog {
                                 ),
                               ),
                               SizedBox(width: 10.w),
-
                               /// Apply Button
                               Expanded(
                                 child: ElevatedButton(
@@ -235,12 +354,19 @@ class CustomChangeStageDialog {
                                     }
                                     final changeStageCubit =
                                         context.read<ChangeStageCubit>();
-                                    // نفّذ تغيير المرحلة
+                                    // Await the first call
                                     await changeStageCubit.changeStage(
                                       leadId: leedId,
                                       laststagedateupdated:
                                           DateTime.now().toIso8601String(),
-                                      unitPrice: unitPriceValue,
+                                      unitPrice: unitPriceController.text,
+                                      commissionratio:
+                                          commissionRatioController.text,
+                                      commissionmoney: commissionMoney,
+                                      cashbackratio:
+                                          cashbackRatioController.text,
+                                      cashbackmoney: cashbackMoney,
+                                      unitnumber: unitnumberController.text,
                                       stagedateupdated:
                                           selectedDateTime
                                               ?.toUtc()
@@ -250,10 +376,12 @@ class CustomChangeStageDialog {
                                               .toIso8601String(),
                                       stage: selectedStageId!,
                                     );
-                                    // بعد ما يتم التغيير بنجاح
-                                    final state = changeStageCubit.state;
-                                    if (state is ChangeStageSuccess) {
-                                      // نفذ postLeadStage بعد نجاح تغيير المرحلة
+
+                                    // Check the state after the first call
+                                    final stateAfterChange =
+                                        changeStageCubit.state;
+                                    if (stateAfterChange
+                                        is ChangeStageSuccess) {
                                       await changeStageCubit.postLeadStage(
                                         leadId: leedId,
                                         date:
@@ -262,33 +390,40 @@ class CustomChangeStageDialog {
                                                 .split('T')
                                                 .first,
                                         stage: selectedStageId!,
-                                        sales: salesId!, // عدّلها حسب المطلوب
+                                        sales: savedSalesId,
                                       );
-                                      final newState = changeStageCubit.state;
-                                      if (newState is ChangeStageSuccess) {
-                                        Navigator.pop(context);
-                                        onStageChanged(selectedStageName ?? '');
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(newState.message),
-                                          ),
-                                        );
-                                      } else if (newState is ChangeStageError) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(newState.error),
-                                          ),
-                                        );
-                                      }
-                                    } else if (state is ChangeStageError) {
+
+                                      // **Important**: Remove listeners before closing the dialog
+                                      unitPriceController.removeListener(
+                                        calculateValues,
+                                      );
+                                      commissionRatioController.removeListener(
+                                        calculateValues,
+                                      );
+                                      cashbackRatioController.removeListener(
+                                        calculateValues,
+                                      );
+
+                                      Navigator.pop(context);
+                                      onStageChanged(selectedStageName ?? '');
+
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        SnackBar(content: Text(state.error)),
+                                        SnackBar(
+                                          content: Text(
+                                            stateAfterChange.message,
+                                          ),
+                                        ),
+                                      );
+                                    } else if (stateAfterChange
+                                        is ChangeStageError) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(stateAfterChange.error),
+                                        ),
                                       );
                                     }
                                   },
