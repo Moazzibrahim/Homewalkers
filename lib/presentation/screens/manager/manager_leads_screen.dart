@@ -1,6 +1,5 @@
-// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use
+// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -15,12 +14,49 @@ import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/lea
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/manager/manager_custom_filter_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class ManagerLeadsScreen extends StatelessWidget {
+class ManagerLeadsScreen extends StatefulWidget {
   final String? stageName;
   const ManagerLeadsScreen({super.key, this.stageName});
+
+  @override
+  State<ManagerLeadsScreen> createState() => _ManagerLeadsScreenState();
+}
+
+class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
+  bool? isClearHistoryy;
+  DateTime? clearHistoryTimee;
+  @override
+  void initState() {
+    super.initState();
+    checkClearHistoryTime();
+    checkIsClearHistory();
+  }
+
+  Future<void> checkClearHistoryTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final time = prefs.getString('clear_history_time');
+    if (time != null) {
+      setState(() {
+        clearHistoryTimee = DateTime.tryParse(time);
+      });
+      debugPrint('آخر مرة تم فيها الضغط على Clear History: $time');
+    }
+  }
+
+  Future<void> checkIsClearHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final iscleared = prefs.getBool('clearHistory');
+    if (mounted) {
+      setState(() {
+        isClearHistoryy = iscleared;
+      });
+    }
+    debugPrint('Clear History: $iscleared');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,11 +159,11 @@ class ManagerLeadsScreen extends StatelessWidget {
 
     return BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
       builder: (context, state) {
-        if (state is GetManagerLeadsSuccess && stageName != null) {
+        if (state is GetManagerLeadsSuccess && widget.stageName != null) {
           // نفلتر مرة واحدة فقط
           WidgetsBinding.instance.addPostFrameCallback((_) {
             context.read<GetManagerLeadsCubit>().filterLeadsByStageInManager(
-              stageName!,
+              widget.stageName!,
             );
           });
         }
@@ -452,79 +488,116 @@ class ManagerLeadsScreen extends StatelessWidget {
                                                               final firstItem =
                                                                   data.first;
                                                               final firstComment =
-                                                                  firstItem.comments?.isNotEmpty ==
-                                                                          true
-                                                                      ? firstItem
-                                                                          .comments!
-                                                                          .first
-                                                                      : null;
-                                                              return Column(
-                                                                mainAxisSize:
-                                                                    MainAxisSize
-                                                                        .min,
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .start,
-                                                                children: [
-                                                                  const Text(
-                                                                    "Last Comment",
-                                                                    style: TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                    ),
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 10,
-                                                                  ),
-                                                                  const Text(
-                                                                    "Comment",
-                                                                    style: TextStyle(
-                                                                      color:
-                                                                          Constants
-                                                                              .maincolor,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                    ),
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 5,
-                                                                  ),
-                                                                  Text(
+                                                                  firstItem
+                                                                      .comments
+                                                                      ?.first;
+                                                              final firstcommentdate =
+                                                                  DateTime.tryParse(
                                                                     firstComment
                                                                             ?.firstcomment
-                                                                            ?.text ??
-                                                                        'No first comment available.',
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 10,
-                                                                  ),
-                                                                  const Text(
-                                                                    "Action (Plan)",
-                                                                    style: TextStyle(
-                                                                      color:
-                                                                          Constants
-                                                                              .maincolor,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                    ),
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 5,
-                                                                  ),
-                                                                  Text(
+                                                                            ?.date
+                                                                            .toString() ??
+                                                                        "",
+                                                                  )?.toUtc();
+                                                              final secondcommentdate =
+                                                                  DateTime.tryParse(
                                                                     firstComment
                                                                             ?.secondcomment
-                                                                            ?.text ??
-                                                                        'No second comment available.',
-                                                                  ),
-                                                                ],
-                                                              );
+                                                                            ?.date
+                                                                            .toString() ??
+                                                                        "",
+                                                                  )?.toUtc();
+                                                              final isFirstValid =
+                                                                  isClearHistoryy !=
+                                                                      true ||
+                                                                  (firstcommentdate !=
+                                                                          null &&
+                                                                      firstcommentdate
+                                                                          .isAfter(
+                                                                            clearHistoryTimee!,
+                                                                          ));
+                                                              final isSecondValid =
+                                                                  isClearHistoryy !=
+                                                                      true ||
+                                                                  (secondcommentdate !=
+                                                                          null &&
+                                                                      secondcommentdate
+                                                                          .isAfter(
+                                                                            clearHistoryTimee!,
+                                                                          ));
+                                                              if ((isFirstValid &&
+                                                                  firstComment
+                                                                          ?.firstcomment
+                                                                          ?.text !=
+                                                                      null)) {
+                                                                return Column(
+                                                                  mainAxisSize:
+                                                                      MainAxisSize
+                                                                          .min,
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
+                                                                  children: [
+                                                                    const Text(
+                                                                      "Last Comment",
+                                                                      style: TextStyle(
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height:
+                                                                          10,
+                                                                    ),
+                                                                    const Text(
+                                                                      "Comment",
+                                                                      style: TextStyle(
+                                                                        color:
+                                                                            Constants.maincolor,
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height: 5,
+                                                                    ),
+                                                                    Text(
+                                                                      firstComment
+                                                                              ?.firstcomment
+                                                                              ?.text ??
+                                                                          'No first comment available.',
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height:
+                                                                          10,
+                                                                    ),
+                                                                    const Text(
+                                                                      "Action (Plan)",
+                                                                      style: TextStyle(
+                                                                        color:
+                                                                            Constants.maincolor,
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height: 5,
+                                                                    ),
+                                                                    Text(
+                                                                      firstComment
+                                                                              ?.secondcomment
+                                                                              ?.text ??
+                                                                          'No second comment available.',
+                                                                    ),
+                                                                  ],
+                                                                );
+                                                              } else {
+                                                                return const SizedBox(child: Text("no comments"),);
+                                                              }
                                                             } else {
                                                               return const SizedBox(
                                                                 height: 100,
+                                                                child: Text("no comments"),
                                                               );
                                                             }
                                                           },

@@ -66,8 +66,8 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
 
   Future<void> saveClearHistoryTime() async {
     final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now().toIso8601String();
-    await prefs.setString('clear_history_time', now);
+    final now = DateTime.now().toUtc();
+    await prefs.setString('clear_history_time', now.toIso8601String());
     log('Clear history time saved: $now');
   }
 

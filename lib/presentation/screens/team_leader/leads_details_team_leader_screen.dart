@@ -62,10 +62,15 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
 class _SalesLeadsDetailsScreenState
     extends State<LeadsDetailsTeamLeaderScreen> {
   String userRole = '';
+  bool? isClearHistoryy;
+  DateTime? clearHistoryTimee;
+
   @override
   void initState() {
     super.initState();
     checkRoleName();
+    checkClearHistoryTime();
+    checkIsClearHistory();
   }
 
   Future<void> checkRoleName() async {
@@ -74,6 +79,28 @@ class _SalesLeadsDetailsScreenState
     setState(() {
       userRole = role;
     });
+  }
+
+  Future<void> checkClearHistoryTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final time = prefs.getString('clear_history_time');
+    if (time != null) {
+      setState(() {
+        clearHistoryTimee = DateTime.tryParse(time);
+      });
+      debugPrint('آخر مرة تم فيها الضغط على Clear History: $time');
+    }
+  }
+
+  Future<void> checkIsClearHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final iscleared = prefs.getBool('clearHistory');
+    if (mounted) {
+      setState(() {
+        isClearHistoryy = iscleared;
+      });
+    }
+    debugPrint('Clear History: $iscleared');
   }
 
   @override
@@ -356,59 +383,94 @@ class _SalesLeadsDetailsScreenState
                             // استخراج أول DataItem
                             final firstItem = leadComments.data!.first;
                             final firstComment = firstItem.comments?.first;
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Last Comment",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14.sp,
-                                    color: Color(0xff6A6A75),
+                            final firstcommentdate =
+                                DateTime.tryParse(
+                                  firstComment?.firstcomment?.date.toString() ??
+                                      "",
+                                )?.toUtc();
+                            final secondcommentdate =
+                                DateTime.tryParse(
+                                  firstComment?.secondcomment?.date
+                                          .toString() ??
+                                      "",
+                                )?.toUtc();
+                            final isFirstValid =
+                                isClearHistoryy != true ||
+                                (firstcommentdate != null &&
+                                    firstcommentdate.isAfter(
+                                      clearHistoryTimee!,
+                                    ));
+                            final isSecondValid =
+                                isClearHistoryy != true ||
+                                (secondcommentdate != null &&
+                                    secondcommentdate.isAfter(
+                                      clearHistoryTimee!,
+                                    ));
+                            if ((isFirstValid &&
+                                firstComment?.firstcomment?.text != null)) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (firstComment?.firstcomment?.text !=
+                                          null &&
+                                      (isClearHistoryy == true &&
+                                          DateTime.parse(
+                                            firstComment!.firstcomment!.date
+                                                .toString(),
+                                          ).isAfter(clearHistoryTimee!)))
+                                    Text(
+                                      "Last Comment",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14.sp,
+                                        color: Color(0xff6A6A75),
+                                      ),
+                                    ),
+                                  SizedBox(height: 10.h),
+                                  // First Comment Title
+                                  Text(
+                                    "Comment",
+                                    style: TextStyle(
+                                      color: Constants.maincolor,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 10.h),
-                                // First Comment Title
-                                Text(
-                                  "Comment",
-                                  style: TextStyle(
-                                    color: Constants.maincolor,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
+                                  SizedBox(height: 7.h),
+                                  // First Comment Text
+                                  Text(
+                                    firstComment?.firstcomment?.text ??
+                                        'No first comment available.',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w400,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 7.h),
-                                // First Comment Text
-                                Text(
-                                  firstComment?.firstcomment?.text ??
-                                      'No first comment available.',
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
+                                  SizedBox(height: 7.h),
+                                  // Second Comment Title
+                                  Text(
+                                    "Action (Plan)",
+                                    style: TextStyle(
+                                      color: Constants.maincolor,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 7.h),
-                                // Second Comment Title
-                                Text(
-                                  "Action (Plan)",
-                                  style: TextStyle(
-                                    color: Constants.maincolor,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
+                                  SizedBox(height: 7.h),
+                                  // Second Comment Text
+                                  Text(
+                                    firstComment?.secondcomment?.text ??
+                                        'No second comment available.',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w400,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 7.h),
-                                // Second Comment Text
-                                Text(
-                                  firstComment?.secondcomment?.text ??
-                                      'No second comment available.',
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            );
+                                ],
+                              );
+                            }
+                            // If LeadCommentsLoaded but no valid comment, return a placeholder
+                            return Center(child: Text('No comments found'));
                           } else {
                             return SizedBox(); // أو Placeholder
                           }
