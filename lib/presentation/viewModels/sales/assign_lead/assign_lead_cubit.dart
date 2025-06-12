@@ -114,6 +114,8 @@ class AssignleadCubit extends Cubit<AssignState> {
           data: postBody,
           options: Options(headers: {'Content-Type': 'application/json'}),
         );
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('clearHistory', clearhistory!);
         if (postResponse.statusCode != 200 && postResponse.statusCode != 201) {
           emit(AssignFailure('Failed to assign lead in POST: $leadId'));
           return;
@@ -123,6 +125,7 @@ class AssignleadCubit extends Cubit<AssignState> {
       log('All leads assigned successfully');
       log("teamleadersId: $teamleadersId");
       log("salesId: $salesId");
+      log("clearhistory: $clearhistory");
       emit(AssignSuccess());
     } catch (e) {
       emit(AssignFailure('❌ Error during combined assignment: $e'));

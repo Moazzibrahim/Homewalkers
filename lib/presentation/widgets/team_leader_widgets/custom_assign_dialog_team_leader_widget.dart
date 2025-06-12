@@ -1,13 +1,16 @@
-// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
+import 'package:homewalkers_app/data/data_sources/team_leader/get_leads_count.dart';
 import 'package:homewalkers_app/data/data_sources/team_leader/get_sales_by_team_leader_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_count_in_team_leader_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_sales_team_leader_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_sales_team_leader_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CustomAssignDialogTeamLeaderWidget extends StatefulWidget {
@@ -34,7 +37,7 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
   String? savedIdassignedfrom;
   String? selectedSalesId;
   Map<String, bool> selectedSales = {};
-  
+
   // 1. إضافة متغير الحالة للـ Checkbox الجديد
   bool clearHistory = false;
 
@@ -61,14 +64,29 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
     setState(() {});
   }
 
+  Future<void> saveClearHistoryTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now().toIso8601String();
+    await prefs.setString('clear_history_time', now);
+    log('Clear history time saved: $now');
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => AssignleadCubit()),
         BlocProvider(
-          create: (context) =>
-              SalesTeamCubit(GetSalesTeamLeaderApiService())..fetchSalesTeam(),
+          create:
+              (_) =>
+                  LeadCommentsCubit(GetAllLeadCommentsApiService())
+                    ..fetchLeadComments(widget.leadId!),
+        ),
+        BlocProvider(
+          create:
+              (context) =>
+                  GetLeadsCountInTeamLeaderCubit(GetLeadsCountApiService())
+                    ..fetchLeadsCount(),
         ),
       ],
       child: Builder(
@@ -83,51 +101,55 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    BlocBuilder<SalesTeamCubit, SalesTeamState>(
+                    BlocBuilder<
+                      GetLeadsCountInTeamLeaderCubit,
+                      GetLeadsCountInTeamLeaderState
+                    >(
                       builder: (context, state) {
-                        if (state is SalesTeamLoading) {
+                        if (state is GetLeadsCountInTeamLeaderLoading) {
                           return const Center(
                             child: CircularProgressIndicator(),
                           );
-                        } else if (state is SalesTeamLoaded &&
-                            state.salesTeam.data != null) {
-                          final salesOnly = state.salesTeam.data!
-                              .where(
-                                (sale) => sale.userlog?.role == "Sales",
-                              )
-                              .toList();
-                          if (salesOnly.isEmpty) {
+                        } else if (state is GetLeadsCountInTeamLeaderLoaded) {
+                          final salesList = state.data.data;
+                          if (salesList!.isEmpty) {
                             return const Text("No sales available.");
                           }
                           return Column(
-                            children: salesOnly.map((sale) {
-                              return ListTile(
-                                title: Text(sale.name ?? "Unnamed Sales"),
-                                subtitle: Text(
-                                  "Sales",
-                                  style: TextStyle(color: widget.mainColor),
-                                ),
-                                trailing: Checkbox(
-                                  activeColor: widget.mainColor,
-                                  value: selectedSales[sale.id] ?? false,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      selectedSales.clear(); 
-                                      selectedSales[sale.id!] = val ?? false;
-                                      selectedSalesId = val == true
-                                          ? sale.id.toString()
-                                          : null;
-                                    });
-                                  },
-                                ),
-                              );
-                            }).toList(),
+                            children:
+                                salesList.map((sale) {
+                                  return ListTile(
+                                    title: Text(
+                                      sale.salesName ?? "Unnamed Sales",
+                                    ),
+                                    subtitle: Text(
+                                      "Sales",
+                                      style: TextStyle(color: widget.mainColor),
+                                    ),
+                                    trailing: Checkbox(
+                                      activeColor: widget.mainColor,
+                                      value:
+                                          selectedSales[sale.salesID] ?? false,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      onChanged: (val) {
+                                        setState(() {
+                                          selectedSales.clear();
+                                          selectedSales[sale.salesID!] =
+                                              val ?? false;
+                                          selectedSalesId =
+                                              val == true
+                                                  ? sale.salesID.toString()
+                                                  : null;
+                                        });
+                                      },
+                                    ),
+                                  );
+                                }).toList(),
                           );
-                        } else if (state is SalesTeamError) {
-                          return Text(state.error);
+                        } else if (state is GetLeadsCountInTeamLeaderError) {
+                          return Text(state.message);
                         } else {
                           return const Text(
                             "No sales available for assignment.",
@@ -135,7 +157,6 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                         }
                       },
                     ),
-                    
                     // 2. إضافة واجهة المستخدم للـ Checkbox هنا
                     CheckboxListTile(
                       title: const Text("Clear History"),
@@ -145,8 +166,11 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                           clearHistory = newValue ?? false;
                         });
                       },
-                      controlAffinity: ListTileControlAffinity.leading, // لوضع الصندوق على اليسار
-                      contentPadding: EdgeInsets.zero, // لإزالة الحواف الافتراضية
+                      controlAffinity:
+                          ListTileControlAffinity
+                              .leading, // لوضع الصندوق على اليسار
+                      contentPadding:
+                          EdgeInsets.zero, // لإزالة الحواف الافتراضية
                       activeColor: widget.mainColor,
                     ),
 
@@ -194,22 +218,31 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                             ),
                           ),
                           ElevatedButton(
-                            onPressed: () {
+                            onPressed: () async {
                               if (selectedSalesId != null) {
-                                final leadIds = widget.leadIds != null
-                                    ? List<String>.from(widget.leadIds!)
-                                    : [widget.leadId!];
-
+                                final leadIds =
+                                    widget.leadIds != null
+                                        ? List<String>.from(widget.leadIds!)
+                                        : [widget.leadId!];
                                 log("Selected Lead IDs: $leadIds");
                                 // 3. يمكنك الآن استخدام قيمة clearHistory عند الإرسال
-                                log("Clear History value: $clearHistory"); 
-
+                                log("Clear History value: $clearHistory");
+                                if (clearHistory) {
+                                  await saveClearHistoryTime(); // حفظ الوقت في حالة تفعيل clearHistory
+                                }
                                 final String lastDateAssign =
                                     DateTime.now().toUtc().toIso8601String();
-
-                                BlocProvider.of<AssignleadCubit>(
-                                  dialogContext,
-                                ).assignUserAndLeadTeamLeader(
+                                final assignCubit =
+                                    BlocProvider.of<AssignleadCubit>(
+                                      dialogContext,
+                                      listen: false,
+                                    );
+                                final cubit =
+                                    BlocProvider.of<LeadCommentsCubit>(
+                                      dialogContext,
+                                      listen: false,
+                                    );
+                                assignCubit.assignUserAndLeadTeamLeader(
                                   leadIds: leadIds,
                                   lastDateAssign: lastDateAssign,
                                   dateAssigned:
@@ -218,6 +251,9 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                                   salesId: selectedSalesId!,
                                   clearhistory: clearHistory,
                                   // يمكنك إضافة clearHistory هنا إذا كانت الدالة تدعمها
+                                );
+                                cubit.apiService.fetchLeadAssigned(
+                                  widget.leadId!,
                                 );
                               } else {
                                 ScaffoldMessenger.of(

@@ -155,8 +155,9 @@ class _SalesLeadsDetailsScreenState
                               SizedBox(width: 3.w),
                               Text(
                                 '${widget.leadEmail}',
+                                maxLines: 2,
                                 style: TextStyle(
-                                  fontSize: 11.sp,
+                                  fontSize: 9.sp,
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
@@ -338,10 +339,7 @@ class _SalesLeadsDetailsScreenState
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: BlocBuilder<
-                        LeadCommentsCubit,
-                        LeadCommentsState
-                      >(
+                      child: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
                         builder: (context, state) {
                           if (state is LeadCommentsLoading) {
                             return Center(child: CircularProgressIndicator());

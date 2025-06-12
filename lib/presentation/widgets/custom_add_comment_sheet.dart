@@ -126,7 +126,7 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                 final DateTime? pickedDate = await showDatePicker(
                   context: context,
                   initialDate: DateTime.now(),
-                  firstDate: DateTime(2020),
+                  firstDate: DateTime.now(),
                   lastDate: DateTime(2030),
                 );
                 if (pickedDate != null) {
@@ -252,6 +252,7 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                               userlog: userlogId!,
                               usernamelog: userlogId!,
                             );
+                            log("text 1: $text1, text 2: $text2, date: $date");
                           } else {
                             showDialog(
                               context: context,

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
+import 'package:homewalkers_app/data/models/leads_assigned_model.dart';
 
 // --- States ---
 abstract class LeadCommentsState extends Equatable {
@@ -29,4 +30,14 @@ class LeadCommentsError extends LeadCommentsState {
 
   @override
   List<Object?> get props => [message];
+}
+
+// ✅ حالة جديدة
+class LeadAssignedLoaded extends LeadCommentsState {
+  final LeadAssignedModel leadAssigned;
+
+  const LeadAssignedLoaded(this.leadAssigned);
+
+  @override
+  List<Object?> get props => [leadAssigned];
 }

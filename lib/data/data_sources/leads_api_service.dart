@@ -18,7 +18,7 @@ class GetLeadsService {
       }
 
       final url = Uri.parse(
-        '${Constants.baseUrl}/users/filter-by-email?email=$savedEmail',
+        '${Constants.baseUrl}/users/filter-by-email?email=$savedEmail&leadisactive=true',
       );
 
       final response = await http.get(url);
@@ -58,13 +58,17 @@ class GetLeadsService {
       }
 
       final url = Uri.parse(
-        '${Constants.baseUrl}/users/teamleader-leads?email=$savedEmail',
+        '${Constants.baseUrl}/users/teamleader-leads?email=$savedEmail&leadisactive=true',
       );
 
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
+        bool userlogResult = await prefs.setString(
+          'userlog',
+          leadsResponse.data!.first.sales!.userlog!.id.toString(),
+        );
         final teamLeaderIddSpecific =
             leadsResponse.data?.first.sales?.teamleader?.id;
         bool result = await prefs.setString(
@@ -147,6 +151,10 @@ class GetLeadsService {
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
+        bool userlogResult = await prefs.setString(
+          'userlog',
+          leadsResponse.data!.first.sales!.userlog!.id.toString(),
+        );
         final manageridSpecific = leadsResponse.data?.first.sales?.manager?.id;
         final managerName = leadsResponse.data?.first.sales?.manager?.name;
         bool res = await prefs.setString('managerName', managerName ?? '');
