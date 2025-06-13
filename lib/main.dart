@@ -48,6 +48,18 @@ void main() async {
     android: androidSettings,
   );
   await flutterLocalNotificationsPlugin.initialize(initSettings);
+  // في main.dart، قبل runApp
+const AndroidNotificationChannel channel = AndroidNotificationChannel(
+  'high_importance_channel',
+  'High Importance Notifications',
+  description: 'This channel is used for important notifications.',
+  importance: Importance.high,
+);
+
+await flutterLocalNotificationsPlugin
+    .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()
+    ?.createNotificationChannel(channel);
 
   runApp(MyApp(initialTheme: initialTheme));
 }

@@ -180,12 +180,14 @@ class _SalesLeadsDetailsScreenState
                                         : Constants.mainDarkmodecolor,
                               ),
                               SizedBox(width: 3.w),
-                              Text(
-                                '${widget.leadEmail}',
-                                maxLines: 2,
-                                style: TextStyle(
-                                  fontSize: 9.sp,
-                                  fontWeight: FontWeight.w400,
+                              Flexible(
+                                child: Text(
+                                  '${widget.leadEmail}',
+                                  maxLines: 2,
+                                  style: TextStyle(
+                                    fontSize: 9.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
                                 ),
                               ),
                             ],

@@ -37,6 +37,7 @@ class NotificationCubit extends Cubit<NotificationState> {
         emit(NotificationState(error: "Permission denied"));
         return;
       }
+      
 
       // أخذ التوكن وتخزينه
       final token = await messaging.getToken();

@@ -151,11 +151,13 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                         : Constants.mainDarkmodecolor,
                               ),
                               SizedBox(width: 3.w),
-                              Text(
-                                '${widget.leadEmail}',
-                                style: TextStyle(
-                                  fontSize: 11.sp,
-                                  fontWeight: FontWeight.w400,
+                              Flexible(
+                                child: Text(
+                                  '${widget.leadEmail}',
+                                  style: TextStyle(
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
                                 ),
                               ),
                             ],

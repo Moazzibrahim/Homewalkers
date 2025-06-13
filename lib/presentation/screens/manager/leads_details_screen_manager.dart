@@ -162,6 +162,7 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.w400,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                               SizedBox(width: 13.w),
                               Icon(
@@ -174,11 +175,13 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                         : Constants.mainDarkmodecolor,
                               ),
                               SizedBox(width: 3.w),
-                              Text(
-                                '${widget.leadEmail}',
-                                style: TextStyle(
-                                  fontSize: 9.sp,
-                                  fontWeight: FontWeight.w400,
+                              Flexible(
+                                child: Text(
+                                  '${widget.leadEmail}',
+                                  style: TextStyle(
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
                                 ),
                               ),
                             ],

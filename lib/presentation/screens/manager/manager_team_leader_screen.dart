@@ -52,6 +52,11 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
               // إذا لم يتم اختيار أي team leader، اختار الأول تلقائياً
               selectedTeamLeaderName ??= groupedLeads.keys.first;
               final salesList = groupedLeads[selectedTeamLeaderName] ?? [];
+              final uniqueSales =
+                  {
+                    for (var lead in salesList)
+                      if (lead.sales?.id != null) lead.sales!.id!: lead,
+                  }.values.toList();
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -166,18 +171,21 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
                     ],
                   ),
                   SizedBox(height: 5),
+
                   // قائمة الـ sales التابعين للـ team leader المحدد
+                  // فلترة السيلز عشان تبقى unique
                   Expanded(
                     child: ListView.builder(
-                      itemCount: salesList.length,
+                      itemCount: uniqueSales.length,
                       itemBuilder: (context, index) {
-                        final salesLead = salesList[index];
+                        final salesLead = uniqueSales[index];
                         final sales = salesLead.sales;
-                        // حساب عدد الـ Leads لهذا الـ Sales
+
                         final leadCount =
                             salesList
                                 .where((lead) => lead.sales?.id == sales?.id)
                                 .length;
+
                         return ListTile(
                           contentPadding: EdgeInsets.symmetric(vertical: 4),
                           title: Row(
