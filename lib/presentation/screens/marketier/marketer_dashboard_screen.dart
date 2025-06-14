@@ -1,15 +1,15 @@
 // ignore_for_file: file_names, camel_case_types, deprecated_member_use
-
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
+import 'package:homewalkers_app/presentation/screens/marketier/leads_marketier_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
-import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
-import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class TeamLeaderDashboardScreen extends StatelessWidget {
-  const TeamLeaderDashboardScreen({super.key});
+class MarketerDashboardScreen extends StatelessWidget {
+  const MarketerDashboardScreen({super.key});
 
   Future<String> checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
@@ -17,13 +17,125 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
     return name ?? 'User';
   }
 
+  BarChartData _buildBarChartData(
+    Map<String, int> stageCounts,
+    List<int> values,
+    List<String> stages,
+    BuildContext context,
+  ) {
+    return BarChartData(
+      alignment: BarChartAlignment.start,
+      maxY:
+          (values.isNotEmpty ? values.reduce((a, b) => a > b ? a : b) : 1)
+              .toDouble() +
+          0.5,
+      barGroups: List.generate(stageCounts.length, (index) {
+        return BarChartGroupData(
+          x: index,
+          barRods: [
+            BarChartRodData(
+              toY: values[index].toDouble(),
+              width: 20,
+              color: Color(0xFF2E8B8A),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ],
+        );
+      }),
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            interval: 1,
+            reservedSize: 28,
+            getTitlesWidget: (value, meta) {
+              if (value % 1 == 0) {
+                return Text(
+                  value.toInt().toString(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Colors.grey[800]
+                            : Colors.grey[400],
+                  ),
+                );
+              }
+              return SizedBox.shrink();
+            },
+          ),
+        ),
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (value, meta) {
+              int i = value.toInt();
+              if (i >= 0 && i < stages.length) {
+                return SideTitleWidget(
+                  meta: meta,
+                  space: 8.0,
+                  child: Transform.rotate(
+                    angle: -0.5, // تقريبًا 45 درجة (بالراديان)
+                    child: Text(
+                      stages[i],
+                      style: TextStyle(
+                        fontSize: 10,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.grey[800]
+                                : Colors.grey[400],
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return SizedBox.shrink();
+            },
+          ),
+        ),
+        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      gridData: FlGridData(
+        show: true,
+        drawVerticalLine: false,
+        getDrawingHorizontalLine:
+            (y) => FlLine(
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Colors.grey[300]!
+                      : Colors.grey[700]!,
+              strokeWidth: 1,
+            ),
+      ),
+      borderData: FlBorderData(
+        show: true,
+        border: Border(
+          left: BorderSide(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey[500]!
+                    : Colors.grey[600]!,
+          ),
+          bottom: BorderSide(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey[500]!
+                    : Colors.grey[600]!,
+          ),
+          top: BorderSide(color: Colors.transparent),
+          right: BorderSide(color: Colors.transparent),
+        ),
+      ),
+      barTouchData: BarTouchData(enabled: false),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create:
-          (_) =>
-              GetLeadsTeamLeaderCubit(GetLeadsService())
-                ..getLeadsByTeamLeader(),
+          (_) => GetLeadsMarketerCubit(GetLeadsService())..getLeadsByMarketer(),
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
@@ -53,7 +165,7 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                           ),
                         ),
                         const Text(
-                          'Team Leader',
+                          'Marketer',
                           style: TextStyle(
                             color: Colors.grey,
                             fontSize: 14,
@@ -66,8 +178,6 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                 },
               ),
               const Spacer(),
-              _iconBox(Icons.comment_rounded, () {}),
-              const SizedBox(width: 8),
               _iconBox(Icons.notifications_none, () {
                 Navigator.push(
                   context,
@@ -116,9 +226,11 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 20),
-                BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
+                // تم استبدال PieChart بـ BarChart في هذا التعديل
+                // ... (نفس الكود السابق حتى BlocBuilder)
+                BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
                   builder: (context, state) {
-                    if (state is GetLeadsTeamLeaderLoading) {
+                    if (state is GetLeadsMarketerLoading) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -132,7 +244,7 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                                   context,
                                 ),
                               ),
-                              // const SizedBox(width: 12),
+                              // SizedBox(width: 12),
                               // Expanded(
                               //   child: _dashboardCard(
                               //     'Deals',
@@ -143,12 +255,12 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                               // ),
                             ],
                           ),
-                          const SizedBox(height: 24),
-                          const Center(child: CircularProgressIndicator()),
+                          SizedBox(height: 24),
+                          Center(child: CircularProgressIndicator()),
                         ],
                       );
-                    } else if (state is GetLeadsTeamLeaderSuccess) {
-                      final allLeads = state.leadsData.data ?? [];
+                    } else if (state is GetLeadsMarketerSuccess) {
+                      final allLeads = state.leadsResponse.data ?? [];
                       // final doneDeals =
                       //     allLeads
                       //         .where((lead) => lead.stage?.name == "Done Deal")
@@ -159,6 +271,8 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                         stageCounts[stageName] =
                             (stageCounts[stageName] ?? 0) + 1;
                       }
+                      final stages = stageCounts.keys.toList();
+                      final values = stageCounts.values.toList();
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -176,43 +290,22 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                                       MaterialPageRoute(
                                         builder:
                                             (context) =>
-                                                const TeamLeaderAssignScreen(),
+                                                const LeadsMarketierScreen(),
                                       ),
                                     );
                                   },
                                 ),
                               ),
-                              // const SizedBox(width: 12),
-                              // Expanded(
-                              //   child: _dashboardCard(
-                              //     'Deals',
-                              //     '${doneDeals.length}',
-                              //     Icons.work_outline,
-                              //     context,
-                              //     onTap: () {
-                              //       Navigator.push(
-                              //         context,
-                              //         MaterialPageRoute(
-                              //           builder:
-                              //               (context) =>
-                              //                   const TeamLeaderAssignScreen(
-                              //                     stageName: "Done Deal",
-                              //                   ),
-                              //         ),
-                              //       );
-                              //     },
-                              //   ),
-                              // ),
                             ],
                           ),
-                          const SizedBox(height: 18),
+                          SizedBox(height: 18),
                           GridView.count(
                             crossAxisCount: 2,
                             shrinkWrap: true,
                             crossAxisSpacing: 8,
                             mainAxisSpacing: 8,
                             childAspectRatio: 1.5,
-                            physics: const NeverScrollableScrollPhysics(),
+                            physics: NeverScrollableScrollPhysics(),
                             children:
                                 stageCounts.entries.map((entry) {
                                   return _dashboardCard(
@@ -225,15 +318,48 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                                         context,
                                         MaterialPageRoute(
                                           builder:
-                                              (context) =>
-                                                  TeamLeaderAssignScreen(
-                                                    stageName: entry.key,
-                                                  ),
+                                              (context) => LeadsMarketierScreen(
+                                                stageName: entry.key,
+                                              ),
                                         ),
                                       );
                                     },
                                   );
                                 }).toList(),
+                          ),
+                          SizedBox(height: 24),
+                          Text(
+                            'Leads by Stage',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Color(0xff080719)
+                                      : Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          Container(
+                            height: 300,
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Color(0xffF5F8F9)
+                                      : Color(0xff1e1e1e),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: BarChart(
+                              _buildBarChartData(
+                                stageCounts,
+                                values,
+                                stages,
+                                context,
+                              ),
+                            ),
                           ),
                         ],
                       );
@@ -248,7 +374,7 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
                               context,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: _dashboardCard(
                               'Deals',

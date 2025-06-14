@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
+import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:http/http.dart' as http;
@@ -13,7 +14,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/login_model.dart';
 
 class LoginApiService {
-  // Variables to hold token and role
   String? token;
   String? role;
   String? name;
@@ -87,6 +87,11 @@ class LoginApiService {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => TabsScreenManager()),
+          );
+        } else if (role == "Marketer") {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => MarketierTabsScreen()),
           );
         } else {
           log('❌ Unknown role: $role');

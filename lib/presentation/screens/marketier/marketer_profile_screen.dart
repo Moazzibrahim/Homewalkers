@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/login_screen.dart';
-import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
+import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/theme/theme_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart'; // 📌 import intl package
 
-class ManagerProfileScreen extends StatelessWidget {
-  const ManagerProfileScreen({super.key});
+class MarketerProfileScreen extends StatelessWidget {
+  const MarketerProfileScreen({super.key});
 
   Future<String> checkAuthName() async {
     final prefs = await SharedPreferences.getInstance();
@@ -59,7 +59,7 @@ class ManagerProfileScreen extends StatelessWidget {
         onBack: () {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => TabsScreenManager()),
+            MaterialPageRoute(builder: (context) => MarketierTabsScreen()),
           );
         },
       ),

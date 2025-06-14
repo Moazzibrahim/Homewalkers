@@ -170,7 +170,7 @@ class GetLeadsService {
         );
       }
     } catch (e) {
-      log('❌ Error in getLeadsDataByTeamLeader: $e');
+      log('❌ Error in getLeadsDataByManager: $e');
       rethrow;
     }
   }
@@ -195,6 +195,36 @@ class GetLeadsService {
     } catch (e) {
       log("❌ Error while counting leads per stage: $e");
       return {};
+    }
+  }
+
+  Future<LeadResponse> getLeadsDataByMarketer() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? savedEmail = prefs.getString('email');
+
+      if (savedEmail == null) {
+        throw Exception("No saved email found.");
+      }
+
+      final url = Uri.parse(
+        '${Constants.baseUrl}/users/GetAllLeadsAddedByUser?email=$savedEmail&leadisactive=true',
+      );
+
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final jsonBody = json.decode(response.body);
+        final leadsResponse = LeadResponse.fromJson(jsonBody);
+        log("✅ Get leads successfully by marketer");
+        return leadsResponse;
+      } else {
+        throw Exception(
+          '❌ Failed to load assigned data: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      log('❌ Error in getLeadsDataBymarketer: $e');
+      rethrow;
     }
   }
 }

@@ -126,15 +126,15 @@ class SalesdashboardScreen extends StatelessWidget {
                                 context,
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _dashboardCard(
-                                'Deals',
-                                '...',
-                                Icons.work_outline,
-                                context,
-                              ),
-                            ),
+                            // const SizedBox(width: 12),
+                            // Expanded(
+                            //   child: _dashboardCard(
+                            //     'Deals',
+                            //     '...',
+                            //     Icons.work_outline,
+                            //     context,
+                            //   ),
+                            // ),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -143,10 +143,10 @@ class SalesdashboardScreen extends StatelessWidget {
                     );
                   } else if (state is GetLeadsSuccess) {
                     final allLeads = state.assignedModel.data ?? [];
-                    final doneDeals =
-                        allLeads
-                            .where((lead) => lead.stage?.name == "Done Deal")
-                            .toList();
+                    // final doneDeals =
+                    //     allLeads
+                    //         .where((lead) => lead.stage?.name == "Done Deal")
+                    //         .toList();
                     final Map<String, int> stageCounts = {};
                     for (var lead in allLeads) {
                       final stageName = lead.stage?.name ?? 'Unknown';
@@ -176,25 +176,25 @@ class SalesdashboardScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            Expanded(
-                              child: _dashboardCard(
-                                'Deals',
-                                '${doneDeals.length}',
-                                Icons.work_outline,
-                                context,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => const SalesLeadsScreen(
-                                            stageName: "Done Deal",
-                                          ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
+                            // Expanded(
+                            //   child: _dashboardCard(
+                            //     'Deals',
+                            //     '${doneDeals.length}',
+                            //     Icons.work_outline,
+                            //     context,
+                            //     onTap: () {
+                            //       Navigator.push(
+                            //         context,
+                            //         MaterialPageRoute(
+                            //           builder:
+                            //               (context) => const SalesLeadsScreen(
+                            //                 stageName: "Done Deal",
+                            //               ),
+                            //         ),
+                            //       );
+                            //     },
+                            //   ),
+                            // ),
                           ],
                         ),
                         const SizedBox(height: 18),

@@ -17,6 +17,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubi
 import 'package:homewalkers_app/presentation/viewModels/sales/theme/theme_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart'; //
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -49,17 +50,18 @@ void main() async {
   );
   await flutterLocalNotificationsPlugin.initialize(initSettings);
   // في main.dart، قبل runApp
-const AndroidNotificationChannel channel = AndroidNotificationChannel(
-  'high_importance_channel',
-  'High Importance Notifications',
-  description: 'This channel is used for important notifications.',
-  importance: Importance.high,
-);
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'high_importance_channel',
+    'High Importance Notifications',
+    description: 'This channel is used for important notifications.',
+    importance: Importance.high,
+  );
 
-await flutterLocalNotificationsPlugin
-    .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>()
-    ?.createNotificationChannel(channel);
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >()
+      ?.createNotificationChannel(channel);
 
   runApp(MyApp(initialTheme: initialTheme));
 }
@@ -116,13 +118,13 @@ class MyApp extends StatelessWidget {
                 navigatorKey: navigatorKey,
                 debugShowCheckedModeBanner: false,
                 theme: ThemeData.light().copyWith(
-                  textTheme: ThemeData.light().textTheme.apply(
-                    fontFamily: 'Montserrat',
+                  textTheme: GoogleFonts.montserratTextTheme(
+                    ThemeData.light().textTheme,
                   ),
                 ),
                 darkTheme: ThemeData.dark().copyWith(
-                  textTheme: ThemeData.dark().textTheme.apply(
-                    fontFamily: 'Montserrat',
+                  textTheme: GoogleFonts.montserratTextTheme(
+                    ThemeData.dark().textTheme,
                   ),
                 ),
                 themeMode: themeMode,

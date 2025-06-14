@@ -247,15 +247,15 @@ class ManagerDashboardScreen extends StatelessWidget {
                                   context,
                                 ),
                               ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: _dashboardCard(
-                                  'Deals',
-                                  '...',
-                                  Icons.work_outline,
-                                  context,
-                                ),
-                              ),
+                              // SizedBox(width: 12),
+                              // Expanded(
+                              //   child: _dashboardCard(
+                              //     'Deals',
+                              //     '...',
+                              //     Icons.work_outline,
+                              //     context,
+                              //   ),
+                              // ),
                             ],
                           ),
                           SizedBox(height: 24),
@@ -264,10 +264,10 @@ class ManagerDashboardScreen extends StatelessWidget {
                       );
                     } else if (state is GetManagerLeadsSuccess) {
                       final allLeads = state.leads.data ?? [];
-                      final doneDeals =
-                          allLeads
-                              .where((lead) => lead.stage?.name == "Done Deal")
-                              .toList();
+                      // final doneDeals =
+                      //     allLeads
+                      //         .where((lead) => lead.stage?.name == "Done Deal")
+                      //         .toList();
                       final Map<String, int> stageCounts = {};
                       for (var lead in allLeads) {
                         final stageName = lead.stage?.name ?? 'Unknown';
@@ -300,27 +300,27 @@ class ManagerDashboardScreen extends StatelessWidget {
                                   },
                                 ),
                               ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: _dashboardCard(
-                                  'Deals',
-                                  '${doneDeals.length}',
-                                  Icons.work_outline,
-                                  context,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) =>
-                                                const ManagerLeadsScreen(
-                                                  stageName: "Done Deal",
-                                                ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
+                              // SizedBox(width: 12),
+                              // Expanded(
+                              //   child: _dashboardCard(
+                              //     'Deals',
+                              //     '${doneDeals.length}',
+                              //     Icons.work_outline,
+                              //     context,
+                              //     onTap: () {
+                              //       Navigator.push(
+                              //         context,
+                              //         MaterialPageRoute(
+                              //           builder:
+                              //               (context) =>
+                              //                   const ManagerLeadsScreen(
+                              //                     stageName: "Done Deal",
+                              //                   ),
+                              //         ),
+                              //       );
+                              //     },
+                              //   ),
+                              // ),
                             ],
                           ),
                           SizedBox(height: 18),
