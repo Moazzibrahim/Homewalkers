@@ -1,7 +1,7 @@
 class RegionsModel {
   final int results;
   final Pagination pagination;
-  final List<City> data;
+  final List<Region> data;
 
   RegionsModel({
     required this.results,
@@ -13,7 +13,7 @@ class RegionsModel {
     return RegionsModel(
       results: json['results'],
       pagination: Pagination.fromJson(json['pagination']),
-      data: List<City>.from(json['data'].map((x) => City.fromJson(x))),
+      data: List<Region>.from(json['data'].map((x) => Region.fromJson(x))),
     );
   }
 }
@@ -38,7 +38,7 @@ class Pagination {
   }
 }
 
-class City {
+class Region {
   final String id;
   final String name;
   final String slug;
@@ -46,7 +46,7 @@ class City {
   final DateTime updatedAt;
   final int v;
 
-  City({
+  Region({
     required this.id,
     required this.name,
     required this.slug,
@@ -55,8 +55,8 @@ class City {
     required this.v,
   });
 
-  factory City.fromJson(Map<String, dynamic> json) {
-    return City(
+  factory Region.fromJson(Map<String, dynamic> json) {
+    return Region(
       id: json['_id'],
       name: json['name'],
       slug: json['slug'],

@@ -215,6 +215,47 @@ class GetLeadsService {
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
+          bool userlogResult = await prefs.setString(
+          'userlog',
+          leadsResponse.data!.first.sales!.userlog!.id.toString(),
+        );
+        final markteridSpecific = leadsResponse.data?.first.sales?.manager?.id;
+        final markterName = leadsResponse.data?.first.sales?.manager?.name;
+        bool res = await prefs.setString('markterName', markterName ?? '');
+        bool result = await prefs.setString(
+          'markteridSpecific',
+          markteridSpecific ?? '',
+        );
+        log("✅ Get leads successfully by marketer");
+        return leadsResponse;
+      } else {
+        throw Exception(
+          '❌ Failed to load assigned data: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      log('❌ Error in getLeadsDataBymarketer: $e');
+      rethrow;
+    }
+  }
+
+  Future<LeadResponse> getLeadsDataByMarketerInTrash() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? savedEmail = prefs.getString('email');
+
+      if (savedEmail == null) {
+        throw Exception("No saved email found.");
+      }
+
+      final url = Uri.parse(
+        '${Constants.baseUrl}/users/GetAllLeadsAddedByUser?email=$savedEmail&leadisactive=false',
+      );
+
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final jsonBody = json.decode(response.body);
+        final leadsResponse = LeadResponse.fromJson(jsonBody);
         log("✅ Get leads successfully by marketer");
         return leadsResponse;
       } else {

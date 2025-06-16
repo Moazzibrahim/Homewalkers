@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class CustomDropdownField extends StatelessWidget {
   final String hint;
-  final List<String> items;
+  final List<String?> items;
   final String? value; // ✅ Add this line
   final Function(String?)? onChanged;
 
@@ -33,7 +33,7 @@ class CustomDropdownField extends StatelessWidget {
                   (item) => DropdownMenuItem<String>(
                     value: item,
                     child: Text(
-                      item,
+                      item!,
                       style: TextStyle(
                         color:
                             Theme.of(context).brightness == Brightness.light

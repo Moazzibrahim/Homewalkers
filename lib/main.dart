@@ -11,6 +11,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
@@ -101,6 +102,12 @@ class MyApp extends StatelessWidget {
           create:
               (context) =>
                   GetManagerLeadsCubit(GetLeadsService())..getLeadsByManager(),
+        ),
+        BlocProvider(
+          create:
+              (_) =>
+                  GetLeadsMarketerCubit(GetLeadsService())
+                    ..getLeadsByMarketer(),
         ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
