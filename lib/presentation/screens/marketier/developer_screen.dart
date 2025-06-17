@@ -59,10 +59,15 @@ class DeveloperScreen extends StatelessWidget {
                           builder:
                               (_) => BlocProvider.value(
                                 value:
-                                    context.read<AddInMenuCubit>(), // استخدم نفس الـ cubit
+                                    context
+                                        .read<
+                                          AddInMenuCubit
+                                        >(), // استخدم نفس الـ cubit
                                 child: AddDialog(
                                   onAdd: (value) {
-                                    context.read<AddInMenuCubit>().addDeveloper(value);
+                                    context.read<AddInMenuCubit>().addDeveloper(
+                                      value,
+                                    );
                                   },
                                   title: "Developer",
                                 ),
@@ -110,7 +115,10 @@ class DeveloperScreen extends StatelessWidget {
                               (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final developer = dsvelopers[index];
-                            return _buildCommunicationCard(developer,Constants.maincolor,context,
+                            return _buildCommunicationCard(
+                              developer,
+                              Constants.maincolor,
+                              context,
                             );
                           },
                         );
@@ -135,7 +143,7 @@ class DeveloperScreen extends StatelessWidget {
     BuildContext context,
   ) {
     final name = developerData.name;
-    final dateTime =DateTime.parse(developerData.createdAt);
+    final dateTime = DateTime.parse(developerData.createdAt);
     final formattedDate = Formatters.formatDate(dateTime);
     return Container(
       width: double.infinity,
@@ -210,12 +218,15 @@ class DeveloperScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => UpdateDialog(
-                          onAdd: (value) {
-                            // هنا تنفذ العملية بعد الضغط على Add
-                            print("تمت الإضافة: $value");
-                          },
-                          title: "Developer",
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
+                          child: UpdateDialog(
+                            title: "developer",
+                            onAdd: (value) {context.read<AddInMenuCubit>().updateDeveloper(value,
+                                developerData.id.toString(),
+                              );
+                            },
+                          ),
                         ),
                   );
                 },

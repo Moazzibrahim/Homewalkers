@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/add_menu_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/marketer/update_menu_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/login_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/area_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/campaign_screen.dart';
@@ -49,7 +50,7 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService()),
+                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
                     child: CommunicationWayScreen(),
                   ),
             ),
@@ -65,7 +66,7 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService()),
+                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
                     child: DeveloperScreen(),
                   ),
             ),
@@ -81,7 +82,7 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService()),
+                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
                     child: ProjectScreen(),
                   ),
             ),
@@ -97,7 +98,7 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService()),
+                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
                     child: ChannelScreen(),
                   ),
             ),
@@ -112,7 +113,7 @@ class MarketierMenuScreen extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService()),
+                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
                     child: CancelReasonScreen(),
                   ),
             ),
@@ -126,7 +127,7 @@ class MarketierMenuScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute( builder:  (_) => BlocProvider<AddInMenuCubit>(
-                  create: (_) => AddInMenuCubit(AddMenuApiService()),
+                  create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
                   child: CampaignScreen(),),),
           );
         },
@@ -136,7 +137,7 @@ class MarketierMenuScreen extends StatelessWidget {
         label: 'Region',
         onTap: () {
           Navigator.push(context,MaterialPageRoute(
-              builder:(_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService()),
+              builder:(_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
                     child: RegionScreen(),
                   ),
             ),
@@ -151,7 +152,7 @@ class MarketierMenuScreen extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder:
-                  (_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService()),
+                  (_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
                     child: AreaScreen(),
                   ),
             ),

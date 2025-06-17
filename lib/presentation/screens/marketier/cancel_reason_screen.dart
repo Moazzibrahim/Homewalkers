@@ -20,7 +20,9 @@ class CancelReasonScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create:
-          (context) => GetCancelReasonCubit(CancelReasonApiService())..fetchCancelReasons(),
+          (context) =>
+              GetCancelReasonCubit(CancelReasonApiService())
+                ..fetchCancelReasons(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -58,10 +60,15 @@ class CancelReasonScreen extends StatelessWidget {
                           builder:
                               (_) => BlocProvider.value(
                                 value:
-                                    context.read<AddInMenuCubit>(), // استخدم نفس الـ cubit
+                                    context
+                                        .read<
+                                          AddInMenuCubit
+                                        >(), // استخدم نفس الـ cubit
                                 child: AddCancelReasonDialog(
                                   onAdd: (value) {
-                                    context.read<AddInMenuCubit>().addDeveloper(value);
+                                    context.read<AddInMenuCubit>().addDeveloper(
+                                      value,
+                                    );
                                   },
                                   title: "cancel reasons",
                                 ),
@@ -92,7 +99,10 @@ class CancelReasonScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: BlocBuilder<GetCancelReasonCubit, GetCancelReasonState>(
+                  child: BlocBuilder<
+                    GetCancelReasonCubit,
+                    GetCancelReasonState
+                  >(
                     builder: (context, state) {
                       if (state is GetCancelReasonLoading) {
                         return const Center(child: CircularProgressIndicator());
@@ -109,7 +119,10 @@ class CancelReasonScreen extends StatelessWidget {
                               (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final developer = dsvelopers[index];
-                            return _buildCommunicationCard(developer,Constants.maincolor,context,
+                            return _buildCommunicationCard(
+                              developer,
+                              Constants.maincolor,
+                              context,
                             );
                           },
                         );
@@ -209,12 +222,17 @@ class CancelReasonScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => UpdateDialog(
-                          onAdd: (value) {
-                            // هنا تنفذ العملية بعد الضغط على Add
-                            print("تمت الإضافة: $value");
-                          },
-                          title: "cancel reason",
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
+                          child: UpdateDialog(
+                            title: "cancel reason",
+                            onAdd: (value) {
+                              context.read<AddInMenuCubit>().updateCancelReason(
+                                value,
+                                campaignData.id.toString(),
+                              );
+                            },
+                          ),
                         ),
                   );
                 },

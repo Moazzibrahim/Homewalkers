@@ -12,7 +12,7 @@ import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_campaign_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/update_campaign_dialog.dart';
 
 class CampaignScreen extends StatelessWidget {
   const CampaignScreen({super.key});
@@ -21,7 +21,8 @@ class CampaignScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create:
-          (context) => GetCampaignsCubit(CampaignApiService())..fetchCampaigns(),
+          (context) =>
+              GetCampaignsCubit(CampaignApiService())..fetchCampaigns(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -59,10 +60,27 @@ class CampaignScreen extends StatelessWidget {
                           builder:
                               (_) => BlocProvider.value(
                                 value:
-                                    context.read<AddInMenuCubit>(), // استخدم نفس الـ cubit
+                                    context
+                                        .read<
+                                          AddInMenuCubit
+                                        >(), // استخدم نفس الـ cubit
                                 child: AddCampaignDialog(
-                                  onAdd: (value,date,cost,isactive,addby,updatedby) {
-                                    context.read<AddInMenuCubit>().addCampaign(value,date,isactive,cost,addby,updatedby);
+                                  onAdd: (
+                                    value,
+                                    date,
+                                    cost,
+                                    isactive,
+                                    addby,
+                                    updatedby,
+                                  ) {
+                                    context.read<AddInMenuCubit>().addCampaign(
+                                      value,
+                                      date,
+                                      isactive,
+                                      cost,
+                                      addby,
+                                      updatedby,
+                                    );
                                   },
                                   title: "camaign",
                                 ),
@@ -110,7 +128,10 @@ class CampaignScreen extends StatelessWidget {
                               (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final developer = dsvelopers[index];
-                            return _buildCommunicationCard(developer,Constants.maincolor,context,
+                            return _buildCommunicationCard(
+                              developer,
+                              Constants.maincolor,
+                              context,
                             );
                           },
                         );
@@ -137,6 +158,7 @@ class CampaignScreen extends StatelessWidget {
     final name = campaignData.campainName;
     final dateTime = DateTime.parse(campaignData.createdAt!);
     final formattedDate = Formatters.formatDate(dateTime);
+    final costtt=campaignData.cost;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -166,6 +188,30 @@ class CampaignScreen extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: Color(0xFFE5F4F5),
+                child: Icon(
+                  Icons.money,
+                  size: 16,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Cost : $costtt",
+                  style: GoogleFonts.montserrat(fontSize: 13),
                 ),
               ),
             ],
@@ -210,12 +256,17 @@ class CampaignScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => UpdateDialog(
-                          onAdd: (value) {
-                            // هنا تنفذ العملية بعد الضغط على Add
-                            print("تمت الإضافة: $value");
-                          },
-                          title: "campaign",
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
+                          child: UpdateCampaignDialog(
+                            title: "campaign",
+                            onAdd: (value,date,isactive,cost,addby,updatedby) {
+                              context.read<AddInMenuCubit>().updateCampaign(
+                                  value, date,cost,isactive,addby,updatedby,
+                                campaignData.id.toString(),
+                              );
+                            },
+                          ),
                         ),
                   );
                 },

@@ -13,7 +13,7 @@ import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_channel_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/update_channel_dialog.dart';
 
 class ChannelScreen extends StatelessWidget {
   const ChannelScreen({super.key});
@@ -60,10 +60,17 @@ class ChannelScreen extends StatelessWidget {
                           builder:
                               (_) => BlocProvider.value(
                                 value:
-                                  context.read<AddInMenuCubit>(), // استخدم نفس الـ cubit
+                                    context
+                                        .read<
+                                          AddInMenuCubit
+                                        >(), // استخدم نفس الـ cubit
                                 child: AddChannelDialog(
-                                onAdd: (name,code) {
-                                  context.read<AddInMenuCubit>().addChannel(name, code);},
+                                  onAdd: (name, code) {
+                                    context.read<AddInMenuCubit>().addChannel(
+                                      name,
+                                      code,
+                                    );
+                                  },
                                   title: "channel",
                                 ),
                               ),
@@ -110,7 +117,10 @@ class ChannelScreen extends StatelessWidget {
                               (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final project = projects[index];
-                            return _buildCommunicationCard(project,Constants.maincolor,context,
+                            return _buildCommunicationCard(
+                              project,
+                              Constants.maincolor,
+                              context,
                             );
                           },
                         );
@@ -137,7 +147,7 @@ class ChannelScreen extends StatelessWidget {
     final name = projectData.name;
     final dateTime = projectData.createdAt;
     final formattedDate = Formatters.formatDate(dateTime);
-    final code=projectData.code;
+    final code = projectData.code;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -235,12 +245,18 @@ class ChannelScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => UpdateDialog(
-                          onAdd: (value) {
-                            // هنا تنفذ العملية بعد الضغط على Add
-                            print("تمت الإضافة: $value");
-                          },
-                          title: "channel",
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
+                          child: UpdateChannelDialog(
+                            title: "channel",
+                            onAdd: (value, code) {
+                              context.read<AddInMenuCubit>().updateChannel(
+                                value, // new name
+                                code, // keep old code
+                                projectData.id.toString(),
+                              );
+                            },
+                          ),
                         ),
                   );
                 },

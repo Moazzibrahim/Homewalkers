@@ -12,7 +12,7 @@ import 'package:homewalkers_app/presentation/viewModels/area/cubit/get_area_cubi
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_area_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/update_area_dialog.dart';
 
 class AreaScreen extends StatelessWidget {
   const AreaScreen({super.key});
@@ -218,12 +218,18 @@ class AreaScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => UpdateDialog(
-                          onAdd: (value) {
-                            // هنا تنفذ العملية بعد الضغط على Add
-                            print("تمت الإضافة: $value");
-                          },
-                          title: "area",
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
+                          child: UpdateAreaDialog(
+                            title: "Area",
+                            onAdd: (value, regionid) {
+                              context.read<AddInMenuCubit>().updateArea(
+                                value,
+                                regionid, // new name
+                                developerData.id.toString(),
+                              );
+                            },
+                          ),
                         ),
                   );
                 },

@@ -20,8 +20,7 @@ class ProjectScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create:
-          (context) => ProjectsCubit(ProjectsApiService())..fetchProjects(),
+      create: (context) => ProjectsCubit(ProjectsApiService())..fetchProjects(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -59,10 +58,19 @@ class ProjectScreen extends StatelessWidget {
                           builder:
                               (_) => BlocProvider.value(
                                 value:
-                                  context.read<AddInMenuCubit>(), // استخدم نفس الـ cubit
+                                    context
+                                        .read<
+                                          AddInMenuCubit
+                                        >(), // استخدم نفس الـ cubit
                                 child: AddProjectDialog(
-                                onAdd: (name, developerId, cityId, area) {
-                                  context.read<AddInMenuCubit>().addProject(name, developerId, cityId, area);},
+                                  onAdd: (name, developerId, cityId, area) {
+                                    context.read<AddInMenuCubit>().addProject(
+                                      name,
+                                      developerId,
+                                      cityId,
+                                      area,
+                                    );
+                                  },
                                   title: "projects",
                                 ),
                               ),
@@ -109,7 +117,10 @@ class ProjectScreen extends StatelessWidget {
                               (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final project = projects[index];
-                            return _buildCommunicationCard(project,Constants.maincolor,context,
+                            return _buildCommunicationCard(
+                              project,
+                              Constants.maincolor,
+                              context,
                             );
                           },
                         );
@@ -127,6 +138,7 @@ class ProjectScreen extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildCommunicationCard(
     ProjectData projectData,
     Color mainColor,
@@ -208,12 +220,18 @@ class ProjectScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => UpdateDialog(
-                          onAdd: (value) {
-                            // هنا تنفذ العملية بعد الضغط على Add
-                            print("تمت الإضافة: $value");
-                          },
-                          title: "project",
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
+                          child: UpdateDialog(
+                            title: "project",
+                            onAdd: (value) {context.read<AddInMenuCubit>().updateProject(value,
+                                projectData.developer!.id.toString(),
+                                projectData.city!.id.toString(),
+                                projectData.area ?? '',
+                                projectData.id.toString(),
+                              );
+                            },
+                          ),
                         ),
                   );
                 },

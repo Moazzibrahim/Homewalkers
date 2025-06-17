@@ -206,16 +206,19 @@ class RegionScreen extends StatelessWidget {
                           ? Constants.maincolor
                           : Constants.mainDarkmodecolor,
                 ),
-                onPressed: () {
+              onPressed: () {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => UpdateDialog(
-                          onAdd: (value) {
-                            // هنا تنفذ العملية بعد الضغط على Add
-                            print("تمت الإضافة: $value");
-                          },
-                          title: "Region",
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
+                          child: UpdateDialog(
+                            title: "region",
+                            onAdd: (value) {context.read<AddInMenuCubit>().updateRegion(value,
+                                developerData.id.toString(),
+                              );
+                            },
+                          ),
                         ),
                   );
                 },

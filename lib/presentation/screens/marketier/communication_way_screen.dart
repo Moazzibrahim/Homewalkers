@@ -60,7 +60,9 @@ class CommunicationWayScreen extends StatelessWidget {
                               (_) => BlocProvider.value(
                                 value:
                                     context
-                                        .read<AddInMenuCubit>(), // استخدم نفس الـ cubit
+                                        .read<
+                                          AddInMenuCubit
+                                        >(), // استخدم نفس الـ cubit
                                 child: AddDialog(
                                   onAdd: (value) {
                                     context
@@ -96,7 +98,10 @@ class CommunicationWayScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: BlocBuilder<GetCommunicationWaysCubit,GetCommunicationWaysState>(
+                  child: BlocBuilder<
+                    GetCommunicationWaysCubit,
+                    GetCommunicationWaysState
+                  >(
                     builder: (context, state) {
                       if (state is GetCommunicationWaysLoading) {
                         return const Center(child: CircularProgressIndicator());
@@ -134,20 +139,19 @@ class CommunicationWayScreen extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildCommunicationCard(
     CommunicationWay communicationWay,
     Color mainColor,
     BuildContext context,
   ) {
     final name = communicationWay.name ?? 'No Name';
-    final dateTime =DateTime.parse(communicationWay.createdAt!);
-     final formattedDate = Formatters.formatDate(dateTime);
+    final dateTime = DateTime.parse(communicationWay.createdAt!);
+    final formattedDate = Formatters.formatDate(dateTime);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -217,12 +221,16 @@ class CommunicationWayScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => UpdateDialog(
-                          onAdd: (value) {
-                            // هنا تنفذ العملية بعد الضغط على Add
-                            print("تمت الإضافة: $value");
-                          },
-                          title: "Communication Way",
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
+                          child: UpdateDialog(
+                            title: "Communication Way",
+                            onAdd: (value) {
+                              context.read<AddInMenuCubit>().updateCommunicationWay(value,
+                                    communicationWay.id.toString(),
+                                  );
+                            },
+                          ),
                         ),
                   );
                 },
