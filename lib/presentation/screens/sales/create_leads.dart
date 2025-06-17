@@ -208,7 +208,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           return const CircularProgressIndicator();
                         } else if (state is ProjectsSuccess) {
                           final items =
-                              state.projectsModel.data
+                              state.projectsModel.data!
                                   .map((project) => project.name)
                                   .toList();
 

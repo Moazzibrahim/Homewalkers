@@ -76,7 +76,7 @@ class AddMenuApiService {
     String campaignName,
     String date,
     String cost,
-    String isActivate,
+    bool isActivate,
     String addBy,
     String updatedBy,
   ) async {
@@ -99,7 +99,7 @@ class AddMenuApiService {
   }
 
   Future<void> addArea(String area, String region) async {
-    const String url = '${Constants.baseUrl}/regions';
+    const String url = '${Constants.baseUrl}/Area';
     final body = {"Areaname": area, "Region": region};
     await postData(url: url, body: body);
   }

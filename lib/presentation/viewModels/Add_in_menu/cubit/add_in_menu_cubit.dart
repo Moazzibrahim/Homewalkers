@@ -54,7 +54,7 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
       emit(AddInMenuError(message: 'Failed to add cancel reason: $e'));
     }
   }
-  Future<void> addCampaign(String name, String date, String cost, String isActive, String addBy, String updatedBy) async {
+  Future<void> addCampaign(String name, String date, String cost, bool isActive, String addBy, String updatedBy) async {
     emit(AddInMenuLoading());
     try {
       await _apiService.postCampaign(name, date, cost, isActive, addBy, updatedBy);

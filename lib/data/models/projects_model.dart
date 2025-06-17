@@ -1,32 +1,37 @@
 class ProjectsModel {
-  final int results;
-  final Pagination pagination;
-  final List<ProjectData> data;
+  final int? results;
+  final Pagination? pagination;
+  final List<ProjectData>? data;
 
   ProjectsModel({
-    required this.results,
-    required this.pagination,
-    required this.data,
+    this.results,
+    this.pagination,
+    this.data,
   });
 
   factory ProjectsModel.fromJson(Map<String, dynamic> json) {
     return ProjectsModel(
       results: json['results'],
-      pagination: Pagination.fromJson(json['pagination']),
-      data: List<ProjectData>.from(json['data'].map((x) => ProjectData.fromJson(x))),
+      pagination: json['pagination'] != null
+          ? Pagination.fromJson(json['pagination'])
+          : null,
+      data: json['data'] != null
+          ? List<ProjectData>.from(
+              json['data'].map((x) => ProjectData.fromJson(x)))
+          : null,
     );
   }
 }
 
 class Pagination {
-  final int currentPage;
-  final int limit;
-  final int numberOfPages;
+  final int? currentPage;
+  final int? limit;
+  final int? numberOfPages;
 
   Pagination({
-    required this.currentPage,
-    required this.limit,
-    required this.numberOfPages,
+    this.currentPage,
+    this.limit,
+    this.numberOfPages,
   });
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
@@ -39,34 +44,36 @@ class Pagination {
 }
 
 class ProjectData {
-  final String id;
-  final String name;
-  final Developer developer;
-  final City city;
-  final String area;
-  final String createdAt;
-  final String updatedAt;
-  final int v;
-  final String isProjectActivate;
+  final String? id;
+  final String? name;
+  final Developer? developer;
+  final City? city;
+  final String? area;
+  final String? createdAt;
+  final String? updatedAt;
+  final int? v;
+  final String? isProjectActivate;
 
   ProjectData({
-    required this.id,
-    required this.name,
-    required this.developer,
-    required this.city,
-    required this.area,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.v,
-    required this.isProjectActivate,
+    this.id,
+    this.name,
+    this.developer,
+    this.city,
+    this.area,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+    this.isProjectActivate,
   });
 
   factory ProjectData.fromJson(Map<String, dynamic> json) {
     return ProjectData(
       id: json['_id'],
       name: json['name'],
-      developer: Developer.fromJson(json['developer']),
-      city: City.fromJson(json['city']),
+      developer: json['developer'] != null
+          ? Developer.fromJson(json['developer'])
+          : null,
+      city: json['city'] != null ? City.fromJson(json['city']) : null,
       area: json['area'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
@@ -77,12 +84,12 @@ class ProjectData {
 }
 
 class Developer {
-  final String id;
-  final String name;
+  final String? id;
+  final String? name;
 
   Developer({
-    required this.id,
-    required this.name,
+    this.id,
+    this.name,
   });
 
   factory Developer.fromJson(Map<String, dynamic> json) {
@@ -94,12 +101,12 @@ class Developer {
 }
 
 class City {
-  final String id;
-  final String name;
+  final String? id;
+  final String? name;
 
   City({
-    required this.id,
-    required this.name,
+    this.id,
+    this.name,
   });
 
   factory City.fromJson(Map<String, dynamic> json) {

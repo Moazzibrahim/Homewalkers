@@ -1,10 +1,16 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/core/utils/formatters.dart';
+import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
+import 'package:homewalkers_app/data/models/projects_model.dart';
+import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/add_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/add_project_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/update_dialog.dart';
 
@@ -13,88 +19,126 @@ class ProjectScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // backgroundColor: const Color(0xFFF4F4F4),
-      appBar: CustomAppBar(
-        title: "Project",
-        onBack: () {
-          Navigator.pop(context);
+    return BlocProvider(
+      create:
+          (context) => ProjectsCubit(ProjectsApiService())..fetchProjects(),
+      child: BlocListener<AddInMenuCubit, AddInMenuState>(
+        listener: (context, state) {
+          print("BlocListener Triggered: $state");
+          if (state is AddInMenuSuccess) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('added successfully')));
+            // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
+            context.read<ProjectsCubit>().fetchProjects();
+          } else if (state is AddInMenuError) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text(' error')));
+          }
         },
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 25),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder:
-                          (_) => AddDialog(
-                            onAdd: (value) {
-                              // هنا تنفذ العملية بعد الضغط على Add
-                              print("تمت الإضافة: $value");
-                            },
-                            title: "project",
-                          ),
-                    );
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text(
-                    "Add New Project",
-                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+        child: Scaffold(
+          appBar: CustomAppBar(
+            title: "projects",
+            onBack: () {
+              Navigator.pop(context);
+            },
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 25),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder:
+                              (_) => BlocProvider.value(
+                                value:
+                                  context.read<AddInMenuCubit>(), // استخدم نفس الـ cubit
+                                child: AddProjectDialog(
+                                onAdd: (name, developerId, cityId, area) {
+                                  context.read<AddInMenuCubit>().addProject(name, developerId, cityId, area);},
+                                  title: "projects",
+                                ),
+                              ),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text(
+                        "Add New project",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Constants.mainDarkmodecolor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: BlocBuilder<ProjectsCubit, ProjectsState>(
+                    builder: (context, state) {
+                      if (state is ProjectsLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (state is ProjectsSuccess) {
+                        final projects = state.projectsModel.data;
+                        if (projects!.isEmpty) {
+                          return const Center(
+                            child: Text('No projects Found.'),
+                          );
+                        }
+                        return ListView.separated(
+                          itemCount: projects.length,
+                          separatorBuilder:
+                              (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final project = projects[index];
+                            return _buildCommunicationCard(project,Constants.maincolor,context,
+                            );
+                          },
+                        );
+                      } else if (state is ProjectsError) {
+                        return Center(child: Text('Error: ${state.error}'));
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            _buildCommunicationCard(
-              "Mobile",
-              "23 April 2025 - 8:37 AM",
-              Constants.maincolor,
-              context,
-            ),
-            const SizedBox(height: 12),
-            _buildCommunicationCard(
-              "WhatsApp",
-              "23 April 2025 - 8:37 AM",
-              Constants.maincolor,
-              context,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
-
   Widget _buildCommunicationCard(
-    String name,
-    String dateTime,
+    ProjectData projectData,
     Color mainColor,
     BuildContext context,
   ) {
+    final name = projectData.name;
+    final dateTime = DateTime.parse(projectData.createdAt!);
+    final formattedDate = Formatters.formatDate(dateTime);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -115,7 +159,7 @@ class ProjectScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "project : $name",
+                  "project Name : $name",
                   style: GoogleFonts.montserrat(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -142,7 +186,7 @@ class ProjectScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "Creation Date : $dateTime",
+                  "Creation Date : $formattedDate",
                   style: GoogleFonts.montserrat(fontSize: 13),
                 ),
               ),
@@ -151,7 +195,6 @@ class ProjectScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.copy, size: 20, color: Colors.grey),
               const Spacer(),
               IconButton(
                 icon: Icon(

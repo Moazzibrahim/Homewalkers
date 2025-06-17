@@ -76,9 +76,15 @@ class MarketierMenuScreen extends StatelessWidget {
         icon: Icons.business_outlined,
         label: 'Project',
         onTap: () {
-          Navigator.push(
+        Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ProjectScreen()),
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create: (_) => AddInMenuCubit(AddMenuApiService()),
+                    child: ProjectScreen(),
+                  ),
+            ),
           );
         },
       ),
@@ -88,7 +94,13 @@ class MarketierMenuScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ChannelScreen()),
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create: (_) => AddInMenuCubit(AddMenuApiService()),
+                    child: ChannelScreen(),
+                  ),
+            ),
           );
         },
       ),
@@ -96,9 +108,14 @@ class MarketierMenuScreen extends StatelessWidget {
         icon: Icons.cancel_outlined,
         label: 'Cancel Reason',
         onTap: () {
-          Navigator.push(
+        Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const CancelReasonScreen()),
+            MaterialPageRoute(
+              builder: (_) => BlocProvider<AddInMenuCubit>(
+                    create: (_) => AddInMenuCubit(AddMenuApiService()),
+                    child: CancelReasonScreen(),
+                  ),
+            ),
           );
         },
       ),
@@ -108,7 +125,9 @@ class MarketierMenuScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const CampaignScreen()),
+            MaterialPageRoute( builder:  (_) => BlocProvider<AddInMenuCubit>(
+                  create: (_) => AddInMenuCubit(AddMenuApiService()),
+                  child: CampaignScreen(),),),
           );
         },
       ),
@@ -116,12 +135,8 @@ class MarketierMenuScreen extends StatelessWidget {
         icon: Icons.map_outlined,
         label: 'Region',
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService()),
+          Navigator.push(context,MaterialPageRoute(
+              builder:(_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService()),
                     child: RegionScreen(),
                   ),
             ),
@@ -134,7 +149,12 @@ class MarketierMenuScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AreaScreen()),
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService()),
+                    child: AreaScreen(),
+                  ),
+            ),
           );
         },
       ),

@@ -39,7 +39,7 @@ class RegionScreen extends StatelessWidget {
         },
         child: Scaffold(
           appBar: CustomAppBar(
-            title: "Revelopers",
+            title: "Regions",
             onBack: () {
               Navigator.pop(context);
             },
