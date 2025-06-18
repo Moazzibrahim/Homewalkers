@@ -305,21 +305,49 @@ class Campaign {
 }
 
 class LeadVersion {
-  final String? id;
-  final String? leadId;
+  final String? name;
+  final String? email;
+  final String? phone;
+  final String? projectName;
+  final String? developerName;
+  final String? cityName;
+  final String? channelName;
+  final String? campaignName;
+  final String? addedByName;
+  final String? communicationWay;
   final String? versionDate;
 
-  LeadVersion({this.id, this.leadId, this.versionDate});
+  LeadVersion({
+    this.name,
+    this.email,
+    this.phone,
+    this.projectName,
+    this.developerName,
+    this.cityName,
+    this.channelName,
+    this.campaignName,
+    this.addedByName,
+    this.communicationWay,
+    this.versionDate,
+  });
 
-  factory LeadVersion.fromJson(Map<String, dynamic>? json) {
-    if (json == null) return LeadVersion();
+  factory LeadVersion.fromJson(Map<String, dynamic> json) {
     return LeadVersion(
-      id: json['_id'],
-      leadId: json['lead_id'],
-      versionDate: json['version_date'],
+      name: json['name'],
+      email: json['email'],
+      phone: json['phone'],
+      projectName: json['project']?['name'],
+      developerName: json['project']?['developer']?['name'],
+      cityName: json['project']?['city']?['name'],
+      channelName: json['chanel']?['name'],
+      campaignName: json['campaign']?['CampainName'],
+      addedByName: json['addby']?['name'],
+      communicationWay: json['communicationway']?['name'],
+      versionDate: json['recordedAt'],
     );
   }
 }
+
 
 
 

@@ -1,5 +1,4 @@
 // leads_marketier_screen.dart
-
 // ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable
 import 'dart:developer';
 import 'package:flutter/material.dart';
@@ -78,11 +77,13 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
       }
     });
   }
+
   @override
   void dispose() {
     _nameSearchController.dispose(); // 🟡 مهم: التخلص من الـ controller
     super.dispose();
   }
+
   // 🟡 دالة مساعدة لتطبيق الفلاتر الشاملة (البحث + الفلاتر من الـ dialog)
   void _applyCurrentFilters() {
     context.read<GetLeadsMarketerCubit>().filterLeadsMarketer(
@@ -210,7 +211,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
   @override
   Widget build(BuildContext context) {
     bool isOutdated = false; // قد تحتاج لإعادة تقييمها لكل عنصر
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
@@ -367,7 +367,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                             );
                           },
                         );
-
                         if (filters != null) {
                           // 🟡 تحديث متغيرات الـ State بالفلتر الجديدة
                           setState(() {
@@ -757,7 +756,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                                     null;
                                                               }
                                                             }
-
                                                             final String
                                                             firstCommentText =
                                                                 firstCommentEntry
@@ -770,7 +768,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                                     ?.secondComment
                                                                     .text ??
                                                                 'No second comment available.';
-
                                                             // 🟡 منطق checkClearHistoryTime و isClearHistoryy
                                                             // يجب أن يكون له علاقة بعرض الكومنتات هنا، وليس له علاقة بالفلترة العامة
                                                             final firstCommentDate =
@@ -789,7 +786,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                                           .toString() ??
                                                                       "",
                                                                 )?.toUtc();
-
                                                             final bool
                                                             showFirstComment =
                                                                 isClearHistoryy !=
@@ -814,7 +810,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                                         .isAfter(
                                                                           clearHistoryTimee!,
                                                                         ));
-
                                                             // هذا الجزء يعرض آخر كومنت (سواء أول أو ثاني)
                                                             // وقد تحتاج لتعديله ليعرض جميع الكومنتات أو الكومنتات حسب تاريخ معين
                                                             // بناءً على منطق "Last Comment" اللي بتوضحه
@@ -840,7 +835,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                                 Text(
                                                                   showFirstComment
                                                                       ? firstCommentText
-                                                                      : 'Comment hidden by clear history.',
+                                                                      : 'no comments available',
                                                                   maxLines: 2,
                                                                   overflow:
                                                                       TextOverflow
@@ -866,7 +861,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                                 Text(
                                                                   showSecondComment
                                                                       ? secondCommentText
-                                                                      : 'Action hidden by clear history.',
+                                                                      : 'no actions available.',
                                                                   maxLines: 2,
                                                                   overflow:
                                                                       TextOverflow
@@ -1086,14 +1081,98 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                       ),
                                       SizedBox(height: 8),
                                       // 🟡 الزرار ده المفروض بيفتح صفحة تعديل Lead مش بس صورة
-                                      InkWell(
-                                        onTap: () {
-                                          // هنا هتفتح صفحة تعديل Lead لو عندك
-                                          print('Edit lead ${lead.name}');
-                                        },
-                                        child: Image.asset(
-                                          "assets/images/edit.png",
-                                        ),
+                                      Row(
+                                        children: [
+                                          InkWell(
+                                            onTap: () {
+                                              // هنا هتفتح صفحة تعديل Lead لو عندك
+                                              print('Edit lead ${lead.name}');
+                                            },
+                                            child: Image.asset(
+                                              "assets/images/edit.png",
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          InkWell(
+                                          onTap: () { 
+                                            showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header with icon and title
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
+                      child: Icon(Icons.copy, color: Colors.white),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      "Show Duplicate",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Profile section
+                Row(
+                  children: [
+                    Text(
+                      lead.name ?? "",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Lead Information :",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Lead Details
+                buildInfoRow(Icons.location_city, "Project", lead.allVersions!.first.projectName!),
+                buildInfoRow(Icons.settings, "Developer", lead.allVersions!.first.developerName!),
+                buildInfoRow(Icons.chat, "Communication Way",lead.allVersions!.first.communicationWay!),
+                buildInfoRow(Icons.date_range, "Creation Date",DateTime.parse( lead.allVersions!.first.versionDate!).toLocal().toString()),
+                buildInfoRow(Icons.device_hub, "Channel",lead.allVersions!.first.channelName!),
+                buildInfoRow(Icons.campaign, "Campaign", lead.allVersions!.first.campaignName!),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  },
+  child: CircleAvatar(
+    backgroundColor: Theme.of(context).brightness == Brightness.light
+        ? Constants.maincolor
+        : Constants.mainDarkmodecolor,
+    child: Icon(Icons.copy, color: Colors.white),
+  ),
+)
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -1117,4 +1196,23 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
       ),
     );
   }
+  Widget buildInfoRow(IconData icon, String title, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6.0),
+    child: Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.teal),
+        const SizedBox(width: 8),
+        Text(
+          "$title : ",
+          style: TextStyle(fontWeight: FontWeight.w500),
+        ),
+        Expanded(
+          child: Text(value, overflow: TextOverflow.ellipsis),
+        ),
+      ],
+    ),
+  );
+}
+
 }

@@ -6,7 +6,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
-import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
@@ -15,7 +15,7 @@ import 'package:homewalkers_app/presentation/widgets/custom_add_comment_sheet.da
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_change_stage_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart';
-import 'package:homewalkers_app/presentation/widgets/manager/assign_lead_dialog_manager.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/assign_lead_markter_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MarketerLeadDetailsScreen extends StatefulWidget {
@@ -192,8 +192,8 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                           Row(
                             children: [
                               BlocBuilder<
-                                GetManagerLeadsCubit,
-                                GetManagerLeadsState
+                                GetLeadsMarketerCubit,
+                                GetLeadsMarketerState
                               >(
                                 builder: (context, state) {
                                   return ElevatedButton(
@@ -222,14 +222,14 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                       ),
                                     ),
                                     onPressed:
-                                        state is GetManagerLeadsSuccess
+                                        state is GetLeadsMarketerSuccess
                                             ? () async {
                                               await showDialog(
                                                 context: context,
                                                 builder:
                                                     (
                                                       context,
-                                                    ) => AssignLeadDialogManager(
+                                                    ) => AssignLeadMarkterDialog(
                                                       leadIds: [widget.leedId],
                                                       leadId: widget.leedId,
                                                       mainColor:
@@ -242,7 +242,7 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                                                   .maincolor
                                                               : Constants
                                                                   .mainDarkmodecolor,
-                                                      leadResponse: state.leads,
+                                                      leadResponse: state.leadsResponse,
                                                     ),
                                               );
                                             }
