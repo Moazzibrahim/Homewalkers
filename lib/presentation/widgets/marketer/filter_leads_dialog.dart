@@ -1,12 +1,8 @@
+// filter_leads_dialog.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/data/data_sources/campaign_api_service.dart';
-import 'package:homewalkers_app/data/data_sources/communication_way_api_service.dart';
-import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
-import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
-import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
-import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
@@ -17,59 +13,88 @@ import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
-import 'package:country_picker/country_picker.dart';
+import 'package:country_picker/country_picker.dart'; // تأكد أن هذا المستورد موجود
 
-void showFilterDialogMarketer(BuildContext context) {
-  showDialog(
-    context: context,
-    builder:
-        (context) => MultiBlocProvider(
-          providers: [
-            BlocProvider(
-              create:
-                  (_) =>
-                      DevelopersCubit(DeveloperApiService())..getDevelopers(),
-            ),
-            BlocProvider(
-              create:
-                  (_) => ProjectsCubit(ProjectsApiService())..fetchProjects(),
-            ),
-            BlocProvider(
-              create: (_) => StagesCubit(StagesApiService())..fetchStages(),
-            ),
-            BlocProvider(
-              create:
-                  (_) => ChannelCubit(GetChannelsApiService())..fetchChannels(),
-            ),
-            BlocProvider(create: (_)=> GetCommunicationWaysCubit(CommunicationWayApiService())..fetchCommunicationWays()),
-            BlocProvider(create: (_)=> GetCampaignsCubit(CampaignApiService())..fetchCampaigns()),
-          ],
-          child: const FilterDialog(),
-        ),
-  );
-}
+// ❌ يمكنك حذف هذه الدالة showFilterDialogMarketer لأنها ستُستبدل في LeadsMarketierScreen
+// void showFilterDialogMarketer(BuildContext context) {
+//   showDialog(
+//     context: context,
+//     builder:
+//         (context) => MultiBlocProvider(
+//           providers: [
+//             BlocProvider(create: (_) => DevelopersCubit(DeveloperApiService())..getDevelopers()),
+//             // ... بقية الـ BlocProviders
+//           ],
+//           child: const FilterDialog(),
+//         ),
+//   );
+// }
+
 class FilterDialog extends StatefulWidget {
-  const FilterDialog({super.key});
+  // 🟡 جديد: لاستقبال القيم الأولية (الحالية) للفلاتر
+  final String? initialCountry;
+  final String? initialDeveloper;
+  final String? initialProject;
+  final String? initialStage;
+  final String? initialChannel;
+  final String? initialSales;
+  final String? initialCommunicationWay;
+  final String? initialCampaign;
+  final String? initialSearchName; // 🟡 لاستقبال نص البحث من الشاشة الرئيسية
+
+  const FilterDialog({
+    super.key,
+    this.initialCountry,
+    this.initialDeveloper,
+    this.initialProject,
+    this.initialStage,
+    this.initialChannel,
+    this.initialSales,
+    this.initialCommunicationWay,
+    this.initialCampaign,
+    this.initialSearchName,
+  });
+
   @override
   State<FilterDialog> createState() => _FilterDialogState();
 }
+
 class _FilterDialogState extends State<FilterDialog> {
-  final TextEditingController nameController = TextEditingController();
-  Country? selectedCountry;
-  String? selectedDeveloper;
-  String? selectedProject;
-  String? selectedStage;
-  String? selectedChannel;
-  String? selectedCommunicationWay;
-  String? selectedCampaign;
-  List<Country> countries = [];
-  String? selectedSales;
+  // 🟡 استخدم TextEditingController مع قيمة أولية
+  late TextEditingController _nameController;
+
+  String? _selectedCountry; // 🟡 تم تغيير الاسم ليكون أوضح
+  String? _selectedDeveloper;
+  String? _selectedProject;
+  String? _selectedStage;
+  String? _selectedChannel;
+  String? _selectedCommunicationWay;
+  String? _selectedCampaign;
+  String? _selectedSales;
 
   @override
   void initState() {
     super.initState();
-    context.read<GetLeadsMarketerCubit>().getLeadsByMarketer();
+    _nameController = TextEditingController(text: widget.initialSearchName); // 🟡 تهيئة بنص البحث الحالي
+    _selectedCountry = widget.initialCountry;
+    _selectedDeveloper = widget.initialDeveloper;
+    _selectedProject = widget.initialProject;
+    _selectedStage = widget.initialStage;
+    _selectedChannel = widget.initialChannel;
+    _selectedSales = widget.initialSales;
+    _selectedCommunicationWay = widget.initialCommunicationWay;
+    _selectedCampaign = widget.initialCampaign;
+
+    // ❌ احذف هذا الاستدعاء. الـ dialog لا يجلب بيانات Leads
+    // context.read<GetLeadsMarketerCubit>().getLeadsByMarketer();
   }
+
+  @override
+  void dispose() {
+    _nameController.dispose(); // 🟡 مهم: التخلص من الـ controller
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -98,12 +123,13 @@ class _FilterDialogState extends State<FilterDialog> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pop(context, null), // 🟡 إرجاع null عند الإغلاق
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              CustomTextField(hint: "Full Name", controller: nameController),
+              // 🟡 الـ CustomTextField ده هيستخدم كـ 'query' للبحث عن الاسم أو الايميل أو الرقم
+              CustomTextField(hint: "Search Name, Email, or Phone", controller: _nameController),
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: () {
@@ -112,7 +138,7 @@ class _FilterDialogState extends State<FilterDialog> {
                     showPhoneCode: true,
                     onSelect: (Country country) {
                       setState(() {
-                        selectedCountry = country;
+                        _selectedCountry = country.phoneCode; // 🟡 حفظ كود الهاتف فقط
                       });
                     },
                   );
@@ -130,7 +156,7 @@ class _FilterDialogState extends State<FilterDialog> {
                     children: [
                       Expanded(
                         child: Text(
-                          selectedCountry?.name ?? "Select Country",
+                          _selectedCountry ?? "Select Country", // 🟡 عرض الكود أو النص
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w400,
@@ -143,6 +169,7 @@ class _FilterDialogState extends State<FilterDialog> {
                 ),
               ),
               const SizedBox(height: 12),
+              // 🟡 CustomDropdownField لباقي الفلاتر
               BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
                 builder: (context, state) {
                   final salesList =
@@ -150,34 +177,30 @@ class _FilterDialogState extends State<FilterDialog> {
                   return CustomDropdownField(
                     hint: "Choose Sales",
                     items: salesList,
-                    value: selectedSales,
+                    value: _selectedSales,
                     onChanged: (value) {
-                      setState(() => selectedSales = value);
+                      setState(() => _selectedSales = value);
                     },
                   );
                 },
               ),
               const SizedBox(height: 12),
-              // 👇 Developer Dropdown باستخدام BlocBuilder
               BlocBuilder<DevelopersCubit, DevelopersState>(
                 builder: (context, state) {
                   if (state is DeveloperLoading) {
                     return const CircularProgressIndicator();
                   } else if (state is DeveloperSuccess) {
                     final items =
-                        state.developersModel.data
-                            .map((dev) => dev.name)
-                            .toList();
+                        state.developersModel.data.map((dev) => dev.name).toList();
                     return CustomDropdownField(
                       hint: "Choose Developer",
                       items: items,
-                      value: selectedDeveloper,
-                      onChanged:
-                          (val) => setState(() => selectedDeveloper = val),
+                      value: _selectedDeveloper,
+                      onChanged: (val) => setState(() => _selectedDeveloper = val),
                     );
                   } else if (state is DeveloperError) {
                     return Text(
-                      "خطأ: ${state.error}",
+                      "Error: ${state.error}",
                       style: const TextStyle(color: Colors.red),
                     );
                   } else {
@@ -186,25 +209,22 @@ class _FilterDialogState extends State<FilterDialog> {
                 },
               ),
               const SizedBox(height: 12),
-              // 👇 Developer Dropdown باستخدام BlocBuilder
               BlocBuilder<ChannelCubit, ChannelState>(
                 builder: (context, state) {
                   if (state is ChannelLoading) {
                     return const CircularProgressIndicator();
                   } else if (state is ChannelLoaded) {
                     final items =
-                        state.channelResponse.data
-                            .map((dev) => dev.name)
-                            .toList();
+                        state.channelResponse.data.map((dev) => dev.name).toList();
                     return CustomDropdownField(
                       hint: "Choose channel",
                       items: items,
-                      value: selectedChannel,
-                      onChanged: (val) => setState(() => selectedChannel = val),
+                      value: _selectedChannel,
+                      onChanged: (val) => setState(() => _selectedChannel = val),
                     );
                   } else if (state is ChannelError) {
                     return Text(
-                      "خطأ: ${state.message}",
+                      "Error: ${state.message}",
                       style: const TextStyle(color: Colors.red),
                     );
                   } else {
@@ -219,18 +239,16 @@ class _FilterDialogState extends State<FilterDialog> {
                     return const CircularProgressIndicator();
                   } else if (state is ProjectsSuccess) {
                     final items =
-                        state.projectsModel.data!
-                            .map((project) => project.name)
-                            .toList();
+                        state.projectsModel.data!.map((project) => project.name).toList();
                     return CustomDropdownField(
                       hint: "Choose Project",
                       items: items,
-                      value: selectedProject,
-                      onChanged: (val) => setState(() => selectedProject = val),
+                      value: _selectedProject,
+                      onChanged: (val) => setState(() => _selectedProject = val),
                     );
                   } else if (state is ProjectsError) {
                     return Text(
-                      "خطأ: ${state.error}",
+                      "Error: ${state.error}",
                       style: const TextStyle(color: Colors.red),
                     );
                   } else {
@@ -245,18 +263,16 @@ class _FilterDialogState extends State<FilterDialog> {
                     return const CircularProgressIndicator();
                   } else if (state is GetCampaignsSuccess) {
                     final items =
-                        state.campaigns.data!
-                            .map((campaign) =>campaign.campainName)
-                            .toList();
+                        state.campaigns.data!.map((campaign) =>campaign.campainName).toList();
                     return CustomDropdownField(
                       hint: "Choose Campaign",
                       items: items,
-                      value: selectedCampaign,
-                      onChanged: (val) => setState(() => selectedCampaign = val),
+                      value: _selectedCampaign,
+                      onChanged: (val) => setState(() => _selectedCampaign = val),
                     );
                   } else if (state is GetCampaignsFailure) {
                     return Text(
-                      "خطأ: ${state.message}",
+                      "Error: ${state.message}",
                       style: const TextStyle(color: Colors.red),
                     );
                   } else {
@@ -271,18 +287,16 @@ class _FilterDialogState extends State<FilterDialog> {
                     return const CircularProgressIndicator();
                   } else if (state is GetCommunicationWaysLoaded) {
                     final items =
-                        state.response.data!
-                            .map((communicationway) => communicationway.name)
-                            .toList();
+                        state.response.data!.map((communicationway) => communicationway.name).toList();
                     return CustomDropdownField(
                       hint: "Choose communication way",
                       items: items,
-                      value: selectedCommunicationWay,
-                      onChanged: (val) => setState(() => selectedCommunicationWay = val),
+                      value: _selectedCommunicationWay,
+                      onChanged: (val) => setState(() => _selectedCommunicationWay = val),
                     );
                   } else if (state is GetCommunicationWaysError) {
                     return Text(
-                      "خطأ: ${state.message}",
+                      "Error: ${state.message}",
                       style: const TextStyle(color: Colors.red),
                     );
                   } else {
@@ -301,16 +315,16 @@ class _FilterDialogState extends State<FilterDialog> {
                     return CustomDropdownField(
                       hint: "Choose Stage",
                       items: items,
-                      value: selectedStage,
+                      value: _selectedStage,
                       onChanged: (value) {
                         setState(() {
-                          selectedStage = value;
+                          _selectedStage = value;
                         });
                       },
                     );
                   } else if (state is StagesError) {
                     return Text(
-                      "خطأ: ${state.message}",
+                      "Error: ${state.message}",
                       style: const TextStyle(color: Colors.red),
                     );
                   } else {
@@ -338,15 +352,27 @@ class _FilterDialogState extends State<FilterDialog> {
                       ),
                       onPressed: () {
                         setState(() {
-                          nameController.clear();
-                          selectedCountry = null;
-                          selectedDeveloper = null;
-                          selectedProject = null;
-                          selectedStage = null;
-                          selectedChannel = null;
-                          selectedSales = null;
-                          selectedCommunicationWay = null;
-                          selectedCampaign = null;
+                          _nameController.clear();
+                          _selectedCountry = null;
+                          _selectedDeveloper = null;
+                          _selectedProject = null;
+                          _selectedStage = null;
+                          _selectedChannel = null;
+                          _selectedSales = null;
+                          _selectedCommunicationWay = null;
+                          _selectedCampaign = null;
+                        });
+                        // 🟡 عند الـ Reset، نرجع قيم فارغة (أو null) للشاشة الرئيسية ونقفل الـ Dialog
+                        Navigator.pop(context, {
+                          'name': null,
+                          'country': null,
+                          'developer': null,
+                          'project': null,
+                          'stage': null,
+                          'channel': null,
+                          'sales': null,
+                          'communicationWay': null,
+                          'campaign': null,
                         });
                       },
                       child: const Text(
@@ -363,21 +389,20 @@ class _FilterDialogState extends State<FilterDialog> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        context.read<GetLeadsMarketerCubit>().filterLeadsMarketer(
-                          name:
-                              nameController.text.trim().isEmpty
-                                  ? null
-                                  : nameController.text.trim(),
-                          country: selectedCountry?.phoneCode, // مثل: "20"
-                          developer: selectedDeveloper,
-                          project: selectedProject,
-                          stage: selectedStage,
-                          channel: selectedChannel,
-                          sales: selectedSales,
-                          communicationWay: selectedCommunicationWay,
-                          campaign: selectedCampaign
-                        );
-                        Navigator.pop(context); // ✅ اقفل الـDialog بعد التطبيق
+                        // 🟡 عند الـ Apply، نرجع كل قيم الفلاتر المختارة
+                        Navigator.pop(context, {
+                          'name': _nameController.text.trim().isEmpty ? null : _nameController.text.trim(),
+                          'country': _selectedCountry,
+                          'developer': _selectedDeveloper,
+                          'project': _selectedProject,
+                          'stage': _selectedStage,
+                          'channel': _selectedChannel,
+                          'sales': _selectedSales,
+                          'communicationWay': _selectedCommunicationWay,
+                          'campaign': _selectedCampaign,
+                        });
+                        // ❌ لا تستدعي filterLeadsMarketer هنا. الشاشة الرئيسية هي اللي هتستدعيها.
+                        // context.read<GetLeadsMarketerCubit>().filterLeadsMarketer(...)
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
