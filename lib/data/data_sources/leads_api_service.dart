@@ -247,11 +247,9 @@ class GetLeadsService {
       if (savedEmail == null) {
         throw Exception("No saved email found.");
       }
-
       final url = Uri.parse(
-        '${Constants.baseUrl}/users/GetAllLeadsAddedByUser?email=$savedEmail&leadisactive=false',
+        '${Constants.baseUrl}/users?leadisactive=false',
       );
-
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
