@@ -3,10 +3,13 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
+import 'package:homewalkers_app/data/models/all_sales_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
-import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -53,6 +56,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                   LeadCommentsCubit(GetAllLeadCommentsApiService())
                     ..fetchLeadComments(widget.leadId!),
         ),
+        BlocProvider(create: (_)=> SalesCubit(GetAllSalesApiService())..fetchAllSales()),
       ],
       child: Builder(
         builder: (dialogContext) {
@@ -66,21 +70,21 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
+                      BlocBuilder<SalesCubit, SalesState>(
                       builder: (context, state) {
-                        if (state is GetManagerLeadsLoading) {
+                        if (state is SalesLoading) {
                           return const Center(
                             child: CircularProgressIndicator(),
                           );
-                        } else if (state is GetManagerLeadsSuccess &&
-                            state.leads.data != null) {
-                          final uniqueSalesMap = <String, LeadData>{};
-                          for (var sale in state.leads.data!) {
-                            final user = sale.sales?.userlog;
+                        } else if (state is SalesLoaded &&
+                            state.salesData.data != null) {
+                          final uniqueSalesMap = <String, SalesData>{};
+                          for (var sale in state.salesData.data!) {
+                            final user = sale.userlog;
                             if (user != null &&
                                 (user.role == "Sales" ||
                                     user.role == "Team Leader")) {
-                              uniqueSalesMap[sale.sales!.id!] = sale;
+                              uniqueSalesMap[sale.id!] = sale;
                             }
                           }
                           final salesOnly = uniqueSalesMap.values.toList();
@@ -92,14 +96,14 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                           return Column(
                             children:
                                 salesOnly.map((sale) {
-                                  final userId = sale.sales!.id!;
+                                  final userId = sale.id!;
                                   return ListTile(
                                     title: Text(
-                                      sale.sales?.userlog?.name ??
+                                      sale.userlog?.name ??
                                           "Unnamed Sales",
                                     ),
                                     subtitle: Text(
-                                      "${sale.sales?.userlog?.role}",
+                                      "${sale.userlog?.role}",
                                       style: TextStyle(color: widget.mainColor),
                                     ),
                                     trailing: Checkbox(
@@ -123,7 +127,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                   );
                                 }).toList(),
                           );
-                        } else if (state is GetManagerLeadsFailure) {
+                        } else if (state is SalesError) {
                           return Text(state.message);
                         } else {
                           return const Text(
@@ -132,7 +136,6 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                         }
                       },
                     ),
-
                     // 2. إضافة واجهة المستخدم للـ Checkbox هنا
                     CheckboxListTile(
                       title: const Text("Clear History"),

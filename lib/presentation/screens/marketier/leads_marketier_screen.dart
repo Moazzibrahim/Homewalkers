@@ -10,6 +10,7 @@ import 'package:homewalkers_app/data/data_sources/campaign_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/communication_way_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
@@ -22,6 +23,7 @@ import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/communication_ways/cubit/get_communication_ways_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
@@ -348,6 +350,9 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                         CampaignApiService(),
                                       )..fetchCampaigns(),
                                 ),
+                                  BlocProvider(
+                                  create:
+                                    (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),),
                               ],
                               child: FilterDialog(
                                 // 🟡 تمرير القيم الحالية للـ dialog عشان يعرضها

@@ -1,39 +1,40 @@
 class AllSalesModel {
-  final int results;
-  final Pagination pagination;
-  final List<SalesData> data;
+  final int? results;
+  final Pagination? pagination;
+  final List<SalesData>? data;
 
   AllSalesModel({
-    required this.results,
-    required this.pagination,
-    required this.data,
+    this.results,
+    this.pagination,
+    this.data,
   });
 
   factory AllSalesModel.fromJson(Map<String, dynamic> json) {
     return AllSalesModel(
       results: json['results'],
-      pagination: Pagination.fromJson(json['pagination']),
-      data: List<SalesData>.from(
-          json['data'].map((item) => SalesData.fromJson(item))),
+      pagination: json['pagination'] != null ? Pagination.fromJson(json['pagination']) : null,
+      data: json['data'] != null
+          ? List<SalesData>.from(json['data'].map((item) => SalesData.fromJson(item)))
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
         'results': results,
-        'pagination': pagination.toJson(),
-        'data': data.map((e) => e.toJson()).toList(),
+        'pagination': pagination?.toJson(),
+        'data': data?.map((e) => e.toJson()).toList(),
       };
 }
 
 class Pagination {
-  final int currentPage;
-  final int limit;
-  final int numberOfPages;
+  final int? currentPage;
+  final int? limit;
+  final int? numberOfPages;
 
   Pagination({
-    required this.currentPage,
-    required this.limit,
-    required this.numberOfPages,
+    this.currentPage,
+    this.limit,
+    this.numberOfPages,
   });
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
@@ -52,52 +53,54 @@ class Pagination {
 }
 
 class SalesData {
-  final String id;
-  final String name;
-  final List<City> city;
-  final String notes;
-  final UserLogsModel userlog;
-  final DateTime lastAssigned;
-  final int maxLeadsPerProject;
-  final int assignedLeads;
-  final TeamLeaderModel teamleader;
-  final Manager manager;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final int v; // corresponds to __v
-  final String salesIsActivate;
+  final String? id;
+  final String? name;
+  final List<City>? city;
+  final String? notes;
+  final UserLogsModel? userlog;
+  final DateTime? lastAssigned;
+  final int? maxLeadsPerProject;
+  final int? assignedLeads;
+  final TeamLeaderModel? teamleader;
+  final Manager? manager;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final int? v;
+  final String? salesIsActivate;
 
   SalesData({
-    required this.id,
-    required this.name,
-    required this.city,
-    required this.notes,
-    required this.userlog,
-    required this.lastAssigned,
-    required this.maxLeadsPerProject,
-    required this.assignedLeads,
-    required this.teamleader,
-    required this.manager,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.v,
-    required this.salesIsActivate,
+    this.id,
+    this.name,
+    this.city,
+    this.notes,
+    this.userlog,
+    this.lastAssigned,
+    this.maxLeadsPerProject,
+    this.assignedLeads,
+    this.teamleader,
+    this.manager,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+    this.salesIsActivate,
   });
 
   factory SalesData.fromJson(Map<String, dynamic> json) {
     return SalesData(
       id: json['_id'],
       name: json['name'],
-      city: List<City>.from(json['city'].map((x) => City.fromJson(x))),
+      city: json['city'] != null
+          ? List<City>.from(json['city'].map((x) => City.fromJson(x)))
+          : null,
       notes: json['notes'],
-      userlog: UserLogsModel.fromJson(json['userlog']),
-      lastAssigned: DateTime.parse(json['lastAssigned']),
+      userlog: json['userlog'] != null ? UserLogsModel.fromJson(json['userlog']) : null,
+      lastAssigned: json['lastAssigned'] != null ? DateTime.parse(json['lastAssigned']) : null,
       maxLeadsPerProject: json['maxLeadsPerProject'],
       assignedLeads: json['assignedLeads'],
-      teamleader: TeamLeaderModel.fromJson(json['teamleader']),
-      manager: Manager.fromJson(json['Manager']),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      teamleader: json['teamleader'] != null ? TeamLeaderModel.fromJson(json['teamleader']) : null,
+      manager: json['Manager'] != null ? Manager.fromJson(json['Manager']) : null,
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
       v: json['__v'],
       salesIsActivate: json['salesisactivate'],
     );
@@ -106,28 +109,28 @@ class SalesData {
   Map<String, dynamic> toJson() => {
         '_id': id,
         'name': name,
-        'city': city.map((e) => e.toJson()).toList(),
+        'city': city?.map((e) => e.toJson()).toList(),
         'notes': notes,
-        'userlog': userlog.toJson(),
-        'lastAssigned': lastAssigned.toIso8601String(),
+        'userlog': userlog?.toJson(),
+        'lastAssigned': lastAssigned?.toIso8601String(),
         'maxLeadsPerProject': maxLeadsPerProject,
         'assignedLeads': assignedLeads,
-        'teamleader': teamleader.toJson(),
-        'Manager': manager.toJson(),
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
+        'teamleader': teamleader?.toJson(),
+        'Manager': manager?.toJson(),
+        'createdAt': createdAt?.toIso8601String(),
+        'updatedAt': updatedAt?.toIso8601String(),
         '__v': v,
         'salesisactivate': salesIsActivate,
       };
 }
 
 class City {
-  final String id;
-  final String name;
+  final String? id;
+  final String? name;
 
   City({
-    required this.id,
-    required this.name,
+    this.id,
+    this.name,
   });
 
   factory City.fromJson(Map<String, dynamic> json) {
@@ -144,20 +147,20 @@ class City {
 }
 
 class UserLogsModel {
-  final String id;
-  final String name;
-  final String email;
-  final String phone;
-  final String profileImg;
-  final String role;
+  final String? id;
+  final String? name;
+  final String? email;
+  final String? phone;
+  final String? profileImg;
+  final String? role;
 
   UserLogsModel({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.phone,
-    required this.profileImg,
-    required this.role,
+    this.id,
+    this.name,
+    this.email,
+    this.phone,
+    this.profileImg,
+    this.role,
   });
 
   factory UserLogsModel.fromJson(Map<String, dynamic> json) {
@@ -181,19 +184,19 @@ class UserLogsModel {
       };
 }
 
-class TeamLeaderModel { 
-  final String id;
-  final String name;
-  final String email;
-  final String profileImg;
-  final String role;
+class TeamLeaderModel {
+  final String? id;
+  final String? name;
+  final String? email;
+  final String? profileImg;
+  final String? role;
 
   TeamLeaderModel({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.profileImg,
-    required this.role,
+    this.id,
+    this.name,
+    this.email,
+    this.profileImg,
+    this.role,
   });
 
   factory TeamLeaderModel.fromJson(Map<String, dynamic> json) {
@@ -216,18 +219,18 @@ class TeamLeaderModel {
 }
 
 class Manager {
-  final String id;
-  final String name;
-  final String email;
-  final String profileImg;
-  final String role;
+  final String? id;
+  final String? name;
+  final String? email;
+  final String? profileImg;
+  final String? role;
 
   Manager({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.profileImg,
-    required this.role,
+    this.id,
+    this.name,
+    this.email,
+    this.profileImg,
+    this.role,
   });
 
   factory Manager.fromJson(Map<String, dynamic> json) {

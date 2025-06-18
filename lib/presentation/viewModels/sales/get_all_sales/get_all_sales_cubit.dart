@@ -26,4 +26,18 @@ class SalesCubit extends Cubit<SalesState> {
       emit(SalesError(e.toString()));
     }
   }
+  Future<void> fetchAllSales() async {
+    emit(SalesLoading());
+    try {
+      // هنا نفترض انك بتجيب userlogId من SharedPreferences أو أي مصدر آخر
+      final salesData = await salesRepository.fetchAllSales();
+      if (salesData != null) {
+        emit(SalesLoaded(salesData));
+      } else {
+        emit(SalesError('Failed to fetch sales data'));
+      }
+    } catch (e) {
+      emit(SalesError(e.toString()));
+    }
+  }
 }
