@@ -235,17 +235,20 @@ class AreaScreen extends StatelessWidget {
                 },
               ),
               InkWell(
-                onTap: () {
+              onTap: () {
                   showDialog(
                     context: context,
                     builder:
-                        (context) => DeleteDialog(
-                          onCancel: () => Navigator.of(context).pop(),
-                          onConfirm: () {
-                            // تنفيذ الحذف
-                            Navigator.of(context).pop();
-                          },
-                          title: "area",
+                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
+                          child: DeleteDialog(
+                            onCancel: () => Navigator.of(context).pop(),
+                            onConfirm: () {
+                              // تنفيذ الحذف
+                              Navigator.of(context).pop();
+                              context.read<AddInMenuCubit>().deleteArea(developerData.id.toString(),);
+                            },
+                            title: "area",
+                          ),
                         ),
                   );
                 },

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/add_menu_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/marketer/delete_menu_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/update_menu_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/login_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/area_screen.dart';
@@ -50,7 +51,7 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
+                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
                     child: CommunicationWayScreen(),
                   ),
             ),
@@ -66,7 +67,7 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
+                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
                     child: DeveloperScreen(),
                   ),
             ),
@@ -82,7 +83,7 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
+                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
                     child: ProjectScreen(),
                   ),
             ),
@@ -98,7 +99,7 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
+                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
                     child: ChannelScreen(),
                   ),
             ),
@@ -113,7 +114,7 @@ class MarketierMenuScreen extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
+                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
                     child: CancelReasonScreen(),
                   ),
             ),
@@ -127,7 +128,7 @@ class MarketierMenuScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute( builder:  (_) => BlocProvider<AddInMenuCubit>(
-                  create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
+                  create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
                   child: CampaignScreen(),),),
           );
         },
@@ -137,7 +138,7 @@ class MarketierMenuScreen extends StatelessWidget {
         label: 'Region',
         onTap: () {
           Navigator.push(context,MaterialPageRoute(
-              builder:(_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
+              builder:(_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
                     child: RegionScreen(),
                   ),
             ),
@@ -152,7 +153,7 @@ class MarketierMenuScreen extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder:
-                  (_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService()),
+                  (_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
                     child: AreaScreen(),
                   ),
             ),

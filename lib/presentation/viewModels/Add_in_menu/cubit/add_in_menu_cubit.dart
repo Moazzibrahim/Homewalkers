@@ -1,14 +1,16 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/add_menu_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/marketer/delete_menu_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/update_menu_api_service.dart';
 part 'add_in_menu_state.dart';
 
 class AddInMenuCubit extends Cubit<AddInMenuState> {
   final AddMenuApiService _apiService;
   final UpdateMenuApiService _updateApiService;
+  final DeleteMenuApiService _deleteApiService;
 
-  AddInMenuCubit(this._apiService,this._updateApiService) : super(AddInMenuInitial());
+  AddInMenuCubit(this._apiService,this._updateApiService,this._deleteApiService) : super(AddInMenuInitial());
 
   Future<void> addCommunicationWay(String name) async {
     emit(AddInMenuLoading());
@@ -203,4 +205,85 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
       emit(AddInMenuError(message: 'Failed to update area: $e'));
     }
   }
+  // ----------- Delete Methods -----------
+
+Future<void> deleteCommunicationWay(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteCommunicationWay(id);
+    emit(AddInMenuSuccess(message: 'Communication way deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete communication way: $e'));
+  }
+}
+
+Future<void> deleteDeveloper(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteDeveloper(id);
+    emit(AddInMenuSuccess(message: 'Developer deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete developer: $e'));
+  }
+}
+
+Future<void> deleteProject(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteProject(id);
+    emit(AddInMenuSuccess(message: 'Project deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete project: $e'));
+  }
+}
+
+Future<void> deleteChannel(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteChannel(id);
+    emit(AddInMenuSuccess(message: 'Channel deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete channel: $e'));
+  }
+}
+
+Future<void> deleteCancelReason(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteCancelReason(id);
+    emit(AddInMenuSuccess(message: 'Cancel reason deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete cancel reason: $e'));
+  }
+}
+
+Future<void> deleteCampaign(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteCampaign(id);
+    emit(AddInMenuSuccess(message: 'Campaign deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete campaign: $e'));
+  }
+}
+
+Future<void> deleteRegion(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteRegion(id);
+    emit(AddInMenuSuccess(message: 'Region deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete region: $e'));
+  }
+}
+
+Future<void> deleteArea(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteArea(id);
+    emit(AddInMenuSuccess(message: 'Area deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete area: $e'));
+  }
+}
 }

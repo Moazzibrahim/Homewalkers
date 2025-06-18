@@ -240,13 +240,16 @@ class CommunicationWayScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (context) => DeleteDialog(
-                          onCancel: () => Navigator.of(context).pop(),
-                          onConfirm: () {
-                            // تنفيذ الحذف
-                            Navigator.of(context).pop();
-                          },
-                          title: "Communication Way",
+                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
+                          child: DeleteDialog(
+                            onCancel: () => Navigator.of(context).pop(),
+                            onConfirm: () {
+                              // تنفيذ الحذف
+                              Navigator.of(context).pop();
+                              context.read<AddInMenuCubit>().deleteCommunicationWay(communicationWay.id.toString(),);
+                            },
+                            title: "Communication Way",
+                          ),
                         ),
                   );
                 },

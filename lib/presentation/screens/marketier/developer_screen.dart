@@ -232,17 +232,20 @@ class DeveloperScreen extends StatelessWidget {
                 },
               ),
               InkWell(
-                onTap: () {
+              onTap: () {
                   showDialog(
                     context: context,
                     builder:
-                        (context) => DeleteDialog(
-                          onCancel: () => Navigator.of(context).pop(),
-                          onConfirm: () {
-                            // تنفيذ الحذف
-                            Navigator.of(context).pop();
-                          },
-                          title: "Developer",
+                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
+                          child: DeleteDialog(
+                            onCancel: () => Navigator.of(context).pop(),
+                            onConfirm: () {
+                              // تنفيذ الحذف
+                              Navigator.of(context).pop();
+                              context.read<AddInMenuCubit>().deleteDeveloper(developerData.id.toString(),);
+                            },
+                            title: "Developer",
+                          ),
                         ),
                   );
                 },

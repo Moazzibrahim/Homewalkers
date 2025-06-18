@@ -224,17 +224,19 @@ class RegionScreen extends StatelessWidget {
                 },
               ),
               InkWell(
-                onTap: () {
+              onTap: () {
                   showDialog(
                     context: context,
-                    builder:
-                        (context) => DeleteDialog(
-                          onCancel: () => Navigator.of(context).pop(),
-                          onConfirm: () {
-                            // تنفيذ الحذف
-                            Navigator.of(context).pop();
-                          },
-                          title: "Region",
+                    builder:(_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
+                          child: DeleteDialog(
+                            onCancel: () => Navigator.of(context).pop(),
+                            onConfirm: () {
+                              // تنفيذ الحذف
+                              Navigator.of(context).pop();
+                              context.read<AddInMenuCubit>().deleteRegion(developerData.id.toString(),);
+                            },
+                            title: "region",
+                          ),
                         ),
                   );
                 },
