@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -17,6 +18,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubi
 import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
 import 'package:country_picker/country_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void showFilterDialogManager(BuildContext context) {
   showDialog(
@@ -66,11 +68,21 @@ class _FilterDialogState extends State<FilterDialog> {
   String? selectedChannel;
   List<Country> countries = [];
   String? selectedSales;
+  String? managerId; // لازم تكون nullable ومتغيرة عادية
 
   @override
   void initState() {
     super.initState();
     context.read<GetManagerLeadsCubit>().getLeadsByManager();
+    _loadManagerId(); // استدعاء الدالة async
+  }
+
+  Future<void> _loadManagerId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      managerId = prefs.getString("managerIdspecific");
+    });
+    print("managerId: $managerId");
   }
 
   @override
@@ -151,8 +163,10 @@ class _FilterDialogState extends State<FilterDialog> {
                   if (state is SalesLoaded) {
                     final filteredSales =
                         state.salesData.data?.where((sales) {
-                          final role = sales.userlog?.role?.toLowerCase();
-                          return role == 'sales' || role == 'team leader';
+                          final role = sales.userlog?.role?.toLowerCase();              
+                          final salesManagerId = sales.manager?.id?.toString();
+                            return (role == 'sales' || role == 'team leader') &&
+                          (salesManagerId == managerId);
                         }).toList() ??
                         [];
                     return CustomDropdownField(

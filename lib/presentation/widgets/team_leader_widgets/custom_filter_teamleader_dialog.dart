@@ -3,18 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
 import 'package:country_picker/country_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void showFilterDialogTeamLeader(
   BuildContext context,
@@ -42,6 +46,10 @@ void showFilterDialogTeamLeader(
               create:
                   (_) => ChannelCubit(GetChannelsApiService())..fetchChannels(),
             ),
+            BlocProvider(
+              create:
+                  (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+            ),
           ],
           child: const FilterDialog(),
         ),
@@ -64,11 +72,21 @@ class _FilterDialogState extends State<FilterDialog> {
   String? selectedChannel;
   List<Country> countries = [];
   String? selectedSales;
+  String? teamleaderid;
 
   @override
   void initState() {
     super.initState();
     context.read<GetLeadsTeamLeaderCubit>().getLeadsByTeamLeader();
+    _loadTeamLeaderId();
+  }
+
+  Future<void> _loadTeamLeaderId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      teamleaderid = prefs.getString("teamLeaderIddspecific");
+    });
+    debugPrint("teamleaderid: $teamleaderid");
   }
 
   @override
@@ -144,18 +162,32 @@ class _FilterDialogState extends State<FilterDialog> {
                 ),
               ),
               const SizedBox(height: 12),
-              BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
+              BlocBuilder<SalesCubit, SalesState>(
                 builder: (context, state) {
-                  final salesList =
-                      context.read<GetLeadsTeamLeaderCubit>().salesNames;
-                  return CustomDropdownField(
-                    hint: "Choose Sales",
-                    items: salesList,
-                    value: selectedSales,
-                    onChanged: (value) {
-                      setState(() => selectedSales = value);
-                    },
-                  );
+                  if (state is SalesLoaded) {
+                    final filteredSales =
+                        state.salesData.data?.where((sales) {
+                          final role = sales.userlog?.role?.toLowerCase();
+                          final salesTeamleaderId =
+                              sales.teamleader?.id?.toString();
+                          return (role == 'sales') &&
+                              (salesTeamleaderId == teamleaderid);
+                        }).toList() ??
+                        [];
+                    return CustomDropdownField(
+                      hint: "Choose Sales",
+                      items: filteredSales.map((e) => e.name ?? '').toList(),
+                      value: selectedSales,
+                      onChanged: (value) {
+                        setState(() => selectedSales = value);
+                      },
+                    );
+                  } else if (state is SalesLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is SalesError) {
+                    return Text("Error: ${state.message}");
+                  }
+                  return const SizedBox(); // Default empty widget
                 },
               ),
               const SizedBox(height: 12),

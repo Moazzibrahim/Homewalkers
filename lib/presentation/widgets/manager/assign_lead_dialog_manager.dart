@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, avoid_print
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -34,9 +34,23 @@ class AssignLeadDialogManager extends StatefulWidget {
 class _AssignDialogState extends State<AssignLeadDialogManager> {
   String? selectedSalesId;
   Map<String, bool> selectedSales = {};
-
   // 1. إضافة متغير الحالة للـ Checkbox
   bool clearHistory = false;
+  String? managerId;
+  Future<void> _loadManagerId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      managerId = prefs.getString("managerIdspecific");
+    });
+    print("managerId: $managerId");
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadManagerId(); // تحميل معرف المدير عند بدء الحالة
+    log("Manager ID loaded: $managerId");
+  }
 
   Future<void> saveClearHistoryTime() async {
     final prefs = await SharedPreferences.getInstance();
@@ -56,7 +70,9 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                   LeadCommentsCubit(GetAllLeadCommentsApiService())
                     ..fetchLeadComments(widget.leadId!),
         ),
-        BlocProvider(create: (_)=> SalesCubit(GetAllSalesApiService())..fetchAllSales()),
+        BlocProvider(
+          create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+        ),
       ],
       child: Builder(
         builder: (dialogContext) {
@@ -70,7 +86,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                      BlocBuilder<SalesCubit, SalesState>(
+                    BlocBuilder<SalesCubit, SalesState>(
                       builder: (context, state) {
                         if (state is SalesLoading) {
                           return const Center(
@@ -80,8 +96,9 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                             state.salesData.data != null) {
                           final uniqueSalesMap = <String, SalesData>{};
                           for (var sale in state.salesData.data!) {
+                            final salesManagerId = sale.manager?.id?.toString();
                             final user = sale.userlog;
-                            if (user != null &&
+                            if (user != null && salesManagerId == managerId &&
                                 (user.role == "Sales" ||
                                     user.role == "Team Leader")) {
                               uniqueSalesMap[sale.id!] = sale;
@@ -99,8 +116,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                   final userId = sale.id!;
                                   return ListTile(
                                     title: Text(
-                                      sale.userlog?.name ??
-                                          "Unnamed Sales",
+                                      sale.userlog?.name ?? "Unnamed Sales",
                                     ),
                                     subtitle: Text(
                                       "${sale.userlog?.role}",
