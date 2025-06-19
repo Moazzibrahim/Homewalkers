@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
-import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/team_leader/get_leads_count.dart';
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_count_in_team_leader_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
@@ -48,7 +48,9 @@ void showFilterDialogTeamLeader(
             ),
             BlocProvider(
               create:
-                  (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+                  (context) =>
+                      GetLeadsCountInTeamLeaderCubit(GetLeadsCountApiService())
+                        ..fetchLeadsCount(),
             ),
           ],
           child: const FilterDialog(),
@@ -142,7 +144,12 @@ class _FilterDialogState extends State<FilterDialog> {
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black),
+                    border: Border.all(
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Colors.black
+                              : Colors.grey,
+                    ),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
@@ -162,29 +169,31 @@ class _FilterDialogState extends State<FilterDialog> {
                 ),
               ),
               const SizedBox(height: 12),
-              BlocBuilder<SalesCubit, SalesState>(
+              BlocBuilder<
+                GetLeadsCountInTeamLeaderCubit,
+                GetLeadsCountInTeamLeaderState
+              >(
                 builder: (context, state) {
-                  if (state is SalesLoaded) {
+                  if (state is GetLeadsCountInTeamLeaderLoaded) {
                     final filteredSales =
-                        state.salesData.data?.where((sales) {
-                          final role = sales.userlog?.role?.toLowerCase();
-                          final salesTeamleaderId =
-                              sales.teamleader?.id?.toString();
-                          return (role == 'sales') &&
-                              (salesTeamleaderId == teamleaderid);
+                        state.data.data?.where((sales) {
+                          final name = sales.salesName;
+                          return name != null;
                         }).toList() ??
                         [];
                     return CustomDropdownField(
                       hint: "Choose Sales",
-                      items: filteredSales.map((e) => e.name ?? '').toList(),
+                      items: filteredSales.map((e) => e.salesName ?? '').toList(),
                       value: selectedSales,
                       onChanged: (value) {
                         setState(() => selectedSales = value);
+                        log("Selected Sales: $value");
+                        log("sales: ${filteredSales.map((e) => e.salesName).toList()}");
                       },
                     );
                   } else if (state is SalesLoading) {
                     return const Center(child: CircularProgressIndicator());
-                  } else if (state is SalesError) {
+                  } else if (state is GetLeadsCountInTeamLeaderError) {
                     return Text("Error: ${state.message}");
                   }
                   return const SizedBox(); // Default empty widget
@@ -343,6 +352,7 @@ class _FilterDialogState extends State<FilterDialog> {
                     child: ElevatedButton(
                       onPressed: () {
                         log("selectedDeveloper: $selectedDeveloper");
+                        log("selectedsales: $selectedSales");
                         context
                             .read<GetLeadsTeamLeaderCubit>()
                             .filterLeadsTeamLeader(

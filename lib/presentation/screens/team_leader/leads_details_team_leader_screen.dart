@@ -185,7 +185,7 @@ class _SalesLeadsDetailsScreenState
                                   '${widget.leadEmail}',
                                   maxLines: 2,
                                   style: TextStyle(
-                                    fontSize: 9.sp,
+                                    fontSize: 11.sp,
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),

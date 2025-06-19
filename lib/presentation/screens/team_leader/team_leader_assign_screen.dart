@@ -31,6 +31,9 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   LeadResponse? leadResponse;
   String? leadIdd;
   TextEditingController searchController = TextEditingController();
+  // isOutdated is a state variable and should be managed per lead, not globally.
+  // We will calculate it inside the buildUserTile or pass it from itemBuilder.
+
   String formatDateTime(String dateStr) {
     try {
       final dateTime = DateTime.parse(dateStr);
@@ -96,31 +99,28 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Constants.maincolor
+                                        : Constants.mainDarkmodecolor,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Constants.maincolor
+                                        : Constants.mainDarkmodecolor,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Constants.maincolor
+                                        : Constants.mainDarkmodecolor,
                                   ),
                                 ),
                               ),
@@ -133,22 +133,20 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             decoration: BoxDecoration(
                               color: const Color(0xFFE8F1F2),
                               border: Border.all(
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Constants.maincolor
+                                    : Constants.mainDarkmodecolor,
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: IconButton(
                               icon: Icon(
                                 Icons.filter_list,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Constants.maincolor
+                                    : Constants.mainDarkmodecolor,
                               ),
                               onPressed: () {
                                 showFilterDialogTeamLeader(
@@ -160,30 +158,27 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                           ),
                           SizedBox(width: 10),
                           GestureDetector(
-                            onTapDown:
-                                (details) => _showAssignMenu(
-                                  context,
-                                  details.globalPosition,
-                                ),
+                            onTapDown: (details) => _showAssignMenu(
+                              context,
+                              details.globalPosition,
+                            ),
                             child: Container(
                               padding: EdgeInsets.all(10),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Constants.maincolor
+                                      : Constants.mainDarkmodecolor,
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 Icons.more_vert,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Constants.maincolor
+                                    : Constants.mainDarkmodecolor,
                               ),
                             ),
                           ),
@@ -193,15 +188,13 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   },
                 ),
                 Expanded(
-                  child: BlocBuilder<
-                    GetLeadsTeamLeaderCubit,
-                    GetLeadsTeamLeaderState
-                  >(
+                  child: BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
                     builder: (context, state) {
                       if (state is GetLeadsTeamLeaderLoading) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (state is GetLeadsTeamLeaderSuccess) {
                         _leads = state.leadsData.data ?? [];
+
                         // تأكد من مزامنة selected مع طول البيانات
                         if (selected.length != _leads.length) {
                           selected = List.generate(
@@ -220,6 +213,33 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             itemBuilder: (context, index) {
                               final lead = _leads[index];
                               leadIdd = lead.id.toString();
+
+                              final leadstageupdated = lead.stagedateupdated;
+                              final leadStagetype = lead.stage?.name ?? "";
+                              DateTime? stageUpdatedDate;
+                              bool isOutdatedLocal = false; // Local variable for each lead
+
+                              if (leadstageupdated != null) {
+                                try {
+                                  stageUpdatedDate = DateTime.parse(
+                                    leadstageupdated,
+                                  );
+                                  log("stageUpdatedDate: $stageUpdatedDate");
+                                  log("stage type: $leadStagetype");
+                                } catch (_) {
+                                  stageUpdatedDate = null;
+                                }
+                              }
+                              if (stageUpdatedDate != null) {
+                                final now = DateTime.now().toUtc();
+                                print("now: $now");
+                                final difference =
+                                    now.difference(stageUpdatedDate).inMinutes;
+                                print("difference: $difference");
+                                isOutdatedLocal =
+                                    difference > 1; // اعتبره قديم إذا مرّ أكثر من دقيقة
+                                print("isOutdated: $isOutdatedLocal");
+                              }
                               return buildUserTile(
                                 name: lead.name ?? 'No Name',
                                 status: lead.stage?.name ?? 'No Status',
@@ -231,14 +251,12 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 stageid:
                                     lead.stage?.id.toString() ?? 'No Stage ID',
                                 channel: lead.chanel?.name ?? 'No Channel',
-                                creationdate:
-                                    lead.createdAt != null
-                                        ? formatDateTime(lead.createdAt!)
-                                        : '',
+                                creationdate: lead.createdAt != null
+                                    ? formatDateTime(lead.createdAt!)
+                                    : '',
                                 project: lead.project?.name ?? 'No Project',
                                 lastcomment:
                                     lead.lastcommentdate ?? 'No Last Comment',
-                                lead: lead,
                                 leadcampaign:
                                     lead.campaign?.campaoignType ??
                                     'No Campaign',
@@ -252,7 +270,11 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                     lead.sales?.teamleader?.name ??
                                     'No Team Leader',
                                 salesName:
-                                    lead.sales?.userlog?.name ?? 'No Sales',
+                                    lead.sales?.name ?? 'No Sales',
+                                lead: lead,
+                                stageUpdatedDate: stageUpdatedDate, // Pass the DateTime object
+                                leadStagetype: leadStagetype, // Pass the stage type string
+                                isOutdated: isOutdatedLocal, // Pass the calculated boolean
                               );
                             },
                           ),
@@ -274,13 +296,12 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   }
 
   void _showAssignDialog() async {
-    final selectedIndices =
-        selected
-            .asMap()
-            .entries
-            .where((entry) => entry.value)
-            .map((entry) => entry.key)
-            .toList();
+    final selectedIndices = selected
+        .asMap()
+        .entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key)
+        .toList();
 
     if (selectedIndices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -315,10 +336,9 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                 leadIds: selectedLeads.map((e) => e.id ?? 0).toList(),
                 leadId: leadIdd,
                 leadResponse: leadResponse,
-                mainColor:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
-                        : Constants.mainDarkmodecolor,
+                mainColor: Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
               ),
             );
           },
@@ -367,109 +387,188 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     required String teamleadername,
     required String salesName,
     required dynamic lead,
+    DateTime? stageUpdatedDate, // Add this parameter
+    required String leadStagetype, // Add this parameter
+    required bool isOutdated, // Add this parameter
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color:
-            Theme.of(context).brightness == Brightness.light
-                ? Colors.grey[100]
-                : Colors.black87,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2)],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                SizedBox(height: 4),
-                Text(
-                  status,
-                  style: TextStyle(
-                    color:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  "sales : $salesName",
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: 4),
-                InkWell(
-                  onTap: () {
-                    makePhoneCall(phone);
-                  },
-                  child: Text(
-                    phone,
-                    style: TextStyle(
-                      color:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.white
+            : Colors.grey[800],
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.grey.withOpacity(0.2)
+                : Colors.black.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: Offset(0, 3),
           ),
-          Checkbox(
-            value: selected[index],
-            shape: const ContinuousRectangleBorder(),
-            activeColor:
-                Theme.of(context).brightness == Brightness.light
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  name,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? Colors.black87
+                        : Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // Moved the logic for the outdated icon here and used the passed parameters
+              (stageUpdatedDate != null &&
+                      (leadStagetype == "Done Deal" ||
+                          leadStagetype == "Transfer" ||
+                          leadStagetype == "Fresh" ||
+                          leadStagetype == "Not Interested"))
+                  ? const SizedBox()
+                  : Icon(
+                      isOutdated ? Icons.close : Icons.check_circle,
+                      color: isOutdated ? Colors.red : Colors.green,
+                      size: 24,
+                    ),
+              Checkbox(
+                value: selected[index],
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5)),
+                activeColor: Theme.of(context).brightness == Brightness.light
                     ? Constants.maincolor
                     : Constants.mainDarkmodecolor,
-            onChanged: (val) {
-              setState(() {
-                selected[index] = val!;
-              });
-            },
+                onChanged: (val) {
+                  setState(() {
+                    selected[index] = val!;
+                  });
+                },
+              ),
+            ],
           ),
+          const Divider(height: 16, thickness: 1),
+          _buildInfoRow(
+            context,
+            Icons.category,
+            'stage',
+            status,
+            valueColor: Theme.of(context).brightness == Brightness.light
+                ? Constants.maincolor
+                : Constants.mainDarkmodecolor,
+          ),
+          _buildInfoRow(context, Icons.person, 'Sales', salesName),
           InkWell(
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (_) => LeadsDetailsTeamLeaderScreen(
-                        leedId: id,
-                        leadName: name,
-                        leadPhone: phone,
-                        leadEmail: email,
-                        leadStage: stage,
-                        leadStageId: stageid,
-                        leadChannel: channel,
-                        leadCreationDate: creationdate,
-                        leadProject: project,
-                        leadLastComment: lastcomment,
-                        leadcampaign: leadcampaign,
-                        leadNotes: leadNotes,
-                        leaddeveloper: leaddeveloper,
-                        userlogname: userlogname,
-                        teamleadername: teamleadername,
-                      ),
-                ),
-              );
+            onTap: () {
+              makePhoneCall(phone);
             },
+            child: _buildInfoRow(
+              context,
+              Icons.phone,
+              'Phone',
+              phone,
+              valueColor: Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+              isUnderlined: true,
+            ),
+          ),
+          _buildInfoRow(context, Icons.email, 'Email', email),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LeadsDetailsTeamLeaderScreen(
+                      leedId: id,
+                      leadName: name,
+                      leadPhone: phone,
+                      leadEmail: email,
+                      leadStage: stage,
+                      leadStageId: stageid,
+                      leadChannel: channel,
+                      leadCreationDate: creationdate,
+                      leadProject: project,
+                      leadLastComment: lastcomment,
+                      leadcampaign: leadcampaign,
+                      leadNotes: leadNotes,
+                      leaddeveloper: leaddeveloper,
+                      userlogname: userlogname,
+                      teamleadername: teamleadername,
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                'View More',
+                style: GoogleFonts.montserrat(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).brightness == Brightness.light
+                      ? Constants.maincolor
+                      : Constants.mainDarkmodecolor,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(
+      BuildContext context, IconData icon, String label, String value,
+      {Color? valueColor, bool isUnderlined = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 18,
+            color: Theme.of(context).brightness == Brightness.light
+                ? Constants.maincolor
+                : Constants.mainDarkmodecolor,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: GoogleFonts.montserrat(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Colors.black87
+                  : Colors.white70,
+            ),
+          ),
+          Expanded(
             child: Text(
-              'View More',
+              value,
               style: GoogleFonts.montserrat(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
-                        : Constants.mainDarkmodecolor,
-                decoration: TextDecoration.underline,
+                color: valueColor ??
+                    (Theme.of(context).brightness == Brightness.light
+                        ? Colors.black54
+                        : Colors.white54),
+                decoration: isUnderlined ? TextDecoration.underline : null,
               ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ),
         ],

@@ -141,7 +141,7 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
           final matchStage = stage == null || lead.stage?.name == stage;
           final matchChannel = channel == null || lead.chanel?.name == channel;
           final matchSales =
-              sales == null || lead.sales?.userlog?.name == sales;
+              sales == null || lead.sales?.name == sales;
 
           return matchQuery &&
               matchCountry &&
