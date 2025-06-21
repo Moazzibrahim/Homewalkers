@@ -374,15 +374,15 @@ class MarketerDashboardScreen extends StatelessWidget {
                               context,
                             ),
                           ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: _dashboardCard(
-                              'Deals',
-                              '0',
-                              Icons.work_outline,
-                              context,
-                            ),
-                          ),
+                          // SizedBox(width: 12),
+                          // Expanded(
+                          //   child: _dashboardCard(
+                          //     'Deals',
+                          //     '0',
+                          //     Icons.work_outline,
+                          //     context,
+                          //   ),
+                          // ),
                         ],
                       );
                     }

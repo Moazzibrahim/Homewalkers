@@ -12,12 +12,14 @@ import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/data/models/add_comment_model.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_lead_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
+import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
@@ -29,6 +31,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/lea
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/edit_lead_dialog.dart';
 // 🟡 استيراد الـ Dialog الجديد اللي هيرجع القيم
 import 'package:homewalkers_app/presentation/widgets/marketer/filter_leads_dialog.dart'; // تأكد أن المسار صحيح
 import 'package:shared_preferences/shared_preferences.dart';
@@ -61,46 +64,45 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
   String? _selectedCommunicationWayFilter;
   String? _selectedCampaignFilter;
   @override
-  void initState() {
-    super.initState();
-    _nameSearchController = TextEditingController(); // تهيئة الـ controller
-    checkClearHistoryTime();
-    checkIsClearHistory();
-    // 🟡 جلب الـ leads الأولية عند تهيئة الشاشة
-    // مهم: نستخدم addPostFrameCallback لضمان أن الـ context متاح
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.stageName != null) {
-        // إذا تم الدخول من شاشة تصفية المراحل، نطبق الفلترة الأولية
-        _selectedStageFilter = widget.stageName!; // حفظ الـ stageName كفلتر
-        _applyCurrentFilters(); // تطبيق الفلترة مع الـ stage
-      } else {
-        // إذا لم يكن هناك stageName، قم بجلب كل الـ leads
-        context.read<GetLeadsMarketerCubit>().getLeadsByMarketer();
-      }
-    });
-  }
-
+void initState() {
+  super.initState();
+  _nameSearchController = TextEditingController(); // تهيئة الـ controller
+  checkClearHistoryTime();
+  checkIsClearHistory();
+  // 🟡 جلب الـ leads الأولية عند تهيئة الشاشة
+  // مهم: نستخدم addPostFrameCallback لضمان أن الـ context متاح
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (widget.stageName != null) {
+      // إذا تم الدخول من شاشة تصفية المراحل، نطبق الفلترة الأولية
+      _selectedStageFilter = widget.stageName!; // حفظ الـ stageName كفلتر
+      print("stageName: $_selectedStageFilter");
+      _applyCurrentFilters(); // تطبيق الفلترة مع الـ stage
+    } else {
+      // إذا لم يكن هناك stageName، قم بجلب كل الـ leads
+      context.read<GetLeadsMarketerCubit>().getLeadsByMarketer();
+    }
+  });
+}
   @override
   void dispose() {
     _nameSearchController.dispose(); // 🟡 مهم: التخلص من الـ controller
     super.dispose();
   }
-
   // 🟡 دالة مساعدة لتطبيق الفلاتر الشاملة (البحث + الفلاتر من الـ dialog)
-  void _applyCurrentFilters() {
-    context.read<GetLeadsMarketerCubit>().filterLeadsMarketer(
-      query: _searchQuery, // نص البحث من TextField
-      country: _selectedCountryFilter,
-      developer: _selectedDeveloperFilter,
-      project: _selectedProjectFilter,
-      stage: _selectedStageFilter,
-      channel: _selectedChannelFilter,
-      sales: _selectedSalesFilter,
-      communicationWay: _selectedCommunicationWayFilter,
-      campaign: _selectedCampaignFilter,
-    );
-  }
-
+  // 🟡 دالة مساعدة لتطبيق الفلاتر الشاملة (البحث + الفلاتر من الـ dialog)
+void _applyCurrentFilters() {
+  context.read<GetLeadsMarketerCubit>().filterLeadsMarketer(
+    query: _searchQuery, // نص البحث من TextField
+    country: _selectedCountryFilter,
+    developer: _selectedDeveloperFilter,
+    project: _selectedProjectFilter,
+    stage: _selectedStageFilter,
+    channel: _selectedChannelFilter,
+    sales: _selectedSalesFilter,
+    communicationWay: _selectedCommunicationWayFilter,
+    campaign: _selectedCampaignFilter,
+  );
+}
   Future<void> checkClearHistoryTime() async {
     final prefs = await SharedPreferences.getInstance();
     final time = prefs.getString('clear_history_time');
@@ -350,9 +352,12 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                         CampaignApiService(),
                                       )..fetchCampaigns(),
                                 ),
-                                  BlocProvider(
+                                BlocProvider(
                                   create:
-                                    (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),),
+                                      (_) =>
+                                          SalesCubit(GetAllSalesApiService())
+                                            ..fetchAllSales(),
+                                ),
                               ],
                               child: FilterDialog(
                                 // 🟡 تمرير القيم الحالية للـ dialog عشان يعرضها
@@ -766,13 +771,13 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                                 firstCommentEntry
                                                                     ?.firstComment
                                                                     .text ??
-                                                                'No first comment available.';
+                                                                'No comments available.';
                                                             final String
                                                             secondCommentText =
                                                                 firstCommentEntry
                                                                     ?.secondComment
                                                                     .text ??
-                                                                'No second comment available.';
+                                                                'No  comment available.';
                                                             // 🟡 منطق checkClearHistoryTime و isClearHistoryy
                                                             // يجب أن يكون له علاقة بعرض الكومنتات هنا، وليس له علاقة بالفلترة العامة
                                                             final firstCommentDate =
@@ -1090,8 +1095,24 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                         children: [
                                           InkWell(
                                             onTap: () {
-                                              // هنا هتفتح صفحة تعديل Lead لو عندك
-                                              print('Edit lead ${lead.name}');
+                                              showDialog(
+                                                context: context,
+                                                builder:
+                                                    (context) => BlocProvider(
+                                                      create:
+                                                          (_) => EditLeadCubit(
+                                                            EditLeadApiService(),
+                                                          ),
+                                                      child: EditLeadDialog(
+                                                        userId: lead.id!,
+                                                        initialName: lead.name,
+                                                        initialEmail:
+                                                            lead.email,
+                                                        initialPhone:
+                                                            lead.phone,
+                                                      ),
+                                                    ),
+                                              );
                                             },
                                             child: Image.asset(
                                               "assets/images/edit.png",
@@ -1099,84 +1120,209 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                           ),
                                           const SizedBox(width: 8),
                                           InkWell(
-                                          onTap: () { 
-                                            showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header with icon and title
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                      child: Icon(Icons.copy, color: Colors.white),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      "Show Duplicate",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    )
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Profile section
-                Row(
-                  children: [
-                    Text(
-                      lead.name ?? "",
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Lead Information :",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                // Lead Details
-                buildInfoRow(Icons.location_city, "Project", lead.allVersions!.first.projectName!),
-                buildInfoRow(Icons.settings, "Developer", lead.allVersions!.first.developerName!),
-                buildInfoRow(Icons.chat, "Communication Way",lead.allVersions!.first.communicationWay!),
-                buildInfoRow(Icons.date_range, "Creation Date",DateTime.parse( lead.allVersions!.first.versionDate!).toLocal().toString()),
-                buildInfoRow(Icons.device_hub, "Channel",lead.allVersions!.first.channelName!),
-                buildInfoRow(Icons.campaign, "Campaign", lead.allVersions!.first.campaignName!),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  },
-  child: CircleAvatar(
-    backgroundColor: Theme.of(context).brightness == Brightness.light
-        ? Constants.maincolor
-        : Constants.mainDarkmodecolor,
-    child: Icon(Icons.copy, color: Colors.white),
-  ),
-)
+                                            onTap: () {
+                                              if (lead.totalSubmissions! > 1) {
+                                                showDialog(
+                                                  context: context,
+                                                  builder:
+                                                      (context) => Dialog(
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                16,
+                                                              ),
+                                                        ),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                16.0,
+                                                              ),
+                                                          child: SingleChildScrollView(
+                                                            child: Column(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              children: [
+                                                                // Header with icon and title
+                                                                Row(
+                                                                  children: [
+                                                                    CircleAvatar(
+                                                                      backgroundColor:
+                                                                          Theme.of(context).brightness ==
+                                                                                  Brightness.light
+                                                                              ? Constants.maincolor
+                                                                              : Constants.mainDarkmodecolor,
+                                                                      child: Icon(Icons.copy,
+                                                                        color:Colors.white,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      width: 12,
+                                                                    ),
+                                                                    Text(
+                                                                      "Show Duplicate",
+                                                                      style: TextStyle(
+                                                                        fontSize:
+                                                                            18,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                    Spacer(),
+                                                                    IconButton(
+                                                                      icon: Icon(
+                                                                        Icons
+                                                                            .close,
+                                                                      ),
+                                                                      onPressed:
+                                                                          () => Navigator.pop(
+                                                                            context,
+                                                                          ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                const SizedBox(
+                                                                  height: 16,
+                                                                ),
+                                                                // Profile section
+                                                                Row(
+                                                                  children: [
+                                                                    Text(
+                                                                      lead.name ??
+                                                                          "",
+                                                                      style: TextStyle(
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                        fontSize:
+                                                                            16,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                const SizedBox(
+                                                                  height: 20,
+                                                                ),
+                                                                Align(
+                                                                  alignment:
+                                                                      Alignment
+                                                                          .centerLeft,
+                                                                  child: Text(
+                                                                    "Lead Information :",
+                                                                    style: TextStyle(
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w600,
+                                                                      color:
+                                                                          Colors
+                                                                              .grey[700],
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                  height: 10,
+                                                                ),
+                                                                // Lead Details
+                                                                buildInfoRow(
+                                                                  Icons
+                                                                      .location_city,
+                                                                  "Project",
+                                                                  lead
+                                                                      .allVersions!
+                                                                      .first
+                                                                      .projectName!,
+                                                                ),
+                                                                buildInfoRow(
+                                                                  Icons
+                                                                      .settings,
+                                                                  "Developer",
+                                                                  lead
+                                                                      .allVersions!
+                                                                      .first
+                                                                      .developerName!,
+                                                                ),
+                                                                buildInfoRow(
+                                                                  Icons.chat,
+                                                                  "Communication Way",
+                                                                  lead
+                                                                      .allVersions!
+                                                                      .first
+                                                                      .communicationWay!,
+                                                                ),
+                                                                buildInfoRow(
+                                                                  Icons
+                                                                      .date_range,
+                                                                  "Creation Date",
+                                                                  DateTime.parse(
+                                                                    lead
+                                                                        .allVersions!
+                                                                        .first
+                                                                        .versionDate!,
+                                                                  ).toLocal().toString(),
+                                                                ),
+                                                                buildInfoRow(
+                                                                  Icons
+                                                                      .device_hub,
+                                                                  "Channel",
+                                                                  lead
+                                                                      .allVersions!
+                                                                      .first
+                                                                      .channelName!,
+                                                                ),
+                                                                buildInfoRow(
+                                                                  Icons
+                                                                      .campaign,
+                                                                  "Campaign",
+                                                                  lead
+                                                                      .allVersions!
+                                                                      .first
+                                                                      .campaignName!,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                );
+                                              } else {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text(
+                                                      "No Duplicates",
+                                                    ),
+                                                    content: const Text(
+                                                      "This lead has no duplicates.",
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                          context,
+                                                        ),
+                                                        child: const Text(
+                                                          "OK",
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );  
+                                              }
+                                            },
+                                            child: CircleAvatar(
+                                              backgroundColor:
+                                                  Theme.of(
+                                                            context,
+                                                          ).brightness ==
+                                                          Brightness.light
+                                                      ? Constants.maincolor
+                                                      : Constants
+                                                          .mainDarkmodecolor,
+                                              child: Icon(
+                                                Icons.copy,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ],
@@ -1201,23 +1347,18 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
       ),
     );
   }
-  Widget buildInfoRow(IconData icon, String title, String value) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6.0),
-    child: Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.teal),
-        const SizedBox(width: 8),
-        Text(
-          "$title : ",
-          style: TextStyle(fontWeight: FontWeight.w500),
-        ),
-        Expanded(
-          child: Text(value, overflow: TextOverflow.ellipsis),
-        ),
-      ],
-    ),
-  );
-}
 
+  Widget buildInfoRow(IconData icon, String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.teal),
+          const SizedBox(width: 8),
+          Text("$title : ", style: TextStyle(fontWeight: FontWeight.w500)),
+          Expanded(child: Text(value, overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+    );
+  }
 }

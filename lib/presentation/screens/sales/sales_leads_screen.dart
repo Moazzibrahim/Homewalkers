@@ -484,7 +484,7 @@ class SalesLeadsScreen extends StatelessWidget {
                                                                     firstComment
                                                                             ?.firstcomment
                                                                             ?.text ??
-                                                                        'No first comment available.',
+                                                                        'No comment available.',
                                                                   ),
                                                                   const SizedBox(
                                                                     height: 10,
@@ -507,7 +507,7 @@ class SalesLeadsScreen extends StatelessWidget {
                                                                     firstComment
                                                                             ?.secondcomment
                                                                             ?.text ??
-                                                                        'No second comment available.',
+                                                                        'No comment available.',
                                                                   ),
                                                                 ],
                                                               );

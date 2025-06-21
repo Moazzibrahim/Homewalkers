@@ -565,7 +565,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                                       firstComment
                                                                               ?.firstcomment
                                                                               ?.text ??
-                                                                          'No first comment available.',
+                                                                          'No comment available.',
                                                                     ),
                                                                     const SizedBox(
                                                                       height:
@@ -587,7 +587,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                                       firstComment
                                                                               ?.secondcomment
                                                                               ?.text ??
-                                                                          'No second comment available.',
+                                                                          'No comment available.',
                                                                     ),
                                                                   ],
                                                                 );

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 // ignore_for_file: deprecated_member_use
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/presentation/screens/manager/manager_team_leader_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/leads_marketier_screen.dart';
+import 'package:homewalkers_app/presentation/screens/marketier/marketer_advanced_search_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_menu_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
@@ -58,7 +58,7 @@ class _TabsScreenState extends State<MarketierTabsScreen> {
                 children: [
                   MarketerDashboardScreen(),
                   LeadsMarketierScreen(),
-                  ManagerTeamLeaderScreen(),
+                  MarketerAdvancedSearchScreen(),
                   MarketierMenuScreen(),
                 ],
               ),
@@ -99,9 +99,9 @@ class _TabsScreenState extends State<MarketierTabsScreen> {
                 onTap: () => _onTap(2),
                 child: _bottomBarItem(
                   null,
-                  'Assign',
+                  'Adv Search',
                   _currentIndex == 2,
-                  imagePath: 'assets/images/team_leader.png',
+                  imagePath: 'assets/images/search.png',
                 ),
               ),
               GestureDetector(

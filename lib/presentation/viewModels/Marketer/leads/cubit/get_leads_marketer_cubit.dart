@@ -1,7 +1,5 @@
 // get_leads_marketer_cubit.dart
-
 // ignore_for_file: unused_field, unused_local_variable
-
 import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -9,7 +7,6 @@ import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 part 'get_leads_marketer_state.dart';
-
 class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
   final GetLeadsService _getLeadsService;
   LeadResponse? _originalLeadsResponse; // 🟡 حفظ البيانات الأصلية
@@ -52,7 +49,7 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
     } catch (e) {
       log('❌ خطأ في getLeadsByMarketer: $e');
       emit(
-        const GetLeadsMarketerFailure("Failed to load leads."),
+        const GetLeadsMarketerFailure("No leads found"), // رسالة أوضح
       ); // رسالة أوضح
     }
   }
@@ -81,7 +78,6 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
           teamLeaderSet.add(teamLeaderName);
         }
       }
-
       salesNames = salesSet.toList();
       teamLeaderNames = teamLeaderSet.toList();
       log("✅ تم جلب بيانات سلة المهملات بنجاح.");
@@ -93,7 +89,6 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
       ); // رسالة أوضح
     }
   }
-
   // ❌ حذف الدالة دي، لأن filterLeadsMarketer هتكون شاملة
   // void filterLeadsByStageInMarketer(String query) {
   //   if (_originalLeadsResponse?.data == null) return;
@@ -133,10 +128,8 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
       ); // رسالة أوضح
       return;
     }
-
     // ابدأ دائمًا من البيانات الأصلية غير المُفلترة
     List<LeadData> filteredLeads = List.from(_originalLeadsResponse!.data!);
-
     // 1. تطبيق الفلترة النصية (query) أولاً
     // هذا الـ 'query' يمثل نص البحث العام من TextField (اسم، إيميل، هاتف)
     if (query != null && query.isNotEmpty) {
@@ -160,7 +153,6 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
               .where((lead) => lead.name?.toLowerCase().contains(n) ?? false)
               .toList();
     }
-
     // 3. تطبيق باقي الفلاتر بناءً على البيانات المُفلترة من الخطوات السابقة
     filteredLeads =
         filteredLeads.where((lead) {
@@ -193,7 +185,6 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
           final matchCampaign =
               campaign == null ||
               (lead.campaign?.name?.toLowerCase() == campaign.toLowerCase());
-
           return matchCountry &&
               matchDev &&
               matchProject &&
@@ -203,7 +194,6 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
               matchCommunicationWay &&
               matchCampaign;
         }).toList();
-
     if (filteredLeads.isEmpty &&
         ((query != null && query.isNotEmpty) ||
             (name != null && name.isNotEmpty) || // إذا كان name منفصل عن query
@@ -249,4 +239,50 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
     }
     return null;
   }
+  void filterLeadsMarketerForAdvancedSearch({
+  String? sales,
+  String? country,
+  String? creationDate,
+  String? fromDate,
+  String? toDate,
+  String? user,
+  String? commentDate,
+}) {
+  if (_originalLeadsResponse == null || _originalLeadsResponse!.data == null) {
+    emit(const GetLeadsMarketerFailure("No leads data available for filtering."));
+    return;
+  }
+
+  List<LeadData> filteredLeads = List.from(_originalLeadsResponse!.data!);
+
+  filteredLeads = filteredLeads.where((lead) {
+    final matchSales = sales == null || (lead.sales?.name?.toLowerCase() == sales.toLowerCase());
+    final leadPhoneCode = lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
+    final matchCountry = country == null || (leadPhoneCode?.startsWith(country) ?? false);
+    final matchUser = user == null || (lead.addby?.name?.toLowerCase() == user.toLowerCase());
+    final leadCreatedAt = lead.createdAt != null ? DateTime.tryParse(lead.createdAt!) : null;
+    final leadCommentDate = lead.lastcommentdate != null ? DateTime.tryParse(lead.lastcommentdate!) : null;
+    final matchCreationDate = creationDate == null || (leadCreatedAt != null && _compareOnlyDate(leadCreatedAt, DateTime.parse(creationDate)));
+    final matchFromToDate = (fromDate == null && toDate == null) ||
+        (leadCreatedAt != null &&
+            (fromDate == null || leadCreatedAt.isAfter(DateTime.parse(fromDate).subtract(const Duration(days: 1)))) &&
+            (toDate == null || leadCreatedAt.isBefore(DateTime.parse(toDate).add(const Duration(days: 1)))));
+    final matchCommentDate = commentDate == null || (leadCommentDate != null && _compareOnlyDate(leadCommentDate, DateTime.parse(commentDate)));
+    return matchSales &&
+        matchCountry &&
+        matchCreationDate &&
+        matchFromToDate &&
+        matchUser &&
+        matchCommentDate;
+  }).toList();
+  if (filteredLeads.isEmpty) {
+    emit(const GetLeadsMarketerFailure("No leads found matching your criteria."));
+  } else {
+    emit(GetLeadsMarketerSuccess(LeadResponse(data: filteredLeads)));
+  }
+}
+/// مقارنة التاريخ بدون الوقت
+bool _compareOnlyDate(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
+}
 }

@@ -394,7 +394,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                 // First Comment Text
                                 Text(
                                   firstComment?.firstcomment?.text ??
-                                      'No first comment available.',
+                                      'No comment available.',
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     fontWeight: FontWeight.w400,
@@ -414,7 +414,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                 // Second Comment Text
                                 Text(
                                   firstComment?.secondcomment?.text ??
-                                      'No second comment available.',
+                                      'No comment available.',
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     fontWeight: FontWeight.w400,

@@ -245,7 +245,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
               SizedBox(height: 10),
               Text('First action', style: commentTitleStyle),
               Text(
-                firstComment?.text ?? 'No First Comment',
+                firstComment?.text ?? 'No Comment',
                 style: TextStyle(fontSize: 14),
               ),
               if (firstComment?.date != null)
@@ -256,7 +256,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
               SizedBox(height: 6),
               Text('Second action', style: commentTitleStyle),
               Text(
-                secondComment?.text ?? 'No Second Comment',
+                secondComment?.text ?? 'No Comment',
                 style: TextStyle(fontSize: 14),
               ),
               if (secondComment?.date != null)

@@ -434,7 +434,7 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                   SizedBox(height: 7.h),
                                   Text(
                                     firstComment?.firstcomment?.text ??
-                                        'No first comment available.',
+                                        'No comment available.',
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       fontWeight: FontWeight.w400,
@@ -452,7 +452,7 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                   SizedBox(height: 7.h),
                                   Text(
                                     firstComment?.secondcomment?.text ??
-                                        'No second comment available.',
+                                        'No comment available.',
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       fontWeight: FontWeight.w400,
