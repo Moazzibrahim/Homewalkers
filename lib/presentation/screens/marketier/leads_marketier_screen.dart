@@ -64,45 +64,44 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
   String? _selectedCommunicationWayFilter;
   String? _selectedCampaignFilter;
   @override
-void initState() {
-  super.initState();
-  _nameSearchController = TextEditingController(); // تهيئة الـ controller
-  checkClearHistoryTime();
-  checkIsClearHistory();
-  // 🟡 جلب الـ leads الأولية عند تهيئة الشاشة
-  // مهم: نستخدم addPostFrameCallback لضمان أن الـ context متاح
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (widget.stageName != null) {
-      // إذا تم الدخول من شاشة تصفية المراحل، نطبق الفلترة الأولية
-      _selectedStageFilter = widget.stageName!; // حفظ الـ stageName كفلتر
-      print("stageName: $_selectedStageFilter");
-      _applyCurrentFilters(); // تطبيق الفلترة مع الـ stage
-    } else {
-      // إذا لم يكن هناك stageName، قم بجلب كل الـ leads
-      context.read<GetLeadsMarketerCubit>().getLeadsByMarketer();
-    }
-  });
-}
+  void initState() {
+    super.initState();
+    _nameSearchController = TextEditingController();
+    checkClearHistoryTime();
+    checkIsClearHistory();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final stage = widget.stageName;
+      _selectedStageFilter = stage;
+
+      context.read<GetLeadsMarketerCubit>().getLeadsByMarketer(
+        stageFilter: stage, // ⬅️ نمرر الفلتر مباشرة
+      );
+    });
+  }
+
   @override
   void dispose() {
     _nameSearchController.dispose(); // 🟡 مهم: التخلص من الـ controller
     super.dispose();
   }
+
   // 🟡 دالة مساعدة لتطبيق الفلاتر الشاملة (البحث + الفلاتر من الـ dialog)
   // 🟡 دالة مساعدة لتطبيق الفلاتر الشاملة (البحث + الفلاتر من الـ dialog)
-void _applyCurrentFilters() {
-  context.read<GetLeadsMarketerCubit>().filterLeadsMarketer(
-    query: _searchQuery, // نص البحث من TextField
-    country: _selectedCountryFilter,
-    developer: _selectedDeveloperFilter,
-    project: _selectedProjectFilter,
-    stage: _selectedStageFilter,
-    channel: _selectedChannelFilter,
-    sales: _selectedSalesFilter,
-    communicationWay: _selectedCommunicationWayFilter,
-    campaign: _selectedCampaignFilter,
-  );
-}
+  void _applyCurrentFilters() {
+    context.read<GetLeadsMarketerCubit>().filterLeadsMarketer(
+      query: _searchQuery, // نص البحث من TextField
+      country: _selectedCountryFilter,
+      developer: _selectedDeveloperFilter,
+      project: _selectedProjectFilter,
+      stage: _selectedStageFilter,
+      channel: _selectedChannelFilter,
+      sales: _selectedSalesFilter,
+      communicationWay: _selectedCommunicationWayFilter,
+      campaign: _selectedCampaignFilter,
+    );
+  }
+
   Future<void> checkClearHistoryTime() async {
     final prefs = await SharedPreferences.getInstance();
     final time = prefs.getString('clear_history_time');
@@ -1152,8 +1151,11 @@ void _applyCurrentFilters() {
                                                                                   Brightness.light
                                                                               ? Constants.maincolor
                                                                               : Constants.mainDarkmodecolor,
-                                                                      child: Icon(Icons.copy,
-                                                                        color:Colors.white,
+                                                                      child: Icon(
+                                                                        Icons
+                                                                            .copy,
+                                                                        color:
+                                                                            Colors.white,
                                                                       ),
                                                                     ),
                                                                     const SizedBox(
@@ -1286,26 +1288,28 @@ void _applyCurrentFilters() {
                                               } else {
                                                 showDialog(
                                                   context: context,
-                                                  builder: (context) => AlertDialog(
-                                                    title: const Text(
-                                                      "No Duplicates",
-                                                    ),
-                                                    content: const Text(
-                                                      "This lead has no duplicates.",
-                                                    ),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                          context,
+                                                  builder:
+                                                      (context) => AlertDialog(
+                                                        title: const Text(
+                                                          "No Duplicates",
                                                         ),
-                                                        child: const Text(
-                                                          "OK",
+                                                        content: const Text(
+                                                          "This lead has no duplicates.",
                                                         ),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed:
+                                                                () =>
+                                                                    Navigator.pop(
+                                                                      context,
+                                                                    ),
+                                                            child: const Text(
+                                                              "OK",
+                                                            ),
+                                                          ),
+                                                        ],
                                                       ),
-                                                    ],
-                                                  ),
-                                                );  
+                                                );
                                               }
                                             },
                                             child: CircleAvatar(

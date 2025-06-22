@@ -18,41 +18,51 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
   GetLeadsMarketerCubit(this._getLeadsService)
     : super(GetLeadsMarketerInitial());
 
-  Future<void> getLeadsByMarketer() async {
-    emit(GetLeadsMarketerLoading());
-    try {
-      final leadsResponse = await _getLeadsService.getLeadsDataByMarketer();
-      _originalLeadsResponse = leadsResponse; // 🟡 حفظ البيانات الأصلية هنا
-      final prefs = await SharedPreferences.getInstance();
-      final managerName = prefs.getString("markterName");
-      // ⬇️ استخراج الأسماء الحقيقية
-      final salesSet = <String>{};
-      final teamLeaderSet = <String>{};
+  Future<void> getLeadsByMarketer({String? stageFilter}) async {
+  emit(GetLeadsMarketerLoading());
+  try {
+    final leadsResponse = await _getLeadsService.getLeadsDataByMarketer();
+    _originalLeadsResponse = leadsResponse;
 
-      for (var lead in leadsResponse.data ?? []) {
-        if (lead.sales?.manager?.name == managerName) {
-          final salesName = lead.sales?.name;
-          final teamLeaderName = lead.sales?.teamleader?.name;
+    final prefs = await SharedPreferences.getInstance();
+    final managerName = prefs.getString("markterName");
 
-          if (salesName != null && salesName.isNotEmpty) {
-            salesSet.add(salesName);
-          }
-          if (teamLeaderName != null && teamLeaderName.isNotEmpty) {
-            teamLeaderSet.add(teamLeaderName);
-          }
+    final salesSet = <String>{};
+    final teamLeaderSet = <String>{};
+
+    for (var lead in leadsResponse.data ?? []) {
+      if (lead.sales?.manager?.name == managerName) {
+        final salesName = lead.sales?.name;
+        final teamLeaderName = lead.sales?.teamleader?.name;
+
+        if (salesName != null && salesName.isNotEmpty) {
+          salesSet.add(salesName);
+        }
+        if (teamLeaderName != null && teamLeaderName.isNotEmpty) {
+          teamLeaderSet.add(teamLeaderName);
         }
       }
-      salesNames = salesSet.toList();
-      teamLeaderNames = teamLeaderSet.toList();
-      log("✅ تم جلب البيانات بنجاح.");
-      emit(GetLeadsMarketerSuccess(leadsResponse));
-    } catch (e) {
-      log('❌ خطأ في getLeadsByMarketer: $e');
-      emit(
-        const GetLeadsMarketerFailure("No leads found"), // رسالة أوضح
-      ); // رسالة أوضح
     }
+
+    salesNames = salesSet.toList();
+    teamLeaderNames = teamLeaderSet.toList();
+
+    List<LeadData>? filteredData = leadsResponse.data;
+
+    if (stageFilter != null && stageFilter.isNotEmpty) {
+      filteredData = filteredData
+          ?.where((lead) =>
+              lead.stage?.name?.toLowerCase() == stageFilter.toLowerCase())
+          .toList();
+    }
+
+    log("✅ تم جلب البيانات بنجاح.");
+    emit(GetLeadsMarketerSuccess(LeadResponse(data: filteredData)));
+  } catch (e) {
+    log('❌ خطأ في getLeadsByMarketer: $e');
+    emit(const GetLeadsMarketerFailure("No leads found"));
   }
+}
 
   Future<void> getLeadsByMarketerInTrash() async {
     emit(GetLeadsMarketerLoading());

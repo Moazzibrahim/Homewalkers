@@ -134,8 +134,7 @@ class MarketerDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create:
-          (_) => GetLeadsMarketerCubit(GetLeadsService())..getLeadsByMarketer(),
+      create: (_) => GetLeadsMarketerCubit(GetLeadsService())..getLeadsByMarketer(),
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
@@ -215,9 +214,7 @@ class MarketerDashboardScreen extends StatelessWidget {
                                   Theme.of(context).brightness ==
                                           Brightness.light
                                       ? const Color(0xff080719)
-                                      : Colors.white,
-                            ),
-                          );
+                                      : Colors.white,),);
                         }
                       },
                     ),
