@@ -5,6 +5,7 @@ import 'dart:developer';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
@@ -81,9 +82,7 @@ class LoginApiService {
             context,
             MaterialPageRoute(builder: (context) => TeamLeaderTabsScreen()),
           );
-        } else if (role == "Admin") {
-          Navigator.pushNamed(context, '/adminHome');
-        } else if (role == "Manager") {
+        }else if (role == "Manager") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => TabsScreenManager()),
@@ -93,10 +92,14 @@ class LoginApiService {
             context,
             MaterialPageRoute(builder: (context) => MarketierTabsScreen()),
           );
-        } else {
+        } else if (role == "Admin") {
+            Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AdminTabsScreen()),
+          );
+        }else {
           log('❌ Unknown role: $role');
         }
-
         return loginResponse;
       } else {
         log('❌ Login failed: ${response.statusCode}');

@@ -28,3 +28,24 @@ class GetAllUsersFailure extends GetAllUsersState {
   @override
   List<Object?> get props => [error];
 }
+
+class GetLeadsInTrashLoading extends GetAllUsersState {}
+
+class GetLeadsInTrashSuccess extends GetAllUsersState {
+  final LeadResponse leads;
+
+  const GetLeadsInTrashSuccess(this.leads);
+
+  @override
+  List<Object?> get props => [leads];
+}
+
+class GetLeadsInTrashFailure extends GetAllUsersState {
+  final String error;
+
+  const GetLeadsInTrashFailure(this.error);
+
+  @override
+  List<Object?> get props => [error];
+}
+

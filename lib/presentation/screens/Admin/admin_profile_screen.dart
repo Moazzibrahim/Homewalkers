@@ -3,15 +3,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/login_screen.dart';
-import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/theme/theme_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart'; // 📌 import intl package
 
-class MarketerProfileScreen extends StatelessWidget {
-  const MarketerProfileScreen({super.key});
+class AdminProfileScreen extends StatelessWidget {
+  const AdminProfileScreen({super.key});
 
   Future<String> checkAuthName() async {
     final prefs = await SharedPreferences.getInstance();
@@ -59,7 +59,7 @@ class MarketerProfileScreen extends StatelessWidget {
         onBack: () {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => MarketierTabsScreen()),
+            MaterialPageRoute(builder: (context) => AdminTabsScreen()),
           );
         },
       ),
@@ -94,7 +94,7 @@ class MarketerProfileScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  "Marketer",
+                  "Admin",
                   style: TextStyle(
                     color: Colors.grey,
                     fontWeight: FontWeight.w400,

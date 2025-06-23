@@ -37,6 +37,11 @@ class AddMenuApiService {
     final body = {"name": name};
     await postData(url: url, body: body);
   }
+  Future<void> addSales(String name) async {
+    const String url = '${Constants.baseUrl}/users';
+    final body = {"name": name};
+    await postData(url: url, body: body);
+  }
 
   Future<void> addDeveloper(String name) async {
     const String url = '${Constants.baseUrl}/Developers';

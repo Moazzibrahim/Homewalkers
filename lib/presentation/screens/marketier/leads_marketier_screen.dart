@@ -644,12 +644,17 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                           ],
                                         ),
                                         const SizedBox(height: 6),
-                                        Text(
-                                          "sales: ${lead.sales?.name ?? ""}",
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.man,color: Constants.maincolor,),
+                                            Text(
+                                              "sales: ${lead.sales?.name ?? ""}",
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                         SizedBox(height: 4),
                                         // 🟡 هذا الـ ElevatedButton بيفتح dialog عرض الكومنتات

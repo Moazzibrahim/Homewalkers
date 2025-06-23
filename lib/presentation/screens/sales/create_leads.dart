@@ -445,17 +445,20 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       const SizedBox(height: 12),
                       CustomTextField(
                         hint: "Budget",
+                        textInputType: TextInputType.number,
                         controller: _budgetController,
                       ),
                       const SizedBox(height: 12),
                       CustomTextField(
                         hint: "Revenue",
                         controller: _revenueController,
+                        textInputType: TextInputType.number,
                       ),
                       const SizedBox(height: 12),
                       CustomTextField(
                         hint: "Unit Price",
                         controller: _unitPriceController,
+                        textInputType: TextInputType.number,
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
