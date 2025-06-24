@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart' show SharedPreferences;
 
 class AddMenuApiService {
   /// دالة عامة تقدر تبعتها لأي endpoint وتحدد الـ body
@@ -37,13 +38,15 @@ class AddMenuApiService {
     final body = {"name": name};
     await postData(url: url, body: body);
   }
-  Future<void> addSales(String name) async {
-    const String url = '${Constants.baseUrl}/users';
-    final body = {"name": name};
+  Future<void> addSales(String name,List<String> city,String teamleaderId,String managerId,bool isactive,String notes) async {
+    const String url = '${Constants.baseUrl}/Sales';
+    final prefs = await SharedPreferences.getInstance();
+    final userlogid = prefs.getString('salesId');
+    final body = {"name": name,"city": city,"userlog": userlogid,"teamleader": teamleaderId,"Manager": managerId,"salesisactivate": isactive,"notes": notes};
     await postData(url: url, body: body);
   }
 
-  Future<void> addDeveloper(String name) async {
+  Future<void> addDeveloper(String name, ) async {
     const String url = '${Constants.baseUrl}/Developers';
     final body = {"name": name};
     await postData(url: url, body: body);

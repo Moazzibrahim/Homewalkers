@@ -21,10 +21,10 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
       emit(AddInMenuError(message: 'Failed to add: $e'));
     }
   }
-  Future<void> addSales(String name) async {
+  Future<void> addSales(String name,List<String> city,String teamleaderId,String managerId,bool isactive,String notes) async {
     emit(AddInMenuLoading());
     try {
-      await _apiService.addSales(name);
+      await _apiService.addSales(name, city, teamleaderId, managerId, isactive, notes);
       emit(AddInMenuSuccess(message: 'Added successfully'));
     } catch (e) {
       emit(AddInMenuError(message: 'Failed to add: $e'));
