@@ -130,7 +130,15 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
       emit(AddInMenuError(message: 'Failed to update: $e'));
     }
   }
-
+  Future<void> updateSales(String name,String salesIdi) async {
+    emit(AddInMenuLoading());
+    try {
+      await _updateApiService.updateSales(name, salesIdi);
+      emit(AddInMenuSuccess(message: 'sales updated successfully'));
+    } catch (e) {
+      emit(AddInMenuError(message: 'Failed to update: $e'));
+    }
+  }
   Future<void> updateDeveloper(String name, String id) async {
     emit(AddInMenuLoading());
     try {
@@ -293,6 +301,15 @@ Future<void> deleteArea(String id) async {
     emit(AddInMenuSuccess(message: 'Area deleted successfully'));
   } catch (e) {
     emit(AddInMenuError(message: 'Failed to delete area: $e'));
+  }
+}
+Future<void> deleteSales(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteSales(id);
+    emit(AddInMenuSuccess(message: 'sales deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete sales: $e'));
   }
 }
 }

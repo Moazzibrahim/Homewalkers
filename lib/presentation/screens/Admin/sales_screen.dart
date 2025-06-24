@@ -236,7 +236,7 @@ class SalesScreen extends StatelessWidget {
                             onAdd: (value) {
                               context
                                   .read<AddInMenuCubit>()
-                                  .updateCommunicationWay(
+                                  .updateSales(
                                     value,
                                     communicationWay.id.toString(),
                                   );
@@ -260,7 +260,7 @@ class SalesScreen extends StatelessWidget {
                               Navigator.of(context).pop();
                               context
                                   .read<AddInMenuCubit>()
-                                  .deleteCommunicationWay(
+                                  .deleteSales(
                                     communicationWay.id.toString(),
                                   );
                             },

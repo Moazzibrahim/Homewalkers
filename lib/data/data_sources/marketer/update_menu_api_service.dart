@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UpdateMenuApiService {
   Future<http.Response> updateData({
@@ -33,6 +34,13 @@ class UpdateMenuApiService {
   Future<void> updateCommunicationWay(String name,String communicationWayId) async {
     final String url = '${Constants.baseUrl}/communicationway/$communicationWayId';
     final body = {"name": name};
+    await updateData(url: url, body: body);
+  }
+  Future<void> updateSales(String name,String salesIdi) async {
+    final String url = '${Constants.baseUrl}/Sales/$salesIdi';
+    final prefs = await SharedPreferences.getInstance();
+    final userlogid = prefs.getString('salesId');
+    final body = {"name": name,"userlog": userlogid};
     await updateData(url: url, body: body);
   }
   Future<void> updateDeveloper(String name,String developerId) async {
