@@ -17,8 +17,8 @@ import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/data/models/add_comment_model.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_lead_details.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
-import 'package:homewalkers_app/presentation/screens/marketier/marketer_lead_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
@@ -501,7 +501,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                       const SizedBox(height: 3),
                                       InkWell(
                                           onTap: () async {
-                                            await Navigator.push(context, MaterialPageRoute(builder: (_) => MarketerLeadDetailsScreen(leedId: lead.id!, leadName: lead.name ?? '', leadPhone: lead.phone ?? '', leadEmail: lead.email ?? '', leadStage: lead.stage?.name ?? '', leadStageId: lead.stage?.id ?? '', leadChannel: lead.chanel?.name ?? '', leadCreationDate: lead.createdAt != null ? formatDateTime(lead.createdAt!) : '', leadProject: lead.project?.name ?? '', leadLastComment: lead.lastcommentdate ?? '', leadcampaign: lead.campaign?.campainName ?? "campaign", leadNotes: "no notes", leaddeveloper: lead.project?.developer?.name ?? "no developer")));
+                                            await Navigator.push(context, MaterialPageRoute(builder: (_) => AdminLeadDetails(leedId: lead.id!, leadName: lead.name ?? '', leadPhone: lead.phone ?? '', leadEmail: lead.email ?? '', leadStage: lead.stage?.name ?? '', leadStageId: lead.stage?.id ?? '', leadChannel: lead.chanel?.name ?? '', leadCreationDate: lead.createdAt != null ? formatDateTime(lead.createdAt!) : '', leadProject: lead.project?.name ?? '', leadLastComment: lead.lastcommentdate ?? '', leadcampaign: lead.campaign?.campainName ?? "campaign", leadNotes: "no notes", leaddeveloper: lead.project?.developer?.name ?? "no developer")));
                                             if (selectedTab == 0) {
                                               context.read<GetAllUsersCubit>().fetchAllUsers();
                                             } else {

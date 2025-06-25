@@ -16,7 +16,7 @@ class StagesCubit extends Cubit<StagesState> {
   final result = await apiService.fetchStages();
 
   if (result != null) {
-    emit(StagesLoaded(result.data)); // result.data هي List<StageModel>
+    emit(StagesLoaded(result.data!)); // result.data هي List<StageModel>
   } else {
     emit(StagesError("فشل في جلب البيانات"));
   }

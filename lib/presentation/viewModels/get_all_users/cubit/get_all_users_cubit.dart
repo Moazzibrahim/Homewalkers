@@ -1,17 +1,13 @@
 // ignore_for_file: unused_field, unnecessary_null_comparison
-
-import 'dart:developer';
-
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/models/all_users_model.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 part 'get_all_users_state.dart';
-
 class GetAllUsersCubit extends Cubit<GetAllUsersState> {
   final GetAllUsersApiService apiService;
-  AllUsersModel? _originalLeadsResponse; // 🟡 حفظ البيانات الأصلية
+  AllUsersModel? _originalLeadsResponse;
   LeadResponse? _originalLeadsResponseee; 
   final Map<String, int> _salesLeadCount = {};
   Map<String, int> get salesLeadCount => _salesLeadCount;
@@ -22,36 +18,35 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
 
   Future<void> fetchAllUsers({String? stageFilter}) async {
     emit(GetAllUsersLoading());
-    final response = await apiService.getUsers();
-    _originalLeadsResponse = response; // 🟡 حفظ البيانات الأصلية
-    final salesSet = <String>{};
-    final teamLeaderSet = <String>{};
+    try {
+      final response = await apiService.getUsers();
+      _originalLeadsResponse = response; 
+      
+      if (response != null) {
+        // ... (your existing logic for salesNames, teamLeaderNames etc.)
+         final salesSet = <String>{};
+        final teamLeaderSet = <String>{};
 
-    for (var lead in response!.data ?? []) {
-        final salesName = lead.sales?.name;
-        final teamLeaderName = lead.sales?.teamleader?.name;
+        for (var lead in response.data ?? []) {
+          final salesName = lead.sales?.name;
+          final teamLeaderName = lead.sales?.teamleader?.name;
 
-        if (salesName != null && salesName.isNotEmpty) {
-          salesSet.add(salesName);
+          if (salesName != null && salesName.isNotEmpty) {
+            salesSet.add(salesName);
+          }
+          if (teamLeaderName != null && teamLeaderName.isNotEmpty) {
+            teamLeaderSet.add(teamLeaderName);
+          }
         }
-        if (teamLeaderName != null && teamLeaderName.isNotEmpty) {
-          teamLeaderSet.add(teamLeaderName);
-        }
-    }
-    salesNames = salesSet.toList();
-    teamLeaderNames = teamLeaderSet.toList();
-    List<Lead>? filteredData = response.data!;
-    if (stageFilter != null && stageFilter.isNotEmpty) {
-      filteredData = filteredData
-          .where((lead) =>
-              lead.stage?.name?.toLowerCase() == stageFilter.toLowerCase())
-          .toList();
-    }
-    log("✅ تم جلب البيانات بنجاح.");
-    if (response != null) {
-      emit(GetAllUsersSuccess(response));
-    } else {
-      emit(GetAllUsersFailure('Failed to fetch users.'));
+        salesNames = salesSet.toList();
+        teamLeaderNames = teamLeaderSet.toList();
+        
+        emit(GetAllUsersSuccess(response));
+      } else {
+        emit(GetAllUsersFailure('Failed to fetch users.'));
+      }
+    } catch (e) {
+      emit(GetAllUsersFailure('An error occurred: ${e.toString()}'));
     }
   }
 
@@ -171,6 +166,60 @@ Future<void> fetchLeadsInTrash() async {
     } else {
       emit(GetAllUsersSuccess(AllUsersModel(data: filteredLeads)));
     }
+  }
+  // ✅ الخطوة 7: تحديث دالة الفلترة
+  void filterLeadsAdminForAdvancedSearch({
+    String? salesId, // <-- استخدام الـ ID
+    String? country,
+    String? creationDate,
+    String? fromDate,
+    String? toDate,
+    String? user,
+    String? commentDate,
+  }) {
+    if (_originalLeadsResponse == null || _originalLeadsResponse!.data == null) {
+      emit(const GetAllUsersFailure("No original data to filter. Please fetch users first."));
+      return;
+    }
+
+    List<Lead> filteredLeads = List.from(_originalLeadsResponse!.data!);
+
+    filteredLeads = filteredLeads.where((lead) {
+      // <-- مقارنة باستخدام الـ ID
+      final matchSales = salesId == null || (lead.sales?.id == salesId);
+
+      final leadPhoneCode = lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
+      final matchCountry = country == null || (leadPhoneCode?.startsWith(country) ?? false);
+      final matchUser = user == null || (lead.addby?.name?.toLowerCase() == user.toLowerCase());
+      final leadCreatedAt = lead.createdAt != null ? DateTime.tryParse(lead.createdAt!) : null;
+      final leadCommentDate = lead.lastcommentdate != null ? DateTime.tryParse(lead.lastcommentdate!) : null;
+
+      final matchCreationDate = creationDate == null ||
+          (leadCreatedAt != null && _compareOnlyDate(leadCreatedAt, DateTime.parse(creationDate)));
+
+      final matchFromToDate = (fromDate == null && toDate == null) ||
+          (leadCreatedAt != null &&
+              (fromDate == null || leadCreatedAt.isAfter(DateTime.parse(fromDate).subtract(const Duration(days: 1)))) &&
+              (toDate == null || leadCreatedAt.isBefore(DateTime.parse(toDate).add(const Duration(days: 1)))));
+      
+      final matchCommentDate = commentDate == null ||
+          (leadCommentDate != null && _compareOnlyDate(leadCommentDate, DateTime.parse(commentDate)));
+
+      return matchSales &&
+          matchCountry &&
+          matchCreationDate &&
+          matchFromToDate &&
+          matchUser &&
+          matchCommentDate;
+    }).toList();
+    
+    // ملاحظة: لا داعي لإصدار حالة فشل إذا كانت النتائج فارغة، بل حالة نجاح مع قائمة فارغة
+    // الواجهة ستتعامل مع عرض رسالة "لا توجد نتائج"
+    emit(GetAllUsersSuccess(AllUsersModel(data: filteredLeads)));
+  }
+
+  bool _compareOnlyDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   String? getPhoneCodeFromPhone(String phone) {

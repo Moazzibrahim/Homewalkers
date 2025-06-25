@@ -21,6 +21,24 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
       emit(AddInMenuError(message: 'Failed to add: $e'));
     }
   }
+  Future<void> addStage(String name,String stageType,String comment) async {
+    emit(AddInMenuLoading());
+    try {
+      await _apiService.addStage(name,stageType,comment);
+      emit(AddInMenuSuccess(message: 'Added successfully'));
+    } catch (e) {
+      emit(AddInMenuError(message: 'Failed to add: $e'));
+    }
+  }
+    Future<void> addStagetype(String name,String comment) async {
+    emit(AddInMenuLoading());
+    try {
+      await _apiService.addStageType(name,comment);
+      emit(AddInMenuSuccess(message: 'Added successfully'));
+    } catch (e) {
+      emit(AddInMenuError(message: 'Failed to add: $e'));
+    }
+  }
   Future<void> addSales(String name,List<String> city,String teamleaderId,String managerId,bool isactive,String notes) async {
     emit(AddInMenuLoading());
     try {
@@ -135,6 +153,24 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
     try {
       await _updateApiService.updateSales(name, salesIdi);
       emit(AddInMenuSuccess(message: 'sales updated successfully'));
+    } catch (e) {
+      emit(AddInMenuError(message: 'Failed to update: $e'));
+    }
+  }
+  Future<void> updateStage(String name,String stageId,String stageType,String comment) async {
+    emit(AddInMenuLoading());
+    try {
+      await _updateApiService.updateStage(name, stageId, stageType, comment);
+      emit(AddInMenuSuccess(message: 'stage updated successfully'));
+    } catch (e) {
+      emit(AddInMenuError(message: 'Failed to update: $e'));
+    }
+  }
+  Future<void> updateStagetype(String name,String stageId,String comment) async {
+    emit(AddInMenuLoading());
+    try {
+      await _updateApiService.updateStageType(name, stageId, comment);
+      emit(AddInMenuSuccess(message: 'stage type updated successfully'));
     } catch (e) {
       emit(AddInMenuError(message: 'Failed to update: $e'));
     }
@@ -310,6 +346,24 @@ Future<void> deleteSales(String id) async {
     emit(AddInMenuSuccess(message: 'sales deleted successfully'));
   } catch (e) {
     emit(AddInMenuError(message: 'Failed to delete sales: $e'));
+  }
+}
+Future<void> deleteStage(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteStage(id);
+    emit(AddInMenuSuccess(message: 'stage deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete stage: $e'));
+  }
+}
+Future<void> deleteStagetype(String id) async {
+  emit(AddInMenuLoading());
+  try {
+    await _deleteApiService.deleteStagetype(id);
+    emit(AddInMenuSuccess(message: 'stage type deleted successfully'));
+  } catch (e) {
+    emit(AddInMenuError(message: 'Failed to delete stage type: $e'));
   }
 }
 }

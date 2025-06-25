@@ -303,7 +303,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                   state.stages.map((stage) {
                                     return DropdownMenuItem<String>(
                                       value: stage.id,
-                                      child: Text(stage.name),
+                                      child: Text(stage.name!),
                                     );
                                   }).toList(),
                               // 👈 -- الخطوة 2: تحديث كلا المتغيرين عند التغيير

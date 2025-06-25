@@ -8,7 +8,7 @@ class StagesInitial extends StagesState {}
 class StagesLoading extends StagesState {}
 
 class StagesLoaded extends StagesState {
-  final List<StageData> stages;
+  final List<StageDatas> stages;
 
   StagesLoaded(this.stages);
 }

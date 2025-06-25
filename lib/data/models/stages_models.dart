@@ -1,94 +1,103 @@
 class StageResponse {
-  final int results;
-  final Pagination pagination;
-  final List<StageData> data;
+  final int? results;
+  final Pagination? pagination;
+  final List<StageDatas>? data;
 
   StageResponse({
-    required this.results,
-    required this.pagination,
-    required this.data,
+    this.results,
+    this.pagination,
+    this.data,
   });
 
   factory StageResponse.fromJson(Map<String, dynamic> json) {
     return StageResponse(
-      results: json['results'],
-      pagination: Pagination.fromJson(json['pagination']),
-      data: List<StageData>.from(json['data'].map((x) => StageData.fromJson(x))),
+      results: json['results'] as int?,
+      pagination: json['pagination'] != null
+          ? Pagination.fromJson(json['pagination'] as Map<String, dynamic>)
+          : null,
+      data: (json['data'] as List<dynamic>?)
+          ?.map((item) => StageDatas.fromJson(item as Map<String, dynamic>))
+          .toList(),
     );
   }
 }
 
 class Pagination {
-  final int currentPage;
-  final int limit;
-  final int numberOfPages;
+  final int? currentPage;
+  final int? limit;
+  final int? numberOfPages;
 
   Pagination({
-    required this.currentPage,
-    required this.limit,
-    required this.numberOfPages,
+    this.currentPage,
+    this.limit,
+    this.numberOfPages,
   });
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
     return Pagination(
-      currentPage: json['currentPage'],
-      limit: json['limit'],
-      numberOfPages: json['NumberOfPages'],
+      currentPage: json['currentPage'] as int?,
+      limit: json['limit'] as int?,
+      numberOfPages: json['NumberOfPages'] as int?,
     );
   }
 }
 
-class StageData {
-  final String id;
-  final String name;
-  final String slug;
-  final String stageIsActivate;
-  final StageType stagetype;
-  final String comment;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final int v;
+class StageDatas {
+  final String? id;
+  final String? name;
+  final String? slug;
+  final String? stageIsActivate;
+  final StageType? stagetype;
+  final String? comment;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final int? v;
 
-  StageData({
-    required this.id,
-    required this.name,
-    required this.slug,
-    required this.stageIsActivate,
-    required this.stagetype,
-    required this.comment,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.v,
+  StageDatas({
+    this.id,
+    this.name,
+    this.slug,
+    this.stageIsActivate,
+    this.stagetype,
+    this.comment,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
   });
 
-  factory StageData.fromJson(Map<String, dynamic> json) {
-    return StageData(
-      id: json['_id'],
-      name: json['name'],
-      slug: json['slug'],
-      stageIsActivate: json['stageisactivate'],
-      stagetype: StageType.fromJson(json['stagetype']),
-      comment: json['Comment'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-      v: json['__v'],
+  factory StageDatas.fromJson(Map<String, dynamic> json) {
+    final createdStr = json['createdAt'] as String?;
+    final updatedStr = json['updatedAt'] as String?;
+
+    return StageDatas(
+      id: json['_id'] as String?,
+      name: json['name'] as String?,
+      slug: json['slug'] as String?,
+      stageIsActivate: json['stageisactivate'] as String?,
+      stagetype: json['stagetype'] != null
+          ? StageType.fromJson(json['stagetype'] as Map<String, dynamic>)
+          : null,
+      comment: json['Comment'] as String?,
+      createdAt: createdStr != null ? DateTime.tryParse(createdStr) : null,
+      updatedAt: updatedStr != null ? DateTime.tryParse(updatedStr) : null,
+      v: json['__v'] as int?,
     );
   }
 }
 
 class StageType {
-  final String id;
-  final String name;
+  final String? id;
+  final String? name;
 
   StageType({
-    required this.id,
-    required this.name,
+    this.id,
+    this.name,
   });
 
   factory StageType.fromJson(Map<String, dynamic> json) {
     return StageType(
-      id: json['_id'],
-      name: json['name'],
+      id: json['_id'] as String?,
+      name: json['name'] as String?,
     );
   }
 }

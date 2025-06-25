@@ -65,4 +65,12 @@ class DeleteMenuApiService {
     final String url = '${Constants.baseUrl}/Sales/$salesId';
     await deleteRequest(url: url);
   }
+  Future<void> deleteStage(String stageId) async {
+    final String url = '${Constants.baseUrl}/stage/$stageId';
+    await deleteRequest(url: url);
+  }
+  Future<void> deleteStagetype(String stageId) async {
+    final String url = '${Constants.baseUrl}/stagetype/$stageId';
+    await deleteRequest(url: url);
+  }
 }

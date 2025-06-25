@@ -38,6 +38,16 @@ class AddMenuApiService {
     final body = {"name": name};
     await postData(url: url, body: body);
   }
+  Future<void> addStage(String name,String stageType,String comment) async {
+    const String url = '${Constants.baseUrl}/stage';
+    final body = {"name": name,"stagetype": stageType,"Comment": comment};
+    await postData(url: url, body: body);
+  }
+  Future<void> addStageType(String name,String comment) async {
+    const String url = '${Constants.baseUrl}/stagetype';
+    final body = {"name": name,"Comment": comment};
+    await postData(url: url, body: body);
+  }
   Future<void> addSales(String name,List<String> city,String teamleaderId,String managerId,bool isactive,String notes) async {
     const String url = '${Constants.baseUrl}/Sales';
     final prefs = await SharedPreferences.getInstance();
