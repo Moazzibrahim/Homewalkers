@@ -9,6 +9,7 @@ import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_count_in_team_leader_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_sales_team_leader_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,7 @@ class CustomAssignDialogTeamLeaderWidget extends StatefulWidget {
   final LeadResponse? leadResponse;
   final List? leadIds;
   final String? leadId;
+  final String fcmyoken;
 
   const CustomAssignDialogTeamLeaderWidget({
     super.key,
@@ -25,6 +27,7 @@ class CustomAssignDialogTeamLeaderWidget extends StatefulWidget {
     this.leadResponse,
     this.leadId,
     this.leadIds,
+    required this.fcmyoken,
   });
 
   @override
@@ -49,6 +52,7 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
     _salesTeamCubit = SalesTeamCubit(GetSalesTeamLeaderApiService());
     _salesTeamCubit.fetchSalesTeam();
     _initialize();
+    print("fcm token: ${widget.fcmyoken}");
   }
 
   @override
@@ -252,6 +256,12 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                                   clearhistory: clearHistory,
                                   // يمكنك إضافة clearHistory هنا إذا كانت الدالة تدعمها
                                 );
+                                context.read<NotificationCubit>().sendNotificationToToken(
+                                      // 👈 هنعرف دي تحت
+                                      title: "Lead",
+                                      body: "Lead assigned successfully ✅",
+                                      fcmtokennnn: widget.fcmyoken,
+                                    );
                                 cubit.apiService.fetchLeadAssigned(
                                   widget.leadId!,
                                 );

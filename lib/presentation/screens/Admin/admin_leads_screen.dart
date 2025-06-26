@@ -1,4 +1,3 @@
-
 // leads_marketier_screen.dart
 // ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable
 import 'dart:developer';
@@ -399,6 +398,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                         itemCount: leads.length,
                         itemBuilder: (context, index) {
                           final lead = leads[index];
+                          final salesfcmtoken=lead.sales?.userlog?.fcmtoken;
+                          final prefs = SharedPreferences.getInstance();
+                          final fcmToken = prefs.then((prefs) => prefs.setString('fcm_token_sales', salesfcmtoken ?? ''));
+                          log("fcmToken of sales: $salesfcmtoken");
                           final leadstageupdated = lead.stagedateupdated;
                           final leadStagetype = lead.stage?.name ?? "";
                           DateTime? stageUpdatedDate;
@@ -436,7 +439,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                         const SizedBox(height: 6),
                                         Row(children: [
                                           Icon(Icons.man, color: Constants.maincolor),
-                                          Text("sales: ${lead.sales?.name ?? ""}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
+                                          Text(" ${lead.sales?.name ?? ""}", style:TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w400)),
                                         ]),
                                         SizedBox(height: 4),
                                         ElevatedButton(
@@ -501,7 +504,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                       const SizedBox(height: 3),
                                       InkWell(
                                           onTap: () async {
-                                            await Navigator.push(context, MaterialPageRoute(builder: (_) => AdminLeadDetails(leedId: lead.id!, leadName: lead.name ?? '', leadPhone: lead.phone ?? '', leadEmail: lead.email ?? '', leadStage: lead.stage?.name ?? '', leadStageId: lead.stage?.id ?? '', leadChannel: lead.chanel?.name ?? '', leadCreationDate: lead.createdAt != null ? formatDateTime(lead.createdAt!) : '', leadProject: lead.project?.name ?? '', leadLastComment: lead.lastcommentdate ?? '', leadcampaign: lead.campaign?.campainName ?? "campaign", leadNotes: "no notes", leaddeveloper: lead.project?.developer?.name ?? "no developer")));
+                                            await Navigator.push(context, MaterialPageRoute(builder: (_) => AdminLeadDetails(leedId: lead.id!, leadName: lead.name ?? '', leadPhone: lead.phone ?? '', leadEmail: lead.email ?? '', leadStage: lead.stage?.name ?? '', leadStageId: lead.stage?.id ?? '', leadChannel: lead.chanel?.name ?? '', leadCreationDate: lead.createdAt != null ? formatDateTime(lead.createdAt!) : '', leadProject: lead.project?.name ?? '', leadLastComment: lead.lastcommentdate ?? '', leadcampaign: lead.campaign?.campainName ?? "campaign", leadNotes: "no notes", leaddeveloper: lead.project?.developer?.name ?? "no developer",salesfcmToken: salesfcmtoken,)));
                                             if (selectedTab == 0) {
                                               context.read<GetAllUsersCubit>().fetchAllUsers();
                                             } else {
@@ -522,7 +525,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Could not open WhatsApp.")));
                                             }
                                           },
-                                          child: Row(mainAxisSize: MainAxisSize.min, children: [FaIcon(FontAwesomeIcons.whatsapp, color: Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor, size: 18), const SizedBox(width: 4), Text(lead.phone ?? '', style: const TextStyle(fontSize: 13))])),
+                                          child: Row(mainAxisSize: MainAxisSize.min, children: [FaIcon(FontAwesomeIcons.whatsapp, color: Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor, size: 18), const SizedBox(width: 4), Text(lead.phone ?? '', style:TextStyle(fontSize: 11.sp))])),
                                       SizedBox(height: 8),
                                       Row(children: [
                                         InkWell(

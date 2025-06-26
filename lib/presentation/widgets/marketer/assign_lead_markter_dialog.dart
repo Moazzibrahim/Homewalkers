@@ -11,6 +11,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AssignLeadMarkterDialog extends StatefulWidget {
@@ -18,6 +19,7 @@ class AssignLeadMarkterDialog extends StatefulWidget {
   final LeadResponse? leadResponse;
   final List? leadIds;
   final String? leadId;
+  final String salesfcmtoken;
 
   const AssignLeadMarkterDialog({
     super.key,
@@ -25,6 +27,7 @@ class AssignLeadMarkterDialog extends StatefulWidget {
     this.leadResponse,
     this.leadId,
     this.leadIds,
+    required this.salesfcmtoken,
   });
 
   @override
@@ -56,7 +59,9 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                   LeadCommentsCubit(GetAllLeadCommentsApiService())
                     ..fetchLeadComments(widget.leadId!),
         ),
-        BlocProvider(create: (_)=> SalesCubit(GetAllSalesApiService())..fetchAllSales()),
+        BlocProvider(
+          create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+        ),
       ],
       child: Builder(
         builder: (dialogContext) {
@@ -81,7 +86,8 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                           for (var sale in state.salesData.data!) {
                             final user = sale.userlog;
                             if ((user!.role == "Sales" ||
-                                    user.role == "Team Leader"|| user.role == "Manager")) {
+                                user.role == "Team Leader" ||
+                                user.role == "Manager")) {
                               uniqueSalesMap[sale.id!] = sale;
                             }
                           }
@@ -96,9 +102,7 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                 salesOnly.map((sale) {
                                   final userId = sale.id;
                                   return ListTile(
-                                    title: Text(
-                                      sale.userlog!.name!,
-                                    ),
+                                    title: Text(sale.userlog!.name!),
                                     subtitle: Text(
                                       sale.userlog!.role!,
                                       style: TextStyle(color: widget.mainColor),
@@ -224,6 +228,12 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                   isClearhistory: clearHistory,
                                   // يمكنك إضافة clearHistory هنا إذا كانت الدالة تدعمها
                                 );
+                                context.read<NotificationCubit>().sendNotificationToToken(
+                                      // 👈 هنعرف دي تحت
+                                      title: "Lead",
+                                      body: "Lead assigned successfully ✅",
+                                      fcmtokennnn: widget.salesfcmtoken,
+                                    );
                                 cubit.apiService.fetchLeadAssigned(
                                   widget.leadId!,
                                 );

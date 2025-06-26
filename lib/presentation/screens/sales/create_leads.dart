@@ -37,9 +37,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _notesController = TextEditingController();
-  final _budgetController = TextEditingController();
-  final _revenueController = TextEditingController();
-  final _unitPriceController = TextEditingController();
 
   String? selectedDeveloperId;
   String? selectedProjectId;
@@ -443,23 +440,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                         controller: _notesController,
                       ),
                       const SizedBox(height: 12),
-                      CustomTextField(
-                        hint: "Budget",
-                        textInputType: TextInputType.number,
-                        controller: _budgetController,
-                      ),
-                      const SizedBox(height: 12),
-                      CustomTextField(
-                        hint: "Revenue",
-                        controller: _revenueController,
-                        textInputType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 12),
-                      CustomTextField(
-                        hint: "Unit Price",
-                        controller: _unitPriceController,
-                        textInputType: TextInputType.number,
-                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -528,14 +508,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                       _selectedCommunicationWayId ?? '',
                                   // 👈 -- الخطوة 3: إرسال اسم المرحلة في حقل النوع
                                   leedtype: selectedStageName ?? '',
-                                  budget:
-                                      int.tryParse(_budgetController.text) ?? 0,
-                                  revenue:
-                                      int.tryParse(_revenueController.text) ??
-                                      0,
-                                  unitPrice:
-                                      int.tryParse(_unitPriceController.text) ??
-                                      0,
                                   dayonly: _dateController.text,
                                   lastStageDateUpdated: _dateController.text,
                                   campaign: _selectedCampaignId ?? '',

@@ -209,8 +209,9 @@ class User {
   final String? name;
   final String? email;
   final String? role;
+  final String? fcmtokenn;
 
-  User({this.id, this.name,this.email,this.role});
+  User({this.id, this.name,this.email,this.role,this.fcmtokenn});
 
   factory User.fromJson(Map<String, dynamic>? json) {
     if (json == null) return User();
@@ -219,6 +220,7 @@ class User {
       name: json['name'],
       email: json['email'],
       role: json['role'],
+      fcmtokenn: json['fcmToken'],
     );
   }
 }

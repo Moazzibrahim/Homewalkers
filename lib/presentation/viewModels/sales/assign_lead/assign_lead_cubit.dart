@@ -1,11 +1,14 @@
 // assign_cubit.dart
 // ignore_for_file: avoid_print
+import 'dart:convert';
 import 'dart:developer';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class AssignleadCubit extends Cubit<AssignState> {
   AssignleadCubit() : super(AssignInitial());
@@ -225,7 +228,6 @@ class AssignleadCubit extends Cubit<AssignState> {
           "Assigned_to": salesId,
           "clearHistory": isClearhistory,
         };
-
         final postResponse = await dio.post(
           postUrl,
           data: postBody,
@@ -243,6 +245,33 @@ class AssignleadCubit extends Cubit<AssignState> {
       emit(AssignSuccess());
     } catch (e) {
       emit(AssignFailure('❌ Error during combined assignment: $e'));
+    }
+  }
+  Future<void> sendNotification({
+    required String title,
+    required String body,
+  }) async {
+    try {
+      final String url = '${Constants.baseUrl}/Notification/send-fcm';
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "fcmToken": fcmToken,
+          "title": title,
+          "body": body,
+        }),
+      );
+      if (response.statusCode == 200) {
+        print('✅ Notification sent successfully');
+        print('🧾 Response body: ${response.body}');
+      } else {
+        print('❌ Failed to send notification: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Error sending notification: $e');
     }
   }
 }

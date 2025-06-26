@@ -225,8 +225,9 @@ class UserInfo {
   String? phone;
   String? profileImg;
   String? role;
+  String? fcmtoken;
 
-  UserInfo({this.id, this.name, this.email, this.phone, this.profileImg, this.role});
+  UserInfo({this.id, this.name, this.email, this.phone, this.profileImg, this.role,this.fcmtoken});
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
@@ -236,6 +237,7 @@ class UserInfo {
       phone: json['phone'],
       profileImg: json['profileImg'],
       role: json['role'],
+      fcmtoken: json['fcmToken'],
     );
   }
 }

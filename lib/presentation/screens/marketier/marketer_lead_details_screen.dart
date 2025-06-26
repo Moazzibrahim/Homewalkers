@@ -33,6 +33,7 @@ class MarketerLeadDetailsScreen extends StatefulWidget {
   final String? leadLastComment;
   final String? leadNotes;
   final String? leaddeveloper;
+  final String salesfcmtoken;
   MarketerLeadDetailsScreen({
     super.key,
     required this.leedId,
@@ -49,6 +50,7 @@ class MarketerLeadDetailsScreen extends StatefulWidget {
     this.leadLastComment,
     this.leadNotes,
     this.leaddeveloper,
+    required this.salesfcmtoken,
   });
   @override
 
@@ -243,6 +245,7 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                                               : Constants
                                                                   .mainDarkmodecolor,
                                                       leadResponse: state.leadsResponse,
+                                                      salesfcmtoken: widget.salesfcmtoken,
                                                     ),
                                               );
                                             }

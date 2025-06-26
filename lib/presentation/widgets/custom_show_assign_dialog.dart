@@ -6,6 +6,7 @@ import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:homewalkers_app/presentation/viewModels/get_all_sales/get_all_sales_cubit.dart';
 
@@ -14,7 +15,8 @@ class AssignDialog extends StatefulWidget {
   final LeadResponse?
   leadResponse; // Contains potential assignees (e.g., sales team members)
   final List? leadIds;
-  final String? leadId; // Optional: if you want to pass a specific lead ID
+  final String? leadId;
+  final String? fcmtoken; // Optional: if you want to pass a specific lead ID
 
   const AssignDialog({
     super.key,
@@ -22,6 +24,7 @@ class AssignDialog extends StatefulWidget {
     this.leadResponse,
     this.leadId,
     this.leadIds,
+    this.fcmtoken,
   });
 
   @override
@@ -184,6 +187,12 @@ class _AssignDialogState extends State<AssignDialog> {
                                       "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}",
                                   teamleadersId: teamLeaderId!,
                                 );
+                                  context.read<NotificationCubit>().sendNotificationToToken(
+                                      // 👈 هنعرف دي تحت
+                                      title: "Lead",
+                                      body: "Lead assigned successfully ✅",
+                                      fcmtokennnn: widget.fcmtoken!,
+                                    );
                               } else {
                                 ScaffoldMessenger.of(
                                   dialogContext,

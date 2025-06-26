@@ -1,10 +1,13 @@
 // ignore_for_file: unused_local_variable
 
+import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/main.dart'; // تأكد أن فيه navigatorKey
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 
@@ -42,8 +45,16 @@ class NotificationCubit extends Cubit<NotificationState> {
       // أخذ التوكن وتخزينه
       final token = await messaging.getToken();
       log("🔑 FCM Token: $token");
-
       final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('fcm_token', token ?? '');
+
+// ⬇️ لو كنت مخزن الـ role وقت تسجيل الدخول
+      final role = prefs.getString('role');
+      final userId = prefs.getString('salesId'); // أو id المستخدم
+
+      log("🔑 FCM Token: $token");
+      log("👤 Current User ID: $userId");
+      log("🧑‍💼 Current User Role: $role");
       await prefs.setString('fcm_token', token ?? '');
       emit(NotificationState(token: token));
 
@@ -122,6 +133,34 @@ class NotificationCubit extends Cubit<NotificationState> {
     }
   }
 
+  void sendNotificationToToken({
+  required String title,
+  required String body,
+  required String fcmtokennnn,
+}) async {
+  try {
+    final String url = '${Constants.baseUrl}/Notification/send-fcm';
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "fcmToken": fcmtokennnn,
+        "title": title,
+        "body": body,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      log('✅ Notification sent successfully to: $fcmtokennnn');
+    } else {
+      log('❌ Failed to send notification: ${response.statusCode}');
+      log('Response body: ${response.body}');
+    }
+  } catch (e) {
+    log('❌ Error sending notification: $e');
+  }
+}
   void _handleNotificationNavigation(Map<String, dynamic> data) {
     // مثال على التنقل حسب نوع الإشعار
     final target = data['target'];

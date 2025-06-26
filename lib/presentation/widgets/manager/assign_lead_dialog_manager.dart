@@ -11,6 +11,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AssignLeadDialogManager extends StatefulWidget {
@@ -18,6 +19,7 @@ class AssignLeadDialogManager extends StatefulWidget {
   final LeadResponse? leadResponse;
   final List? leadIds;
   final String? leadId;
+  final String fcmtoken;
 
   const AssignLeadDialogManager({
     super.key,
@@ -25,6 +27,7 @@ class AssignLeadDialogManager extends StatefulWidget {
     this.leadResponse,
     this.leadId,
     this.leadIds,
+    required this.fcmtoken,
   });
 
   @override
@@ -242,6 +245,12 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                   isClearhistory: clearHistory,
                                   // يمكنك إضافة clearHistory هنا إذا كانت الدالة تدعمها
                                 );
+                                  context.read<NotificationCubit>().sendNotificationToToken(
+                                      // 👈 هنعرف دي تحت
+                                      title: "Lead",
+                                      body: "new Lead assigned successfully ✅",
+                                      fcmtokennnn: widget.fcmtoken,
+                                    );
                                 cubit.apiService.fetchLeadAssigned(
                                   widget.leadId!,
                                 );

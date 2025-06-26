@@ -35,6 +35,7 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
   final String? leadLastComment;
   final String? leadNotes;
   final String? leaddeveloper;
+  final String? fcmtoken;
   SalesLeadsDetailsScreen({
     super.key,
     required this.leedId,
@@ -51,6 +52,7 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
     this.leadLastComment,
     this.leadNotes,
     this.leaddeveloper,
+    this.fcmtoken,
   });
   @override
   State<SalesLeadsDetailsScreen> createState() =>
@@ -208,6 +210,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                                           widget.leedId,
                                                         ],
                                                         leadId: widget.leedId,
+                                                        fcmtoken: widget.fcmtoken,
                                                         mainColor:
                                                             Theme.of(
                                                                       context,

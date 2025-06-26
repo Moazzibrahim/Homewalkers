@@ -29,10 +29,11 @@ class LoginApiService {
     BuildContext context,
   ) async {
     try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
       final response = await http.post(
         Uri.parse("$baseUrl/Signup/login"),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({'email': email, 'password': password, 'fcmToken': fcmToken}),
       );
 
       if (response.statusCode == 200) {

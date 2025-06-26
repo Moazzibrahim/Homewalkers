@@ -574,6 +574,10 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                         itemCount: leads.length,
                         itemBuilder: (context, index) {
                           final lead = leads[index];
+                          final salesfcmtoken=lead.sales?.userlog?.fcmtokenn;
+                          final prefs = SharedPreferences.getInstance();
+                          final fcmToken = prefs.then((prefs) => prefs.setString('fcm_token_sales', salesfcmtoken ?? ''));
+                          log("fcmToken of sales: $salesfcmtoken");
                           final leadstageupdated = lead.stagedateupdated;
                           final leadStagetype = lead.stage?.name ?? "";
                           // تحويل التاريخ من String إلى DateTime
@@ -979,6 +983,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                             ?.developer
                                                             ?.name ??
                                                         "no developer",
+                                                        salesfcmtoken: salesfcmtoken!,
                                                   ),
                                             ),
                                           );

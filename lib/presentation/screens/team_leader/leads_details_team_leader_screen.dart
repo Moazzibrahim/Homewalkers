@@ -34,6 +34,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
   final String? leaddeveloper;
   final String? userlogname;
   final String? teamleadername;
+  final String fcmtoken;
 
   LeadsDetailsTeamLeaderScreen({
     super.key,
@@ -53,6 +54,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
     this.leaddeveloper,
     this.userlogname,
     this.teamleadername,
+    required this.fcmtoken,
   });
   @override
   State<LeadsDetailsTeamLeaderScreen> createState() =>

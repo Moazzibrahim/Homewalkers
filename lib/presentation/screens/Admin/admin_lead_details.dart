@@ -32,6 +32,7 @@ class AdminLeadDetails extends StatefulWidget {
   final String? leadLastComment;
   final String? leadNotes;
   final String? leaddeveloper;
+  final String? salesfcmToken;
   AdminLeadDetails({
     super.key,
     required this.leedId,
@@ -48,6 +49,7 @@ class AdminLeadDetails extends StatefulWidget {
     this.leadLastComment,
     this.leadNotes,
     this.leaddeveloper,
+    this.salesfcmToken,
   });
   @override
 
@@ -224,6 +226,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                                     ) => AssignLeadMarkterDialog(
                                                       leadIds: [widget.leedId],
                                                       leadId: widget.leedId,
+                                                      salesfcmtoken: widget.salesfcmToken!,
                                                       mainColor:
                                                           Theme.of(
                                                                     context,

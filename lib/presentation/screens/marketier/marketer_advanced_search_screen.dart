@@ -253,7 +253,7 @@ class _MarketerAdvancedSearchScreenState
             ),
             Spacer(),
             TextButton(onPressed: (){
-              Navigator.push(context,MaterialPageRoute(builder:(context)=> MarketerLeadDetailsScreen(leedId: lead.id!,leadName: lead.name,leadEmail: lead.email,leadPhone: lead.phone,leadStageId: lead.stage!.id!,
+              Navigator.push(context,MaterialPageRoute(builder:(context)=> MarketerLeadDetailsScreen(leedId: lead.id!,leadName: lead.name,leadEmail: lead.email,leadPhone: lead.phone,leadStageId: lead.stage!.id!,salesfcmtoken: lead.sales!.userlog!.fcmtokenn!,
               leadStage: lead.stage!.name,leadChannel: lead.chanel!.name!,leadCreationDate:DateTime.parse(lead.createdAt!).toUtc().toString(),leadLastComment: lead.lastcommentdate,leadCreationTime: lead.createdAt,leadNotes: lead.notes,leadProject: lead.project!.name,leadcampaign: lead.campaign!.name,leaddeveloper: lead.project!.developer!.name,) ));
             }, child: Text("view more", style: TextStyle(color: Theme.of(context).brightness == Brightness.light ?Constants.maincolor: Constants.mainDarkmodecolor))),
           ],

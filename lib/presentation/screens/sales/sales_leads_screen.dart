@@ -15,6 +15,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/lea
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_filter_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -286,7 +287,11 @@ class SalesLeadsScreen extends StatelessWidget {
                         child: ListView.builder(
                           itemCount: leads.length,
                           itemBuilder: (context, index) {
-                            final lead = leads[index];
+                          final lead = leads[index];
+                          final salesfcmtoken=lead.sales?.userlog?.fcmtokenn;
+                          final prefs = SharedPreferences.getInstance();
+                          final fcmToken = prefs.then((prefs) => prefs.setString('fcm_token_sales', salesfcmtoken ?? ''));
+                          log("fcmToken of sales: $salesfcmtoken");
                             final leadstageupdated = lead.stagedateupdated;
                             final leadStagetype = lead.stage?.name ?? "";
                             // تحويل التاريخ من String إلى DateTime
@@ -606,6 +611,7 @@ class SalesLeadsScreen extends StatelessWidget {
                                                               ?.developer
                                                               ?.name ??
                                                           "no developer",
+                                                          fcmtoken: salesfcmtoken,
                                                     ),
                                               ),
                                             );

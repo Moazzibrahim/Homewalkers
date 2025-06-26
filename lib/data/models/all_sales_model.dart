@@ -153,6 +153,7 @@ class UserLogsModel {
   final String? phone;
   final String? profileImg;
   final String? role;
+  final String? fcmtoken;
 
   UserLogsModel({
     this.id,
@@ -161,6 +162,7 @@ class UserLogsModel {
     this.phone,
     this.profileImg,
     this.role,
+    this.fcmtoken,
   });
 
   factory UserLogsModel.fromJson(Map<String, dynamic> json) {
@@ -171,6 +173,7 @@ class UserLogsModel {
       phone: json['phone'],
       profileImg: json['profileImg'],
       role: json['role'],
+      fcmtoken: json['fcmToken'],
     );
   }
 
@@ -181,6 +184,7 @@ class UserLogsModel {
         'phone': phone,
         'profileImg': profileImg,
         'role': role,
+        'fcmToken': fcmtoken,
       };
 }
 

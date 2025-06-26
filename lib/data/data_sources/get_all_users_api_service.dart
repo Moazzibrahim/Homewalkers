@@ -15,7 +15,8 @@ class GetAllUsersApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        return AllUsersModel.fromJson(jsonResponse);
+        final allUsersModel = AllUsersModel.fromJson(jsonResponse);
+        return allUsersModel;
       } else {
         print('❌ Failed to load users. Status code: ${response.statusCode}');
       }
@@ -24,11 +25,10 @@ class GetAllUsersApiService {
     }
     return null;
   }
+
   Future<LeadResponse> getLeadsDataInTrash() async {
     try {
-      final url = Uri.parse(
-        '${Constants.baseUrl}/users?leadisactive=false',
-      );
+      final url = Uri.parse('${Constants.baseUrl}/users?leadisactive=false');
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
