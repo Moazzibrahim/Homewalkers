@@ -30,29 +30,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   log("[Background] Message: ${message.messageId}");
-
-  final notification = message.notification;
-  final android = notification?.android;
-
-  if (notification != null) {
-    flutterLocalNotificationsPlugin.show(
-      notification.hashCode,
-      notification.title ?? '📢 إشعار',
-      notification.body ?? '📬 لديك رسالة جديدة',
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          'high_importance_channel',
-          'High Importance Notifications',
-          importance: Importance.max,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
-    );
-  }
 }
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

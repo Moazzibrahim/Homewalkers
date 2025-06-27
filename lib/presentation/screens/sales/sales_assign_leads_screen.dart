@@ -192,6 +192,7 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
                       Theme.of(context).brightness == Brightness.light
                           ? Constants.maincolor
                           : Constants.mainDarkmodecolor,
+                        fcmtoken: leadResponse?.data?.first.sales?.teamleader?.fcmtokenn ?? '',
                 ),
               );
             },

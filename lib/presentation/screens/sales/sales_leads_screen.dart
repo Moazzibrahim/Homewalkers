@@ -288,7 +288,7 @@ class SalesLeadsScreen extends StatelessWidget {
                           itemCount: leads.length,
                           itemBuilder: (context, index) {
                           final lead = leads[index];
-                          final salesfcmtoken=lead.sales?.userlog?.fcmtokenn;
+                          final salesfcmtoken=lead.sales?.teamleader?.fcmtokenn;
                           final prefs = SharedPreferences.getInstance();
                           final fcmToken = prefs.then((prefs) => prefs.setString('fcm_token_sales', salesfcmtoken ?? ''));
                           log("fcmToken of sales: $salesfcmtoken");

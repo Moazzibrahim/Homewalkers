@@ -64,6 +64,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    print("fcmtoken: ${widget.fcmtoken}");
     checkRoleName();
   }
 
@@ -223,6 +224,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                                                     .mainDarkmodecolor,
                                                         leadResponse:
                                                             state.assignedModel,
+                                                            
                                                       ),
                                                     ),
                                               );

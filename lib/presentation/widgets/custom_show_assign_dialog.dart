@@ -41,6 +41,7 @@ class _AssignDialogState extends State<AssignDialog> {
   void initState() {
     super.initState();
     _initialize();
+    print('fcmtoken: ${widget.fcmtoken}');
   }
 
   void _initialize() async {
