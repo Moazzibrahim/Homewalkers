@@ -651,8 +651,9 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                         Row(
                                           children: [
                                             Icon(Icons.man,color: Constants.maincolor,),
+                                            const SizedBox(width: 6),
                                             Text(
-                                              "sales: ${lead.sales?.name ?? ""}",
+                                              lead.sales?.name ?? "",
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w400,

@@ -67,6 +67,7 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
     checkRoleName();
     checkClearHistoryTime();
     checkIsClearHistory();
+    print("fcmtokenn: ${widget.fcmtokenn}");
   }
 
   Future<void> checkRoleName() async {
@@ -400,18 +401,15 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                           .toString() ??
                                       "",
                                 )?.toUtc();
-                            final isFirstValid =
-                                isClearHistoryy != true ||
-                                (firstcommentdate != null &&
-                                    firstcommentdate.isAfter(
-                                      clearHistoryTimee!,
-                                    ));
-                            final isSecondValid =
-                                isClearHistoryy != true ||
-                                (secondcommentdate != null &&
-                                    secondcommentdate.isAfter(
-                                      clearHistoryTimee!,
-                                    ));
+                            final isFirstValid = isClearHistoryy != true ||
+        (clearHistoryTimee != null && // <-- ADD THIS CHECK
+            firstcommentdate != null &&
+            firstcommentdate.isAfter(clearHistoryTimee!));
+
+    final isSecondValid = isClearHistoryy != true ||
+        (clearHistoryTimee != null && // <-- AND ADD THIS CHECK
+            secondcommentdate != null &&
+            secondcommentdate.isAfter(clearHistoryTimee!));
                             if ((isFirstValid &&
                                 firstComment?.firstcomment?.text != null)) {
                               return Column(

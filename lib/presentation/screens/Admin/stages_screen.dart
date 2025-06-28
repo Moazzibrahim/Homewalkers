@@ -86,7 +86,7 @@ class _StagesScreenState extends State<StagesScreen>
                         indicatorSize: TabBarIndicatorSize.tab,
                         tabs: const [
                           Tab(text: "Stages"),
-                          Tab(text: "Stages Type"),
+                          Tab(text: "Types"),
                         ],
                       ),
                     ),

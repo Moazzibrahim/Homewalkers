@@ -48,7 +48,15 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
       emit(AddInMenuError(message: 'Failed to add: $e'));
     }
   }
-
+  Future<void> addUsers(String name,String email,String phone,String password,String confirmpassword,String role) async {
+    emit(AddInMenuLoading());
+    try {
+      await _apiService.addUsers(name, email, phone, password, confirmpassword, role);
+      emit(AddInMenuSuccess(message: 'Added successfully'));
+    } catch (e) {
+      emit(AddInMenuError(message: 'Failed to add: $e'));
+    }
+  }
   Future<void> addDeveloper(String name) async {
     emit(AddInMenuLoading());
     try {
@@ -153,6 +161,24 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
     try {
       await _updateApiService.updateSales(name, salesIdi);
       emit(AddInMenuSuccess(message: 'sales updated successfully'));
+    } catch (e) {
+      emit(AddInMenuError(message: 'Failed to update: $e'));
+    }
+  }
+  Future<void> updateUser(String name,String idi,String email,String phone,String role) async {
+    emit(AddInMenuLoading());
+    try {
+      await _updateApiService.updateUser(name,idi, email, phone, role);
+      emit(AddInMenuSuccess(message: 'user updated successfully'));
+    } catch (e) {
+      emit(AddInMenuError(message: 'Failed to update: $e'));
+    }
+  }
+  Future<void> updateUserPassword(String idi,String currentPassword,String password, String confirmpassword) async {
+    emit(AddInMenuLoading());
+    try {
+      await _updateApiService.updateUserPassword(idi, currentPassword, password, confirmpassword);
+      emit(AddInMenuSuccess(message: 'user password updated successfully'));
     } catch (e) {
       emit(AddInMenuError(message: 'Failed to update: $e'));
     }

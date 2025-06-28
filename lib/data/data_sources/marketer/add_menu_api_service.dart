@@ -48,7 +48,12 @@ class AddMenuApiService {
     final body = {"name": name,"Comment": comment};
     await postData(url: url, body: body);
   }
-  Future<void> addSales(String name,List<String> city,String teamleaderId,String managerId,bool isactive,String notes) async {
+  Future<void> addUsers(String name,String email,String phone,String password,String confirmpassword,String role) async {
+    const String url = '${Constants.baseUrl}/Signup';
+    final body = {"name": name,"email": email,"phone": phone,"password": password,"passwordConfirm": confirmpassword,"role": role,};
+    await postData(url: url, body: body);
+  }
+    Future<void> addSales(String name,List<String> city,String teamleaderId,String managerId,bool isactive,String notes) async {
     const String url = '${Constants.baseUrl}/Sales';
     final prefs = await SharedPreferences.getInstance();
     final userlogid = prefs.getString('salesId');

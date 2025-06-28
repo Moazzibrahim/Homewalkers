@@ -43,6 +43,16 @@ class UpdateMenuApiService {
     final body = {"name": name,"userlog": userlogid};
     await updateData(url: url, body: body);
   }
+  Future<void> updateUser(String name,String Idi,String email,String phone,String role) async {
+    final String url = '${Constants.baseUrl}/Signup/$Idi';
+    final body = {"name": name, "email": email, "phone": phone, "role": role};
+    await updateData(url: url, body: body);
+  }
+  Future<void> updateUserPassword(String idi,String currentPassword,String password, String confirmpassword) async {
+    final String url = '${Constants.baseUrl}/Signup/changeMyPassword/$idi';
+    final body = {"currentPassword": currentPassword, "password": password, "passwordConfirm": confirmpassword,};
+    await updateData(url: url, body: body);
+  }
   Future<void> updateStage(String name,String stageId,String stageType,String comment) async {
     final String url = '${Constants.baseUrl}/stage/$stageId';
     final body = {"name": name,"stagetype": stageType,"Comment": comment};

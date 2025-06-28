@@ -401,12 +401,18 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             ],
                                           ),
                                           const SizedBox(height: 6),
-                                          Text(
-                                            "sales: ${lead.sales?.name ?? ""}",
+                                          Row(
+                                            children: [
+                                              Icon(Icons.man,color: Constants.maincolor,),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                            lead.sales?.name ?? "",
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w400,
                                             ),
+                                          ),
+                                            ],
                                           ),
                                           SizedBox(height: 4),
                                           ElevatedButton(
