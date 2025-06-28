@@ -41,3 +41,5 @@ class LeadAssignedLoaded extends LeadCommentsState {
   @override
   List<Object?> get props => [leadAssigned];
 }
+
+class ReplySentSuccessfully extends LeadCommentsState {}

@@ -51,4 +51,40 @@ class GetAllLeadCommentsApiService {
       throw Exception('Failed to fetch LeadAssigned data: $e');
     }
   }
+   // ✅ New function to post a reply to a comment
+  Future<void> postReply({
+    required String commentId,
+    required String replyText,
+  }) async {
+    final Uri url = Uri.parse('${Constants.baseUrl}/Action/reply');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    final prefs = await SharedPreferences.getInstance();
+    final salesId = prefs.getString('salesId');
+
+    final Map<String, dynamic> body = {
+      'commentId': commentId,
+      'replyText': replyText,
+      'userId': salesId,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to post reply. Status code: ${response.statusCode}, body: ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to send reply: $e');
+    }
+  }
 }

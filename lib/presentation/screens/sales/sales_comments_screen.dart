@@ -80,60 +80,68 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
           (_) =>
               LeadCommentsCubit(GetAllLeadCommentsApiService())
                 ..fetchLeadComments(widget.leedId),
-      child: Scaffold(
-        appBar: CustomAppBar(
-          title: "comments",
-          onBack: () => Navigator.pop(context),
-        ),
-        body: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
-          builder: (context, state) {
-            if (state is LeadCommentsLoading) {
-              return Center(child: CircularProgressIndicator());
-            } else if (state is LeadCommentsError) {
-              return Center(child: Text('Error: ${state.message}'));
-            } else if (state is LeadCommentsLoaded) {
-              final leadComments = state.leadComments;
-              final List<DataItem> filteredData =
-                  leadComments.data!.where((item) {
-                    if (isClearHistory == true && clearHistoryTime != null) {
-                      final firstDate =
-                          DateTime.tryParse(
-                            item.comments?.first.firstcomment?.date
-                                    ?.toString() ??
-                                '',
-                          )?.toUtc();
-                      final secondDate =
-                          DateTime.tryParse(
-                            item.comments?.first.secondcomment?.date
-                                    ?.toString() ??
-                                '',
-                          )?.toUtc();
-                      final isFirstValid =
-                          firstDate != null &&
-                          firstDate.isAfter(clearHistoryTime!);
-                      final isSecondValid =
-                          secondDate != null &&
-                          secondDate.isAfter(clearHistoryTime!);
-                      return isFirstValid || isSecondValid;
-                    }
-                    return true;
-                  }).toList();
-              if (filteredData.isEmpty) {
-                return Center(child: Text('No comments found'));
+      child:  BlocListener<LeadCommentsCubit, LeadCommentsState>(
+    listener: (context, state) {
+      if (state is ReplySentSuccessfully) {
+        // ✅ إعادة جلب الكومنتات بعد إرسال الرد
+        context.read<LeadCommentsCubit>().fetchLeadComments(widget.leedId);
+      }
+    },
+        child: Scaffold(
+          appBar: CustomAppBar(
+            title: "comments",
+            onBack: () => Navigator.pop(context),
+          ),
+          body: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
+            builder: (context, state) {
+              if (state is LeadCommentsLoading) {
+                return Center(child: CircularProgressIndicator());
+              } else if (state is LeadCommentsError) {
+                return Center(child: Text('Error: ${state.message}'));
+              } else if (state is LeadCommentsLoaded) {
+                final leadComments = state.leadComments;
+                final List<DataItem> filteredData =
+                    leadComments.data!.where((item) {
+                      if (isClearHistory == true && clearHistoryTime != null) {
+                        final firstDate =
+                            DateTime.tryParse(
+                              item.comments?.first.firstcomment?.date
+                                      ?.toString() ??
+                                  '',
+                            )?.toUtc();
+                        final secondDate =
+                            DateTime.tryParse(
+                              item.comments?.first.secondcomment?.date
+                                      ?.toString() ??
+                                  '',
+                            )?.toUtc();
+                        final isFirstValid =
+                            firstDate != null &&
+                            firstDate.isAfter(clearHistoryTime!);
+                        final isSecondValid =
+                            secondDate != null &&
+                            secondDate.isAfter(clearHistoryTime!);
+                        return isFirstValid || isSecondValid;
+                      }
+                      return true;
+                    }).toList();
+                if (filteredData.isEmpty) {
+                  return Center(child: Text('No comments found'));
+                }
+                return ListView.builder(
+                  padding: EdgeInsets.all(16),
+                  itemCount: filteredData.length,
+                  itemBuilder: (context, index) {
+                    final dataItem = filteredData[index];
+                    // نقدر نبني كارت لكل DataItem ويعرض أول comment عنده
+                    return buildCommentCard(context, dataItem);
+                  },
+                );
+              } else {
+                return Container();
               }
-              return ListView.builder(
-                padding: EdgeInsets.all(16),
-                itemCount: filteredData.length,
-                itemBuilder: (context, index) {
-                  final dataItem = filteredData[index];
-                  // نقدر نبني كارت لكل DataItem ويعرض أول comment عنده
-                  return buildCommentCard(context, dataItem);
-                },
-              );
-            } else {
-              return Container();
-            }
-          },
+            },
+          ),
         ),
       ),
     );
@@ -299,6 +307,67 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                           );
                         }).toList()
                         : [Text('No Replies')],
+              ),
+              SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final TextEditingController replyController =
+                        TextEditingController();
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext ctx) {
+                        return AlertDialog(
+                          title: Text("Write a reply"),
+                          content: TextField(
+                            controller: replyController,
+                            maxLines: 3,
+                            decoration: InputDecoration(
+                              hintText: 'Type your reply here...',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text("Cancel"),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).brightness == Brightness.light? Constants.maincolor : Constants.mainDarkmodecolor),
+                              onPressed: () async {
+                                final replyText = replyController.text.trim();
+                                if (replyText.isEmpty) return;
+                                Navigator.pop(ctx); // Close dialog
+                                context.read<LeadCommentsCubit>().sendReplyToComment(
+                                      commentId: dataItem.comments?.first.id ?? '',
+                                      replyText: replyText,
+                                    );
+                                // Optional: show a message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Reply sent!')),
+                                );
+                                // Optional: refresh comments
+                                context.read<LeadCommentsCubit>().fetchLeadComments(widget.leedId);
+                              },
+                              child: Text("Send",style: TextStyle(color: Colors.white),),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  icon: Icon(Icons.reply, color: Colors.white),
+                  label: Text("Reply", style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
+                  ),
+                ),
               ),
             ],
           ),

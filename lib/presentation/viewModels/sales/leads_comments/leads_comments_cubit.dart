@@ -27,4 +27,20 @@ class LeadCommentsCubit extends Cubit<LeadCommentsState> {
       emit(LeadCommentsError(e.toString()));
     }
   }
+   // ✅ New function to post a reply to a comment
+  Future<void> sendReplyToComment({
+    required String commentId,
+    required String replyText,
+  }) async {
+    emit(LeadCommentsLoading()); // Optional: or use a separate state like ReplySending
+    try {
+      await apiService.postReply(
+        commentId: commentId,
+        replyText: replyText,
+      );
+      emit(ReplySentSuccessfully());
+    } catch (e) {
+      emit(LeadCommentsError('Failed to send reply: $e'));
+    }
+  }
 }
