@@ -17,4 +17,14 @@ class RegionCubit extends Cubit<RegionState> {
       emit(RegionError(e.toString()));
     }
   }
+  Future<void> fetchRegionsInTrash() async {
+    emit(RegionLoading());
+
+    try {
+      final regions = await regionApiService.fetchRegionsInTrash();
+      emit(RegionLoaded(regions));
+    } catch (e) {
+      emit(RegionError(e.toString()));
+    }
+  }
 }

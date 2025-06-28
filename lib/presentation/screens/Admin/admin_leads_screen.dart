@@ -61,29 +61,35 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   String? _selectedCampaignFilter;
 
   @override
-  void initState() {
-    super.initState();
-    _nameSearchController = TextEditingController();
-    checkClearHistoryTime();
-    checkIsClearHistory();
+void initState() {
+  super.initState();
+  _nameSearchController = TextEditingController();
+  checkClearHistoryTime();
+  checkIsClearHistory();
 
-    // 🟢 FIX: تم تعديل هذا الجزء ليقوم بالفلترة الأولية بشكل صحيح
-    // نحفظ الفلتر المبدئي القادم من الـ widget
-    _selectedStageFilter = widget.stageName;
+  // --- بداية الإصلاح ---
+  // تم تبسيط المنطق لضمان أننا نبدأ دائمًا بطلب قائمة الـ "leads" الرئيسية عند فتح الشاشة.
+  // المشكلة الأصلية كانت تكمن في أن حالة "سلة المهملات" من زيارة سابقة
+  // كانت تظهر قبل اكتمال طلب البيانات الجديد، كما هو واضح في الصورة التي أرسلتها.
 
+  // 1. نحفظ الفلتر المبدئي القادم من الـ widget إن وجد.
+  _selectedStageFilter = widget.stageName;
+  // 2. نطلب بيانات "Manage Leads" فورًا وبدون أي تأخير.
+  //    هذه الخطوة تبدأ عملية تحديث الحالة (state) من أي حالة قديمة إلى
+  //    Loading ثم Success، مما يمنع ظهور بيانات سلة المهملات.
+  context.read<GetAllUsersCubit>().fetchAllUsers();
+  // 3. إذا كان هناك فلتر مبدئي، نقوم بتطبيقه بأمان بعد أن يتم بناء أول إطار للشاشة.
+  //    هذا يضمن أن الواجهة بدأت بالفعل في تحميل البيانات الصحيحة.
+  if (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // نستدعي دالة جلب كل البيانات أولاً
-      context.read<GetAllUsersCubit>().fetchAllUsers().then((_) {
-        // بعد انتهاء الجلب، نتأكد أن الصفحة ما زالت موجودة وأن هناك فلتر مبدئي
-        if (mounted &&
-            _selectedStageFilter != null &&
-            _selectedStageFilter!.isNotEmpty) {
-          // الآن نطبق الفلترة باستخدام القيمة المحفوظة
-          _applyCurrentFilters();
-        }
-      });
+      if (mounted) {
+        // هذه الدالة ستقوم بتطبيق الفلتر وطلب البيانات المفلترة من جديد.
+        _applyCurrentFilters();
+      }
     });
   }
+  // --- نهاية الإصلاح ---
+}
 
   @override
   void dispose() {

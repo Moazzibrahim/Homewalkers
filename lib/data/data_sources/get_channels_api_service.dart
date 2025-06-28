@@ -23,4 +23,20 @@ class GetChannelsApiService {
       return null;
     }
   }
+  Future<ChannelModelresponse?> getChannelsInNtrash() async {
+    try {
+      final response = await http.get(Uri.parse('${Constants.baseUrl}/channal?isactive=false'));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return ChannelModelresponse.fromJson(data);
+      } else {
+        print('Error: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Exception occurred: $e');
+      return null;
+    }
+  }
 }

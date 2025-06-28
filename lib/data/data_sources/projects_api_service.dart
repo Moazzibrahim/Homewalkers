@@ -6,8 +6,18 @@ import 'package:http/http.dart' as http; // استبدل your_project بمسار
 class ProjectsApiService {
   final String baseUrl = '${Constants.baseUrl}/Projectss';
 
-  Future<ProjectsModel> fetchDevelopers() async {
+  Future<ProjectsModel> fetchProjects() async {
     final response = await http.get(Uri.parse(baseUrl));
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      return ProjectsModel.fromJson(jsonData);
+    } else {
+      throw Exception('فشل في جلب البيانات: ${response.statusCode}');
+    }
+  }
+  Future<ProjectsModel> fetchProjectsInTrash() async {
+    final response = await http.get(Uri.parse("$baseUrl?isactive=false"));
 
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);

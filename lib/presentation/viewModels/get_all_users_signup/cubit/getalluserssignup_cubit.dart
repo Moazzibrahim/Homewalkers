@@ -23,4 +23,17 @@ class GetalluserssignupCubit extends Cubit<GetalluserssignupState> {
       emit(GetalluserssignupFailure(e.toString()));
     }
   }
+  Future<void> fetchUsersInTrash() async {
+    emit(GetalluserssignupLoading());
+    try {
+      final users = await _apiService.getUsersInTrash();
+      if (users != null) {
+        emit(GetalluserssignupSuccess(users));
+      } else {
+        emit(GetalluserssignupFailure("No users found"));
+      }
+    } catch (e) {
+      emit(GetalluserssignupFailure(e.toString()));
+    }
+  }
 }

@@ -22,4 +22,17 @@ class GetCampaignsCubit extends Cubit<GetCampaignsState> {
       emit(GetCampaignsFailure("Error: $e"));
     }
   }
+  Future<void> fetchCampaignsInTrash() async {
+    emit(GetCampaignsLoading());
+    try {
+      final response = await _campaignApiService.getCampaignsInTrash();
+      if (response != null && response.data != null) {
+        emit(GetCampaignsSuccess(response));
+      } else {
+        emit(GetCampaignsFailure("No campaigns found"));
+      }
+    } catch (e) {
+      emit(GetCampaignsFailure("Error: $e"));
+    }
+  }
 }

@@ -5,22 +5,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
-import 'package:homewalkers_app/data/data_sources/area_api_service.dart';
-import 'package:homewalkers_app/data/models/areas_model.dart';
+import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
+import 'package:homewalkers_app/data/models/channel_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/area/cubit/get_area_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/add_area_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/add_channel_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_area_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/update_channel_dialog.dart';
 
-class AreaScreen extends StatelessWidget {
-  const AreaScreen({super.key});
+class ChannelsTrash extends StatelessWidget {
+  const ChannelsTrash({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GetAreaCubit(AreaApiService())..fetchAreas(),
+      create:
+          (context) => ChannelCubit(GetChannelsApiService())..fetchChannelsInTrash(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -29,7 +31,7 @@ class AreaScreen extends StatelessWidget {
               context,
             ).showSnackBar(const SnackBar(content: Text('added successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
-            context.read<GetAreaCubit>().fetchAreas();
+            context.read<ChannelCubit>().fetchChannelsInTrash();
           } else if (state is AddInMenuError) {
             ScaffoldMessenger.of(
               context,
@@ -38,7 +40,7 @@ class AreaScreen extends StatelessWidget {
         },
         child: Scaffold(
           appBar: CustomAppBar(
-            title: "Areas",
+            title: "channels",
             onBack: () {
               Navigator.pop(context);
             },
@@ -62,21 +64,21 @@ class AreaScreen extends StatelessWidget {
                                         .read<
                                           AddInMenuCubit
                                         >(), // استخدم نفس الـ cubit
-                                child: AddAreaDialog(
-                                  onAdd: (value, region) {
-                                    context.read<AddInMenuCubit>().addArea(
-                                      value,
-                                      region,
+                                child: AddChannelDialog(
+                                  onAdd: (name, code) {
+                                    context.read<AddInMenuCubit>().addChannel(
+                                      name,
+                                      code,
                                     );
                                   },
-                                  title: "Area",
+                                  title: "channel",
                                 ),
                               ),
                         );
                       },
                       icon: const Icon(Icons.add),
                       label: const Text(
-                        "Add New Area",
+                        "Add New channel",
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
@@ -98,31 +100,31 @@ class AreaScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: BlocBuilder<GetAreaCubit, GetAreaState>(
+                  child: BlocBuilder<ChannelCubit, ChannelState>(
                     builder: (context, state) {
-                      if (state is GetAreaLoading) {
+                      if (state is ChannelLoading) {
                         return const Center(child: CircularProgressIndicator());
-                      } else if (state is GetAreaLoaded) {
-                        final dsvelopers = state.areas;
-                        if (dsvelopers.isEmpty) {
+                      } else if (state is ChannelLoaded) {
+                        final projects = state.channelResponse.data;
+                        if (projects.isEmpty) {
                           return const Center(
-                            child: Text('No areas Found.'),
+                            child: Text('No channels Found.'),
                           );
                         }
                         return ListView.separated(
-                          itemCount: dsvelopers.length,
+                          itemCount: projects.length,
                           separatorBuilder:
                               (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
-                            final developer = dsvelopers[index];
+                            final project = projects[index];
                             return _buildCommunicationCard(
-                              developer,
+                              project,
                               Constants.maincolor,
                               context,
                             );
                           },
                         );
-                      } else if (state is GetAreaError) {
+                      } else if (state is ChannelError) {
                         return Center(child: Text('Error: ${state.message}'));
                       }
                       return const SizedBox.shrink();
@@ -138,13 +140,14 @@ class AreaScreen extends StatelessWidget {
   }
 
   Widget _buildCommunicationCard(
-    AreaData developerData,
+    ChannelModel projectData,
     Color mainColor,
     BuildContext context,
   ) {
-    final name = developerData.areaName;
-    final dateTime = DateTime.parse(developerData.createdAt!);
+    final name = projectData.name;
+    final dateTime = projectData.createdAt;
     final formattedDate = Formatters.formatDate(dateTime);
+    final code = projectData.code;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -169,7 +172,7 @@ class AreaScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "area Name : $name",
+                  "channel Name : $name",
                   style: GoogleFonts.montserrat(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -205,6 +208,30 @@ class AreaScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: Color(0xFFE5F4F5),
+                child: Icon(
+                  Icons.code,
+                  size: 16,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Code : $code",
+                  style: GoogleFonts.montserrat(fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
               const Spacer(),
               IconButton(
                 icon: Icon(
@@ -220,13 +247,13 @@ class AreaScreen extends StatelessWidget {
                     builder:
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
-                          child: UpdateAreaDialog(
-                            title: "Area",
-                            onAdd: (value, regionid) {
-                              context.read<AddInMenuCubit>().updateArea(
-                                value,
-                                regionid, // new name
-                                developerData.id.toString(),
+                          child: UpdateChannelDialog(
+                            title: "channel",
+                            onAdd: (value, code) {
+                              context.read<AddInMenuCubit>().updateChannel(
+                                value, // new name
+                                code, // keep old code
+                                projectData.id.toString(),
                               );
                             },
                           ),
@@ -235,7 +262,7 @@ class AreaScreen extends StatelessWidget {
                 },
               ),
               InkWell(
-              onTap: () {
+                  onTap: () {
                   showDialog(
                     context: context,
                     builder:
@@ -245,9 +272,9 @@ class AreaScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteArea(developerData.id.toString(),);
+                              context.read<AddInMenuCubit>().deleteChannel(projectData.id.toString(),);
                             },
-                            title: "area",
+                            title: "Channel",
                           ),
                         ),
                   );

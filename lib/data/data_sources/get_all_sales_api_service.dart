@@ -57,4 +57,23 @@ class GetAllSalesApiService {
       return null;
     }
   }
+  Future<AllSalesModel?> fetchAllSalesInTrash() async {
+    final url = Uri.parse('${Constants.baseUrl}/Sales?isactive=false');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        final salesModel = AllSalesModel.fromJson(jsonData);
+        return salesModel;
+      } else {
+        print(
+          '❌ Failed to load sales data. Status code: ${response.statusCode}',
+        );
+        return null;
+      }
+    } catch (e) {
+      print('❌ Error fetching sales data: $e');
+      return null;
+    }
+  }
 }

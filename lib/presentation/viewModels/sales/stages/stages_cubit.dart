@@ -21,5 +21,15 @@ class StagesCubit extends Cubit<StagesState> {
     emit(StagesError("فشل في جلب البيانات"));
   }
 }
+Future<void> fetchStagesInTrash() async {
+  emit(StagesLoading());
 
+  final result = await apiService.fetchStagesInTrash();
+
+  if (result != null) {
+    emit(StagesLoaded(result.data!)); // result.data هي List<StageModel>
+  } else {
+    emit(StagesError("فشل في جلب البيانات"));
+  }
+}
 }

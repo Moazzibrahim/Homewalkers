@@ -6,9 +6,26 @@ import 'package:http/http.dart' as http;
 
 class GetAllUsersForSignupApiService {
   static const String _baseUrl = '${Constants.baseUrl}/Signup';
+  static const String _baseUrlInTrash = '${Constants.baseUrl}/Signup?isactive=false';
   Future<AllUsersModelForAddUsers?> getUsers() async {
     try {
       final response = await http.get(Uri.parse(_baseUrl));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        final allUsersModel = AllUsersModelForAddUsers.fromJson(jsonResponse);
+        return allUsersModel;
+      } else {
+        print('❌ Failed to load users. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error fetching users: $e');
+    }
+    return null;
+  }
+  Future<AllUsersModelForAddUsers?> getUsersInTrash() async {
+    try {
+      final response = await http.get(Uri.parse(_baseUrlInTrash));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);

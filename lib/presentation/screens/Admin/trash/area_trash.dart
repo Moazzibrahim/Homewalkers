@@ -14,13 +14,13 @@ import 'package:homewalkers_app/presentation/widgets/marketer/add_area_dialog.da
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/update_area_dialog.dart';
 
-class AreaScreen extends StatelessWidget {
-  const AreaScreen({super.key});
+class AreaTrash extends StatelessWidget {
+  const AreaTrash({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GetAreaCubit(AreaApiService())..fetchAreas(),
+      create: (context) => GetAreaCubit(AreaApiService())..fetchAreasInTrash(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -29,7 +29,7 @@ class AreaScreen extends StatelessWidget {
               context,
             ).showSnackBar(const SnackBar(content: Text('added successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
-            context.read<GetAreaCubit>().fetchAreas();
+            context.read<GetAreaCubit>().fetchAreasInTrash();
           } else if (state is AddInMenuError) {
             ScaffoldMessenger.of(
               context,
@@ -106,7 +106,7 @@ class AreaScreen extends StatelessWidget {
                         final dsvelopers = state.areas;
                         if (dsvelopers.isEmpty) {
                           return const Center(
-                            child: Text('No areas Found.'),
+                            child: Text('No araes Found.'),
                           );
                         }
                         return ListView.separated(

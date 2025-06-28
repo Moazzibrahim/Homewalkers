@@ -25,4 +25,23 @@ class CommunicationWayApiService {
   }
 }
 
+Future<CommunicationWayResponse?> fetchCommunicationWaysInTrash() async {
+  final String url = '${Constants.baseUrl}/communicationway?isactive=false';
+
+  try {
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonData = json.decode(response.body);
+      return CommunicationWayResponse.fromJson(jsonData);
+    } else {
+      print('Failed to load data: ${response.statusCode}');
+      return null;
+    }
+  } catch (e) {
+    print('Error fetching data: $e');
+    return null;
+  }
+}
+
 }

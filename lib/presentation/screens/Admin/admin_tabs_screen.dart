@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 // ignore_for_file: deprecated_member_use
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/presentation/screens/Admin/admin_advanced_search.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_menu_screen.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_sales_sceen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 
 class AdminTabsScreen extends StatefulWidget {
@@ -58,7 +58,7 @@ class _TabsScreenState extends State<AdminTabsScreen> {
                 children: [
                   AdminDashboardScreen(),
                   AdminLeadsScreen(),
-                  AdminAdvancedSearch(),
+                  AdminSalesSceen(),
                   AdminMenuScreen(),
                 ],
               ),
@@ -99,9 +99,9 @@ class _TabsScreenState extends State<AdminTabsScreen> {
                 onTap: () => _onTap(2),
                 child: _bottomBarItem(
                   null,
-                  'Adv Search',
+                  'sales',
                   _currentIndex == 2,
-                  imagePath: 'assets/images/search.png',
+                  imagePath: 'assets/images/sales.png',
                 ),
               ),
               GestureDetector(

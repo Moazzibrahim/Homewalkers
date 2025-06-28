@@ -24,4 +24,20 @@ class CampaignApiService {
       return null;
     }
   }
+  Future<CampaignResponse?> getCampaignsInTrash() async {
+    try {
+      final response = await http.get(Uri.parse("$_baseUrl?isactive=false"));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        return CampaignResponse.fromJson(jsonData);
+      } else {
+        print('Failed to load campaigns: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching campaigns: $e');
+      return null;
+    }
+  }
 }

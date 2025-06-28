@@ -43,4 +43,21 @@ class GetCitiesApiService {
       return null;
     }
   }
+  Future<RegionsModel?> getRegionsInTrashh() async {
+    final String baseUrl = '${Constants.baseUrl}/regions?isactive=false';
+    try {
+      final response = await http.get(Uri.parse(baseUrl));
+
+      if (response.statusCode == 200) {
+        final decodedJson = jsonDecode(response.body);
+        return RegionsModel.fromJson(decodedJson);
+      } else {
+        print('❌ Failed to fetch regions: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('🔥 Exception occurred while fetching regions: $e');
+      return null;
+    }
+  }
 }

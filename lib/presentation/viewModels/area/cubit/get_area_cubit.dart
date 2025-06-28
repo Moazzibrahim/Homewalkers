@@ -21,4 +21,14 @@ class GetAreaCubit extends Cubit<GetAreaState> {
       emit(GetAreaError('Failed to load areas'));
     }
   }
+  Future<void> fetchAreasInTrash() async {
+    emit(GetAreaLoading());
+
+    final result = await _areaApiService.getAreasInTrash();
+    if (result != null && result.data != null) {
+      emit(GetAreaLoaded(result.data!));
+    } else {
+      emit(GetAreaError('Failed to load areas'));
+    }
+  }
 }

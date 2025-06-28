@@ -20,4 +20,17 @@ class ChannelCubit extends Cubit<ChannelState> {
       emit(ChannelError('Error occurred: $e'));
     }
   }
+  Future<void> fetchChannelsInTrash() async {
+    emit(ChannelLoading());
+    try {
+      final response = await channelsApiService.getChannelsInNtrash();
+      if (response != null) {
+        emit(ChannelLoaded(response));
+      } else {
+        emit(ChannelError('Failed to load channels'));
+      }
+    } catch (e) {
+      emit(ChannelError('Error occurred: $e'));
+    }
+  }
 }

@@ -6,6 +6,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_sales_sceen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
@@ -170,9 +171,10 @@ class AdminDashboardScreen extends StatelessWidget {
                               '$salesCount',
                               Icons.person,
                               context,
-                              onTap: () {
-                                // Navigate to a screen showing all sales users.
-                              },
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const AdminSalesSceen()),
+                              ),
                             ),
                             ...stageCounts.entries.map((entry) {
                               const iconMap = {"Done Deal": Icons.work};

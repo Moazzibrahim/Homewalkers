@@ -23,4 +23,18 @@ class GetCancelReasonCubit extends Cubit<GetCancelReasonState> {
       emit(GetCancelReasonError(message: 'Error: $e'));
     }
   }
+  Future<void> fetchCancelReasonsInTrash() async {
+    emit(GetCancelReasonLoading());
+
+    try {
+      final response = await apiService.getCancelReasonsInTrash();
+      if (response != null && response.data != null) {
+        emit(GetCancelReasonLoaded(response: response));
+      } else {
+        emit(GetCancelReasonError(message: 'No data found.'));
+      }
+    } catch (e) {
+      emit(GetCancelReasonError(message: 'Error: $e'));
+    }
+  }
 }

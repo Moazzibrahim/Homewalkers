@@ -5,22 +5,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
-import 'package:homewalkers_app/data/data_sources/area_api_service.dart';
-import 'package:homewalkers_app/data/models/areas_model.dart';
+import 'package:homewalkers_app/data/data_sources/cancel_reason_api_service.dart';
+import 'package:homewalkers_app/data/models/cancel_reason_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/area/cubit/get_area_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/cancel_reason/cubit/get_cancel_reason_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/add_area_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/add_cancel_reason_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_area_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/update_dialog.dart';
 
-class AreaScreen extends StatelessWidget {
-  const AreaScreen({super.key});
-
+class CancelReasonTrash extends StatelessWidget {
+  const CancelReasonTrash({super.key});
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GetAreaCubit(AreaApiService())..fetchAreas(),
+      create:
+          (context) =>
+              GetCancelReasonCubit(CancelReasonApiService())
+                ..fetchCancelReasonsInTrash(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -29,7 +31,7 @@ class AreaScreen extends StatelessWidget {
               context,
             ).showSnackBar(const SnackBar(content: Text('added successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
-            context.read<GetAreaCubit>().fetchAreas();
+            context.read<GetCancelReasonCubit>().fetchCancelReasonsInTrash();
           } else if (state is AddInMenuError) {
             ScaffoldMessenger.of(
               context,
@@ -38,7 +40,7 @@ class AreaScreen extends StatelessWidget {
         },
         child: Scaffold(
           appBar: CustomAppBar(
-            title: "Areas",
+            title: "cancel reasons",
             onBack: () {
               Navigator.pop(context);
             },
@@ -62,21 +64,20 @@ class AreaScreen extends StatelessWidget {
                                         .read<
                                           AddInMenuCubit
                                         >(), // استخدم نفس الـ cubit
-                                child: AddAreaDialog(
-                                  onAdd: (value, region) {
-                                    context.read<AddInMenuCubit>().addArea(
+                                child: AddCancelReasonDialog(
+                                  onAdd: (value) {
+                                    context.read<AddInMenuCubit>().addDeveloper(
                                       value,
-                                      region,
                                     );
                                   },
-                                  title: "Area",
+                                  title: "cancel reasons",
                                 ),
                               ),
                         );
                       },
                       icon: const Icon(Icons.add),
                       label: const Text(
-                        "Add New Area",
+                        "Add New cancel reason",
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
@@ -98,15 +99,18 @@ class AreaScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: BlocBuilder<GetAreaCubit, GetAreaState>(
+                  child: BlocBuilder<
+                    GetCancelReasonCubit,
+                    GetCancelReasonState
+                  >(
                     builder: (context, state) {
-                      if (state is GetAreaLoading) {
+                      if (state is GetCancelReasonLoading) {
                         return const Center(child: CircularProgressIndicator());
-                      } else if (state is GetAreaLoaded) {
-                        final dsvelopers = state.areas;
-                        if (dsvelopers.isEmpty) {
+                      } else if (state is GetCancelReasonLoaded) {
+                        final dsvelopers = state.response.data;
+                        if (dsvelopers!.isEmpty) {
                           return const Center(
-                            child: Text('No areas Found.'),
+                            child: Text('No cancel reasons Found.'),
                           );
                         }
                         return ListView.separated(
@@ -122,7 +126,7 @@ class AreaScreen extends StatelessWidget {
                             );
                           },
                         );
-                      } else if (state is GetAreaError) {
+                      } else if (state is GetCancelReasonError) {
                         return Center(child: Text('Error: ${state.message}'));
                       }
                       return const SizedBox.shrink();
@@ -138,12 +142,12 @@ class AreaScreen extends StatelessWidget {
   }
 
   Widget _buildCommunicationCard(
-    AreaData developerData,
+    CancelReason campaignData,
     Color mainColor,
     BuildContext context,
   ) {
-    final name = developerData.areaName;
-    final dateTime = DateTime.parse(developerData.createdAt!);
+    final name = campaignData.cancelReason;
+    final dateTime = DateTime.parse(campaignData.createdAt!);
     final formattedDate = Formatters.formatDate(dateTime);
     return Container(
       width: double.infinity,
@@ -169,7 +173,7 @@ class AreaScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "area Name : $name",
+                  "cancel reason Name : $name",
                   style: GoogleFonts.montserrat(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -220,13 +224,12 @@ class AreaScreen extends StatelessWidget {
                     builder:
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
-                          child: UpdateAreaDialog(
-                            title: "Area",
-                            onAdd: (value, regionid) {
-                              context.read<AddInMenuCubit>().updateArea(
+                          child: UpdateDialog(
+                            title: "cancel reason",
+                            onAdd: (value) {
+                              context.read<AddInMenuCubit>().updateCancelReason(
                                 value,
-                                regionid, // new name
-                                developerData.id.toString(),
+                                campaignData.id.toString(),
                               );
                             },
                           ),
@@ -245,9 +248,9 @@ class AreaScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteArea(developerData.id.toString(),);
+                              context.read<AddInMenuCubit>().deleteCancelReason(campaignData.id.toString(),);
                             },
-                            title: "area",
+                            title: "Cancel Reason",
                           ),
                         ),
                   );

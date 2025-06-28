@@ -5,22 +5,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
-import 'package:homewalkers_app/data/data_sources/area_api_service.dart';
-import 'package:homewalkers_app/data/models/areas_model.dart';
+import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
+import 'package:homewalkers_app/data/models/developers_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/area/cubit/get_area_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/add_area_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/add_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_area_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/update_dialog.dart';
 
-class AreaScreen extends StatelessWidget {
-  const AreaScreen({super.key});
+class DevelopersTrash extends StatelessWidget {
+  const DevelopersTrash({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GetAreaCubit(AreaApiService())..fetchAreas(),
+      create:
+          (context) => DevelopersCubit(DeveloperApiService())..getDevelopersInTrash(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -29,7 +30,7 @@ class AreaScreen extends StatelessWidget {
               context,
             ).showSnackBar(const SnackBar(content: Text('added successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
-            context.read<GetAreaCubit>().fetchAreas();
+            context.read<DevelopersCubit>().getDevelopersInTrash();
           } else if (state is AddInMenuError) {
             ScaffoldMessenger.of(
               context,
@@ -38,7 +39,7 @@ class AreaScreen extends StatelessWidget {
         },
         child: Scaffold(
           appBar: CustomAppBar(
-            title: "Areas",
+            title: "Developers",
             onBack: () {
               Navigator.pop(context);
             },
@@ -62,21 +63,20 @@ class AreaScreen extends StatelessWidget {
                                         .read<
                                           AddInMenuCubit
                                         >(), // استخدم نفس الـ cubit
-                                child: AddAreaDialog(
-                                  onAdd: (value, region) {
-                                    context.read<AddInMenuCubit>().addArea(
+                                child: AddDialog(
+                                  onAdd: (value) {
+                                    context.read<AddInMenuCubit>().addDeveloper(
                                       value,
-                                      region,
                                     );
                                   },
-                                  title: "Area",
+                                  title: "Developer",
                                 ),
                               ),
                         );
                       },
                       icon: const Icon(Icons.add),
                       label: const Text(
-                        "Add New Area",
+                        "Add New Developer",
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
@@ -98,15 +98,15 @@ class AreaScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: BlocBuilder<GetAreaCubit, GetAreaState>(
+                  child: BlocBuilder<DevelopersCubit, DevelopersState>(
                     builder: (context, state) {
-                      if (state is GetAreaLoading) {
+                      if (state is DeveloperLoading) {
                         return const Center(child: CircularProgressIndicator());
-                      } else if (state is GetAreaLoaded) {
-                        final dsvelopers = state.areas;
+                      } else if (state is DeveloperSuccess) {
+                        final dsvelopers = state.developersModel.data;
                         if (dsvelopers.isEmpty) {
                           return const Center(
-                            child: Text('No areas Found.'),
+                            child: Text('No developers Found.'),
                           );
                         }
                         return ListView.separated(
@@ -122,8 +122,8 @@ class AreaScreen extends StatelessWidget {
                             );
                           },
                         );
-                      } else if (state is GetAreaError) {
-                        return Center(child: Text('Error: ${state.message}'));
+                      } else if (state is DeveloperError) {
+                        return Center(child: Text('Error: ${state.error}'));
                       }
                       return const SizedBox.shrink();
                     },
@@ -138,12 +138,12 @@ class AreaScreen extends StatelessWidget {
   }
 
   Widget _buildCommunicationCard(
-    AreaData developerData,
+    DeveloperData developerData,
     Color mainColor,
     BuildContext context,
   ) {
-    final name = developerData.areaName;
-    final dateTime = DateTime.parse(developerData.createdAt!);
+    final name = developerData.name;
+    final dateTime = DateTime.parse(developerData.createdAt);
     final formattedDate = Formatters.formatDate(dateTime);
     return Container(
       width: double.infinity,
@@ -169,7 +169,7 @@ class AreaScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "area Name : $name",
+                  "developer Name : $name",
                   style: GoogleFonts.montserrat(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -220,12 +220,9 @@ class AreaScreen extends StatelessWidget {
                     builder:
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
-                          child: UpdateAreaDialog(
-                            title: "Area",
-                            onAdd: (value, regionid) {
-                              context.read<AddInMenuCubit>().updateArea(
-                                value,
-                                regionid, // new name
+                          child: UpdateDialog(
+                            title: "developer",
+                            onAdd: (value) {context.read<AddInMenuCubit>().updateDeveloper(value,
                                 developerData.id.toString(),
                               );
                             },
@@ -245,9 +242,9 @@ class AreaScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteArea(developerData.id.toString(),);
+                              context.read<AddInMenuCubit>().deleteDeveloper(developerData.id.toString(),);
                             },
-                            title: "area",
+                            title: "Developer",
                           ),
                         ),
                   );

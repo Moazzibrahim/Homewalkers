@@ -20,4 +20,15 @@ class GetStageTypesCubit extends Cubit<GetStageTypesState> {
       emit(GetStageTypesFailure("Failed to fetch stage types"));
     }
   }
+  Future<void> fetchStageTypesInTrash() async {
+    emit(GetStageTypesLoading());
+
+    final response = await apiService.fetchStageTypesInTrash();
+
+    if (response != null && response.data != null) {
+      emit(GetStageTypesSuccess(response));
+    } else {
+      emit(GetStageTypesFailure("Failed to fetch stage types"));
+    }
+  }
 }

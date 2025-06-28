@@ -7,6 +7,7 @@ import 'package:homewalkers_app/data/data_sources/marketer/delete_menu_api_servi
 import 'package:homewalkers_app/data/data_sources/marketer/update_menu_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_advanced_search.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_profile_screen.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_trash_menu_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/sales_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/stages_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/users_screen.dart';
@@ -218,6 +219,21 @@ class AdminMenuScreen extends StatelessWidget {
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
                     child: AreaScreen(),
+                  ),
+            ),
+          );
+        },
+      ),
+      _MenuItem(
+        icon: Icons.delete_outline,
+        label: 'Trash',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    child: AdminTrashMenuScreen(),
                   ),
             ),
           );

@@ -18,4 +18,13 @@ class DevelopersCubit extends Cubit<DevelopersState> {
       emit(DeveloperError(e.toString()));
     }
   }
+  Future<void> getDevelopersInTrash() async {
+    emit(DeveloperLoading());
+    try {
+      final data = await apiService.fetchDevelopersInTrash();
+      emit(DeveloperSuccess(data));
+    } catch (e) {
+      emit(DeveloperError(e.toString()));
+    }
+  }
 }

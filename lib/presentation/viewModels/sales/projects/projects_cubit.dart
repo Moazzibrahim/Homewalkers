@@ -13,7 +13,16 @@ class ProjectsCubit extends Cubit<ProjectsState> {
   Future<void> fetchProjects() async {
     emit(ProjectsLoading());
     try {
-      final projects = await apiService.fetchDevelopers();
+      final projects = await apiService.fetchProjects();
+      emit(ProjectsSuccess(projectsModel: projects));
+    } catch (e) {
+      emit(ProjectsError(error: e.toString()));
+    }
+  }
+    Future<void> fetchProjectsInTrash() async {
+    emit(ProjectsLoading());
+    try {
+      final projects = await apiService.fetchProjectsInTrash();
       emit(ProjectsSuccess(projectsModel: projects));
     } catch (e) {
       emit(ProjectsError(error: e.toString()));

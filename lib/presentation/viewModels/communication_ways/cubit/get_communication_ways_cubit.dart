@@ -24,4 +24,17 @@ class GetCommunicationWaysCubit extends Cubit<GetCommunicationWaysState> {
       emit(GetCommunicationWaysError(e.toString()));
     }
   }
+  Future<void> fetchCommunicationWaysInTrash() async {
+    emit(GetCommunicationWaysLoading());
+    try {
+      final result = await apiService.fetchCommunicationWaysInTrash();
+      if (result != null) {
+        emit(GetCommunicationWaysLoaded(result));
+      } else {
+        emit(const GetCommunicationWaysError('No data received.'));
+      }
+    } catch (e) {
+      emit(GetCommunicationWaysError(e.toString()));
+    }
+  }
 }

@@ -5,22 +5,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
-import 'package:homewalkers_app/data/data_sources/area_api_service.dart';
-import 'package:homewalkers_app/data/models/areas_model.dart';
+import 'package:homewalkers_app/data/data_sources/campaign_api_service.dart';
+import 'package:homewalkers_app/data/models/campaign_models.dart';
 import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/area/cubit/get_area_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/add_area_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/add_campaign_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_area_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/update_campaign_dialog.dart';
 
-class AreaScreen extends StatelessWidget {
-  const AreaScreen({super.key});
+class CampaignTrash extends StatelessWidget {
+  const CampaignTrash({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GetAreaCubit(AreaApiService())..fetchAreas(),
+      create:
+          (context) =>
+              GetCampaignsCubit(CampaignApiService())..fetchCampaignsInTrash(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -29,7 +31,7 @@ class AreaScreen extends StatelessWidget {
               context,
             ).showSnackBar(const SnackBar(content: Text('added successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
-            context.read<GetAreaCubit>().fetchAreas();
+            context.read<GetCampaignsCubit>().fetchCampaignsInTrash();
           } else if (state is AddInMenuError) {
             ScaffoldMessenger.of(
               context,
@@ -38,7 +40,7 @@ class AreaScreen extends StatelessWidget {
         },
         child: Scaffold(
           appBar: CustomAppBar(
-            title: "Areas",
+            title: "campaign",
             onBack: () {
               Navigator.pop(context);
             },
@@ -62,21 +64,32 @@ class AreaScreen extends StatelessWidget {
                                         .read<
                                           AddInMenuCubit
                                         >(), // استخدم نفس الـ cubit
-                                child: AddAreaDialog(
-                                  onAdd: (value, region) {
-                                    context.read<AddInMenuCubit>().addArea(
+                                child: AddCampaignDialog(
+                                  onAdd: (
+                                    value,
+                                    date,
+                                    cost,
+                                    isactive,
+                                    addby,
+                                    updatedby,
+                                  ) {
+                                    context.read<AddInMenuCubit>().addCampaign(
                                       value,
-                                      region,
+                                      date,
+                                      isactive,
+                                      cost,
+                                      addby,
+                                      updatedby,
                                     );
                                   },
-                                  title: "Area",
+                                  title: "camaign",
                                 ),
                               ),
                         );
                       },
                       icon: const Icon(Icons.add),
                       label: const Text(
-                        "Add New Area",
+                        "Add New campaign",
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
@@ -98,15 +111,15 @@ class AreaScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: BlocBuilder<GetAreaCubit, GetAreaState>(
+                  child: BlocBuilder<GetCampaignsCubit, GetCampaignsState>(
                     builder: (context, state) {
-                      if (state is GetAreaLoading) {
+                      if (state is GetCampaignsLoading) {
                         return const Center(child: CircularProgressIndicator());
-                      } else if (state is GetAreaLoaded) {
-                        final dsvelopers = state.areas;
-                        if (dsvelopers.isEmpty) {
+                      } else if (state is GetCampaignsSuccess) {
+                        final dsvelopers = state.campaigns.data;
+                        if (dsvelopers!.isEmpty) {
                           return const Center(
-                            child: Text('No areas Found.'),
+                            child: Text('No campaign Found.'),
                           );
                         }
                         return ListView.separated(
@@ -122,7 +135,7 @@ class AreaScreen extends StatelessWidget {
                             );
                           },
                         );
-                      } else if (state is GetAreaError) {
+                      } else if (state is GetCampaignsFailure) {
                         return Center(child: Text('Error: ${state.message}'));
                       }
                       return const SizedBox.shrink();
@@ -138,13 +151,14 @@ class AreaScreen extends StatelessWidget {
   }
 
   Widget _buildCommunicationCard(
-    AreaData developerData,
+    CampaignData campaignData,
     Color mainColor,
     BuildContext context,
   ) {
-    final name = developerData.areaName;
-    final dateTime = DateTime.parse(developerData.createdAt!);
+    final name = campaignData.campainName;
+    final dateTime = DateTime.parse(campaignData.createdAt!);
     final formattedDate = Formatters.formatDate(dateTime);
+    final costtt=campaignData.cost;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -169,11 +183,35 @@ class AreaScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "area Name : $name",
+                  "campaign Name : $name",
                   style: GoogleFonts.montserrat(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: Color(0xFFE5F4F5),
+                child: Icon(
+                  Icons.money,
+                  size: 16,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Cost : $costtt",
+                  style: GoogleFonts.montserrat(fontSize: 13),
                 ),
               ),
             ],
@@ -220,13 +258,12 @@ class AreaScreen extends StatelessWidget {
                     builder:
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
-                          child: UpdateAreaDialog(
-                            title: "Area",
-                            onAdd: (value, regionid) {
-                              context.read<AddInMenuCubit>().updateArea(
-                                value,
-                                regionid, // new name
-                                developerData.id.toString(),
+                          child: UpdateCampaignDialog(
+                            title: "campaign",
+                            onAdd: (value,date,isactive,cost,addby,updatedby) {
+                              context.read<AddInMenuCubit>().updateCampaign(
+                                  value, date,cost,isactive,addby,updatedby,
+                                campaignData.id.toString(),
                               );
                             },
                           ),
@@ -235,7 +272,7 @@ class AreaScreen extends StatelessWidget {
                 },
               ),
               InkWell(
-              onTap: () {
+                onTap: () {
                   showDialog(
                     context: context,
                     builder:
@@ -245,9 +282,9 @@ class AreaScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteArea(developerData.id.toString(),);
+                              context.read<AddInMenuCubit>().deleteCampaign(campaignData.id.toString(),);
                             },
-                            title: "area",
+                            title: "Campaign",
                           ),
                         ),
                   );
