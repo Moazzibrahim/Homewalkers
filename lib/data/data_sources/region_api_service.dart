@@ -4,7 +4,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/regions_model.dart';
 
 class RegionApiService {
-  final String baseUrl = '${Constants.baseUrl}/regions';
+  final String baseUrl = '${Constants.baseUrl}/regions?active=true';
 
   Future<RegionsModel> fetchRegions() async {
     try {
@@ -23,7 +23,7 @@ class RegionApiService {
   }
   Future<RegionsModel> fetchRegionsInTrash() async {
     try {
-      final response = await http.get(Uri.parse("$baseUrl?isactive=false"));
+      final response = await http.get(Uri.parse("$baseUrl?active=false"));
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);

@@ -9,8 +9,6 @@ import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in
 import 'package:homewalkers_app/presentation/viewModels/get_all_users_signup/cubit/getalluserssignup_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/add_users_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/update_password_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/update_user_dialog.dart';
 
 class UsersTrashScreen extends StatelessWidget {
   const UsersTrashScreen({super.key});
@@ -167,7 +165,6 @@ class UsersTrashScreen extends StatelessWidget {
     final role = user.role ?? 'No Role';
     final email = user.email ?? 'No Email';
     final phone = user.phone ?? 'No Phone';
-    final id = user.id.toString();
 
     return Container(
       width: double.infinity,
@@ -183,84 +180,26 @@ class UsersTrashScreen extends StatelessWidget {
           _infoRow(context, Icons.email, "Email: $email"),
           const SizedBox(height: 12),
           _infoRow(context, Icons.phone, "Phone: $phone"),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12,),
           Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              const Spacer(),
-              InkWell(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(
-                          value: context.read<AddInMenuCubit>(),
-                          child: UpdateUserDialog(
-                            id: id,
-                            name: name,
-                            email: email,
-                            phone: phone,
-                            role: role,
-                            onUpdate: ({
-                              required String id,
-                              required String name,
-                              required String email,
-                              required String phone,
-                              required String role,
-                            }) {
-                              context.read<AddInMenuCubit>().updateUser(
-                                name,
-                                id,
-                                email,
-                                phone,
-                                role,
-                              );
-                            },
-                          ),
-                        ),
-                  );
-                },
-                child: Image.asset(
-                  "assets/images/edit_new.png",
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+                InkWell(
+                child: Icon(
+                  Icons.restore_from_trash,
+                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  size: 30.0,
                 ),
-              ),
-              const SizedBox(width: 8),
-              InkWell(
                 onTap: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(
-                          value: context.read<AddInMenuCubit>(),
-                          child: UpdateUserPasswordDialog(
-                            userId:
-                                id, // Replace with the actual user ID you're passing
-                            onUpdatePassword: (
-                              userId,
-                              currentPassword,
-                              newPassword,
-                              confirmPassword,
-                            ) {
-                              return context
-                                  .read<AddInMenuCubit>()
-                                  .updateUserPassword(
-                                    userId,
-                                    currentPassword,
-                                    newPassword,
-                                    confirmPassword,
-                                  );
-                            },
-                          ),
-                        ),
+                  context.read<AddInMenuCubit>().updateUserStatus(
+                    user.id.toString(),
+                    true,
                   );
                 },
-                child: Image.asset("assets/images/change_pass.png"),
               ),
             ],
-          ),
+          )
+          
         ],
       ),
     );

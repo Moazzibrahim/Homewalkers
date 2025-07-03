@@ -15,7 +15,30 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
   List<String> teamLeaderNames = [];
 
   GetAllUsersCubit(this.apiService) : super(GetAllUsersInitial());
+ Future<void> fetchLeadCounts() async {
+    // No need for a loading state here as it runs in the background
+    try {
+      final response = await apiService.getUsers();
 
+      if (response != null && response.data != null) {
+        final Map<String, int> leadCounts = {};
+
+        for (var lead in response.data!) {
+          if (lead.sales?.userlog?.id != null) {
+            final salesId = lead.sales!.userlog!.id!;
+            // Add salesId to map and increment count, or set to 1 if new
+            leadCounts[salesId] = (leadCounts[salesId] ?? 0) + 1;
+          }
+        }
+        // Emit success state with the map of counts
+        emit(UsersLeadCountSuccess(leadCounts));
+      } else {
+        emit(const GetAllUsersFailure('Failed to fetch lead counts.'));
+      }
+    } catch (e) {
+      emit(GetAllUsersFailure('An error occurred while counting leads: ${e.toString()}'));
+    }
+  }
   Future<void> fetchAllUsers({String? stageFilter}) async {
     emit(GetAllUsersLoading());
     try {
@@ -24,7 +47,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       
       if (response != null) {
         // ... (your existing logic for salesNames, teamLeaderNames etc.)
-         final salesSet = <String>{};
+        final salesSet = <String>{};
         final teamLeaderSet = <String>{};
 
         for (var lead in response.data ?? []) {

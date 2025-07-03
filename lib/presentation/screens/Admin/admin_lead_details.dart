@@ -9,8 +9,9 @@ import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
-import 'package:homewalkers_app/presentation/widgets/custom_add_comment_sheet.dart';
+import 'package:homewalkers_app/presentation/widgets/custom_add_comment_admin.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_change_stage_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart';
@@ -52,10 +53,7 @@ class AdminLeadDetails extends StatefulWidget {
     this.salesfcmToken,
   });
   @override
-
-
-  State<AdminLeadDetails> createState() =>
-      _SalesLeadsDetailsScreenState();
+  State<AdminLeadDetails> createState() => _SalesLeadsDetailsScreenState();
 }
 
 class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
@@ -192,67 +190,53 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                           SizedBox(height: 12.h),
                           Row(
                             children: [
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          4.r,
-                                        ),
-                                      ),
-                                      backgroundColor:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Color(0xffFFFFFF)
-                                              : Color(0xff080719),
-                                      side: const BorderSide(
-                                        color: Color.fromRGBO(
-                                          15,
-                                          118,
-                                          135,
-                                          0.5,
-                                        ),
-                                      ),
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 20.w,
-                                        vertical: 9.h,
-                                      ),
-                                    ),
-                                    onPressed: () async {
-                                              await showDialog(
-                                                context: context,
-                                                builder:
-                                                    (
-                                                      context,
-                                                    ) => AssignLeadMarkterDialog(
-                                                      leadIds: [widget.leedId],
-                                                      leadId: widget.leedId,
-                                                      salesfcmtoken: widget.salesfcmToken!,
-                                                      mainColor:
-                                                          Theme.of(
-                                                                    context,
-                                                                  ).brightness ==
-                                                                  Brightness
-                                                                      .light
-                                                              ? Constants
-                                                                  .maincolor
-                                                              : Constants
-                                                                  .mainDarkmodecolor,
-                                                    ),
-                                              );
-                                            },
-                                    child: Text(
-                                      'Assign Lead',
-                                      style: TextStyle(
-                                        fontSize: 15.sp,
-                                        fontWeight: FontWeight.w500,
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? Constants.maincolor
-                                                : Constants.mainDarkmodecolor,
-                                      ),
-                                    ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4.r),
                                   ),
+                                  backgroundColor:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Color(0xffFFFFFF)
+                                          : Color(0xff080719),
+                                  side: const BorderSide(
+                                    color: Color.fromRGBO(15, 118, 135, 0.5),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 20.w,
+                                    vertical: 9.h,
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  await showDialog(
+                                    context: context,
+                                    builder:
+                                        (context) => AssignLeadMarkterDialog(
+                                          leadIds: [widget.leedId],
+                                          leadId: widget.leedId,
+                                          salesfcmtoken: widget.salesfcmToken!,
+                                          mainColor:
+                                              Theme.of(context).brightness ==
+                                                      Brightness.light
+                                                  ? Constants.maincolor
+                                                  : Constants.mainDarkmodecolor,
+                                        ),
+                                  );
+                                },
+                                child: Text(
+                                  'Assign Lead',
+                                  style: TextStyle(
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.w500,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                ),
+                              ),
                               SizedBox(width: 22.w),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
@@ -519,6 +503,8 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                   builder:
                                       (context) => SalesCommentsScreen(
                                         leedId: widget.leedId,
+                                        fcmtoken: widget.salesfcmToken,
+                                        leadName: widget.leadName,
                                       ),
                                 ),
                               );
@@ -558,7 +544,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                 builder:
                                     (_) => BlocProvider(
                                       create: (_) => AddCommentCubit(),
-                                      child: AddCommentBottomSheet(
+                                      child: CustomAddCommentAdmin(
                                         buttonName: "add comment",
                                         optionalName: "add comment",
                                         leadId: widget.leedId,
@@ -566,11 +552,20 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                     ),
                               );
                               if (result == true) {
-                                // THIS WILL NOW WORK!
-                                // The context has access to the LeadCommentsCubit from MultiBlocProvider.
                                 context
                                     .read<LeadCommentsCubit>()
                                     .fetchLeadComments(widget.leedId);
+                                // ✅ إرسال إشعار بعد الإضافة
+                                if (widget.salesfcmToken != null) {
+                                  context
+                                      .read<NotificationCubit>()
+                                      .sendNotificationToToken(
+                                        title: "Lead Comment",
+                                        body: " ${widget.leadName} تم إضافة تعليق جديد ✅",
+                                        fcmtokennnn:
+                                            widget.salesfcmToken!, // تأكد إن الاسم متطابق مع `NotificationCubit`
+                                      );
+                                }
                               }
                             },
                             child: Text(

@@ -5,8 +5,8 @@ import 'package:homewalkers_app/data/models/all_users_model_for_add_users.dart';
 import 'package:http/http.dart' as http;
 
 class GetAllUsersForSignupApiService {
-  static const String _baseUrl = '${Constants.baseUrl}/Signup';
-  static const String _baseUrlInTrash = '${Constants.baseUrl}/Signup?isactive=false';
+  static const String _baseUrl = '${Constants.baseUrl}/Signup?active=true';
+  static const String _baseUrlInTrash = '${Constants.baseUrl}/Signup?active=false';
   Future<AllUsersModelForAddUsers?> getUsers() async {
     try {
       final response = await http.get(Uri.parse(_baseUrl));

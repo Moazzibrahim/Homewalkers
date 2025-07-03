@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +13,7 @@ import 'package:homewalkers_app/presentation/screens/Admin/admin_trash_menu_scre
 import 'package:homewalkers_app/presentation/screens/Admin/sales_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/stages_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/users_screen.dart';
+import 'package:homewalkers_app/presentation/screens/cities_screen.dart';
 import 'package:homewalkers_app/presentation/screens/login_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/area_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/campaign_screen.dart';
@@ -41,13 +44,11 @@ class AdminMenuScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const AdminProfileScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const AdminProfileScreen()),
           );
         },
       ),
-        _MenuItem(
+      _MenuItem(
         icon: Icons.search,
         label: 'Advanced Search',
         onTap: () {
@@ -66,8 +67,14 @@ class AdminMenuScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder:(_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: CommunicationWayScreen(),
                   ),
             ),
@@ -83,14 +90,19 @@ class AdminMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: SalesScreen(),
                   ),
             ),
           );
         },
       ),
-        _MenuItem(
+      _MenuItem(
         icon: Icons.person,
         label: 'users',
         onTap: () {
@@ -99,7 +111,12 @@ class AdminMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: UsersScreen(),
                   ),
             ),
@@ -115,7 +132,12 @@ class AdminMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: StagesScreen(),
                   ),
             ),
@@ -131,7 +153,12 @@ class AdminMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: DeveloperScreen(),
                   ),
             ),
@@ -142,12 +169,17 @@ class AdminMenuScreen extends StatelessWidget {
         icon: Icons.business_outlined,
         label: 'Project',
         onTap: () {
-        Navigator.push(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: ProjectScreen(),
                   ),
             ),
@@ -163,7 +195,12 @@ class AdminMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: ChannelScreen(),
                   ),
             ),
@@ -174,11 +211,17 @@ class AdminMenuScreen extends StatelessWidget {
         icon: Icons.cancel_outlined,
         label: 'Cancel Reason',
         onTap: () {
-        Navigator.push(
+          Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: CancelReasonScreen(),
                   ),
             ),
@@ -191,9 +234,39 @@ class AdminMenuScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute( builder:  (_) => BlocProvider<AddInMenuCubit>(
-                  create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
-                  child: CampaignScreen(),),),
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
+                    child: CampaignScreen(),
+                  ),
+            ),
+          );
+        },
+      ),
+      _MenuItem(
+        icon: Icons.location_city,
+        label: 'city',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
+                    child: CitiesScreen(),
+                  ),
+            ),
           );
         },
       ),
@@ -201,8 +274,17 @@ class AdminMenuScreen extends StatelessWidget {
         icon: Icons.map_outlined,
         label: 'Region',
         onTap: () {
-          Navigator.push(context,MaterialPageRoute(
-              builder:(_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: RegionScreen(),
                   ),
             ),
@@ -217,7 +299,13 @@ class AdminMenuScreen extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder:
-                  (_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: AreaScreen(),
                   ),
             ),
@@ -232,7 +320,13 @@ class AdminMenuScreen extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder:
-                  (_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: AdminTrashMenuScreen(),
                   ),
             ),
@@ -242,10 +336,15 @@ class AdminMenuScreen extends StatelessWidget {
       _MenuItem(
         icon: Icons.logout,
         label: 'Sign Out',
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('token'); // امسح الـ token
+          await prefs.remove('role');
+          // رجع المستخدم لصفحة تسجيل الدخول
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false, // يمنع الرجوع لورا
           );
         },
       ),

@@ -8,12 +8,17 @@ class UpdateUserDialog extends StatefulWidget {
   final String email;
   final String phone;
   final String role;
+  final bool opencomments;
+  final bool closeDoneDealcomments;
+
   final void Function({
     required String id,
     required String name,
     required String email,
     required String phone,
     required String role,
+    required bool opencomments,
+    required bool closeDoneDealcomments,
   }) onUpdate;
 
   const UpdateUserDialog({
@@ -23,6 +28,8 @@ class UpdateUserDialog extends StatefulWidget {
     required this.email,
     required this.phone,
     required this.role,
+    required this.opencomments,
+    required this.closeDoneDealcomments,
     required this.onUpdate,
   });
 
@@ -37,6 +44,8 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late String _selectedRole;
+  late bool _openComments;
+  late bool _closeDoneDealComments;
 
   @override
   void initState() {
@@ -44,6 +53,8 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
     _emailController = TextEditingController(text: widget.email);
     _phoneController = TextEditingController(text: widget.phone);
     _selectedRole = widget.role;
+    _openComments = widget.opencomments;
+    _closeDoneDealComments = widget.closeDoneDealcomments;
     super.initState();
   }
 
@@ -124,6 +135,24 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                 ),
               ),
 
+              const SizedBox(height: 20),
+
+              // Toggle switches
+              SwitchListTile(
+                title: Text("Open Comments", style: GoogleFonts.montserrat()),
+                value: _openComments,
+                onChanged: (value) {
+                  setState(() => _openComments = value);
+                },
+              ),
+              SwitchListTile(
+                title: Text("Close Done Deal Comments", style: GoogleFonts.montserrat()),
+                value: _closeDoneDealComments,
+                onChanged: (value) {
+                  setState(() => _closeDoneDealComments = value);
+                },
+              ),
+
               const SizedBox(height: 24),
 
               // Buttons
@@ -149,6 +178,8 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                           email: _emailController.text.trim(),
                           phone: _phoneController.text.trim(),
                           role: _selectedRole,
+                          opencomments: _openComments,
+                          closeDoneDealcomments: _closeDoneDealComments,
                         );
                         Navigator.of(context).pop();
                       },

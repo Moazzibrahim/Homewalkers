@@ -146,7 +146,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                         items:
                             state.cities!
                                 .map(
-                                  (City city) => DropdownMenuItem(
+                                  (Cityy city) => DropdownMenuItem(
                                     value: city.id.toString(),
                                     child: Text(city.name ?? 'Unknown'),
                                   ),

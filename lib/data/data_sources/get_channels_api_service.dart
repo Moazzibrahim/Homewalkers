@@ -9,7 +9,7 @@ class GetChannelsApiService {
 
   Future<ChannelModelresponse?> getChannels() async {
     try {
-      final response = await http.get(Uri.parse('${Constants.baseUrl}/channal'));
+      final response = await http.get(Uri.parse('${Constants.baseUrl}/channal?active=true'));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -25,7 +25,7 @@ class GetChannelsApiService {
   }
   Future<ChannelModelresponse?> getChannelsInNtrash() async {
     try {
-      final response = await http.get(Uri.parse('${Constants.baseUrl}/channal?isactive=false'));
+      final response = await http.get(Uri.parse('${Constants.baseUrl}/channal?active=false'));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

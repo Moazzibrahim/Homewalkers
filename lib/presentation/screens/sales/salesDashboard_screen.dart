@@ -61,8 +61,8 @@ class SalesdashboardScreen extends StatelessWidget {
               },
             ),
             const Spacer(),
-            _iconBox(Icons.comment_rounded, () {}),
-            const SizedBox(width: 8),
+            // _iconBox(Icons.comment_rounded, () {}),
+            // const SizedBox(width: 8),
             _iconBox(Icons.notifications_none, () {
               Navigator.push(
                 context,

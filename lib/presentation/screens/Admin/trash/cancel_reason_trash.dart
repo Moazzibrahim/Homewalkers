@@ -11,8 +11,6 @@ import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in
 import 'package:homewalkers_app/presentation/viewModels/cancel_reason/cubit/get_cancel_reason_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_cancel_reason_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_dialog.dart';
 
 class CancelReasonTrash extends StatelessWidget {
   const CancelReasonTrash({super.key});
@@ -210,52 +208,18 @@ class CancelReasonTrash extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-              IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+                InkWell(
+                child: Icon(
+                  Icons.restore_from_trash,
+                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  size: 30.0,
                 ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(
-                          value: context.read<AddInMenuCubit>(),
-                          child: UpdateDialog(
-                            title: "cancel reason",
-                            onAdd: (value) {
-                              context.read<AddInMenuCubit>().updateCancelReason(
-                                value,
-                                campaignData.id.toString(),
-                              );
-                            },
-                          ),
-                        ),
+                onTap: () {
+                  context.read<AddInMenuCubit>().updateCancelReasonsStatus(
+                    campaignData.id.toString(),
+                    true,
                   );
                 },
-              ),
-              InkWell(
-              onTap: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
-                          child: DeleteDialog(
-                            onCancel: () => Navigator.of(context).pop(),
-                            onConfirm: () {
-                              // تنفيذ الحذف
-                              Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteCancelReason(campaignData.id.toString(),);
-                            },
-                            title: "Cancel Reason",
-                          ),
-                        ),
-                  );
-                },
-                child: Image.asset("assets/images/delete.png"),
               ),
             ],
           ),

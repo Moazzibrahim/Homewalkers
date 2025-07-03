@@ -23,6 +23,19 @@ class GetCitiesCubit extends Cubit<GetCitiesState> {
       emit(GetCitiesFailure(error: e.toString()));
     }
   }
+  Future<void> fetchCitiesInTrash() async {
+    emit(GetCitiesLoading());
+    try {
+      final CityResponse? response = await apiService.getCitiesInTrash();
+      if (response != null && response.data != null) {
+        emit(GetCitiesSuccess(cities: response.data!));
+      } else {
+        emit(GetCitiesFailure(error: 'No data received'));
+      }
+    } catch (e) {
+      emit(GetCitiesFailure(error: e.toString()));
+    }
+  }
   Future<void> fetchRegions() async {
     emit(GetCitiesLoading());
     try {

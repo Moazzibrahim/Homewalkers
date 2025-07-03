@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http; // استبدل your_project بمسار مشروعك
 
 class DeveloperApiService {
-  final String baseUrl = '${Constants.baseUrl}/Developers';
+  final String baseUrl = '${Constants.baseUrl}/Developers?isdeveloperactivate=true';
   
 
   Future<DevelopersModel> fetchDevelopers() async {
@@ -18,7 +18,7 @@ class DeveloperApiService {
     }
   }
   Future<DevelopersModel> fetchDevelopersInTrash() async {
-    final response = await http.get(Uri.parse("$baseUrl?isactive=false"));
+    final response = await http.get(Uri.parse("$baseUrl?isdeveloperactivate=false"));
 
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);

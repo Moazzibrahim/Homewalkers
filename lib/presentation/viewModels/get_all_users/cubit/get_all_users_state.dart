@@ -48,4 +48,12 @@ class GetLeadsInTrashFailure extends GetAllUsersState {
   @override
   List<Object?> get props => [error];
 }
+// New state to hold our processed and sorted list
+class UsersLeadCountSuccess extends GetAllUsersState {
+  final Map<String, int> leadCounts;
 
+  const UsersLeadCountSuccess(this.leadCounts);
+
+  @override
+  List<Object> get props => [leadCounts];
+}

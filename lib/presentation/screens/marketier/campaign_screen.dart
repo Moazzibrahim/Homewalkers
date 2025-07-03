@@ -282,7 +282,7 @@ class CampaignScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteCampaign(campaignData.id.toString(),);
+                              context.read<AddInMenuCubit>().updateCampaignStatus(campaignData.id.toString(),false);
                             },
                             title: "Campaign",
                           ),

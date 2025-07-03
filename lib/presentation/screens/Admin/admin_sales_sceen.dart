@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
-import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
+import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';// Import user service
+import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';// Import user cubit
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
@@ -13,8 +15,16 @@ class AdminSalesSceen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+    // Use MultiBlocProvider to have access to both cubits in the widget tree
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+        ),
+        BlocProvider(
+          create: (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchLeadCounts(),
+        ),
+      ],
       child: Scaffold(
         appBar: CustomAppBar(
           title: "Sales",
@@ -25,58 +35,71 @@ class AdminSalesSceen extends StatelessWidget {
             );
           },
         ),
+        // This builder is for the main list of sales from SalesCubit
         body: BlocBuilder<SalesCubit, SalesState>(
-          builder: (context, state) {
-            if (state is SalesLoading) {
+          builder: (context, salesState) {
+            if (salesState is SalesLoading) {
               return const Center(child: CircularProgressIndicator());
-            } else if (state is SalesError) {
-              return Center(child: Text(state.message));
-            } else if (state is SalesLoaded) {
-              final List<SalesData> allSales = state.salesData.data ?? [];
+            }
+            if (salesState is SalesError) {
+              return Center(child: Text(salesState.message));
+            }
+            if (salesState is SalesLoaded) {
+              final List<SalesData> allSales = salesState.salesData.data ?? [];
 
-              // تحويل البيانات إلى قائمة من (_SalesWithLeadCount)
-              final List<_SalesWithLeadCount> salesList =
-                  allSales
+              // This builder gets the lead counts from GetAllUsersCubit
+              return BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
+                builder: (context, usersState) {
+                  // Get the map of lead counts. If the state is not success, use an empty map.
+                  final leadCounts = (usersState is UsersLeadCountSuccess)
+                      ? usersState.leadCounts
+                      : <String, int>{};
+
+                  // Map the sales data to a new list that includes the lead count
+                  final List<_SalesWithLeadCount> salesList = allSales
                       .where((s) => s.userlog != null)
-                      .map(
-                        (s) => _SalesWithLeadCount(
-                          user: s.userlog!,
-                          leadCount: s.assignedLeads ?? 0,
-                        ),
-                      )
+                      .map((s) => _SalesWithLeadCount(
+                            user: s.userlog!,
+                            // Look up the count from the map. If not found, default to 0.
+                            leadCount: leadCounts[s.userlog!.id] ?? 0,
+                          ))
                       .toList();
 
-              // ترتيب من أكثر عدد leads إلى أقل
-              salesList.sort((a, b) => b.leadCount.compareTo(a.leadCount));
+                  // Sort the final list by lead count in descending order
+                  salesList.sort((a, b) => b.leadCount.compareTo(a.leadCount));
 
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: salesList.length,
-                itemBuilder: (context, index) {
-                  final item = salesList[index];
-                  return Card(
-                    elevation: 2,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      title: Text(
-                        item.user.name ?? 'No Name',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text("Role: ${item.user.role ?? 'Unknown'}"),
-                      trailing: Chip(
-                        label: Text(
-                          '${item.leadCount} Leads',
-                          style: const TextStyle(color: Colors.white),
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: salesList.length,
+                    itemBuilder: (context, index) {
+                      final item = salesList[index];
+                      return Card(
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          title: Text(
+                            item.user.name ?? 'No Name',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text("Role: ${item.user.role ?? 'Unknown'}"),
+                          trailing: Chip(
+                            label: Text(
+                              '${item.leadCount} Leads',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                            backgroundColor: Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Constants.mainDarkmodecolor,
+                          ),
                         ),
-                        backgroundColor:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
-                      ),
-                    ),
+                      );
+                    },
                   );
                 },
               );
-            } else {
-              return const SizedBox();
             }
+            return const SizedBox.shrink(); // Default empty state
           },
         ),
       ),
@@ -84,9 +107,10 @@ class AdminSalesSceen extends StatelessWidget {
   }
 }
 
+// Helper class to hold the combined data for the UI
 class _SalesWithLeadCount {
   final UserLogsModel user;
-  int leadCount;
+  final int leadCount;
 
   _SalesWithLeadCount({required this.user, required this.leadCount});
 }

@@ -6,7 +6,7 @@ import 'package:homewalkers_app/data/models/cancel_reason_model.dart';
 import 'package:http/http.dart' as http;
 
 class CancelReasonApiService {
-  final String _baseUrl = '${Constants.baseUrl}/cancelreason';
+  final String _baseUrl = '${Constants.baseUrl}/cancelreason?iscancelreasonactivate=true';
 
   Future<CancelReasonResponse?> getCancelReasons() async {
     try {
@@ -26,7 +26,7 @@ class CancelReasonApiService {
   }
   Future<CancelReasonResponse?> getCancelReasonsInTrash() async {
     try {
-      final response = await http.get(Uri.parse("$_baseUrl?isactive=false"));
+      final response = await http.get(Uri.parse("$_baseUrl?iscancelreasonactivate=false"));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);

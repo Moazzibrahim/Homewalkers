@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 class StagesApiService {
   Future<StageResponse?> fetchStages() async {
-    final url = Uri.parse('${Constants.baseUrl}/stage');
+    final url = Uri.parse('${Constants.baseUrl}/stage?stageisactivate=true');
 
     try {
       final response = await http.get(url);
@@ -25,7 +25,7 @@ class StagesApiService {
     }
   }
   Future<StageResponse?> fetchStagesInTrash() async {
-    final url = Uri.parse('${Constants.baseUrl}/stage?isactive=false');
+    final url = Uri.parse('${Constants.baseUrl}/stage?stageisactivate=false');
 
     try {
       final response = await http.get(url);

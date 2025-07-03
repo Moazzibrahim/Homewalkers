@@ -11,8 +11,7 @@ import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in
 import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_campaign_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_campaign_dialog.dart';
+
 
 class CampaignTrash extends StatelessWidget {
   const CampaignTrash({super.key});
@@ -244,52 +243,18 @@ class CampaignTrash extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-              IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+                 InkWell(
+                child: Icon(
+                  Icons.restore_from_trash,
+                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  size: 30.0,
                 ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(
-                          value: context.read<AddInMenuCubit>(),
-                          child: UpdateCampaignDialog(
-                            title: "campaign",
-                            onAdd: (value,date,isactive,cost,addby,updatedby) {
-                              context.read<AddInMenuCubit>().updateCampaign(
-                                  value, date,cost,isactive,addby,updatedby,
-                                campaignData.id.toString(),
-                              );
-                            },
-                          ),
-                        ),
-                  );
-                },
-              ),
-              InkWell(
                 onTap: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
-                          child: DeleteDialog(
-                            onCancel: () => Navigator.of(context).pop(),
-                            onConfirm: () {
-                              // تنفيذ الحذف
-                              Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteCampaign(campaignData.id.toString(),);
-                            },
-                            title: "Campaign",
-                          ),
-                        ),
+                  context.read<AddInMenuCubit>().updateCampaignStatus(
+                    campaignData.id.toString(),
+                    true,
                   );
                 },
-                child: Image.asset("assets/images/delete.png"),
               ),
             ],
           ),

@@ -89,6 +89,12 @@ class AddMenuApiService {
     await postData(url: url, body: body);
   }
 
+   Future<void> addCity(String name) async {
+    const String url = '${Constants.baseUrl}/Cities';
+    final body = {"name": name};
+    await postData(url: url, body: body);
+  }
+
   Future<void> addCancelReasons(String cancelreason) async {
     const String url = '${Constants.baseUrl}/cancelreason';
     final body = {"cancelreason": cancelreason};

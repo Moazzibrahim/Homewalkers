@@ -9,7 +9,24 @@ import 'package:http/http.dart' as http;
 
 class GetCitiesApiService {
   Future<CityResponse?> getCities() async {
-    final String baseUrl = '${Constants.baseUrl}/Cities';
+    final String baseUrl = '${Constants.baseUrl}/Cities?active=true';
+    try {
+      final response = await http.get(Uri.parse(baseUrl));
+
+      if (response.statusCode == 200) {
+        final decodedJson = jsonDecode(response.body);
+        return CityResponse.fromJson(decodedJson);
+      } else {
+        print('❌ Failed to fetch cities: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('🔥 Exception occurred while fetching cities: $e');
+      return null;
+    }
+  }
+   Future<CityResponse?> getCitiesInTrash() async {
+    final String baseUrl = '${Constants.baseUrl}/Cities?active=false';
     try {
       final response = await http.get(Uri.parse(baseUrl));
 

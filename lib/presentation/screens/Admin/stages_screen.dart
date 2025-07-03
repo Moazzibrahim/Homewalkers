@@ -440,7 +440,7 @@ class _StagesScreenState extends State<StagesScreen>
               onCancel: () => Navigator.of(context).pop(),
               onConfirm: () {
                 Navigator.of(context).pop();
-                context.read<AddInMenuCubit>().deleteStage(id);
+                context.read<AddInMenuCubit>().updateStageStatus(id,false);
               },
               title: title,
             ),
@@ -462,7 +462,7 @@ class _StagesScreenState extends State<StagesScreen>
               onCancel: () => Navigator.of(context).pop(),
               onConfirm: () {
                 Navigator.of(context).pop();
-                context.read<AddInMenuCubit>().deleteStagetype(id);
+                context.read<AddInMenuCubit>().updateStageTypeStatus(id,false);
               },
               title: title,
             ),

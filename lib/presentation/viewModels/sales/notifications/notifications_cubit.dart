@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/models/notifications_model.dart';
 import 'package:homewalkers_app/main.dart'; // تأكد أن فيه navigatorKey
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,6 +22,9 @@ class NotificationState {
 
 class NotificationCubit extends Cubit<NotificationState> {
   NotificationCubit() : super(NotificationState());
+
+  List<NotificationItem> notifications = [];
+
 
   void initNotifications() async {
     try {
@@ -175,4 +179,36 @@ class NotificationCubit extends Cubit<NotificationState> {
       navigatorKey.currentState?.pushNamed('/notifications');
     }
   }
+  Future<void> fetchNotifications() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final receiverId = prefs.getString('salesId'); // 👈 استخدام salesId
+
+    if (receiverId == null || receiverId.isEmpty) {
+      log("❌ No salesId found in SharedPreferences");
+      return;
+    }
+
+    final url = Uri.parse(
+        'https://apirender8.onrender.com/api/v1/Notification?receiver=$receiverId');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      final model = NotificationModel.fromJson(decoded);
+
+      notifications = model.data ?? [];
+
+      log("✅ Notifications fetched: ${notifications.length}");
+      emit(NotificationState(token: state.token)); // trigger rebuild
+    } else {
+      log("❌ Failed to fetch notifications: ${response.statusCode}");
+      emit(NotificationState(error: 'Failed to load notifications'));
+    }
+  } catch (e) {
+    log("❌ Error fetching notifications: $e");
+    emit(NotificationState(error: e.toString()));
+  }
+}
 }

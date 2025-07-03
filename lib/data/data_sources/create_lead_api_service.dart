@@ -17,7 +17,7 @@ class CreateLeadApiService {
     required String stage,
     required String chanel,
     required String communicationway,
-    required String leedtype,
+    // required String leedtype,
     required String dayonly, // لازم يكون بصيغة yyyy-MM-dd
     required String lastStageDateUpdated,
     required String campaign,
@@ -38,7 +38,7 @@ class CreateLeadApiService {
       "stage": stage,
       "chanel": chanel,
       "communicationway": communicationway,
-      "leedtype": leedtype,
+      // "leedtype": leedtype,
       "review": false,
       "dayonly": dayonly,
       "last_stage_date_updated": lastStageDateUpdated,

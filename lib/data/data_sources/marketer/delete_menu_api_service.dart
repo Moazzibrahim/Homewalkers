@@ -73,4 +73,8 @@ class DeleteMenuApiService {
     final String url = '${Constants.baseUrl}/stagetype/$stageId';
     await deleteRequest(url: url);
   }
+  Future<void> deleteCity(String stageId) async {
+    final String url = '${Constants.baseUrl}/Cities/$stageId';
+    await deleteRequest(url: url);
+  }
 }

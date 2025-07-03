@@ -12,8 +12,6 @@ import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_channel_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_channel_dialog.dart';
 
 class ChannelsTrash extends StatelessWidget {
   const ChannelsTrash({super.key});
@@ -233,53 +231,18 @@ class ChannelsTrash extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-              IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+                InkWell(
+                child: Icon(
+                  Icons.restore_from_trash,
+                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  size: 30.0,
                 ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(
-                          value: context.read<AddInMenuCubit>(),
-                          child: UpdateChannelDialog(
-                            title: "channel",
-                            onAdd: (value, code) {
-                              context.read<AddInMenuCubit>().updateChannel(
-                                value, // new name
-                                code, // keep old code
-                                projectData.id.toString(),
-                              );
-                            },
-                          ),
-                        ),
+                onTap: () {
+                  context.read<AddInMenuCubit>().updateChannelStatus(
+                    projectData.id.toString(),
+                    true,
                   );
                 },
-              ),
-              InkWell(
-                  onTap: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
-                          child: DeleteDialog(
-                            onCancel: () => Navigator.of(context).pop(),
-                            onConfirm: () {
-                              // تنفيذ الحذف
-                              Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteChannel(projectData.id.toString(),);
-                            },
-                            title: "Channel",
-                          ),
-                        ),
-                  );
-                },
-                child: Image.asset("assets/images/delete.png"),
               ),
             ],
           ),

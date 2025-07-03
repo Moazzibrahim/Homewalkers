@@ -260,8 +260,10 @@ class SalesScreen extends StatelessWidget {
                               Navigator.of(context).pop();
                               context
                                   .read<AddInMenuCubit>()
-                                  .deleteSales(
+                                  .updateSalesStatus(
+                                    false,
                                     communicationWay.id.toString(),
+                                    
                                   );
                             },
                             title: "sales",

@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,11 +9,20 @@ import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in
 import 'package:homewalkers_app/presentation/viewModels/get_all_users_signup/cubit/getalluserssignup_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/add_users_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/update_password_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/update_user_dialog.dart';
 
-class UsersScreen extends StatelessWidget {
+class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
+
+  @override
+  State<UsersScreen> createState() => _UsersScreenState();
+}
+
+class _UsersScreenState extends State<UsersScreen> {
+  Map<String, bool> switchStates = {};
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -167,7 +176,13 @@ class UsersScreen extends StatelessWidget {
     final role = user.role ?? 'No Role';
     final email = user.email ?? 'No Email';
     final phone = user.phone ?? 'No Phone';
+    final opencomments = user.opencomments ?? false; // ✅ تأكد أنها قيمة bool
+    final closeDoneDealcomments = user.closeDoneDealcomments ?? false;
     final id = user.id.toString();
+    final Color primaryTextColor =
+        Theme.of(context).brightness == Brightness.light
+            ? Colors.black87
+            : Colors.white70;
 
     return Container(
       width: double.infinity,
@@ -183,6 +198,61 @@ class UsersScreen extends StatelessWidget {
           _infoRow(context, Icons.email, "Email: $email"),
           const SizedBox(height: 12),
           _infoRow(context, Icons.phone, "Phone: $phone"),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: const Color(
+                  0xFFE5F4F5,
+                ), 
+                child: Icon(
+                  Icons.sync,
+                  size: 22,
+                  color: Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+                ),
+              ),
+              const SizedBox(width: 10),
+              RichText(
+                text: TextSpan(
+                  style: GoogleFonts.montserrat(
+                    fontSize: 14,
+                    color: primaryTextColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  children: <TextSpan>[
+                    TextSpan(
+                      text: 'Status : ',
+                      style: GoogleFonts.montserrat(fontSize: 13),
+                    ),
+                    // Specific style for the "Active" / "Inactive" part
+                    TextSpan(
+                      text: (switchStates[user.id] ?? user.active ?? false)? "Active"  : "Inactive",
+                      style: GoogleFonts.montserrat(fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              // 3. Spacer to push the switch to the end of the row
+              const Spacer(),
+              // 4. The Switch widget
+              Switch(
+                value: switchStates[user.id] ?? user.active ?? false,
+                onChanged: (bool value) {
+                  setState(() {
+                    switchStates[user.id!] = value;
+                  });
+                  // OPTIONAL: لو عايز تبعت التغيير لـ API أو Cubit
+                  context.read<AddInMenuCubit>().updateUserStatus(user.id!, value);
+                },
+                activeColor: Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+              ),
+            ],
+          ),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -200,12 +270,17 @@ class UsersScreen extends StatelessWidget {
                             email: email,
                             phone: phone,
                             role: role,
+                            opencomments: opencomments, // ✅ تأكد أنها قيمة bool
+                            closeDoneDealcomments:
+                                closeDoneDealcomments, // ✅ برضو bool
                             onUpdate: ({
                               required String id,
                               required String name,
                               required String email,
                               required String phone,
                               required String role,
+                              required bool opencomments,
+                              required bool closeDoneDealcomments,
                             }) {
                               context.read<AddInMenuCubit>().updateUser(
                                 name,
@@ -213,6 +288,8 @@ class UsersScreen extends StatelessWidget {
                                 email,
                                 phone,
                                 role,
+                                opencomments,
+                                closeDoneDealcomments,
                               );
                             },
                           ),
@@ -258,6 +335,33 @@ class UsersScreen extends StatelessWidget {
                   );
                 },
                 child: Image.asset("assets/images/change_pass.png"),
+              ),
+              const SizedBox(width: 8),
+             InkWell(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder:
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
+                          child: DeleteDialog(
+                            onCancel: () => Navigator.of(context).pop(),
+                            onConfirm: () {
+                              // تنفيذ الحذف
+                              Navigator.of(context).pop();
+                              context
+                                  .read<AddInMenuCubit>()
+                                  .updateUserStatus(
+                                    user.id.toString(),
+                                    false,
+                                  );
+                            },
+                            title: "user",
+                          ),
+                        ),
+                  );
+                },
+                child: Image.asset("assets/images/delete.png"),
               ),
             ],
           ),

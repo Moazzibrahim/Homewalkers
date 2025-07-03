@@ -248,7 +248,7 @@ class CancelReasonScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteCancelReason(campaignData.id.toString(),);
+                              context.read<AddInMenuCubit>().updateCancelReasonsStatus(campaignData.id.toString(),false);
                             },
                             title: "Cancel Reason",
                           ),

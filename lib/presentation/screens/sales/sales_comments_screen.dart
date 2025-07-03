@@ -1,21 +1,30 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/edit_comment_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
+import 'package:homewalkers_app/presentation/viewModels/edit_comment/cubit/edit_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SalesCommentsScreen extends StatefulWidget {
   final String leedId;
+  final String? fcmtoken;
+  final String? leadName;
 
-  const SalesCommentsScreen({super.key, required this.leedId});
+  const SalesCommentsScreen({
+    super.key,
+    required this.leedId,
+    required this.fcmtoken,
+    required this.leadName,
+  });
 
   @override
   State<SalesCommentsScreen> createState() => _SalesCommentsScreenState();
@@ -75,18 +84,42 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create:
-          (_) =>
-              LeadCommentsCubit(GetAllLeadCommentsApiService())
-                ..fetchLeadComments(widget.leedId),
-      child:  BlocListener<LeadCommentsCubit, LeadCommentsState>(
-    listener: (context, state) {
-      if (state is ReplySentSuccessfully) {
-        // ✅ إعادة جلب الكومنتات بعد إرسال الرد
-        context.read<LeadCommentsCubit>().fetchLeadComments(widget.leedId);
-      }
-    },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create:
+              (_) =>
+                  LeadCommentsCubit(GetAllLeadCommentsApiService())
+                    ..fetchLeadComments(widget.leedId),
+        ),
+        BlocProvider(create: (_) => EditCommentCubit(EditCommentApiService())),
+      ],
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<LeadCommentsCubit, LeadCommentsState>(
+            listener: (context, state) {
+              if (state is ReplySentSuccessfully) {
+                // ✅ إعادة جلب الكومنتات بعد إرسال الرد
+                context.read<LeadCommentsCubit>().fetchLeadComments(
+                  widget.leedId,
+                );
+              }
+            },
+          ),
+          BlocListener<EditCommentCubit, EditCommentState>(
+            listener: (context, state) {
+              if (state is EditCommentSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Comment edited successfully')),
+                );
+              } else if (state is EditCommentFailure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to edit comment')),
+                );
+              }
+            },
+          ),
+        ],
         child: Scaffold(
           appBar: CustomAppBar(
             title: "comments",
@@ -97,7 +130,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
               if (state is LeadCommentsLoading) {
                 return Center(child: CircularProgressIndicator());
               } else if (state is LeadCommentsError) {
-                return Center(child: Text('Error: ${state.message}'));
+                return Center(child: Text('Error: ////${state.message}'));
               } else if (state is LeadCommentsLoaded) {
                 final leadComments = state.leadComments;
                 final List<DataItem> filteredData =
@@ -336,23 +369,44 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
-                                    Theme.of(context).brightness == Brightness.light? Constants.maincolor : Constants.mainDarkmodecolor),
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Constants.maincolor
+                                        : Constants.mainDarkmodecolor,
+                              ),
                               onPressed: () async {
                                 final replyText = replyController.text.trim();
                                 if (replyText.isEmpty) return;
                                 Navigator.pop(ctx); // Close dialog
-                                context.read<LeadCommentsCubit>().sendReplyToComment(
-                                      commentId: dataItem.comments?.first.id ?? '',
+                                context
+                                    .read<LeadCommentsCubit>()
+                                    .sendReplyToComment(
+                                      commentId:
+                                          dataItem.comments?.first.id ?? '',
                                       replyText: replyText,
                                     );
                                 // Optional: show a message
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Reply sent!')),
                                 );
+                                if (widget.fcmtoken != null) {
+                                  context
+                                      .read<NotificationCubit>()
+                                      .sendNotificationToToken(
+                                        title: "Comment Reply",
+                                        body: "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
+                                        fcmtokennnn: widget.fcmtoken!,
+                                      );
+                                }
                                 // Optional: refresh comments
-                                context.read<LeadCommentsCubit>().fetchLeadComments(widget.leedId);
+                                context
+                                    .read<LeadCommentsCubit>()
+                                    .fetchLeadComments(widget.leedId);
                               },
-                              child: Text("Send",style: TextStyle(color: Colors.white),),
+                              child: Text(
+                                "Send",
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ),
                           ],
                         );
@@ -368,6 +422,122 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                             : Constants.mainDarkmodecolor,
                   ),
                 ),
+              ),
+              FutureBuilder(
+                future: checkRoleName(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return SizedBox();
+                  }
+
+                  if (snapshot.hasData && snapshot.data == "Admin") {
+                    return Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.edit, color: Colors.white),
+                        label: Text(
+                          "Edit",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Constants.maincolor
+                                  : Constants.mainDarkmodecolor,
+                        ),
+                        onPressed: () {
+                          final firstTextController = TextEditingController(
+                            text: firstComment?.text ?? '',
+                          );
+                          final secondTextController = TextEditingController(
+                            text: secondComment?.text ?? '',
+                          );
+                          showDialog(
+                            context: context,
+                            builder: (ctx) {
+                              return AlertDialog(
+                                title: Text('Edit Comment'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextField(
+                                      controller: firstTextController,
+                                      decoration: InputDecoration(
+                                        labelText: 'First Comment',
+                                      ),
+                                    ),
+                                    SizedBox(height: 10),
+                                    TextField(
+                                      controller: secondTextController,
+                                      decoration: InputDecoration(
+                                        labelText: 'Second Comment',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      final firstText =
+                                          firstTextController.text.trim();
+                                      final secondText =
+                                          secondTextController.text.trim();
+                                      Navigator.pop(ctx);
+                                      context.read<EditCommentCubit>().editComment(
+                                            commentId:
+                                                dataItem.comments?.first.id ?? '',
+                                            firstText: firstText,
+                                            secondText: secondText,
+                                          )
+                                          .then((isSuccess) {
+                                            if (isSuccess) {
+                                              context
+                                                  .read<LeadCommentsCubit>()
+                                                  .fetchLeadComments(
+                                                    widget.leedId,
+                                                  );
+                                              if (widget.fcmtoken != null) {
+                                                context
+                                                    .read<NotificationCubit>()
+                                                    .sendNotificationToToken(
+                                                      title: "Lead",
+                                                      body:
+                                                          " comment has been edited ✅ on ${widget.leadName}",
+                                                      fcmtokennnn:
+                                                          widget.fcmtoken!,
+                                                    );
+                                              }
+                                            } else {
+                                              // اختياري: عرض رسالة فشل
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    " Failed to edit comment ❌",
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          });
+                                    },
+                                    child: Text('Save'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    );
+                  } else {
+                    return SizedBox(); // No button
+                  }
+                },
               ),
             ],
           ),

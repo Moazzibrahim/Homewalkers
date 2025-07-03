@@ -12,7 +12,7 @@ class GetCitiesInitial extends GetCitiesState {}
 class GetCitiesLoading extends GetCitiesState {}
 
 class GetCitiesSuccess extends GetCitiesState {
-  final List<City>? cities;
+  final List<Cityy>? cities;
   final List<Region> ?regions;
 
   const GetCitiesSuccess({ this.cities,this.regions});

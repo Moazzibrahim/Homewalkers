@@ -11,8 +11,6 @@ import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in
 import 'package:homewalkers_app/presentation/viewModels/area/cubit/get_area_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_area_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_area_dialog.dart';
 
 class AreaTrash extends StatelessWidget {
   const AreaTrash({super.key});
@@ -206,53 +204,18 @@ class AreaTrash extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-              IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(
-                          value: context.read<AddInMenuCubit>(),
-                          child: UpdateAreaDialog(
-                            title: "Area",
-                            onAdd: (value, regionid) {
-                              context.read<AddInMenuCubit>().updateArea(
-                                value,
-                                regionid, // new name
-                                developerData.id.toString(),
-                              );
-                            },
-                          ),
-                        ),
-                  );
-                },
-              ),
               InkWell(
-              onTap: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
-                          child: DeleteDialog(
-                            onCancel: () => Navigator.of(context).pop(),
-                            onConfirm: () {
-                              // تنفيذ الحذف
-                              Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteArea(developerData.id.toString(),);
-                            },
-                            title: "area",
-                          ),
-                        ),
+                child: Icon(
+                  Icons.restore_from_trash,
+                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  size: 30.0,
+                ),
+                onTap: () {
+                  context.read<AddInMenuCubit>().updateAreaStatus(
+                    developerData.id.toString(),
+                    true,
                   );
                 },
-                child: Image.asset("assets/images/delete.png"),
               ),
             ],
           ),

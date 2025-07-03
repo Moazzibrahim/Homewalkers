@@ -6,7 +6,7 @@ import 'package:homewalkers_app/data/models/areas_model.dart';
 import 'package:http/http.dart' as http;
 
 class AreaApiService {
-  final String _baseUrl = '${Constants.baseUrl}/Area';
+  final String _baseUrl = '${Constants.baseUrl}/Area?active=true';
 
   Future<AreaResponse?> getAreas() async {
     try {
@@ -26,7 +26,7 @@ class AreaApiService {
   }
   Future<AreaResponse?> getAreasInTrash() async {
     try {
-      final response = await http.get(Uri.parse("$_baseUrl?isactive=false"));
+      final response = await http.get(Uri.parse("$_baseUrl?active=false"));
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
         return AreaResponse.fromJson(jsonData);

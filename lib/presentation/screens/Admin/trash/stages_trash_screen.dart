@@ -14,9 +14,6 @@ import 'package:homewalkers_app/presentation/viewModels/stage_types/cubit/get_st
 import 'package:homewalkers_app/presentation/widgets/add_stage_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/add_stage_type_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/update_stage_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/update_stage_type_dialog.dart';
 
 class StagesTrashScreen extends StatefulWidget {
   const StagesTrashScreen({super.key});
@@ -47,10 +44,16 @@ class _StagesScreenState extends State<StagesTrashScreen>
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => StagesCubit(StagesApiService())..fetchStagesInTrash(),
+          create:
+              (context) =>
+                  StagesCubit(StagesApiService())..fetchStagesInTrash(),
         ),
         BlocProvider(
-          create:(context) => GetStageTypesCubit(StageTypeApiService())..fetchStageTypesInTrash(),),
+          create:
+              (context) =>
+                  GetStageTypesCubit(StageTypeApiService())
+                    ..fetchStageTypesInTrash(),
+        ),
       ],
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
@@ -84,10 +87,7 @@ class _StagesScreenState extends State<StagesTrashScreen>
                         unselectedLabelColor: Colors.grey,
                         indicatorColor: Theme.of(context).primaryColor,
                         indicatorSize: TabBarIndicatorSize.tab,
-                        tabs: const [
-                          Tab(text: "Stages"),
-                          Tab(text: "Types"),
-                        ],
+                        tabs: const [Tab(text: "Stages"), Tab(text: "Types")],
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -218,25 +218,25 @@ class _StagesScreenState extends State<StagesTrashScreen>
                 ? Formatters.formatDate(stage.createdAt!)
                 : "N/A",
           ),
-          // const SizedBox(height: 8),
-          // Row(
-          //   children: [
-          //     const Spacer(),
-          //     IconButton(
-          //       icon: Icon(Icons.refresh, color: iconColor),
-          //       onPressed: () => _showUpdateStageDialog(context, stage),
-          //     ),
-          //     InkWell(
-          //     child: Image.asset("assets/images/delete.png"),
-          //       onTap:
-          //           () => _showDeleteDialog(
-          //             context,
-          //             stage.id.toString(),
-          //             "stage",
-          //           ),
-          //     ),
-          //   ],
-          // ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Spacer(),
+              InkWell(
+                child: Icon(
+                  Icons.restore_from_trash,
+                  color: iconColor,
+                  size: 30.0,
+                ),
+                onTap: () {
+                  context.read<AddInMenuCubit>().updateStageStatus(
+                    stage.id.toString(),
+                    true,
+                  );
+                },
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -277,28 +277,25 @@ class _StagesScreenState extends State<StagesTrashScreen>
             "Creation Date",
             stageType.createdAt != null ? stageType.createdAt! : "N/A",
           ),
-          // const SizedBox(height: 8),
-          // Row(
-          //   children: [
-          //     const Spacer(),
-          //     IconButton(
-          //       icon: Icon(Icons.refresh, color: iconColor),
-          //       onPressed: () {
-          //         _showUpdateStageTypeDialog(context, stageType);
-          //       },
-          //     ),
-          //     InkWell(
-          //       child: Image.asset("assets/images/delete.png"),
-          //       onTap: () {
-          //         _showDeletestageTypeDialog(
-          //           context,
-          //           stageType.id.toString(),
-          //           "Stage Type",
-          //         );
-          //       },
-          //     ),
-          //   ],
-          // ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Spacer(),
+              InkWell(
+                child: Icon(
+                  Icons.restore_from_trash,
+                  color: iconColor,
+                  size: 30.0,
+                ),
+                onTap: () {
+                  context.read<AddInMenuCubit>().updateStageTypeStatus(
+                    stageType.id.toString(),
+                    true,
+                  );
+                },
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -334,6 +331,7 @@ class _StagesScreenState extends State<StagesTrashScreen>
       ],
     );
   }
+
   // --- DIALOGS ---
   void _showAddStageDialog(BuildContext context) {
     showDialog(
@@ -372,99 +370,6 @@ class _StagesScreenState extends State<StagesTrashScreen>
               onAdd: (name, comment) {
                 context.read<AddInMenuCubit>().addStagetype(name, comment);
               },
-            ),
-          ),
-    );
-  }
-
-  void _showUpdateStageDialog(BuildContext context, StageDatas stage) {
-    showDialog(
-      context: context,
-      builder:
-          (_) => MultiBlocProvider(
-            providers: [
-              BlocProvider.value(value: context.read<AddInMenuCubit>()),
-              BlocProvider<GetStageTypesCubit>(
-                create:
-                    (_) =>
-                        GetStageTypesCubit(StageTypeApiService())
-                          ..fetchStageTypesInTrash(),
-              ),
-            ],
-            child: UpdateStageDialog(
-              title: "Stage",
-              onAdd: (name, comment, stageType) {
-                context.read<AddInMenuCubit>().updateStage(
-                  name,
-                  stage.id.toString(),
-                  stageType,
-                  comment,
-                );
-              },
-            ),
-          ),
-    );
-  }
-
-  void _showUpdateStageTypeDialog(BuildContext context, StageDatam stage) {
-    showDialog(
-      context: context,
-      builder:
-          (_) => MultiBlocProvider(
-            providers: [
-              BlocProvider.value(value: context.read<AddInMenuCubit>()),
-              BlocProvider<GetStageTypesCubit>(
-              create: (_) => GetStageTypesCubit(StageTypeApiService())..fetchStageTypesInTrash()),
-            ],
-            child: UpdateStageTypeDialog(
-              title: "Stage Type",
-              onAdd: (name, comment) {
-                context.read<AddInMenuCubit>().updateStagetype(
-                  name,
-                  stage.id.toString(),
-                  comment,
-                );
-              },
-            ),
-          ),
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context, String id, String title) {
-    showDialog(
-      context: context,
-      builder:
-          (_) => BlocProvider.value(
-            value: context.read<AddInMenuCubit>(),
-            child: DeleteDialog(
-              onCancel: () => Navigator.of(context).pop(),
-              onConfirm: () {
-                Navigator.of(context).pop();
-                context.read<AddInMenuCubit>().deleteStage(id);
-              },
-              title: title,
-            ),
-          ),
-    );
-  }
-
-  void _showDeletestageTypeDialog(
-    BuildContext context,
-    String id,
-    String title,
-  ) {
-    showDialog(
-      context: context,
-      builder:
-          (_) => BlocProvider.value(
-            value: context.read<AddInMenuCubit>(),
-            child: DeleteDialog(
-              onCancel: () => Navigator.of(context).pop(),
-              onConfirm: () {
-                Navigator.of(context).pop();
-                context.read<AddInMenuCubit>().deleteStagetype(id);
-              },
-              title: title,
             ),
           ),
     );

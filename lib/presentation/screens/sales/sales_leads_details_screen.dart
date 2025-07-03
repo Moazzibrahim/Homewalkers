@@ -12,6 +12,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_add_comment_sheet.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
@@ -80,13 +81,12 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider(create: (context) => StagesCubit(StagesApiService())),
         BlocProvider(
-          create: (context) => StagesCubit(StagesApiService()),
-        ),
-        BlocProvider(
-          create: (context) =>
-              LeadCommentsCubit(GetAllLeadCommentsApiService())
-                ..fetchLeadComments(widget.leedId),
+          create:
+              (context) =>
+                  LeadCommentsCubit(GetAllLeadCommentsApiService())
+                    ..fetchLeadComments(widget.leedId),
         ),
       ],
       child: Builder(
@@ -211,7 +211,8 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                                           widget.leedId,
                                                         ],
                                                         leadId: widget.leedId,
-                                                        fcmtoken: widget.fcmtoken,
+                                                        fcmtoken:
+                                                            widget.fcmtoken,
                                                         mainColor:
                                                             Theme.of(
                                                                       context,
@@ -224,7 +225,6 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                                                     .mainDarkmodecolor,
                                                         leadResponse:
                                                             state.assignedModel,
-                                                            
                                                       ),
                                                     ),
                                               );
@@ -354,10 +354,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: BlocBuilder<
-                        LeadCommentsCubit,
-                        LeadCommentsState
-                      >(
+                      child: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
                         builder: (context, state) {
                           if (state is LeadCommentsLoading) {
                             return Center(child: CircularProgressIndicator());
@@ -492,6 +489,8 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                   builder:
                                       (context) => SalesCommentsScreen(
                                         leedId: widget.leedId,
+                                        fcmtoken: widget.fcmtoken,
+                                        leadName: widget.leadName,
                                       ),
                                 ),
                               );
@@ -524,27 +523,40 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                       : Constants.mainDarkmodecolor,
                             ),
                             onPressed: () async {
-                            final result = await showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => BlocProvider(
-                                create: (_) => AddCommentCubit(),
-                                child: AddCommentBottomSheet(
-                                  buttonName: "add comment",
-                                  optionalName: "add comment",
-                                  leadId: widget.leedId,
-                                ),
-                              ),
-                            );
-                            if (result == true) {
-                              // THIS WILL NOW WORK!
-                              // The context has access to the LeadCommentsCubit from MultiBlocProvider.
-                              context
-                                  .read<LeadCommentsCubit>()
-                                  .fetchLeadComments(widget.leedId);
-                            }
-                          },
+                              final result = await showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder:
+                                    (_) => BlocProvider(
+                                      create: (_) => AddCommentCubit(),
+                                      child: AddCommentBottomSheet(
+                                        buttonName: "add comment",
+                                        optionalName: "add comment",
+                                        leadId: widget.leedId,
+                                      ),
+                                    ),
+                              );
+                              if (result == true) {
+                                // THIS WILL NOW WORK!
+                                // The context has access to the LeadCommentsCubit from MultiBlocProvider.
+                                context
+                                    .read<LeadCommentsCubit>()
+                                    .fetchLeadComments(widget.leedId);
+                                // ✅ إرسال إشعار بعد الإضافة
+                                if (widget.fcmtoken != null) {
+                                  context
+                                      .read<NotificationCubit>()
+                                      .sendNotificationToToken(
+                                        title: "Lead Comment",
+                                        body: " ${widget.leadName} تم إضافة تعليق جديد ✅",
+                                        fcmtokennnn:
+                                            widget
+                                                .fcmtoken!, // تأكد إن الاسم متطابق مع `NotificationCubit`
+                                      );
+                                }
+                              }
+                            },
                             child: Text(
                               'Add Comment',
                               style: TextStyle(

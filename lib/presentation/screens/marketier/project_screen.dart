@@ -247,7 +247,7 @@ class ProjectScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteProject(projectData.id.toString(),);
+                              context.read<AddInMenuCubit>().updateDProjectStatus(projectData.id.toString(),false);
                             },
                             title: "project",
                           ),

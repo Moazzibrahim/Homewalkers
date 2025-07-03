@@ -11,8 +11,6 @@ import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_project_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_dialog.dart';
 
 class ProjectsTrash extends StatelessWidget {
   const ProjectsTrash({super.key});
@@ -208,53 +206,18 @@ class ProjectsTrash extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-              IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(
-                          value: context.read<AddInMenuCubit>(),
-                          child: UpdateDialog(
-                            title: "project",
-                            onAdd: (value) {context.read<AddInMenuCubit>().updateProject(value,
-                                projectData.developer!.id.toString(),
-                                projectData.city!.id.toString(),
-                                projectData.area ?? '',
-                                projectData.id.toString(),
-                              );
-                            },
-                          ),
-                        ),
-                  );
-                },
-              ),
               InkWell(
-              onTap: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
-                          child: DeleteDialog(
-                            onCancel: () => Navigator.of(context).pop(),
-                            onConfirm: () {
-                              // تنفيذ الحذف
-                              Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteProject(projectData.id.toString(),);
-                            },
-                            title: "project",
-                          ),
-                        ),
+                child: Icon(
+                  Icons.restore_from_trash,
+                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  size: 30.0,
+                ),
+                onTap: () {
+                  context.read<AddInMenuCubit>().updateDProjectStatus(
+                    projectData.id.toString(),
+                    true,
                   );
                 },
-                child: Image.asset("assets/images/delete.png"),
               ),
             ],
           ),

@@ -8,7 +8,7 @@ class StageTypeApiService {
   final String _baseUrl = 'https://apirender8.onrender.com/api/v1';
 
   Future<StageTypeResponse?> fetchStageTypes() async {
-    final url = Uri.parse('$_baseUrl/stagetype');
+    final url = Uri.parse('$_baseUrl/stagetype?isstagetypeactivate=true');
 
     try {
       final response = await http.get(url);
@@ -26,7 +26,7 @@ class StageTypeApiService {
     }
   }
   Future<StageTypeResponse?> fetchStageTypesInTrash() async {
-    final url = Uri.parse('$_baseUrl/stagetype?isactive=false');
+    final url = Uri.parse('$_baseUrl/stagetype?isstagetypeactivate=false');
 
     try {
       final response = await http.get(url);

@@ -10,6 +10,7 @@ import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manage
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_add_comment_sheet.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
@@ -527,6 +528,8 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                   builder:
                                       (context) => SalesCommentsScreen(
                                         leedId: widget.leedId,
+                                        fcmtoken: widget.fcmtokenn,
+                                        leadName: widget.leadName,
                                       ),
                                 ),
                               );
@@ -579,7 +582,16 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                 context
                                     .read<LeadCommentsCubit>()
                                     .fetchLeadComments(widget.leedId);
-                              }
+                                      // ✅ إرسال إشعار بعد الإضافة
+                                context
+                                    .read<NotificationCubit>()
+                                    .sendNotificationToToken(
+                                      title: "Lead Comment",
+                                      body: " ${widget.leadName} تم إضافة تعليق جديد ✅",
+                                      fcmtokennnn:
+                                          widget
+                                              .fcmtokenn, // تأكد إن الاسم متطابق مع `NotificationCubit`
+                                    );}
                             },
                             child: Text(
                               'Add Comment',

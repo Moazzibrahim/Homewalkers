@@ -39,7 +39,7 @@ class GetAllSalesApiService {
   }
 
   Future<AllSalesModel?> fetchAllSales() async {
-    final url = Uri.parse('${Constants.baseUrl}/Sales');
+    final url = Uri.parse('${Constants.baseUrl}/Sales?salesisactivate=true');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -58,7 +58,7 @@ class GetAllSalesApiService {
     }
   }
   Future<AllSalesModel?> fetchAllSalesInTrash() async {
-    final url = Uri.parse('${Constants.baseUrl}/Sales?isactive=false');
+    final url = Uri.parse('${Constants.baseUrl}/Sales?salesisactivate=false');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {

@@ -3,13 +3,12 @@ import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/data_sources/create_lead_api_service.dart';
 
 part 'create_lead_state.dart';
-
 class CreateLeadCubit extends Cubit<CreateLeadState> {
   final CreateLeadApiService apiService;
 
   CreateLeadCubit(this.apiService) : super(CreateLeadInitial());
 
-  Future<void> createLead({
+  Future<bool> createLead({
     required String name,
     required String email,
     required String phone,
@@ -20,7 +19,7 @@ class CreateLeadCubit extends Cubit<CreateLeadState> {
     required String stage,
     required String chanel,
     required String communicationway,
-    required String leedtype,
+    // required String leedtype,
     required String dayonly,
     required String lastStageDateUpdated,
     required String campaign,
@@ -38,14 +37,16 @@ class CreateLeadCubit extends Cubit<CreateLeadState> {
         stage: stage,
         chanel: chanel,
         communicationway: communicationway,
-        leedtype: leedtype,
+        // leedtype: leedtype,
         dayonly: dayonly,
         lastStageDateUpdated: lastStageDateUpdated,
         campaign: campaign,
       );
       emit(const CreateLeadSuccess('Lead created successfully.'));
+      return true; // ✅ ترجع true عند النجاح
     } catch (e) {
       emit(CreateLeadFailure(e.toString()));
+      return false; // ❌ ترجع false عند الفشل
     }
   }
 }

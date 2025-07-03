@@ -49,23 +49,23 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE8F1F2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: IconButton(
-            icon: Icon(
-              Icons.comment_rounded,
-              color:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.maincolor
-                      : Constants.mainDarkmodecolor,
-            ),
-            onPressed: () {},
-          ),
-        ),
+        // Container(
+        //   margin: const EdgeInsets.symmetric(horizontal: 6),
+        //   decoration: BoxDecoration(
+        //     color: const Color(0xFFE8F1F2),
+        //     borderRadius: BorderRadius.circular(8),
+        //   ),
+        //   child: IconButton(
+        //     icon: Icon(
+        //       Icons.comment_rounded,
+        //       color:
+        //           Theme.of(context).brightness == Brightness.light
+        //               ? Constants.maincolor
+        //               : Constants.mainDarkmodecolor,
+        //     ),
+        //     onPressed: () {},
+        //   ),
+        // ),
         Container(
           margin: const EdgeInsets.only(right: 10),
           decoration: BoxDecoration(

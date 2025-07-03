@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
@@ -279,13 +280,15 @@ class AdminDashboardScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    // Dynamic color for the card title
-                    color: isDarkMode ? Colors.white70 : Colors.blueGrey,
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      // Dynamic color for the card title
+                      color: isDarkMode ? Colors.white70 : Colors.blueGrey,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 Container(
@@ -308,7 +311,7 @@ class AdminDashboardScreen extends StatelessWidget {
             Text(
               number,
               style: TextStyle(
-                fontSize: 32,
+                fontSize: 25,
                 // Dynamic color for the main number
                 color: isDarkMode ? Colors.white : const Color(0xFF0D1B2A),
                 fontWeight: FontWeight.w600,

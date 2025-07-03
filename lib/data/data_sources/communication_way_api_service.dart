@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 class CommunicationWayApiService {
   Future<CommunicationWayResponse?> fetchCommunicationWays() async {
-  final String url = '${Constants.baseUrl}/communicationway';
+  final String url = '${Constants.baseUrl}/communicationway?iscommunicationwayactivate=true';
 
   try {
     final response = await http.get(Uri.parse(url));
@@ -26,7 +26,7 @@ class CommunicationWayApiService {
 }
 
 Future<CommunicationWayResponse?> fetchCommunicationWaysInTrash() async {
-  final String url = '${Constants.baseUrl}/communicationway?isactive=false';
+  final String url = '${Constants.baseUrl}/communicationway?iscommunicationwayactivate=false';
 
   try {
     final response = await http.get(Uri.parse(url));

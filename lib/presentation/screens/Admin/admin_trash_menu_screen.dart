@@ -9,6 +9,7 @@ import 'package:homewalkers_app/presentation/screens/Admin/trash/area_trash.dart
 import 'package:homewalkers_app/presentation/screens/Admin/trash/campaign_trash.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/trash/cancel_reason_trash.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/trash/channels_trash.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/trash/cities_trash_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/trash/communication_way_trash.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/trash/developers_trash.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/trash/projects_trash.dart';
@@ -209,6 +210,27 @@ class AdminTrashMenuScreen extends StatelessWidget {
                           DeleteMenuApiService(),
                         ),
                     child: CampaignTrash(),
+                  ),
+            ),
+          );
+        },
+      ),
+      _MenuItem(
+        icon: Icons.location_city,
+        label: 'city',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
+                    child: CitiesTrashScreen(),
                   ),
             ),
           );

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/add_menu_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/delete_menu_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/update_menu_api_service.dart';
+import 'package:homewalkers_app/presentation/screens/cities_screen.dart';
 import 'package:homewalkers_app/presentation/screens/login_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/area_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/campaign_screen.dart';
@@ -130,6 +131,27 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute( builder:  (_) => BlocProvider<AddInMenuCubit>(
                   create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
                   child: CampaignScreen(),),),
+          );
+        },
+      ),
+      _MenuItem(
+        icon: Icons.location_city,
+        label: 'city',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
+                    child: CitiesScreen(),
+                  ),
+            ),
           );
         },
       ),

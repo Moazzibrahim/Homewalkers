@@ -242,7 +242,7 @@ class DeveloperScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteDeveloper(developerData.id.toString(),);
+                              context.read<AddInMenuCubit>().updateDeveloperStatus(developerData.id.toString(),false);
                             },
                             title: "Developer",
                           ),

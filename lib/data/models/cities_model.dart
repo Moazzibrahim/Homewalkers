@@ -1,7 +1,7 @@
 class CityResponse {
   final int? results;
   final Pagination? pagination;
-  final List<City>? data;
+  final List<Cityy>? data;
 
   CityResponse({this.results, this.pagination, this.data});
 
@@ -12,7 +12,7 @@ class CityResponse {
           ? Pagination.fromJson(json['pagination'])
           : null,
       data: (json['data'] as List<dynamic>?)
-          ?.map((e) => City.fromJson(e))
+          ?.map((e) => Cityy.fromJson(e))
           .toList(),
     );
   }
@@ -32,7 +32,7 @@ class Pagination {
     );
   }
 }
-class City {
+class Cityy {
   final String? id;
   final String? name;
   final String? slug;
@@ -40,7 +40,7 @@ class City {
   final String? updatedAt;
   final int? v;
 
-  City({
+  Cityy({
     this.id,
     this.name,
     this.slug,
@@ -49,8 +49,8 @@ class City {
     this.v,
   });
 
-  factory City.fromJson(Map<String, dynamic> json) {
-    return City(
+  factory Cityy.fromJson(Map<String, dynamic> json) {
+    return Cityy(
       id: json['_id'],
       name: json['name'],
       slug: json['slug'],

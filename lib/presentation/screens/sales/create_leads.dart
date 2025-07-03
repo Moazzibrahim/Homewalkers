@@ -1,4 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -18,6 +20,7 @@ import 'package:homewalkers_app/presentation/viewModels/create_lead/cubit/create
 import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
@@ -48,6 +51,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   String? _selectedSalesId;
   bool _assign = false;
   String? _fullPhoneNumber;
+  String? _selectedSalesFcmToken;
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
@@ -116,33 +120,34 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               (_) => GetCampaignsCubit(CampaignApiService())..fetchCampaigns(),
         ),
         BlocProvider(
-          create:
-              (_) =>
-                  SalesCubit(GetAllSalesApiService())..fetchAllSales(),),
+          create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+        ),
         BlocProvider(create: (_) => CreateLeadCubit(CreateLeadApiService())),
       ],
       child: Builder(
         builder: (context) {
           return BlocListener<CreateLeadCubit, CreateLeadState>(
-          listener: (context, state) {
-            if (state is CreateLeadSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Lead Created Successfully!'),
-                  backgroundColor: Colors.green,
-                ),);
-              // Go back to the previous screen after a short delay
-              Future.delayed(const Duration(milliseconds: 1500), () {
-                Navigator.pop(context);
-              });
-            } else if (state is CreateLeadFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Failed to create lead: ${state.error}'),
-                  backgroundColor: Colors.red,
-                ),);
-            }
-          },
+            listener: (context, state) {
+              if (state is CreateLeadSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Lead Created Successfully!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                // Go back to the previous screen after a short delay
+                Future.delayed(const Duration(milliseconds: 1500), () {
+                  Navigator.pop(context);
+                });
+              } else if (state is CreateLeadFailure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to create lead: ${state.error}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
             child: Scaffold(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               appBar: CustomAppBar(
@@ -197,7 +202,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                         hint: "Email Address",
                         controller: _emailController,
                       ),
-                        Padding(
+                      Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: IntlPhoneField(
                           controller: _phoneController,
@@ -348,9 +353,18 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                       child: Text(sale.name ?? 'Unnamed'),
                                     );
                                   }).toList(),
-                              onChanged:
-                                  (val) =>
-                                      setState(() => _selectedSalesId = val),
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedSalesId = val;
+                                  // Find the selected sales person and get their fcm token
+                                  _selectedSalesFcmToken =
+                                      filteredSales
+                                          .firstWhere((sale) => sale.id == val)
+                                          .userlog!
+                                          .fcmtoken;
+                                  log("Selected Sales FCM Token: $_selectedSalesFcmToken");
+                                });
+                              },
                             );
                           }
                           return const Center(
@@ -492,26 +506,40 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {
-                                final formattedPhone = _fullPhoneNumber?.replaceAll('+', '') ?? '';
-                                context.read<CreateLeadCubit>().createLead(
-                                  name: _nameController.text,
-                                  email: _emailController.text,
-                                  phone: formattedPhone,
-                                  project: selectedProjectId ?? '',
-                                  sales: _selectedSalesId ?? '',
-                                  notes: _notesController.text,
-                                  assign: _assign,
-                                  stage: selectedStageId ?? '',
-                                  chanel: _selectedChannelId ?? '',
-                                  communicationway:
-                                      _selectedCommunicationWayId ?? '',
-                                  // 👈 -- الخطوة 3: إرسال اسم المرحلة في حقل النوع
-                                  leedtype: selectedStageName ?? '',
-                                  dayonly: _dateController.text,
-                                  lastStageDateUpdated: _dateController.text,
-                                  campaign: _selectedCampaignId ?? '',
-                                );
+                              onPressed: () async {
+                                final formattedPhone =
+                                    _fullPhoneNumber?.replaceAll('+', '') ?? '';
+                                final isSuccess = await context
+                                    .read<CreateLeadCubit>()
+                                    .createLead(
+                                      name: _nameController.text,
+                                      email: _emailController.text,
+                                      phone: formattedPhone,
+                                      project: selectedProjectId ?? '',
+                                      sales: _selectedSalesId ?? '',
+                                      notes: _notesController.text,
+                                      assign: _assign,
+                                      stage: selectedStageId ?? '',
+                                      chanel: _selectedChannelId ?? '',
+                                      communicationway:
+                                          _selectedCommunicationWayId ?? '',
+                                      // 👈 -- الخطوة 3: إرسال اسم المرحلة في حقل النوع
+                                     // leedtype: selectedStageName ?? '',
+                                      dayonly: _dateController.text,
+                                      lastStageDateUpdated:
+                                          _dateController.text,
+                                      campaign: _selectedCampaignId ?? '',
+                                    );
+                                if (isSuccess) {
+                                  context
+                                      .read<NotificationCubit>()
+                                      .sendNotificationToToken(
+                                        title: "Lead",
+                                        body: " lead has been created ✅ ",
+                                        fcmtokennnn: _selectedSalesFcmToken!,
+                                      );
+                                } else {
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:

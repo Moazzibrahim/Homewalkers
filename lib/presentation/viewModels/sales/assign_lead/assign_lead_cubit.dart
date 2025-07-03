@@ -247,31 +247,4 @@ class AssignleadCubit extends Cubit<AssignState> {
       emit(AssignFailure('❌ Error during combined assignment: $e'));
     }
   }
-  Future<void> sendNotification({
-    required String title,
-    required String body,
-  }) async {
-    try {
-      final String url = '${Constants.baseUrl}/Notification/send-fcm';
-      final fcmToken = await FirebaseMessaging.instance.getToken();
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "fcmToken": fcmToken,
-          "title": title,
-          "body": body,
-        }),
-      );
-      if (response.statusCode == 200) {
-        print('✅ Notification sent successfully');
-        print('🧾 Response body: ${response.body}');
-      } else {
-        print('❌ Failed to send notification: ${response.statusCode}');
-        print('Response body: ${response.body}');
-      }
-    } catch (e) {
-      print('❌ Error sending notification: $e');
-    }
-  }
 }

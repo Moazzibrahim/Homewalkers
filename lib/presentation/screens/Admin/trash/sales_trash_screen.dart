@@ -13,8 +13,6 @@ import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/widgets/add_sales_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_dialog.dart';
 
 class SalesTrashScreen extends StatelessWidget {
   const SalesTrashScreen({super.key});
@@ -217,59 +215,18 @@ class SalesTrashScreen extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-              IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+                InkWell(
+                child: Icon(
+                  Icons.restore_from_trash,
+                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  size: 30.0,
                 ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(
-                          value: context.read<AddInMenuCubit>(),
-                          child: UpdateDialog(
-                            title: "sales",
-                            onAdd: (value) {
-                              context
-                                  .read<AddInMenuCubit>()
-                                  .updateSales(
-                                    value,
-                                    communicationWay.id.toString(),
-                                  );
-                            },
-                          ),
-                        ),
-                  );
-                },
-              ),
-              InkWell(
                 onTap: () {
-                  showDialog(
-                    context: context,
-                    builder:
-                        (_) => BlocProvider.value(
-                          value: context.read<AddInMenuCubit>(),
-                          child: DeleteDialog(
-                            onCancel: () => Navigator.of(context).pop(),
-                            onConfirm: () {
-                              // تنفيذ الحذف
-                              Navigator.of(context).pop();
-                              context
-                                  .read<AddInMenuCubit>()
-                                  .deleteSales(
-                                    communicationWay.id.toString(),
-                                  );
-                            },
-                            title: "sales",
-                          ),
-                        ),
+                  context.read<AddInMenuCubit>().updateSalesStatus(
+                    true,
+                    communicationWay.id.toString(),
                   );
                 },
-                child: Image.asset("assets/images/delete.png"),
               ),
             ],
           ),

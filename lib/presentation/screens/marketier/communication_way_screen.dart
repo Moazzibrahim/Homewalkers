@@ -246,7 +246,7 @@ class CommunicationWayScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteCommunicationWay(communicationWay.id.toString(),);
+                              context.read<AddInMenuCubit>().updateCommunicationWayStatus(communicationWay.id.toString(),false);
                             },
                             title: "Communication Way",
                           ),
