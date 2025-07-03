@@ -36,9 +36,9 @@ class _TabsScreenState extends State<AdminTabsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
-          Theme.of(context).brightness == Brightness.light
-              ? Colors.grey[200]
-              : Color(0xff080719),
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
       body: WillPopScope(
         onWillPop: () async {
           // منع الرجوع إلى الشاشة السابقة

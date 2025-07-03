@@ -52,7 +52,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocProvider(
       create: (context) => AuthCubit(apiService),
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Constants.backgroundlightmode
+                : Constants.backgroundDarkmode,
         body: Stack(
           children: [
             // الخلفية
@@ -324,7 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     context.read<AuthCubit>().login(
                                       emailController.text,
                                       passwordController.text,
-                                      context
+                                      context,
                                     );
                                   },
                                   child:

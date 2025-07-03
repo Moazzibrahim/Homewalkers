@@ -2,6 +2,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/leads_marketier_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
@@ -136,6 +137,10 @@ class MarketerDashboardScreen extends StatelessWidget {
     return BlocProvider(
       create: (_) => GetLeadsMarketerCubit(GetLeadsService())..getLeadsByMarketer(),
       child: Scaffold(
+        backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
         appBar: AppBar(
           elevation: 0,
           toolbarHeight: 100,

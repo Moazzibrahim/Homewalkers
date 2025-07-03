@@ -80,7 +80,7 @@ Future<void> fetchLeadsInTrash() async {
     _originalLeadsResponseee = leadsInTrash; // حفظ نسخة من البيانات
     emit(GetLeadsInTrashSuccess(leadsInTrash));
   } catch (e) {
-    emit(GetLeadsInTrashFailure('حدث خطأ أثناء تحميل البيانات المحذوفة'));
+    emit(GetLeadsInTrashFailure(' Failed to fetch leads in trash: ${e.toString()}'));
   }
 }
   void filterLeadsAdmin({

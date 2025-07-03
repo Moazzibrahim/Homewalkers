@@ -38,6 +38,10 @@ class CampaignTrash extends StatelessWidget {
           }
         },
         child: Scaffold(
+          backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "campaign",
             onBack: () {

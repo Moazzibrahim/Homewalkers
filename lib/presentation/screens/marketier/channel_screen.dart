@@ -39,6 +39,10 @@ class ChannelScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
+             backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "channels",
             onBack: () {
@@ -272,7 +276,7 @@ class ChannelScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteChannel(projectData.id.toString(),);
+                              context.read<AddInMenuCubit>().updateChannelStatus(projectData.id.toString(),false);
                             },
                             title: "Channel",
                           ),

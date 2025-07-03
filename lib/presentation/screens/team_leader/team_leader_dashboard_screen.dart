@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
@@ -25,6 +26,10 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
               GetLeadsTeamLeaderCubit(GetLeadsService())
                 ..getLeadsByTeamLeader(),
       child: Scaffold(
+        backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
         appBar: AppBar(
           elevation: 0,
           toolbarHeight: 100,

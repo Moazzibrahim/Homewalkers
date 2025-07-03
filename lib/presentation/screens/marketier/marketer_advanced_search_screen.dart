@@ -53,6 +53,10 @@ class _MarketerAdvancedSearchScreenState
       child: BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
         builder: (context, leadsState) {
           return Scaffold(
+            backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
               title: "Advanced Search",
               onBack: () {

@@ -92,7 +92,10 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
       child: Builder(
         builder: (context) {
           return Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            backgroundColor:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.backgroundlightmode
+                    : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
               title: "Leads Details",
               onBack: () => Navigator.pop(context),
@@ -549,7 +552,8 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                       .read<NotificationCubit>()
                                       .sendNotificationToToken(
                                         title: "Lead Comment",
-                                        body: " ${widget.leadName} تم إضافة تعليق جديد ✅",
+                                        body:
+                                            " ${widget.leadName} تم إضافة تعليق جديد ✅",
                                         fcmtokennnn:
                                             widget
                                                 .fcmtoken!, // تأكد إن الاسم متطابق مع `NotificationCubit`

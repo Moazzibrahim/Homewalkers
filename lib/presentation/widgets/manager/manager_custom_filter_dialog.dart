@@ -132,28 +132,37 @@ class _FilterDialogState extends State<FilterDialog> {
                     },
                   );
                 },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          selectedCountry?.name ?? "Select Country",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            selectedCountry?.name ?? "Select Country",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? const Color(0xff080719)
+                                      : const Color(0xffFFFFFF),
+                              fontFamily: 'Montserrat',
+                            ),
                           ),
                         ),
-                      ),
-                      const Icon(Icons.arrow_drop_down),
-                    ],
+                        const Icon(Icons.keyboard_arrow_down_rounded),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -163,10 +172,10 @@ class _FilterDialogState extends State<FilterDialog> {
                   if (state is SalesLoaded) {
                     final filteredSales =
                         state.salesData.data?.where((sales) {
-                          final role = sales.userlog?.role?.toLowerCase();              
+                          final role = sales.userlog?.role?.toLowerCase();
                           final salesManagerId = sales.manager?.id?.toString();
-                            return (role == 'sales' || role == 'team leader') &&
-                          (salesManagerId == managerId);
+                          return (role == 'sales' || role == 'team leader') &&
+                              (salesManagerId == managerId);
                         }).toList() ??
                         [];
                     return CustomDropdownField(
@@ -205,7 +214,7 @@ class _FilterDialogState extends State<FilterDialog> {
                     );
                   } else if (state is DeveloperError) {
                     return Text(
-                      "خطأ: ${state.error}",
+                      "error: ${state.error}",
                       style: const TextStyle(color: Colors.red),
                     );
                   } else {
@@ -232,7 +241,7 @@ class _FilterDialogState extends State<FilterDialog> {
                     );
                   } else if (state is ChannelError) {
                     return Text(
-                      "خطأ: ${state.message}",
+                      "error: ${state.message}",
                       style: const TextStyle(color: Colors.red),
                     );
                   } else {
@@ -258,7 +267,7 @@ class _FilterDialogState extends State<FilterDialog> {
                     );
                   } else if (state is ProjectsError) {
                     return Text(
-                      "خطأ: ${state.error}",
+                      "error: ${state.error}",
                       style: const TextStyle(color: Colors.red),
                     );
                   } else {
@@ -286,7 +295,7 @@ class _FilterDialogState extends State<FilterDialog> {
                     );
                   } else if (state is StagesError) {
                     return Text(
-                      "خطأ: ${state.message}",
+                      "error: ${state.message}",
                       style: const TextStyle(color: Colors.red),
                     );
                   } else {

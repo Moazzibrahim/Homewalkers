@@ -2,6 +2,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/manager/manager_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
@@ -163,6 +164,10 @@ class ManagerDashboardScreen extends StatelessWidget {
       create:
           (_) => GetManagerLeadsCubit(GetLeadsService())..getLeadsByManager(),
       child: Scaffold(
+        backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
         appBar: AppBar(
           elevation: 0,
           toolbarHeight: 100,

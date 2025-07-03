@@ -117,7 +117,10 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
       child: Builder(
         builder: (context) {
           return Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            backgroundColor:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.backgroundlightmode
+                    : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
               title: "Leads Details",
               onBack: () => Navigator.pop(context),
@@ -245,7 +248,8 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                                               : Constants
                                                                   .mainDarkmodecolor,
                                                       leadResponse: state.leads,
-                                                      fcmtoken: widget.fcmtokenn,
+                                                      fcmtoken:
+                                                          widget.fcmtokenn,
                                                     ),
                                               );
                                             }
@@ -402,15 +406,23 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                           .toString() ??
                                       "",
                                 )?.toUtc();
-                            final isFirstValid = isClearHistoryy != true ||
-        (clearHistoryTimee != null && // <-- ADD THIS CHECK
-            firstcommentdate != null &&
-            firstcommentdate.isAfter(clearHistoryTimee!));
+                            final isFirstValid =
+                                isClearHistoryy != true ||
+                                (clearHistoryTimee !=
+                                        null && // <-- ADD THIS CHECK
+                                    firstcommentdate != null &&
+                                    firstcommentdate.isAfter(
+                                      clearHistoryTimee!,
+                                    ));
 
-    final isSecondValid = isClearHistoryy != true ||
-        (clearHistoryTimee != null && // <-- AND ADD THIS CHECK
-            secondcommentdate != null &&
-            secondcommentdate.isAfter(clearHistoryTimee!));
+                            final isSecondValid =
+                                isClearHistoryy != true ||
+                                (clearHistoryTimee !=
+                                        null && // <-- AND ADD THIS CHECK
+                                    secondcommentdate != null &&
+                                    secondcommentdate.isAfter(
+                                      clearHistoryTimee!,
+                                    ));
                             if ((isFirstValid &&
                                 firstComment?.firstcomment?.text != null)) {
                               return Column(
@@ -582,16 +594,18 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                 context
                                     .read<LeadCommentsCubit>()
                                     .fetchLeadComments(widget.leedId);
-                                      // ✅ إرسال إشعار بعد الإضافة
+                                // ✅ إرسال إشعار بعد الإضافة
                                 context
                                     .read<NotificationCubit>()
                                     .sendNotificationToToken(
                                       title: "Lead Comment",
-                                      body: " ${widget.leadName} تم إضافة تعليق جديد ✅",
+                                      body:
+                                          " ${widget.leadName} تم إضافة تعليق جديد ✅",
                                       fcmtokennnn:
                                           widget
                                               .fcmtokenn, // تأكد إن الاسم متطابق مع `NotificationCubit`
-                                    );}
+                                    );
+                              }
                             },
                             child: Text(
                               'Add Comment',

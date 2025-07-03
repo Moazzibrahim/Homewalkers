@@ -121,6 +121,10 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
           ),
         ],
         child: Scaffold(
+          backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "comments",
             onBack: () => Navigator.pop(context),

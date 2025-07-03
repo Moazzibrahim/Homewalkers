@@ -54,8 +54,6 @@ class MarketerLeadDetailsScreen extends StatefulWidget {
     required this.salesfcmtoken,
   });
   @override
-
-
   State<MarketerLeadDetailsScreen> createState() =>
       _SalesLeadsDetailsScreenState();
 }
@@ -118,7 +116,10 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
       child: Builder(
         builder: (context) {
           return Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            backgroundColor:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.backgroundlightmode
+                    : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
               title: "Leads Details",
               onBack: () => Navigator.pop(context),
@@ -245,8 +246,10 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                                                   .maincolor
                                                               : Constants
                                                                   .mainDarkmodecolor,
-                                                      leadResponse: state.leadsResponse,
-                                                      salesfcmtoken: widget.salesfcmtoken,
+                                                      leadResponse:
+                                                          state.leadsResponse,
+                                                      salesfcmtoken:
+                                                          widget.salesfcmtoken,
                                                     ),
                                               );
                                             }
@@ -586,16 +589,18 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                 context
                                     .read<LeadCommentsCubit>()
                                     .fetchLeadComments(widget.leedId);
-                                      // ✅ إرسال إشعار بعد الإضافة
+                                // ✅ إرسال إشعار بعد الإضافة
                                 context
                                     .read<NotificationCubit>()
                                     .sendNotificationToToken(
                                       title: "Lead Comment",
-                                      body: " ${widget.leadName} تم إضافة تعليق جديد ✅",
+                                      body:
+                                          " ${widget.leadName} تم إضافة تعليق جديد ✅",
                                       fcmtokennnn:
                                           widget
                                               .salesfcmtoken, // تأكد إن الاسم متطابق مع `NotificationCubit`
-                                    );}
+                                    );
+                              }
                             },
                             child: Text(
                               'Add Comment',

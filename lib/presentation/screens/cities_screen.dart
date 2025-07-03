@@ -38,6 +38,10 @@ class CitiesScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
+          backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Cities",
             onBack: () {
@@ -246,7 +250,7 @@ class CitiesScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteCity(communicationWay.id.toString(),);
+                              context.read<AddInMenuCubit>().updateCityStatus(communicationWay.id.toString(),false);
                             },
                             title: "City",
                           ),

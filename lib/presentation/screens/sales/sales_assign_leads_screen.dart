@@ -27,6 +27,10 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
       appBar: CustomAppBar(
         title: "Assign",
         onBack: () {

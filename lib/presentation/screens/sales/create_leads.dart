@@ -7,7 +7,6 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/campaign_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/communication_way_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/create_lead_api_service.dart';
-import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
@@ -17,7 +16,6 @@ import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/communication_ways/cubit/get_communication_ways_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/create_lead/cubit/create_lead_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
@@ -40,8 +38,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _notesController = TextEditingController();
-
-  String? selectedDeveloperId;
   String? selectedProjectId;
   String? selectedStageId;
   String? selectedStageName; // 👈 -- الخطوة 1: إضافة متغير جديد لاسم المرحلة
@@ -49,24 +45,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   String? _selectedChannelId;
   String? _selectedCampaignId;
   String? _selectedSalesId;
-  bool _assign = false;
+  bool isCold = true; // أو false حسب الافتراضي
   String? _fullPhoneNumber;
   String? _selectedSalesFcmToken;
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2050),
-    );
-    if (pickedDate != null) {
-      setState(() {
-        _dateController.text =
-            "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
-      });
-    }
-  }
 
   Widget _buildDropdown<T>({
     required String hint,
@@ -96,10 +77,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create:
-              (_) => DevelopersCubit(DeveloperApiService())..getDevelopers(),
-        ),
         BlocProvider(
           create: (_) => ProjectsCubit(ProjectsApiService())..fetchProjects(),
         ),
@@ -142,14 +119,17 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               } else if (state is CreateLeadFailure) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Failed to create lead: ${state.error}'),
+                    content: Text('Failed to create lead'),
                     backgroundColor: Colors.red,
                   ),
                 );
               }
             },
             child: Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
               appBar: CustomAppBar(
                 title: "create lead",
                 onBack: () => Navigator.pop(context),
@@ -221,53 +201,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           },
                         ),
                       ),
-                      // ... Date Picker ...
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: TextField(
-                          controller: _dateController,
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            hintText: "Creation Date",
-                            suffixIcon: IconButton(
-                              icon: const Icon(
-                                Icons.calendar_today_outlined,
-                                size: 18,
-                              ),
-                              onPressed: () => _selectDate(context),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
                       // ... other dropdowns ...
-                      // Developer Dropdown
-                      BlocBuilder<DevelopersCubit, DevelopersState>(
-                        builder: (context, state) {
-                          if (state is DeveloperSuccess) {
-                            return _buildDropdown<String>(
-                              hint: "Choose Developer",
-                              value: selectedDeveloperId,
-                              items:
-                                  state.developersModel.data.map((dev) {
-                                    return DropdownMenuItem<String>(
-                                      value: dev.id,
-                                      child: Text(dev.name),
-                                    );
-                                  }).toList(),
-                              onChanged:
-                                  (val) =>
-                                      setState(() => selectedDeveloperId = val),
-                            );
-                          }
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        },
-                      ),
                       const SizedBox(height: 12),
                       // Project Dropdown
                       BlocBuilder<ProjectsCubit, ProjectsState>(
@@ -362,7 +296,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                           .firstWhere((sale) => sale.id == val)
                                           .userlog!
                                           .fcmtoken;
-                                  log("Selected Sales FCM Token: $_selectedSalesFcmToken");
+                                  log(
+                                    "Selected Sales FCM Token: $_selectedSalesFcmToken",
+                                  );
                                 });
                               },
                             );
@@ -458,22 +394,32 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            "Assign",
+                            "Leed Type",
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          Switch(
-                            value: _assign,
-                            onChanged: (value) {
-                              setState(() {
-                                _assign = value;
-                              });
-                            },
+                          Row(
+                            children: [
+                              Text(
+                                isCold ? "Cold" : "Fresh",
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              const SizedBox(width: 8),
+                              Switch(
+                                value: isCold,
+                                onChanged: (value) {
+                                  setState(() {
+                                    isCold = value;
+                                  });
+                                },
+                              ),
+                            ],
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 20),
                       Row(
                         children: [
@@ -507,6 +453,26 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           Expanded(
                             child: ElevatedButton(
                               onPressed: () async {
+                                // ✅ تحقق من المدخلات قبل الإرسال
+                                if (_nameController.text.isEmpty ||
+                                    _emailController.text.isEmpty ||
+                                    _phoneController.text.isEmpty ||
+                                    selectedProjectId == null ||
+                                    selectedStageId == null ||
+                                    _selectedSalesId == null ||
+                                    _selectedChannelId == null ||
+                                    _selectedCommunicationWayId == null ||
+                                    _selectedCampaignId == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Please fill all required fields',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
                                 final formattedPhone =
                                     _fullPhoneNumber?.replaceAll('+', '') ?? '';
                                 final isSuccess = await context
@@ -518,13 +484,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                       project: selectedProjectId ?? '',
                                       sales: _selectedSalesId ?? '',
                                       notes: _notesController.text,
-                                      assign: _assign,
+                                      leedtype: isCold ? "Cold" : "Fresh",
                                       stage: selectedStageId ?? '',
                                       chanel: _selectedChannelId ?? '',
                                       communicationway:
                                           _selectedCommunicationWayId ?? '',
-                                      // 👈 -- الخطوة 3: إرسال اسم المرحلة في حقل النوع
-                                     // leedtype: selectedStageName ?? '',
                                       dayonly: _dateController.text,
                                       lastStageDateUpdated:
                                           _dateController.text,
@@ -535,10 +499,10 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                       .read<NotificationCubit>()
                                       .sendNotificationToToken(
                                         title: "Lead",
-                                        body: " lead has been created ✅ ",
+                                        body:
+                                            " lead has been created ✅ to you ",
                                         fcmtokennnn: _selectedSalesFcmToken!,
                                       );
-                                } else {
                                 }
                               },
                               style: ElevatedButton.styleFrom(

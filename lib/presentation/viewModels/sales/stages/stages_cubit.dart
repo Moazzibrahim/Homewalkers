@@ -11,25 +11,26 @@ class StagesCubit extends Cubit<StagesState> {
   StagesCubit(this.apiService) : super(StagesInitial());
 
   Future<void> fetchStages() async {
-  emit(StagesLoading());
+    emit(StagesLoading());
 
-  final result = await apiService.fetchStages();
+    final result = await apiService.fetchStages();
 
-  if (result != null) {
-    emit(StagesLoaded(result.data!)); // result.data هي List<StageModel>
-  } else {
-    emit(StagesError("فشل في جلب البيانات"));
+    if (result != null) {
+      emit(StagesLoaded(result.data!)); // result.data هي List<StageModel>
+    } else {
+      emit(StagesError("error"));
+    }
   }
-}
-Future<void> fetchStagesInTrash() async {
-  emit(StagesLoading());
 
-  final result = await apiService.fetchStagesInTrash();
+  Future<void> fetchStagesInTrash() async {
+    emit(StagesLoading());
 
-  if (result != null) {
-    emit(StagesLoaded(result.data!)); // result.data هي List<StageModel>
-  } else {
-    emit(StagesError("فشل في جلب البيانات"));
+    final result = await apiService.fetchStagesInTrash();
+
+    if (result != null) {
+      emit(StagesLoaded(result.data!)); // result.data هي List<StageModel>
+    } else {
+      emit(StagesError("error"));
+    }
   }
-}
 }

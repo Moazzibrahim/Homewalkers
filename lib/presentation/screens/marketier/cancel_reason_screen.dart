@@ -39,6 +39,10 @@ class CancelReasonScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
+          backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "cancel reasons",
             onBack: () {

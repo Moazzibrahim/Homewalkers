@@ -14,7 +14,7 @@ class DeveloperApiService {
       final jsonData = json.decode(response.body);
       return DevelopersModel.fromJson(jsonData);
     } else {
-      throw Exception('فشل في جلب البيانات: ${response.statusCode}');
+      throw Exception('  error : ${response.statusCode}');
     }
   }
   Future<DevelopersModel> fetchDevelopersInTrash() async {
@@ -24,7 +24,7 @@ class DeveloperApiService {
       final jsonData = json.decode(response.body);
       return DevelopersModel.fromJson(jsonData);
     } else {
-      throw Exception('فشل في جلب البيانات: ${response.statusCode}');
+      throw Exception('فشل في جلب : ${response.statusCode}');
     }
   }
 }

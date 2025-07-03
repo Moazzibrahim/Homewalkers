@@ -37,6 +37,10 @@ class AreaScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
+          backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Areas",
             onBack: () {
@@ -245,7 +249,7 @@ class AreaScreen extends StatelessWidget {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().deleteArea(developerData.id.toString(),);
+                              context.read<AddInMenuCubit>().updateAreaStatus(developerData.id.toString(),false);
                             },
                             title: "area",
                           ),

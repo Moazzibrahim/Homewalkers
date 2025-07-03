@@ -37,6 +37,10 @@ class ChannelsTrash extends StatelessWidget {
           }
         },
         child: Scaffold(
+        backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "channels",
             onBack: () {

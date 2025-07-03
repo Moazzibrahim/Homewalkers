@@ -67,6 +67,10 @@ class _StagesScreenState extends State<StagesScreen>
           }
         },
         child: Scaffold(
+        backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Stages",
             onBack: () => Navigator.pop(context),

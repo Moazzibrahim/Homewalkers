@@ -35,6 +35,10 @@ class UsersTrashScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
+        backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "users",
             onBack: () {

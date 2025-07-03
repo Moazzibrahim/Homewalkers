@@ -16,21 +16,6 @@ import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
 import 'package:country_picker/country_picker.dart'; // تأكد أن هذا المستورد موجود
 
-// ❌ يمكنك حذف هذه الدالة showFilterDialogMarketer لأنها ستُستبدل في LeadsMarketierScreen
-// void showFilterDialogMarketer(BuildContext context) {
-//   showDialog(
-//     context: context,
-//     builder:
-//         (context) => MultiBlocProvider(
-//           providers: [
-//             BlocProvider(create: (_) => DevelopersCubit(DeveloperApiService())..getDevelopers()),
-//             // ... بقية الـ BlocProviders
-//           ],
-//           child: const FilterDialog(),
-//         ),
-//   );
-// }
-
 class FilterDialog extends StatefulWidget {
   // 🟡 جديد: لاستقبال القيم الأولية (الحالية) للفلاتر
   final String? initialCountry;
@@ -141,42 +126,49 @@ class _FilterDialogState extends State<FilterDialog> {
                 controller: _nameController,
               ),
               const SizedBox(height: 12),
-              GestureDetector(
+               GestureDetector(
                 onTap: () {
                   showCountryPicker(
                     context: context,
                     showPhoneCode: true,
                     onSelect: (Country country) {
                       setState(() {
-                        _selectedCountry =
-                            country.phoneCode; // 🟡 حفظ كود الهاتف فقط
+                        _selectedCountry = country.name;
                       });
                     },
                   );
                 },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _selectedCountry ??
-                              "Select Country", // 🟡 عرض الكود أو النص
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _selectedCountry ?? "Select Country",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? const Color(0xff080719)
+                                      : const Color(0xffFFFFFF),
+                              fontFamily: 'Montserrat',
+                            ),
                           ),
                         ),
-                      ),
-                      const Icon(Icons.arrow_drop_down),
-                    ],
+                        const Icon(Icons.keyboard_arrow_down_rounded),
+                      ],
+                    ),
                   ),
                 ),
               ),

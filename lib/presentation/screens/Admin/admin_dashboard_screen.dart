@@ -30,19 +30,27 @@ class AdminDashboardScreen extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchAllUsers(),
+          create:
+              (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchAllUsers(),
         ),
         BlocProvider(
-          create: (context) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+          create:
+              (context) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
         ),
       ],
       child: Scaffold(
         // Use system UI color for background
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Constants.backgroundlightmode
+                : Constants.backgroundDarkmode,
         appBar: AppBar(
           elevation: 0,
           toolbarHeight: 100,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           automaticallyImplyLeading: false,
           title: Row(
             children: [
@@ -52,7 +60,9 @@ class AdminDashboardScreen extends StatelessWidget {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blueGrey),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.blueGrey,
+                      ),
                     );
                   } else {
                     final name = snapshot.data ?? 'User';
@@ -65,7 +75,8 @@ class AdminDashboardScreen extends StatelessWidget {
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             // Dynamic color for AppBar title
-                            color: Theme.of(context).textTheme.titleLarge?.color,
+                            color:
+                                Theme.of(context).textTheme.titleLarge?.color,
                           ),
                         ),
                         const Text(
@@ -114,7 +125,9 @@ class AdminDashboardScreen extends StatelessWidget {
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
                               // Dynamic color for greeting text
-                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color?.withOpacity(0.7),
                             ),
                           );
                         }
@@ -123,7 +136,9 @@ class AdminDashboardScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w500,
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.color?.withOpacity(0.7),
                           ),
                         );
                       },
@@ -140,11 +155,15 @@ class AdminDashboardScreen extends StatelessWidget {
                     return BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
                       builder: (context, usersState) {
                         // Loading State: Show a spinner if either cubit is loading.
-                        if (usersState is GetAllUsersLoading || salesState is SalesLoading) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (usersState is GetAllUsersLoading ||
+                            salesState is SalesLoading) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
                         // Success State: Build the UI when both cubits have data.
-                        if (usersState is GetAllUsersSuccess && salesState is SalesLoaded) {
+                        if (usersState is GetAllUsersSuccess &&
+                            salesState is SalesLoaded) {
                           final allUsers = usersState.users.data ?? [];
                           final allSales = salesState.salesData.data ?? [];
                           final salesCount = allSales.length;
@@ -152,7 +171,8 @@ class AdminDashboardScreen extends StatelessWidget {
                           final Map<String, int> stageCounts = {};
                           for (var lead in allUsers) {
                             final stageName = lead.stage?.name ?? 'Unknown';
-                            stageCounts[stageName] = (stageCounts[stageName] ?? 0) + 1;
+                            stageCounts[stageName] =
+                                (stageCounts[stageName] ?? 0) + 1;
                           }
                           // Create a list of all cards to display.
                           final List<Widget> statCards = [
@@ -161,10 +181,14 @@ class AdminDashboardScreen extends StatelessWidget {
                               '${allUsers.length}',
                               Icons.group,
                               context,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const AdminLeadsScreen()),
-                              ),
+                              onTap:
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => const AdminLeadsScreen(),
+                                    ),
+                                  ),
                             ),
                             // Using salesCount from SalesCubit.
                             _dashboardCard(
@@ -172,10 +196,14 @@ class AdminDashboardScreen extends StatelessWidget {
                               '$salesCount',
                               Icons.person,
                               context,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const AdminSalesSceen()),
-                              ),
+                              onTap:
+                                  () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => const AdminSalesSceen(),
+                                    ),
+                                  ),
                             ),
                             ...stageCounts.entries.map((entry) {
                               const iconMap = {"Done Deal": Icons.work};
@@ -184,22 +212,27 @@ class AdminDashboardScreen extends StatelessWidget {
                                 entry.value.toString(),
                                 iconMap[entry.key] ?? Icons.timeline,
                                 context,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AdminLeadsScreen(stageName: entry.key),
-                                  ),
-                                ),
+                                onTap:
+                                    () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => AdminLeadsScreen(
+                                              stageName: entry.key,
+                                            ),
+                                      ),
+                                    ),
                               );
-                            })
+                            }),
                           ];
                           return GridView.builder(
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              childAspectRatio: 1.4,
-                            ),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 1.4,
+                                ),
                             itemCount: statCards.length,
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -225,7 +258,11 @@ class AdminDashboardScreen extends StatelessWidget {
   }
 
   /// A styled container for icons, like the notification icon.
-  static Widget _iconBox(IconData icon, void Function() onPressed, BuildContext context) {
+  static Widget _iconBox(
+    IconData icon,
+    void Function() onPressed,
+    BuildContext context,
+  ) {
     return Container(
       decoration: BoxDecoration(
         // Dynamic background color for the icon box
@@ -240,7 +277,13 @@ class AdminDashboardScreen extends StatelessWidget {
         ],
       ),
       child: IconButton(
-        icon: Icon(icon, color: Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor),
+        icon: Icon(
+          icon,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        ),
         onPressed: onPressed,
       ),
     );
@@ -267,10 +310,13 @@ class AdminDashboardScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: isDarkMode ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.05),
+              color:
+                  isDarkMode
+                      ? Colors.black.withOpacity(0.2)
+                      : Colors.black.withOpacity(0.05),
               blurRadius: 15,
               offset: const Offset(0, 5),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -296,9 +342,16 @@ class AdminDashboardScreen extends StatelessWidget {
                   width: 40,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: title == 'Leads' || title == 'Sales'
-                          ? [Constants.maincolor, Constants.mainDarkmodecolor]
-                          : [const Color(0xff50E3C2), const Color(0xffA0FFED)],
+                      colors:
+                          title == 'Leads' || title == 'Sales'
+                              ? [
+                                Constants.maincolor,
+                                Constants.mainDarkmodecolor,
+                              ]
+                              : [
+                                const Color(0xff50E3C2),
+                                const Color(0xffA0FFED),
+                              ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),

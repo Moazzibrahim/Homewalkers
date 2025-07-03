@@ -114,7 +114,10 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
       child: Builder(
         builder: (context) {
           return Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            backgroundColor:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.backgroundlightmode
+                    : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
               title: "Leads Details",
               onBack: () => Navigator.pop(context),
@@ -561,9 +564,11 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                       .read<NotificationCubit>()
                                       .sendNotificationToToken(
                                         title: "Lead Comment",
-                                        body: " ${widget.leadName} تم إضافة تعليق جديد ✅",
+                                        body:
+                                            " ${widget.leadName} تم إضافة تعليق جديد ✅",
                                         fcmtokennnn:
-                                            widget.salesfcmToken!, // تأكد إن الاسم متطابق مع `NotificationCubit`
+                                            widget
+                                                .salesfcmToken!, // تأكد إن الاسم متطابق مع `NotificationCubit`
                                       );
                                 }
                               }

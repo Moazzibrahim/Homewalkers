@@ -53,7 +53,10 @@ class MarketerProfileScreen extends StatelessWidget {
     print("Current ThemeMode: ${context.watch<ThemeCubit>().state}");
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.backgroundlightmode
+              : Constants.backgroundDarkmode,
       appBar: CustomAppBar(
         title: "Profile",
         onBack: () {

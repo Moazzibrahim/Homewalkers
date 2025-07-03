@@ -61,6 +61,7 @@ class CustomChangeStageDialog {
         }
       }
     }
+
     showDialog(
       context: context,
       builder:
@@ -102,12 +103,14 @@ class CustomChangeStageDialog {
                       "Commission: $commissionMoney, Cashback: $cashbackMoney",
                     );
                   }
+
                   // Add listeners to controllers to automatically recalculate
                   void setupListeners() {
                     unitPriceController.addListener(calculateValues);
                     commissionRatioController.addListener(calculateValues);
                     cashbackRatioController.addListener(calculateValues);
                   }
+
                   // A flag to ensure listeners are set up only once
                   bool areListenersSetup = false;
                   if (!areListenersSetup) {
@@ -163,12 +166,14 @@ class CustomChangeStageDialog {
                             ],
                           ),
                           SizedBox(height: 12.h),
+
                           /// Old Stage Field
                           CustomTextField(
                             hint: "Old stage",
                             controller: oldStageController,
                           ),
                           SizedBox(height: 12.h),
+
                           /// Dropdown for Stages
                           BlocBuilder<StagesCubit, StagesState>(
                             builder: (context, state) {
@@ -214,13 +219,14 @@ class CustomChangeStageDialog {
                                 );
                               } else if (state is StagesError) {
                                 return Text(
-                                  "خطأ: ${state.message}",
+                                  "error: ${state.message}",
                                   style: const TextStyle(color: Colors.red),
                                 );
                               }
                               return const SizedBox.shrink();
                             },
                           ),
+
                           /// Fields for "Done Deal" stage
                           if (selectedStageName == "Done Deal")
                             Column(
@@ -290,6 +296,7 @@ class CustomChangeStageDialog {
                               ],
                             ),
                           SizedBox(height: 20.h),
+
                           /// Action Buttons
                           Row(
                             children: [
@@ -335,6 +342,7 @@ class CustomChangeStageDialog {
                                 ),
                               ),
                               SizedBox(width: 10.w),
+
                               /// Apply Button
                               Expanded(
                                 child: ElevatedButton(

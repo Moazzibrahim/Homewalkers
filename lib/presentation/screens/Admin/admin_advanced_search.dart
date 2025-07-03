@@ -57,6 +57,10 @@ class _MarketerAdvancedSearchScreenState
         ),
       ],
       child: Scaffold(
+      backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
         appBar: CustomAppBar(
           title: "Advanced Search",
           onBack: () {

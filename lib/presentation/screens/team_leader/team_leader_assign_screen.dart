@@ -65,6 +65,10 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
       child: Builder(
         builder: (context) {
           return Scaffold(
+            backgroundColor:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.backgroundlightmode
+                      : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
               title: "Assign",
               onBack: () {
