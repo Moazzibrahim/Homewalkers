@@ -37,6 +37,26 @@ class _MarketerAdvancedSearchScreenState
     'All Leads With Sales Between Different 2 Date',
     'All Leads With Last Comment Date',
   ];
+
+   // ✅ الخطوة 1: إضافة دوال معالجة التاريخ الدقيقة
+  String _formatFullDate(String date) {
+    try {
+      final localDate = DateTime.parse(date);
+      return localDate.toUtc().toIso8601String();
+    } catch (e) {
+      return date;
+    }
+  }
+
+  String _formatEndDate(String date) {
+    try {
+      final localDate = DateTime.parse(date);
+      final endOfDay = DateTime(localDate.year, localDate.month, localDate.day, 23, 59, 59, 999);
+      return endOfDay.toUtc().toIso8601String();
+    } catch (e) {
+      return date;
+    }
+  }
   @override
   void initState() {
     super.initState();
@@ -200,10 +220,18 @@ class _MarketerAdvancedSearchScreenState
                         sales: selectedSales,
                         country: selectedCountry,
                         user: selectedUser,
-                        creationDate: _dateController.text.isNotEmpty ? _dateController.text : null,
-                        fromDate: _fromDateController.text.isNotEmpty ? _fromDateController.text : null,
-                        toDate: _toDateController.text.isNotEmpty ? _toDateController.text : null,
-                        commentDate: _commentDateController.text.isNotEmpty ? _commentDateController.text : null,
+                        creationDate: _dateController.text.isNotEmpty
+                                  ? _formatFullDate(_dateController.text)
+                                  : null,
+                              fromDate: _fromDateController.text.isNotEmpty
+                                  ? _formatFullDate(_fromDateController.text)
+                                  : null,
+                              toDate: _toDateController.text.isNotEmpty
+                                  ? _formatEndDate(_toDateController.text)
+                                  : null,
+                              commentDate: _commentDateController.text.isNotEmpty
+                                  ? _formatFullDate(_commentDateController.text)
+                                  : null,
                       );
                     },
                       child: const Text(

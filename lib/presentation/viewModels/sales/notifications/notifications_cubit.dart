@@ -16,9 +16,27 @@ import 'dart:io';
 class NotificationState {
   final String? token;
   final String? error;
+  final bool isLoading;
 
-  NotificationState({this.token, this.error});
+  NotificationState({
+    this.token,
+    this.error,
+    this.isLoading = false,
+  });
+
+  NotificationState copyWith({
+    String? token,
+    String? error,
+    bool? isLoading,
+  }) {
+    return NotificationState(
+      token: token ?? this.token,
+      error: error,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
 }
+
 
 class NotificationCubit extends Cubit<NotificationState> {
   NotificationCubit() : super(NotificationState());
@@ -181,34 +199,53 @@ class NotificationCubit extends Cubit<NotificationState> {
   }
   Future<void> fetchNotifications() async {
   try {
+    emit(state.copyWith(isLoading: true, error: null));
     final prefs = await SharedPreferences.getInstance();
-    final receiverId = prefs.getString('salesId'); // 👈 استخدام salesId
+    final receiverId = prefs.getString('salesId');
 
     if (receiverId == null || receiverId.isEmpty) {
       log("❌ No salesId found in SharedPreferences");
+      emit(state.copyWith(isLoading: false, error: 'No salesId found'));
       return;
     }
 
-    final url = Uri.parse(
-        'https://apirender8.onrender.com/api/v1/Notification?receiver=$receiverId');
-
+    final url = Uri.parse('${Constants.baseUrl}/Notification?receiver=$receiverId');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
       final model = NotificationModel.fromJson(decoded);
-
       notifications = model.data ?? [];
-
       log("✅ Notifications fetched: ${notifications.length}");
-      emit(NotificationState(token: state.token)); // trigger rebuild
+      emit(state.copyWith(isLoading: false));
     } else {
       log("❌ Failed to fetch notifications: ${response.statusCode}");
-      emit(NotificationState(error: 'Failed to load notifications'));
+      emit(state.copyWith(isLoading: false, error: 'Failed to load notifications'));
     }
   } catch (e) {
     log("❌ Error fetching notifications: $e");
-    emit(NotificationState(error: e.toString()));
+    emit(state.copyWith(isLoading: false, error: e.toString()));
+  }
+}
+
+Future<void> fetchAllNotifications() async {
+  try {
+    emit(state.copyWith(isLoading: true, error: null));
+    final url = Uri.parse('${Constants.baseUrl}/Notification');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      final model = NotificationModel.fromJson(decoded);
+      notifications = model.data ?? [];
+      log("✅ Notifications fetched: ${notifications.length}");
+      emit(state.copyWith(isLoading: false));
+    } else {
+      log("❌ Failed to fetch notifications: ${response.statusCode}");
+      emit(state.copyWith(isLoading: false, error: 'Failed to load notifications'));
+    }
+  } catch (e) {
+    log("❌ Error fetching notifications: $e");
+    emit(state.copyWith(isLoading: false, error: e.toString()));
   }
 }
 }

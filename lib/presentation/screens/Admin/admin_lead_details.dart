@@ -16,6 +16,7 @@ import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_change_stage_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/assign_lead_markter_dialog.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminLeadDetails extends StatefulWidget {
@@ -97,6 +98,25 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
     }
     debugPrint('Clear History: $iscleared');
   }
+
+  String _formatDate(String? dateStr) {
+  if (dateStr == null) return 'N/A';
+
+  try {
+    // أول محاولة: ISO format
+    final parsed = DateTime.parse(dateStr);
+    return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
+  } catch (_) {
+    try {
+      // محاولة تانية: format مثل "04/07/2025 - 10:36"
+      final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+      return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
+    } catch (e) {
+      return 'Invalid Date';
+    }
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -331,7 +351,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                           InfoRow(
                             icon: Icons.calendar_today,
                             label: 'Creation Date',
-                            value: '${widget.leadCreationDate}',
+                            value: _formatDate(widget.leadCreationDate),
                           ),
                           InfoRow(
                             icon: Icons.link,

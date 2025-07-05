@@ -7,7 +7,6 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_lead_details.dart';
-import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
@@ -44,6 +43,36 @@ class _MarketerAdvancedSearchScreenState
     'All Leads With Last Comment Date',
   ];
 
+  // لتحويل التاريخ إلى بداية اليوم
+// ✅ دالة مُعدّلة: تحول التاريخ المحلي إلى بداية اليوم بالتوقيت العالمي
+// ✅ دالة مُعدّلة: تحول التاريخ المحلي إلى بداية اليوم بالتوقيت العالمي (UTC)
+String _formatFullDate(String date) {
+  try {
+    // 1. تحليل التاريخ كنص للحصول على كائن DateTime بالتوقيت المحلي
+    final localDate = DateTime.parse(date);
+    // 2. تحويله إلى التوقيت العالمي المنسق (UTC) وإرجاعه كنص
+    return localDate.toUtc().toIso8601String();
+  } catch (e) {
+    // Fallback في حال كان التنسيق مختلفاً
+    return date;
+  }
+}
+
+// ✅ دالة جديدة وأكثر دقة: تحسب نهاية اليوم المحدد وتحولها إلى UTC
+String _formatEndDate(String date) {
+  try {
+    // 1. تحليل التاريخ كنص للحصول على بداية اليوم بالتوقيت المحلي
+    final localDate = DateTime.parse(date);
+    // 2. حساب نهاية اليوم بإضافة يوم كامل وطرح ميلي ثانية واحدة
+    final endOfDay = DateTime(localDate.year, localDate.month, localDate.day, 23, 59, 59, 999);
+    // 3. تحويل لحظة نهاية اليوم إلى التوقيت العالمي (UTC) وإرجاعها كنص
+    return endOfDay.toUtc().toIso8601String();
+  } catch (e) {
+    // Fallback
+    return date;
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -64,10 +93,7 @@ class _MarketerAdvancedSearchScreenState
         appBar: CustomAppBar(
           title: "Advanced Search",
           onBack: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminTabsScreen()),
-            );
+            Navigator.pop(context );
           },
         ),
         // ✅ الخطوة 3: استخدام BlocListener للاستماع لحالة SalesCubit وتعبئة الـ Map
@@ -142,7 +168,7 @@ class _MarketerAdvancedSearchScreenState
                   Expanded(
                     child: OutlinedButton(
                       // ... (Cancel Button code remains the same)
-                       style: OutlinedButton.styleFrom(
+                        style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFF2B6777)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -159,7 +185,7 @@ class _MarketerAdvancedSearchScreenState
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                       style: ElevatedButton.styleFrom(
+                        style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2B6777),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -173,9 +199,15 @@ class _MarketerAdvancedSearchScreenState
                               salesId: selectedSalesId, // <-- تمرير الـ ID
                               country: selectedCountry,
                               user: selectedUser,
-                              creationDate: _dateController.text.isNotEmpty ? _dateController.text : null,
-                              fromDate: _fromDateController.text.isNotEmpty ? _fromDateController.text : null,
-                              toDate: _toDateController.text.isNotEmpty ? _toDateController.text : null,
+                              creationDate: _dateController.text.isNotEmpty
+    ? _formatFullDate(_dateController.text)
+    : null,
+fromDate: _fromDateController.text.isNotEmpty
+    ? _formatFullDate(_fromDateController.text)
+    : null,
+toDate: _toDateController.text.isNotEmpty
+    ? _formatEndDate(_toDateController.text) // ✅  دقيق جدًا
+    : null,
                               commentDate: _commentDateController.text.isNotEmpty ? _commentDateController.text : null,
                             );
                       },
@@ -187,7 +219,7 @@ class _MarketerAdvancedSearchScreenState
               const SizedBox(height: 40),
               // Search Results
               if (_hasSearched) ...[
-                 if (state is GetAllUsersLoading)
+                  if (state is GetAllUsersLoading)
                   const Center(child: CircularProgressIndicator())
                 else if (state is GetAllUsersFailure)
                   Center(child: Text(state.error, style: const TextStyle(color: Colors.red)))
@@ -225,7 +257,7 @@ class _MarketerAdvancedSearchScreenState
                                    ),
                                    TextButton(
                                        onPressed: () {
-                                         Navigator.push(context, MaterialPageRoute(builder: (context) => AdminLeadDetails(leedId: lead.id!, leadName: lead.name, leadEmail: lead.email, leadPhone: lead.phone, leadStageId: lead.stage?.id ?? '', leadStage: lead.stage?.name ?? '', leadChannel: lead.chanel?.name ?? '', leadCreationDate: lead.createdAt, leadLastComment: lead.lastcommentdate, leadCreationTime: lead.createdAt, leadNotes: "", leadProject: lead.project?.name ?? '', leadcampaign: lead.campaign?.campainName ?? '', leaddeveloper: lead.project?.developer?.name ?? '')));
+                                         Navigator.push(context, MaterialPageRoute(builder: (context) => AdminLeadDetails(leedId: lead.id!, leadName: lead.name, leadEmail: lead.email, leadPhone: lead.phone, leadStageId: lead.stage?.id ?? '', leadStage: lead.stage?.name ?? '', leadChannel: lead.chanel?.name ?? '', leadCreationDate: lead.createdAt??"", leadLastComment: lead.lastcommentdate, leadCreationTime: lead.createdAt, leadNotes: "", leadProject: lead.project?.name ?? '', leadcampaign: lead.campaign?.campainName ?? '', leaddeveloper: lead.project?.developer?.name ?? '')));
                                        },
                                        child: Text("view more", style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor))),
                                  ],
@@ -299,7 +331,7 @@ class _MarketerAdvancedSearchScreenState
   // (DatePicker and CountryPicker methods remain the same)
   Widget _buildDatePickerField(String label, {required TextEditingController controller}) {
      // ... same as your code
-       return Column(
+      return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(

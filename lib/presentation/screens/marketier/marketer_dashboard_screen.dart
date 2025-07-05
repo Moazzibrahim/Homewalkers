@@ -17,120 +17,145 @@ class MarketerDashboardScreen extends StatelessWidget {
     final name = prefs.getString('name');
     return name ?? 'User';
   }
-
   BarChartData _buildBarChartData(
-    Map<String, int> stageCounts,
-    List<int> values,
-    List<String> stages,
-    BuildContext context,
-  ) {
-    return BarChartData(
-      alignment: BarChartAlignment.start,
-      maxY:
-          (values.isNotEmpty ? values.reduce((a, b) => a > b ? a : b) : 1)
-              .toDouble() +
-          0.5,
-      barGroups: List.generate(stageCounts.length, (index) {
-        return BarChartGroupData(
-          x: index,
-          barRods: [
-            BarChartRodData(
-              toY: values[index].toDouble(),
-              width: 20,
-              color: Color(0xFF2E8B8A),
-              borderRadius: BorderRadius.circular(4),
+  Map<String, int> stageCounts,
+  List<int> values,
+  List<String> stages,
+  BuildContext context,
+) {
+  // 1. حساب أعلى قيمة في البيانات لتحديد مدى المحاور
+  final double maxValue =
+      (values.isNotEmpty ? values.reduce((a, b) => a > b ? a : b) : 1)
+          .toDouble();
+
+  // 2. حساب الفاصل الزمني (Interval) للمحور الرأسي بشكل ديناميكي
+  final double interval = (maxValue / 5).ceilToDouble();
+  final double roundedMaxY = (maxValue / interval).ceil() * interval;
+
+  final primaryColor = Color(0xFF2E8B8A);
+  final secondaryColor = Color.fromARGB(255, 65, 175, 174);
+
+  return BarChartData(
+    extraLinesData: ExtraLinesData(horizontalLines: [
+      HorizontalLine(
+        y: roundedMaxY,
+        color: Colors.transparent,
+      ),
+    ]),
+    maxY: roundedMaxY,
+    barTouchData: BarTouchData(
+      touchTooltipData: BarTouchTooltipData(
+        getTooltipColor: (_) => Colors.blueGrey,
+        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+          return BarTooltipItem(
+            '${stages[group.x]}\n',
+            const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
             ),
-          ],
-        );
-      }),
-      titlesData: FlTitlesData(
-        leftTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            interval: 1,
-            reservedSize: 28,
-            getTitlesWidget: (value, meta) {
-              if (value % 1 == 0) {
-                return Text(
-                  value.toInt().toString(),
+            children: <TextSpan>[
+              TextSpan(
+                text: rod.toY.toInt().toString(),
+                style: const TextStyle(
+                  color: Colors.yellow,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    ),
+    titlesData: FlTitlesData(
+      leftTitles: AxisTitles(
+        sideTitles: SideTitles(
+          showTitles: true,
+          reservedSize: 40,
+          interval: interval > 0 ? interval : 1,
+          getTitlesWidget: (value, meta) {
+            if (value % interval == 0 || value == 0) {
+              return Text(
+                value.toInt().toString(),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.6),
+                ),
+                textAlign: TextAlign.left,
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+      bottomTitles: AxisTitles(
+        sideTitles: SideTitles(
+          showTitles: true,
+          reservedSize: 40,
+          getTitlesWidget: (value, meta) {
+            int i = value.toInt();
+            if (i >= 0 && i < stages.length) {
+              // The correction is here: 'axisSide' is removed.
+              return SideTitleWidget(
+                meta: meta,
+                space: 8.0,
+                angle: -0.785, 
+                child: Text(
+                  stages[i],
                   style: TextStyle(
                     fontSize: 10,
-                    color:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Colors.grey[800]
-                            : Colors.grey[400],
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.8),
                   ),
-                );
-              }
-              return SizedBox.shrink();
-            },
-          ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
         ),
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            getTitlesWidget: (value, meta) {
-              int i = value.toInt();
-              if (i >= 0 && i < stages.length) {
-                return SideTitleWidget(
-                  meta: meta,
-                  space: 8.0,
-                  child: Transform.rotate(
-                    angle: -0.5, // تقريبًا 45 درجة (بالراديان)
-                    child: Text(
-                      stages[i],
-                      style: TextStyle(
-                        fontSize: 10,
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Colors.grey[800]
-                                : Colors.grey[400],
-                      ),
-                    ),
-                  ),
-                );
-              }
-              return SizedBox.shrink();
-            },
-          ),
-        ),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
-      gridData: FlGridData(
-        show: true,
-        drawVerticalLine: false,
-        getDrawingHorizontalLine:
-            (y) => FlLine(
-              color:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Colors.grey[300]!
-                      : Colors.grey[700]!,
-              strokeWidth: 1,
+      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+    ),
+    gridData: FlGridData(
+      show: true,
+      drawVerticalLine: false,
+      horizontalInterval: interval,
+      getDrawingHorizontalLine: (value) {
+        return FlLine(
+          color: Colors.grey.withOpacity(0.2),
+          strokeWidth: 1,
+          dashArray: [5, 5],
+        );
+      },
+    ),
+    borderData: FlBorderData(
+      show: false,
+    ),
+    barGroups: List.generate(stageCounts.length, (index) {
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: values[index].toDouble(),
+            width: 22,
+            gradient: LinearGradient(
+              colors: [primaryColor, secondaryColor],
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
             ),
-      ),
-      borderData: FlBorderData(
-        show: true,
-        border: Border(
-          left: BorderSide(
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey[500]!
-                    : Colors.grey[600]!,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(6),
+              topRight: Radius.circular(6),
+            ),
           ),
-          bottom: BorderSide(
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey[500]!
-                    : Colors.grey[600]!,
-          ),
-          top: BorderSide(color: Colors.transparent),
-          right: BorderSide(color: Colors.transparent),
-        ),
-      ),
-      barTouchData: BarTouchData(enabled: false),
-    );
-  }
+        ],
+      );
+    }),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

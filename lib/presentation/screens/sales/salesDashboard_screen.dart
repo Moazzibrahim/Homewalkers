@@ -8,65 +8,76 @@ import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_s
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SalesdashboardScreen extends StatelessWidget {
+// 1. تحويل الويدجت إلى StatefulWidget
+class SalesdashboardScreen extends StatefulWidget {
   const SalesdashboardScreen({super.key});
 
-  Future<String> checkAuth() async {
+  @override
+  State<SalesdashboardScreen> createState() => _SalesdashboardScreenState();
+}
+
+class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
+  String _userName = 'User'; // متغير لتخزين اسم المستخدم
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. استدعاء دالة جلب البيانات عند بدء تشغيل الشاشة
+    // هذا سيضمن تحديث البيانات في كل مرة تدخل فيها إلى الصفحة
+    context.read<GetLeadsCubit>().fetchLeads();
+    
+    // 3. جلب اسم المستخدم مرة واحدة وتخزينه
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('name');
-    return name ?? 'User';
+    if (mounted) { // التحقق من أن الويدجت لا يزال في الشجرة
+      setState(() {
+        _userName = name ?? 'User';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.backgroundlightmode
+              : Constants.backgroundDarkmode,
       appBar: AppBar(
         elevation: 0,
         toolbarHeight: 100,
         automaticallyImplyLeading: false,
         title: Row(
           children: [
-            FutureBuilder<String>(
-              future: checkAuth(), // ✅ جلب الاسم
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                } else {
-                  final name = snapshot.data ?? 'User';
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: TextStyle(
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? const Color(0xff080719)
-                                  : Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const Text(
-                        'Sales',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  );
-                }
-              },
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _userName, // استخدام اسم المستخدم من متغير الحالة
+                  style: TextStyle(
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? const Color(0xff080719)
+                            : Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const Text(
+                  'Sales',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
             const Spacer(),
-            // _iconBox(Icons.comment_rounded, () {}),
-            // const SizedBox(width: 8),
             _iconBox(Icons.notifications_none, () {
               Navigator.push(
                 context,
@@ -86,34 +97,22 @@ class SalesdashboardScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  FutureBuilder(
-                    future: checkAuth(), // ✅ جلب الاسم
-
-                    builder: (BuildContext context, AsyncSnapshot snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Text(" hello ....");
-                      } else if (snapshot.hasError) {
-                        return const Text('Hello');
-                      } else {
-                        return Text(
-                          'Hello ${snapshot.data}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? const Color(0xff080719)
-                                    : Colors.white,
-                          ),
-                        );
-                      }
-                    },
+                  Text(
+                    'Hello $_userName', // استخدام اسم المستخدم هنا أيضاً
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? const Color(0xff080719)
+                              : Colors.white,
+                    ),
                   ),
-                  SizedBox(width: 8),
-                  Text('👋', style: TextStyle(fontSize: 20)),
+                  const SizedBox(width: 8),
+                  const Text('👋', style: TextStyle(fontSize: 20)),
                 ],
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               BlocBuilder<GetLeadsCubit, GetLeadsState>(
                 builder: (context, state) {
                   if (state is GetLeadsLoading) {
@@ -130,15 +129,6 @@ class SalesdashboardScreen extends StatelessWidget {
                                 context,
                               ),
                             ),
-                            // const SizedBox(width: 12),
-                            // Expanded(
-                            //   child: _dashboardCard(
-                            //     'Deals',
-                            //     '...',
-                            //     Icons.work_outline,
-                            //     context,
-                            //   ),
-                            // ),
                           ],
                         ),
                         const SizedBox(height: 24),
@@ -147,10 +137,6 @@ class SalesdashboardScreen extends StatelessWidget {
                     );
                   } else if (state is GetLeadsSuccess) {
                     final allLeads = state.assignedModel.data ?? [];
-                    // final doneDeals =
-                    //     allLeads
-                    //         .where((lead) => lead.stage?.name == "Done Deal")
-                    //         .toList();
                     final Map<String, int> stageCounts = {};
                     for (var lead in allLeads) {
                       final stageName = lead.stage?.name ?? 'Unknown';
@@ -179,26 +165,7 @@ class SalesdashboardScreen extends StatelessWidget {
                                 },
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            // Expanded(
-                            //   child: _dashboardCard(
-                            //     'Deals',
-                            //     '${doneDeals.length}',
-                            //     Icons.work_outline,
-                            //     context,
-                            //     onTap: () {
-                            //       Navigator.push(
-                            //         context,
-                            //         MaterialPageRoute(
-                            //           builder:
-                            //               (context) => const SalesLeadsScreen(
-                            //                 stageName: "Done Deal",
-                            //               ),
-                            //         ),
-                            //       );
-                            //     },
-                            //   ),
-                            // ),
+                            // يمكنك إضافة كرت "Deals" هنا إذا أردت
                           ],
                         ),
                         const SizedBox(height: 18),
@@ -211,28 +178,28 @@ class SalesdashboardScreen extends StatelessWidget {
                           physics: const NeverScrollableScrollPhysics(),
                           children:
                               stageCounts.entries.map((entry) {
-                                return _dashboardCard(
-                                  entry.key,
-                                  entry.value.toString(),
-                                  Icons.timeline,
+                            return _dashboardCard(
+                              entry.key,
+                              entry.value.toString(),
+                              Icons.timeline,
+                              context,
+                              onTap: () {
+                                Navigator.push(
                                   context,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => SalesLeadsScreen(
-                                              stageName: entry.key,
-                                            ),
-                                      ),
-                                    );
-                                  },
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => SalesLeadsScreen(
+                                      stageName: entry.key,
+                                    ),
+                                  ),
                                 );
-                              }).toList(),
+                              },
+                            );
+                          }).toList(),
                         ),
                       ],
                     );
-                  } else {
+                  } else { //
                     return Row(
                       children: [
                         Expanded(
@@ -257,7 +224,7 @@ class SalesdashboardScreen extends StatelessWidget {
                   }
                 },
               ),
-              SizedBox(height: 25),
+              const SizedBox(height: 25),
             ],
           ),
         ),
@@ -268,11 +235,11 @@ class SalesdashboardScreen extends StatelessWidget {
   static Widget _iconBox(IconData icon, void Function() onPressed) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFFE8F1F2),
+        color: const Color(0xFFE8F1F2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: IconButton(
-        icon: Icon(icon, color: Color(0xff2D6A78)),
+        icon: Icon(icon, color: const Color(0xff2D6A78)),
         onPressed: onPressed,
       ),
     );
@@ -288,39 +255,39 @@ class SalesdashboardScreen extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 100,
+        height: 100, // الارتفاع كان مفقودًا في الكود الأصلي
         decoration: BoxDecoration(
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Color(0xffF5F8F9)
-                  : Color(0xff1e1e1e),
+                  ? const Color(0xffF5F8F9)
+                  : const Color(0xff1e1e1e),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Color(0xff2D6A78), size: 30),
-            SizedBox(height: 8),
+            Icon(icon, color: const Color(0xff2D6A78), size: 30),
+            const SizedBox(height: 8),
             Text(
               title,
               style: TextStyle(
                 fontSize: 14,
                 color:
                     Theme.of(context).brightness == Brightness.light
-                        ? Color(0xff080719)
+                        ? const Color(0xff080719)
                         : Colors.white,
                 fontWeight: FontWeight.w400,
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               number,
               style: TextStyle(
                 fontSize: 20,
                 color:
                     Theme.of(context).brightness == Brightness.light
-                        ? Color(0xff080719)
+                        ? const Color(0xff080719)
                         : Colors.white,
                 fontWeight: FontWeight.bold,
               ),

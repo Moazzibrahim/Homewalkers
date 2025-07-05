@@ -26,7 +26,7 @@ class CampaignApiService {
   }
   Future<CampaignResponse?> getCampaignsInTrash() async {
     try {
-      final response = await http.get(Uri.parse("$_baseUrl?isactivate=false"));
+      final response = await http.get(Uri.parse("https://apirender8.onrender.com/api/v1/Campain?isactivate=false"));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
