@@ -252,6 +252,8 @@ class ChannelScreen extends StatelessWidget {
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateChannelDialog(
+                            initialCode: code,
+                            initialName: name,
                             title: "channel",
                             onAdd: (value, code) {
                               context.read<AddInMenuCubit>().updateChannel(

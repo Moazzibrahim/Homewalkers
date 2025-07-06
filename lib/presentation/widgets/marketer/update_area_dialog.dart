@@ -11,11 +11,21 @@ import 'package:homewalkers_app/presentation/viewModels/sales/Region/region_stat
 class UpdateAreaDialog extends StatefulWidget {
   final void Function(String name, String regionId)? onAdd;
   final String? title;
-  const UpdateAreaDialog({super.key, this.onAdd, this.title});
+  final String? oldName;
+  final String? oldRegionId;
+
+  const UpdateAreaDialog({
+    super.key,
+    this.onAdd,
+    this.title,
+    this.oldName,
+    this.oldRegionId,
+  });
 
   @override
   State<UpdateAreaDialog> createState() => _AddProjectDialogState();
 }
+
 
 class _AddProjectDialogState extends State<UpdateAreaDialog> {
   final TextEditingController _nameController = TextEditingController();
@@ -23,10 +33,13 @@ class _AddProjectDialogState extends State<UpdateAreaDialog> {
   late final RegionCubit regionCubit;
 
   @override
-  void initState() {
-    super.initState();
-    regionCubit = RegionCubit(RegionApiService())..fetchRegions();
-  }
+void initState() {
+  super.initState();
+  regionCubit = RegionCubit(RegionApiService())..fetchRegions();
+  _nameController.text = widget.oldName ?? '';
+  selectedRegionId = widget.oldRegionId;
+}
+
 
   @override
   void dispose() {
@@ -137,18 +150,25 @@ class _AddProjectDialogState extends State<UpdateAreaDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (widget.onAdd != null) {
-                            if (_nameController.text.trim().isNotEmpty &&
-                                selectedRegionId != null) {
-                              widget.onAdd!(
-                                _nameController.text.trim(),
-                                selectedRegionId!,
-                              );
-                              Navigator.of(context).pop();
-                            }
-                          }
-                        },
+                      onPressed: () {
+  final newName = _nameController.text.trim();
+  final newRegionId = selectedRegionId;
+
+  final isChanged = newName != (widget.oldName ?? '') ||
+      newRegionId != (widget.oldRegionId ?? '');
+
+  if (!isChanged) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please change at least one field.')),
+    );
+    return;
+  }
+
+  if (widget.onAdd != null && newRegionId != null) {
+    widget.onAdd!(newName, newRegionId);
+    Navigator.of(context).pop();
+  }
+},
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).brightness == Brightness.light

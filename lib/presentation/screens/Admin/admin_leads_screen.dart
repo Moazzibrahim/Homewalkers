@@ -61,42 +61,23 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   String? _selectedCampaignFilter;
 
   @override
-  void initState() {
-    super.initState();
-    _nameSearchController = TextEditingController();
-    checkClearHistoryTime();
-    checkIsClearHistory();
-
-    // --- بداية الإصلاح ---
-    // تم تبسيط المنطق لضمان أننا نبدأ دائمًا بطلب قائمة الـ "leads" الرئيسية عند فتح الشاشة.
-    // المشكلة الأصلية كانت تكمن في أن حالة "سلة المهملات" من زيارة سابقة
-    // كانت تظهر قبل اكتمال طلب البيانات الجديد، كما هو واضح في الصورة التي أرسلتها.
-
-    // 1. نحفظ الفلتر المبدئي القادم من الـ widget إن وجد.
-    _selectedStageFilter = widget.stageName;
-    // 2. نطلب بيانات "Manage Leads" فورًا وبدون أي تأخير.
-    //    هذه الخطوة تبدأ عملية تحديث الحالة (state) من أي حالة قديمة إلى
-    //    Loading ثم Success، مما يمنع ظهور بيانات سلة المهملات.
-    context.read<GetAllUsersCubit>().fetchAllUsers();
-    // 3. إذا كان هناك فلتر مبدئي، نقوم بتطبيقه بأمان بعد أن يتم بناء أول إطار للشاشة.
-    //    هذا يضمن أن الواجهة بدأت بالفعل في تحميل البيانات الصحيحة.
-    if (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          // هذه الدالة ستقوم بتطبيق الفلتر وطلب البيانات المفلترة من جديد.
-          _applyCurrentFilters();
-        }
-      });
-    }
-    // --- نهاية الإصلاح ---
+void initState() {
+  super.initState();
+  _nameSearchController = TextEditingController();
+  checkClearHistoryTime();
+  checkIsClearHistory();
+  _selectedStageFilter = widget.stageName;
+  context.read<GetAllUsersCubit>().fetchAllUsers().then((_) {
+  if (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty) {
+    _applyCurrentFilters(); // نفذ الفلترة بعد التحميل
   }
-
+});
+}
   @override
   void dispose() {
     _nameSearchController.dispose();
     super.dispose();
   }
-
   void _applyCurrentFilters() {
     // لا نطبق الفلاتر إذا كنا في تبويب سلة المهملات
     if (selectedTab == 1) {
@@ -440,21 +421,26 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        setState(() {
-                          selectedTab = 0;
-                          _searchQuery = '';
-                          _nameSearchController.clear();
-                          _selectedCountryFilter = null;
-                          _selectedDeveloperFilter = null;
-                          _selectedProjectFilter = null;
-                          _selectedStageFilter = null;
-                          _selectedChannelFilter = null;
-                          _selectedSalesFilter = null;
-                          _selectedCommunicationWayFilter = null;
-                          _selectedCampaignFilter = null;
-                        });
-                        context.read<GetAllUsersCubit>().fetchAllUsers();
-                      },
+  setState(() {
+    selectedTab = 0;
+    _searchQuery = '';
+    _nameSearchController.clear();
+    _selectedCountryFilter = null;
+    _selectedDeveloperFilter = null;
+    _selectedProjectFilter = null;
+    _selectedStageFilter = widget.stageName; // أرجع stage لو كانت جاية من فوق
+    _selectedChannelFilter = null;
+    _selectedSalesFilter = null;
+    _selectedCommunicationWayFilter = null;
+    _selectedCampaignFilter = null;
+  });
+
+  if (widget.stageName != null && widget.stageName!.isNotEmpty) {
+    _applyCurrentFilters(); // لو جاية من الـ Widget نفذ فلترة
+  } else {
+    context.read<GetAllUsersCubit>().fetchAllUsers(); // غير كده هات الكل
+  }
+},
                       child: Column(
                         children: [
                           Text(
@@ -556,7 +542,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
           state is GetLeadsInTrashLoading) {
         return const Center(child: CircularProgressIndicator());
       }
-      
       // الشرط الثاني: عرض بيانات سلة المهملات فقط إذا كانت الحالة مطابقة والتبويب المحدد هو 1
       else if (state is GetLeadsInTrashSuccess && selectedTab == 1) {
         final leads = state.leads.data;
@@ -658,7 +643,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                 isOutdated = difference > 1;
                 log("isOutdated: $isOutdated");
               }
-
               return Card(
                 margin: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -709,7 +693,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                         ],
                       ),
                       SizedBox(height: 12.h),
-
                       // ---------- Row 2: Sales Person ----------
                       Row(
                         children: [
@@ -735,7 +718,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                         ],
                       ),
                       SizedBox(height: 12.h),
-
                       // ---------- Row 3: Stage and Total Submissions ----------
                       Row(
                         mainAxisAlignment:

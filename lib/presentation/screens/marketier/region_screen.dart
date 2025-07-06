@@ -217,6 +217,7 @@ class RegionScreen extends StatelessWidget {
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateDialog(
+                            initialValue: developerData.name,
                             title: "region",
                             onAdd: (value) {context.read<AddInMenuCubit>().updateRegion(value,
                                 developerData.id.toString(),

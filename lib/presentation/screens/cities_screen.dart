@@ -229,6 +229,7 @@ class CitiesScreen extends StatelessWidget {
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateDialog(
                             title: "City",
+                            initialValue: communicationWay.name,
                             onAdd: (value) {
                               context.read<AddInMenuCubit>().updateCity(value,
                                     communicationWay.id.toString(),

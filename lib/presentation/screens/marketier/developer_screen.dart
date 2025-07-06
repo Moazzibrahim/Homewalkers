@@ -225,6 +225,7 @@ class DeveloperScreen extends StatelessWidget {
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateDialog(
+                            initialValue: developerData.name,
                             title: "developer",
                             onAdd: (value) {context.read<AddInMenuCubit>().updateDeveloper(value,
                                 developerData.id.toString(),

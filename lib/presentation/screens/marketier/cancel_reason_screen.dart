@@ -70,7 +70,7 @@ class CancelReasonScreen extends StatelessWidget {
                                         >(), // استخدم نفس الـ cubit
                                 child: AddCancelReasonDialog(
                                   onAdd: (value) {
-                                    context.read<AddInMenuCubit>().addDeveloper(
+                                    context.read<AddInMenuCubit>().addCancelReason(
                                       value,
                                     );
                                   },
@@ -229,6 +229,7 @@ class CancelReasonScreen extends StatelessWidget {
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateDialog(
+                            initialValue: campaignData.cancelReason,
                             title: "cancel reason",
                             onAdd: (value) {
                               context.read<AddInMenuCubit>().updateCancelReason(

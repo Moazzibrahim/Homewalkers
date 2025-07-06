@@ -106,23 +106,25 @@ class _SalesLeadsDetailsScreenState
     }
     debugPrint('Clear History: $iscleared');
   }
-  String _formatDate(String? dateStr) {
-  if (dateStr == null) return 'N/A';
 
-  try {
-    // أول محاولة: ISO format
-    final parsed = DateTime.parse(dateStr);
-    return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
-  } catch (_) {
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'N/A';
+
     try {
-      // محاولة تانية: format مثل "04/07/2025 - 10:36"
-      final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+      // أول محاولة: ISO format
+      final parsed = DateTime.parse(dateStr);
       return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
-    } catch (e) {
-      return 'Invalid Date';
+    } catch (_) {
+      try {
+        // محاولة تانية: format مثل "04/07/2025 - 10:36"
+        final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+        return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
+      } catch (e) {
+        return 'Invalid Date';
+      }
     }
   }
-}
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -374,7 +376,7 @@ class _SalesLeadsDetailsScreenState
                           InfoRow(
                             icon: Icons.calendar_today,
                             label: 'Creation Date',
-                              value: _formatDate(widget.leadCreationDate),
+                            value: _formatDate(widget.leadCreationDate),
                           ),
                           InfoRow(
                             icon: Icons.link,
@@ -419,18 +421,16 @@ class _SalesLeadsDetailsScreenState
                                           .toString() ??
                                       "",
                                 )?.toUtc();
-                            final isFirstValid =
-                                isClearHistoryy != true ||
-                                (firstcommentdate != null &&
-                                    firstcommentdate.isAfter(
-                                      clearHistoryTimee!,
-                                    ));
-                            final isSecondValid =
-                                isClearHistoryy != true ||
-                                (secondcommentdate != null &&
-                                    secondcommentdate.isAfter(
-                                      clearHistoryTimee!,
-                                    ));
+                            final isFirstValid = isClearHistoryy != true ||
+    (firstcommentdate != null &&
+     clearHistoryTimee != null &&
+     firstcommentdate.isAfter(clearHistoryTimee!));
+
+final isSecondValid = isClearHistoryy != true ||
+    (secondcommentdate != null &&
+     clearHistoryTimee != null &&
+     secondcommentdate.isAfter(clearHistoryTimee!));
+
                             if ((isFirstValid &&
                                 firstComment?.firstcomment?.text != null)) {
                               return Column(
@@ -559,10 +559,23 @@ class _SalesLeadsDetailsScreenState
                                 context,
                                 MaterialPageRoute(
                                   builder:
-                                      (context) => SalesCommentsScreen(
-                                        leedId: widget.leedId,
-                                        fcmtoken: widget.fcmtoken,
-                                        leadName: widget.leadName,
+                                      (context) => BlocProvider(
+                                        create:
+                                            (_) =>
+                                                LeadCommentsCubit(
+                                                    GetAllLeadCommentsApiService(),
+                                                  )
+                                                  ..fetchLeadComments(
+                                                    widget.leedId,
+                                                  )
+                                                  ..fetchLeadAssignedData(
+                                                    widget.leedId,
+                                                  ),
+                                        child: SalesCommentsScreen(
+                                          leedId: widget.leedId,
+                                          fcmtoken: widget.fcmtoken,
+                                          leadName: widget.leadName,
+                                        ),
                                       ),
                                 ),
                               );

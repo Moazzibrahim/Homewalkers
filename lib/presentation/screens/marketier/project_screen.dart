@@ -227,6 +227,7 @@ class ProjectScreen extends StatelessWidget {
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateDialog(
+                            initialValue: projectData.name,
                             title: "project",
                             onAdd: (value) {context.read<AddInMenuCubit>().updateProject(value,
                                 projectData.developer!.id.toString(),

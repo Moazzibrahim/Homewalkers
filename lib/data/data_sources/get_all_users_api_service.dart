@@ -28,7 +28,7 @@ class GetAllUsersApiService {
 
   Future<LeadResponse> getLeadsDataInTrash() async {
     try {
-      final url = Uri.parse('${Constants.baseUrl}/users?active=false');
+      final url = Uri.parse('${Constants.baseUrl}/users?leadisactive=false');
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);

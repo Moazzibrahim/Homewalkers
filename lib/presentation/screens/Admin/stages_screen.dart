@@ -17,6 +17,7 @@ import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/update_stage_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/update_stage_type_dialog.dart';
+import 'package:intl/intl.dart';
 
 class StagesScreen extends StatefulWidget {
   const StagesScreen({super.key});
@@ -50,7 +51,10 @@ class _StagesScreenState extends State<StagesScreen>
           create: (context) => StagesCubit(StagesApiService())..fetchStages(),
         ),
         BlocProvider(
-          create:(context) => GetStageTypesCubit(StageTypeApiService())..fetchStageTypes(),),
+          create:
+              (context) =>
+                  GetStageTypesCubit(StageTypeApiService())..fetchStageTypes(),
+        ),
       ],
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
@@ -67,10 +71,10 @@ class _StagesScreenState extends State<StagesScreen>
           }
         },
         child: Scaffold(
-        backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Stages",
             onBack: () => Navigator.pop(context),
@@ -88,10 +92,7 @@ class _StagesScreenState extends State<StagesScreen>
                         unselectedLabelColor: Colors.grey,
                         indicatorColor: Theme.of(context).primaryColor,
                         indicatorSize: TabBarIndicatorSize.tab,
-                        tabs: const [
-                          Tab(text: "Stages"),
-                          Tab(text: "Types"),
-                        ],
+                        tabs: const [Tab(text: "Stages"), Tab(text: "Types")],
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -231,7 +232,7 @@ class _StagesScreenState extends State<StagesScreen>
                 onPressed: () => _showUpdateStageDialog(context, stage),
               ),
               InkWell(
-              child: Image.asset("assets/images/delete.png"),
+                child: Image.asset("assets/images/delete.png"),
                 onTap:
                     () => _showDeleteDialog(
                       context,
@@ -279,7 +280,11 @@ class _StagesScreenState extends State<StagesScreen>
             context,
             Icons.calendar_today_outlined,
             "Creation Date",
-            stageType.createdAt != null ? stageType.createdAt! : "N/A",
+            stageType.createdAt != null
+                ? DateFormat(
+                  'yyyy-MM-dd',
+                ).format(DateTime.parse(stageType.createdAt!))
+                : "N/A",
           ),
           const SizedBox(height: 8),
           Row(
@@ -338,6 +343,7 @@ class _StagesScreenState extends State<StagesScreen>
       ],
     );
   }
+
   // --- DIALOGS ---
   void _showAddStageDialog(BuildContext context) {
     showDialog(
@@ -354,11 +360,11 @@ class _StagesScreenState extends State<StagesScreen>
               ),
             ],
             child: AddStageDialog(
-              onAdd: ({required name, required comment, required stageType}) {
+              onAdd: ({required name, comment, required stageType}) {
                 context.read<AddInMenuCubit>().addStage(
                   name,
                   stageType,
-                  comment,
+                  comment!,
                 );
               },
             ),
@@ -397,6 +403,9 @@ class _StagesScreenState extends State<StagesScreen>
             ],
             child: UpdateStageDialog(
               title: "Stage",
+              oldComment: stage.comment,
+              oldName: stage.name,
+              oldStageTypeId: stage.stagetype?.id,
               onAdd: (name, comment, stageType) {
                 context.read<AddInMenuCubit>().updateStage(
                   name,
@@ -418,10 +427,16 @@ class _StagesScreenState extends State<StagesScreen>
             providers: [
               BlocProvider.value(value: context.read<AddInMenuCubit>()),
               BlocProvider<GetStageTypesCubit>(
-              create: (_) => GetStageTypesCubit(StageTypeApiService())..fetchStageTypes()),
+                create:
+                    (_) =>
+                        GetStageTypesCubit(StageTypeApiService())
+                          ..fetchStageTypes(),
+              ),
             ],
             child: UpdateStageTypeDialog(
               title: "Stage Type",
+              initialComment: stage.comment,
+              initialName: stage.name,
               onAdd: (name, comment) {
                 context.read<AddInMenuCubit>().updateStagetype(
                   name,
@@ -444,7 +459,7 @@ class _StagesScreenState extends State<StagesScreen>
               onCancel: () => Navigator.of(context).pop(),
               onConfirm: () {
                 Navigator.of(context).pop();
-                context.read<AddInMenuCubit>().updateStageStatus(id,false);
+                context.read<AddInMenuCubit>().updateStageStatus(id, false);
               },
               title: title,
             ),
@@ -466,7 +481,7 @@ class _StagesScreenState extends State<StagesScreen>
               onCancel: () => Navigator.of(context).pop(),
               onConfirm: () {
                 Navigator.of(context).pop();
-                context.read<AddInMenuCubit>().updateStageTypeStatus(id,false);
+                context.read<AddInMenuCubit>().updateStageTypeStatus(id, false);
               },
               title: title,
             ),

@@ -236,6 +236,7 @@ class SalesScreen extends StatelessWidget {
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateDialog(
+                            initialValue: communicationWay.name,
                             title: "sales",
                             onAdd: (value) {
                               context

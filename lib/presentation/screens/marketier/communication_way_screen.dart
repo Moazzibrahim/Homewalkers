@@ -225,6 +225,7 @@ class CommunicationWayScreen extends StatelessWidget {
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateDialog(
+                            initialValue: communicationWay.name,
                             title: "Communication Way",
                             onAdd: (value) {
                               context.read<AddInMenuCubit>().updateCommunicationWay(value,

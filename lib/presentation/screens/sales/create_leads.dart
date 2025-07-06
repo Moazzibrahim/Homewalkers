@@ -459,7 +459,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                     _phoneController.text.isEmpty ||
                                     selectedProjectId == null ||
                                     selectedStageId == null ||
-                                    _selectedSalesId == null ||
                                     _selectedChannelId == null ||
                                     _selectedCommunicationWayId == null ||
                                     _selectedCampaignId == null) {

@@ -554,16 +554,21 @@ String _formatDate(String? dateStr) {
                             ),
                             onPressed: () {
                               Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => SalesCommentsScreen(
-                                        leedId: widget.leedId,
-                                        fcmtoken: widget.fcmtokenn,
-                                        leadName: widget.leadName,
-                                      ),
-                                ),
-                              );
+  context,
+  MaterialPageRoute(
+    builder: (context) => BlocProvider(
+      create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService())
+        ..fetchLeadComments(widget.leedId)
+        ..fetchLeadAssignedData(widget.leedId),
+      child: SalesCommentsScreen(
+        leedId: widget.leedId,
+        fcmtoken: widget.fcmtokenn,
+        leadName: widget.leadName,
+      ),
+    ),
+  ),
+);
+
                             },
                             child: Text(
                               'All Comments',

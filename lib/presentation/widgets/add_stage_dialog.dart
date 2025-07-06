@@ -7,8 +7,9 @@ class AddStageDialog extends StatefulWidget {
   final void Function({
     required String name,
     required String stageType,
-    required String comment,
-  }) onAdd;
+    String? comment,
+  })
+  onAdd;
 
   const AddStageDialog({super.key, required this.onAdd});
 
@@ -39,9 +40,9 @@ class _AddStageDialogState extends State<AddStageDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildTextField(_nameController, 'Stage Name'),
+              _buildTextField(_nameController, 'Stage Name', isRequired: true),
               const SizedBox(height: 12),
-              _buildTextField(_commentController, 'Comment'),
+              _buildTextField(_commentController, 'Comment', isRequired: false),
               const SizedBox(height: 12),
               BlocBuilder<GetStageTypesCubit, GetStageTypesState>(
                 builder: (context, state) {
@@ -55,19 +56,23 @@ class _AddStageDialogState extends State<AddStageDialog> {
                         border: OutlineInputBorder(),
                       ),
                       value: _selectedStageTypeId,
-                      items: stages.map((stage) {
-                        return DropdownMenuItem<String>(
-                          value: stage.id,
-                          child: Text(stage.name!),
-                        );
-                      }).toList(),
+                      items:
+                          stages.map((stage) {
+                            return DropdownMenuItem<String>(
+                              value: stage.id,
+                              child: Text(stage.name!),
+                            );
+                          }).toList(),
                       onChanged: (value) {
                         setState(() {
                           _selectedStageTypeId = value!;
                         });
                       },
-                      validator: (value) =>
-                          value == null ? 'Please select a stage type' : null,
+                      validator:
+                          (value) =>
+                              value == null
+                                  ? 'Please select a stage type'
+                                  : null,
                     );
                   } else if (state is GetStageTypesFailure) {
                     return Text('Error: ${state.message}');
@@ -102,15 +107,24 @@ class _AddStageDialogState extends State<AddStageDialog> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label, {
+    bool isRequired = true,
+  }) {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
       ),
-      validator: (value) =>
-          value == null || value.isEmpty ? 'This field is required' : null,
+      validator:
+          isRequired
+              ? (value) =>
+                  value == null || value.isEmpty
+                      ? 'This field is required'
+                      : null
+              : null,
     );
   }
 }

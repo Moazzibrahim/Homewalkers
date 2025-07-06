@@ -263,6 +263,10 @@ class CampaignScreen extends StatelessWidget {
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateCampaignDialog(
+                            initialCost: campaignData.cost.toString(),
+                            initialDate: campaignData.createdAt.toString(),
+                            initialIsActive: campaignData.isActivate,
+                            initialName: campaignData.campainName,
                             title: "campaign",
                             onAdd: (value,date,isactive,cost,addby,updatedby) {
                               context.read<AddInMenuCubit>().updateCampaign(

@@ -19,7 +19,8 @@ class UpdateUserDialog extends StatefulWidget {
     required String role,
     required bool opencomments,
     required bool closeDoneDealcomments,
-  }) onUpdate;
+  })
+  onUpdate;
 
   const UpdateUserDialog({
     super.key,
@@ -81,9 +82,10 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                 children: [
                   CircleAvatar(
                     radius: 18,
-                    backgroundColor: Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
-                        : Constants.mainDarkmodecolor,
+                    backgroundColor:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
                     child: Image.asset("assets/images/Vector.png"),
                   ),
                   const SizedBox(width: 10),
@@ -116,20 +118,29 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
               // Role Dropdown
               DropdownButtonFormField<String>(
                 value: _selectedRole,
-                items: roles.map((role) {
-                  return DropdownMenuItem<String>(
-                    value: role,
-                    child: Text(role, style: GoogleFonts.montserrat(fontSize: 14)),
-                  );
-                }).toList(),
+                items:
+                    roles.map((role) {
+                      return DropdownMenuItem<String>(
+                        value: role,
+                        child: Text(
+                          role,
+                          style: GoogleFonts.montserrat(fontSize: 14),
+                        ),
+                      );
+                    }).toList(),
                 onChanged: (value) {
                   if (value != null) {
                     setState(() => _selectedRole = value);
                   }
                 },
                 decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   hintText: "Select Role",
                   hintStyle: GoogleFonts.montserrat(color: Colors.grey),
                 ),
@@ -146,7 +157,10 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                 },
               ),
               SwitchListTile(
-                title: Text("Close Done Deal Comments", style: GoogleFonts.montserrat()),
+                title: Text(
+                  "Close Done Deal Comments",
+                  style: GoogleFonts.montserrat(),
+                ),
                 value: _closeDoneDealComments,
                 onChanged: (value) {
                   setState(() => _closeDoneDealComments = value);
@@ -165,18 +179,45 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                         side: const BorderSide(color: Color(0xFF003D48)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: Text("Cancel", style: GoogleFonts.montserrat(color: Color(0xFF003D48))),
+                      child: Text(
+                        "Cancel",
+                        style: GoogleFonts.montserrat(color: Color(0xFF003D48)),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
+                        // القيم الجديدة بعد التعديل
+                        final newName = _nameController.text.trim();
+                        final newEmail = _emailController.text.trim();
+                        final newPhone = _phoneController.text.trim();
+
+                        final isSomethingChanged =
+                            newName != widget.name ||
+                            newEmail != widget.email ||
+                            newPhone != widget.phone ||
+                            _selectedRole != widget.role ||
+                            _openComments != widget.opencomments ||
+                            _closeDoneDealComments !=
+                                widget.closeDoneDealcomments;
+
+                        if (!isSomethingChanged) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Please change at least one field before updating.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
                         widget.onUpdate(
                           id: widget.id,
-                          name: _nameController.text.trim(),
-                          email: _emailController.text.trim(),
-                          phone: _phoneController.text.trim(),
+                          name: newName,
+                          email: newEmail,
+                          phone: newPhone,
                           role: _selectedRole,
                           opencomments: _openComments,
                           closeDoneDealcomments: _closeDoneDealComments,
@@ -184,12 +225,16 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                         Navigator.of(context).pop();
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Constants.mainDarkmodecolor,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: Text("Update", style: GoogleFonts.montserrat(color: Colors.white)),
+                      child: Text(
+                        "Update",
+                        style: GoogleFonts.montserrat(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -207,7 +252,10 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: GoogleFonts.montserrat(color: Colors.grey),
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 12,
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );

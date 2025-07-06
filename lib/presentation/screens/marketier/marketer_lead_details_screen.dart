@@ -102,23 +102,22 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
   }
 
   String _formatDate(String? dateStr) {
-  if (dateStr == null) return 'N/A';
+    if (dateStr == null) return 'N/A';
 
-  try {
-    // أول محاولة: ISO format
-    final parsed = DateTime.parse(dateStr);
-    return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
-  } catch (_) {
     try {
-      // محاولة تانية: format مثل "04/07/2025 - 10:36"
-      final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+      // أول محاولة: ISO format
+      final parsed = DateTime.parse(dateStr);
       return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
-    } catch (e) {
-      return 'Invalid Date';
+    } catch (_) {
+      try {
+        // محاولة تانية: format مثل "04/07/2025 - 10:36"
+        final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+        return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
+      } catch (e) {
+        return 'Invalid Date';
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -377,10 +376,10 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                             label: 'campaign',
                             value: '${widget.leadcampaign}',
                           ),
-                        InfoRow(
+                          InfoRow(
                             icon: Icons.calendar_today,
                             label: 'Creation Date',
-                              value: _formatDate(widget.leadCreationDate),
+                            value: _formatDate(widget.leadCreationDate),
                           ),
                           InfoRow(
                             icon: Icons.link,
@@ -553,10 +552,23 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder:
-                                      (context) => SalesCommentsScreen(
-                                        leedId: widget.leedId,
-                                        fcmtoken: widget.salesfcmtoken,
-                                        leadName: widget.leadName,
+                                      (context) => BlocProvider(
+                                        create:
+                                            (_) =>
+                                                LeadCommentsCubit(
+                                                    GetAllLeadCommentsApiService(),
+                                                  )
+                                                  ..fetchLeadComments(
+                                                    widget.leedId,
+                                                  )
+                                                  ..fetchLeadAssignedData(
+                                                    widget.leedId,
+                                                  ),
+                                        child: SalesCommentsScreen(
+                                          leedId: widget.leedId,
+                                          fcmtoken: widget.salesfcmtoken,
+                                          leadName: widget.leadName,
+                                        ),
                                       ),
                                 ),
                               );

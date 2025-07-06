@@ -5,12 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/leads_details_team_leader_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/custom_assign_dialog_team_leader_widget.dart';
@@ -66,9 +68,9 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
         builder: (context) {
           return Scaffold(
             backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.backgroundlightmode
+                    : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
               title: "Assign",
               onBack: () {
@@ -534,23 +536,26 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   context,
                   MaterialPageRoute(
                     builder:
-                        (_) => LeadsDetailsTeamLeaderScreen(
-                          leedId: id,
-                          leadName: name,
-                          leadPhone: phone,
-                          leadEmail: email,
-                          leadStage: stage,
-                          leadStageId: stageid,
-                          leadChannel: channel,
-                          leadCreationDate: creationdate,
-                          leadProject: project,
-                          leadLastComment: lastcomment,
-                          leadcampaign: leadcampaign,
-                          leadNotes: leadNotes,
-                          leaddeveloper: leaddeveloper,
-                          userlogname: userlogname,
-                          teamleadername: teamleadername,
-                          fcmtoken: fcmtoken,
+                        (_) => BlocProvider(
+                            create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                          child: LeadsDetailsTeamLeaderScreen(
+                            leedId: id,
+                            leadName: name,
+                            leadPhone: phone,
+                            leadEmail: email,
+                            leadStage: stage,
+                            leadStageId: stageid,
+                            leadChannel: channel,
+                            leadCreationDate: creationdate,
+                            leadProject: project,
+                            leadLastComment: lastcomment,
+                            leadcampaign: leadcampaign,
+                            leadNotes: leadNotes,
+                            leaddeveloper: leaddeveloper,
+                            userlogname: userlogname,
+                            teamleadername: teamleadername,
+                            fcmtoken: fcmtoken,
+                          ),
                         ),
                   ),
                 );

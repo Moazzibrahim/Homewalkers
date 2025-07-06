@@ -225,6 +225,8 @@ class AreaScreen extends StatelessWidget {
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateAreaDialog(
+                            oldName: name,
+                            oldRegionId: developerData.region?.id,
                             title: "Area",
                             onAdd: (value, regionid) {
                               context.read<AddInMenuCubit>().updateArea(

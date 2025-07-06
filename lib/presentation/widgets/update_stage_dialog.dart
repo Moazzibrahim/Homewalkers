@@ -10,8 +10,18 @@ import 'package:homewalkers_app/presentation/viewModels/stage_types/cubit/get_st
 class UpdateStageDialog extends StatefulWidget {
   final void Function(String name, String comment, String stageType)? onAdd;
   final String? title;
+  final String? oldName;
+  final String? oldComment;
+  final String? oldStageTypeId;
 
-  const UpdateStageDialog({super.key, this.onAdd, this.title});
+  const UpdateStageDialog({
+    super.key,
+    this.onAdd,
+    this.title,
+    this.oldName,
+    this.oldComment,
+    this.oldStageTypeId,
+  });
 
   @override
   State<UpdateStageDialog> createState() => _NewCommunicationDialogState();
@@ -25,9 +35,11 @@ class _NewCommunicationDialogState extends State<UpdateStageDialog> {
   @override
   void initState() {
     super.initState();
-    // تحميل أنواع المراحل عند بداية عرض النموذج
     context.read<StagesCubit>().fetchStages();
     context.read<GetStageTypesCubit>().fetchStageTypes();
+    _controller.text = widget.oldName ?? '';
+    _codeController.text = widget.oldComment ?? '';
+    _selectedStageTypeId = widget.oldStageTypeId;
   }
 
   @override
@@ -95,12 +107,15 @@ class _NewCommunicationDialogState extends State<UpdateStageDialog> {
                       labelText: 'Select Stage Type',
                       border: OutlineInputBorder(),
                     ),
-                    value: _selectedStageTypeId,
+                    value:
+                        stages!.any((stage) => stage.id == _selectedStageTypeId)
+                            ? _selectedStageTypeId
+                            : null, // ✅ التأكد من صلاحية القيمة
                     items:
-                        stages!.map((stage) {
+                        stages.map((stage) {
                           return DropdownMenuItem<String>(
                             value: stage.id,
-                            child: Text(stage.name!),
+                            child: Text(stage.name ?? ''),
                           );
                         }).toList(),
                     onChanged: (value) {
@@ -155,22 +170,27 @@ class _NewCommunicationDialogState extends State<UpdateStageDialog> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      if (widget.onAdd != null) {
-                        if (_controller.text.trim().isNotEmpty &&
-                            _codeController.text.trim().isNotEmpty &&
-                            _selectedStageTypeId != null) {
-                          widget.onAdd!(
-                            _controller.text.trim(),
-                            _codeController.text.trim(),
-                            _selectedStageTypeId!,
-                          );
-                          print(
-                            "Selected Stage Type ID: $_selectedStageTypeId",
-                          );
-                          print("Name: ${_controller.text.trim()}");
-                          print("Comment: ${_codeController.text.trim()}");
-                          Navigator.of(context).pop();
-                        }
+                      final name = _controller.text.trim();
+                      final comment = _codeController.text.trim();
+                      final typeId = _selectedStageTypeId;
+
+                      final isChanged =
+                          name != (widget.oldName ?? '') ||
+                          comment != (widget.oldComment ?? '') ||
+                          typeId != (widget.oldStageTypeId ?? '');
+
+                      if (!isChanged) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please change at least one field.'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (widget.onAdd != null && typeId != null) {
+                        widget.onAdd!(name, comment, typeId);
+                        Navigator.of(context).pop();
                       }
                     },
                     style: ElevatedButton.styleFrom(

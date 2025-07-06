@@ -352,11 +352,11 @@ class _StagesScreenState extends State<StagesTrashScreen>
               ),
             ],
             child: AddStageDialog(
-              onAdd: ({required name, required comment, required stageType}) {
+              onAdd: ({required name, comment, required stageType}) {
                 context.read<AddInMenuCubit>().addStage(
                   name,
                   stageType,
-                  comment,
+                  comment!,
                 );
               },
             ),

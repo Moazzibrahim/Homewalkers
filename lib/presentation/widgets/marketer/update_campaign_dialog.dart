@@ -15,7 +15,12 @@ class UpdateCampaignDialog extends StatefulWidget {
     String updatedBy,
   )? onAdd;
   final String? title;
-  const UpdateCampaignDialog({super.key, this.onAdd, this.title});
+  final String? initialName;
+final String? initialCost;
+final String? initialDate;
+final bool? initialIsActive;
+
+  const UpdateCampaignDialog({super.key, this.onAdd, this.title, this.initialName, this.initialCost, this.initialDate, this.initialIsActive});
 
   @override
   State<UpdateCampaignDialog> createState() => _AddProjectDialogState();
@@ -24,6 +29,20 @@ class _AddProjectDialogState extends State<UpdateCampaignDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _costController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
+
+  @override
+void initState() {
+  super.initState();
+  _nameController.text = widget.initialName ?? '';
+  _costController.text = widget.initialCost ?? '';
+  _dateController.text = widget.initialDate ?? '';
+  _isActive = widget.initialIsActive ?? false;
+
+  if (widget.initialDate != null) {
+    _selectedDate = DateTime.tryParse(widget.initialDate!);
+  }
+}
+
   Future<String?> getSalesIdFromSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('salesId');

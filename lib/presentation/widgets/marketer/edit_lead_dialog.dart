@@ -1,3 +1,4 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -8,6 +9,13 @@ class EditLeadDialog extends StatefulWidget {
   final String? initialName;
   final String? initialEmail;
   final String? initialPhone;
+  final String? initialNotes;
+  final String? initialProjectId;
+  final String? initialStageId;
+  final String? initialChannelId;
+  final String? initialCampaignId;
+  final String? initialCommunicationWayId;
+  final bool? isCold;
 
   const EditLeadDialog({
     super.key,
@@ -15,6 +23,13 @@ class EditLeadDialog extends StatefulWidget {
     this.initialName,
     this.initialEmail,
     this.initialPhone,
+    this.initialNotes,
+    this.initialProjectId,
+    this.initialStageId,
+    this.initialChannelId,
+    this.initialCampaignId,
+    this.initialCommunicationWayId,
+    this.isCold,
   });
 
   @override
@@ -25,6 +40,13 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
   late TextEditingController nameController;
   late TextEditingController emailController;
   late TextEditingController phoneController;
+  late TextEditingController notesController;
+  String? selectedProjectId;
+  String? selectedStageId;
+  String? selectedChannelId;
+  String? selectedCampaignId;
+  String? selectedCommunicationWayId;
+  bool isCold = true;
 
   @override
   void initState() {
@@ -32,6 +54,13 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
     nameController = TextEditingController(text: widget.initialName ?? '');
     emailController = TextEditingController(text: widget.initialEmail ?? '');
     phoneController = TextEditingController(text: widget.initialPhone ?? '');
+    notesController = TextEditingController(text: widget.initialNotes ?? '');
+    selectedProjectId = widget.initialProjectId;
+    selectedStageId = widget.initialStageId;
+    selectedChannelId = widget.initialChannelId;
+    selectedCampaignId = widget.initialCampaignId;
+    selectedCommunicationWayId = widget.initialCommunicationWayId;
+    isCold = widget.isCold ?? true;
   }
 
   @override
@@ -39,45 +68,76 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
     nameController.dispose();
     emailController.dispose();
     phoneController.dispose();
+    notesController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit Lead'), // Translated
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: nameController,
-            decoration: const InputDecoration(labelText: 'Name'), // Translated
-          ),
-          TextField(
-            controller: emailController,
-            decoration: const InputDecoration(labelText: 'Email'), // Translated
-          ),
-          TextField(
-            controller: phoneController,
-            decoration: const InputDecoration(labelText: 'Phone Number'), // Translated
-          ),
-        ],
+      title: const Text('Edit Lead'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: phoneController,
+              decoration: const InputDecoration(labelText: 'Phone Number'),
+            ),
+            TextField(
+              controller: notesController,
+              decoration: const InputDecoration(labelText: 'Notes'),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Leed Type",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                Row(
+                  children: [
+                    Text(isCold ? "Cold" : "Fresh"),
+                    Switch(
+                      value: isCold,
+                      onChanged: (value) {
+                        setState(() {
+                          isCold = value;
+                        });
+                      },
+                    )
+                  ],
+                )
+              ],
+            )
+          ],
+        ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'), // Translated
+          child: const Text('Cancel'),
         ),
         BlocConsumer<EditLeadCubit, EditLeadState>(
           listener: (context, state) {
             if (state is EditLeadSuccess) {
-              Navigator.pop(context); // Close the dialog
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Edited Successfully'))); // Translated
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Edited Successfully')),
+              );
             } else if (state is EditLeadFailure) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Edit Failed: ${state.error}')), // Translated
+                SnackBar(content: Text('Edit Failed: ${state.error}')),
               );
             }
           },
@@ -101,9 +161,18 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
                       phone: phoneController.text.trim().isEmpty
                           ? null
                           : phoneController.text.trim(),
+                      notes: notesController.text.trim().isEmpty
+                          ? null
+                          : notesController.text.trim(),
+                      project: selectedProjectId,
+                      stage: selectedStageId,
+                      chanel: selectedChannelId,
+                      communicationway: selectedCommunicationWayId,
+                      leedtype: isCold ? "Cold" : "Fresh",
+                      campaign: selectedCampaignId,
                     );
               },
-              child: const Text('Save', style: TextStyle(color: Colors.white)), // Translated
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
             );
           },
         ),

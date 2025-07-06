@@ -163,7 +163,7 @@ class UpdateMenuApiService {
   }
   Future<void> updateCampaignStatus(String campaignId, bool active) async {
   final String url = '${Constants.baseUrl}/Campain/$campaignId';
-  final body = {"isactivate": active}; // تم توحيد المفتاح إلى "active"
+  final body = {"campaignisactivatedelete": active}; // تم توحيد المفتاح إلى "active"
   await updateData(url: url, body: body);
 }
   Future<void> updateRegion(String region,String regionId) async {

@@ -14,6 +14,15 @@ class EditLeadCubit extends Cubit<EditLeadState> {
     String? phone,
     String? name,
     String? email,
+    String? project,
+    String? notes,
+    String? stage,
+    String? chanel,
+    String? communicationway,
+    String? leedtype,
+    String? dayonly,
+    String? campaign,
+    String? lastStageDateUpdated,
   }) async {
     emit(EditLeadLoading());
 
@@ -23,6 +32,15 @@ class EditLeadCubit extends Cubit<EditLeadState> {
         phone: phone,
         name: name,
         email: email,
+        project: project,
+        notes: notes,
+        stage: stage,
+        chanel: chanel,
+        communicationway: communicationway,
+        leedtype: leedtype,
+        dayonly: dayonly,
+        campaign: campaign,
+        lastStageDateUpdated: lastStageDateUpdated,
       );
       emit(EditLeadSuccess());
     } catch (e) {

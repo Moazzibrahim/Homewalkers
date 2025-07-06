@@ -44,7 +44,7 @@ class GetCitiesApiService {
   }
 
   Future<RegionsModel?> getRegions() async {
-    final String baseUrl = '${Constants.baseUrl}/regions';
+    final String baseUrl = 'https://apirender8.onrender.com/api/v1/regions?active=true';
     try {
       final response = await http.get(Uri.parse(baseUrl));
 
@@ -61,7 +61,7 @@ class GetCitiesApiService {
     }
   }
   Future<RegionsModel?> getRegionsInTrashh() async {
-    final String baseUrl = '${Constants.baseUrl}/regions?isactive=false';
+    final String baseUrl = '${Constants.baseUrl}/regions?active=false';
     try {
       final response = await http.get(Uri.parse(baseUrl));
 

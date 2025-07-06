@@ -5,8 +5,9 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 class UpdateDialog extends StatefulWidget {
   final void Function(String)? onAdd;
   final String? title;
+  final String? initialValue; // 🟡 القيمة القديمة الفعلية في الـ TextField
 
-  const UpdateDialog({super.key, this.onAdd,this.title});
+  const UpdateDialog({super.key, this.onAdd,this.title, this.initialValue});
 
   @override
   State<UpdateDialog> createState() => _NewCommunicationDialogState();
@@ -14,6 +15,12 @@ class UpdateDialog extends StatefulWidget {
 
 class _NewCommunicationDialogState extends State<UpdateDialog> {
   final TextEditingController _controller = TextEditingController();
+
+   @override
+  void initState() {
+    super.initState();
+    _controller.text = widget.initialValue ?? '';
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -90,7 +90,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
           create:
               (_) =>
                   LeadCommentsCubit(GetAllLeadCommentsApiService())
-                    ..fetchLeadComments(widget.leedId),
+                    ..fetchLeadComments(widget.leedId)..fetchLeadAssignedData(widget.leedId),
         ),
         BlocProvider(create: (_) => EditCommentCubit(EditCommentApiService())),
       ],
@@ -202,11 +202,13 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
     log('firstDate: $firstDate');
     log("secondDate: $secondDate");
     final isFirstValid =
-        isClearHistory != true ||
-        (firstDate != null && firstDate.isAfter(clearHistoryTime!));
+    isClearHistory != true ||
+    (firstDate != null && clearHistoryTime != null && firstDate.isAfter(clearHistoryTime!));
+
     final isSecondValid =
-        isClearHistory != true ||
-        (secondDate != null && secondDate.isAfter(clearHistoryTime!));
+    isClearHistory != true ||
+    (secondDate != null && clearHistoryTime != null && secondDate.isAfter(clearHistoryTime!));
+
     // لو لا يوجد ولا كومنت يظهر بعد clear history، متعرضش الكارت أصلاً
     if (!isFirstValid && !isSecondValid) return SizedBox();
 
@@ -295,7 +297,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
               ),
               if (firstComment?.date != null)
                 Text(
-                  "comment at :${formatDate(firstComment!.date)}",
+                  "comment at :${formatDate(firstComment?.date)}",
                   style: TextStyle(color: Colors.grey, fontSize: 14),
                 ),
               SizedBox(height: 6),

@@ -505,17 +505,22 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                               ),
                             ),
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => SalesCommentsScreen(
-                                        leedId: widget.leedId,
-                                        fcmtoken: widget.fcmtoken,
-                                        leadName: widget.leadName,
-                                      ),
-                                ),
-                              );
+                             Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => BlocProvider(
+      create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService())
+        ..fetchLeadComments(widget.leedId)
+        ..fetchLeadAssignedData(widget.leedId),
+      child: SalesCommentsScreen(
+        leedId: widget.leedId,
+        fcmtoken: widget.fcmtoken,
+        leadName: widget.leadName,
+      ),
+    ),
+  ),
+);
+
                             },
                             child: Text(
                               'All Comments',

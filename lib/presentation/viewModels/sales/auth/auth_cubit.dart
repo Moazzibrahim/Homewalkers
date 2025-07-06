@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
+import 'package:homewalkers_app/data/models/login_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -13,7 +14,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       final response = await apiService.login(email, password,context);
-      emit(AuthSuccess(response));
+      emit(AuthSuccess(response as LoginResponse));
     } catch (e) {
       emit(AuthFailure("Incorrect email or password"));
     }
