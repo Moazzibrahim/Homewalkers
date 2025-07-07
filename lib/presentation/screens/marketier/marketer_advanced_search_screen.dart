@@ -2,12 +2,14 @@ import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_lead_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 
 class MarketerAdvancedSearchScreen extends StatefulWidget {
@@ -38,7 +40,7 @@ class _MarketerAdvancedSearchScreenState
     'All Leads With Last Comment Date',
   ];
 
-   // ✅ الخطوة 1: إضافة دوال معالجة التاريخ الدقيقة
+  // ✅ الخطوة 1: إضافة دوال معالجة التاريخ الدقيقة
   String _formatFullDate(String date) {
     try {
       final localDate = DateTime.parse(date);
@@ -51,12 +53,21 @@ class _MarketerAdvancedSearchScreenState
   String _formatEndDate(String date) {
     try {
       final localDate = DateTime.parse(date);
-      final endOfDay = DateTime(localDate.year, localDate.month, localDate.day, 23, 59, 59, 999);
+      final endOfDay = DateTime(
+        localDate.year,
+        localDate.month,
+        localDate.day,
+        23,
+        59,
+        59,
+        999,
+      );
       return endOfDay.toUtc().toIso8601String();
     } catch (e) {
       return date;
     }
   }
+
   @override
   void initState() {
     super.initState();
@@ -74,9 +85,9 @@ class _MarketerAdvancedSearchScreenState
         builder: (context, leadsState) {
           return Scaffold(
             backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.backgroundlightmode
+                    : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
               title: "Advanced Search",
               onBack: () {
@@ -106,6 +117,7 @@ class _MarketerAdvancedSearchScreenState
       ),
     );
   }
+
   Widget _buildBody(BuildContext context, List<String> salesOptions) {
     return BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
       builder: (context, state) {
@@ -196,7 +208,13 @@ class _MarketerAdvancedSearchScreenState
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () => Navigator.push(context,MaterialPageRoute(builder: (context)=> const MarketierTabsScreen())),
+                      onPressed:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MarketierTabsScreen(),
+                            ),
+                          ),
                       child: const Text(
                         "Cancel",
                         style: TextStyle(color: Color(0xFF2B6777)),
@@ -214,26 +232,30 @@ class _MarketerAdvancedSearchScreenState
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       onPressed: () {
-                      final cubit = context.read<GetLeadsMarketerCubit>();
+                        final cubit = context.read<GetLeadsMarketerCubit>();
                         setState(() => _hasSearched = true); // <-- هنا
-                      cubit.filterLeadsMarketerForAdvancedSearch(
-                        sales: selectedSales,
-                        country: selectedCountry,
-                        user: selectedUser,
-                        creationDate: _dateController.text.isNotEmpty
+                        cubit.filterLeadsMarketerForAdvancedSearch(
+                          sales: selectedSales,
+                          country: selectedCountry,
+                          user: selectedUser,
+                          creationDate:
+                              _dateController.text.isNotEmpty
                                   ? _formatFullDate(_dateController.text)
                                   : null,
-                              fromDate: _fromDateController.text.isNotEmpty
+                          fromDate:
+                              _fromDateController.text.isNotEmpty
                                   ? _formatFullDate(_fromDateController.text)
                                   : null,
-                              toDate: _toDateController.text.isNotEmpty
+                          toDate:
+                              _toDateController.text.isNotEmpty
                                   ? _formatEndDate(_toDateController.text)
                                   : null,
-                              commentDate: _commentDateController.text.isNotEmpty
+                          commentDate:
+                              _commentDateController.text.isNotEmpty
                                   ? _formatFullDate(_commentDateController.text)
                                   : null,
-                      );
-                    },
+                        );
+                      },
                       child: const Text(
                         "Search",
                         style: TextStyle(color: Colors.white),
@@ -245,91 +267,169 @@ class _MarketerAdvancedSearchScreenState
               const SizedBox(height: 40),
               // ✅ نتائج البحث
               if (_hasSearched) ...[
-              if (state is GetLeadsMarketerLoading) ...[
-                const Center(child: CircularProgressIndicator()),
-              ] else if (state is GetLeadsMarketerFailure) ...[
-                Text(
-                  state.errorMessage,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ] else if (state is GetLeadsMarketerSuccess) ...[
-                const Text(
-                  "Results:",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ...state.leadsResponse.data!.map((lead) {
-                return Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                if (state is GetLeadsMarketerLoading) ...[
+                  const Center(child: CircularProgressIndicator()),
+                ] else if (state is GetLeadsMarketerFailure) ...[
+                  Text(
+                    state.errorMessage,
+                    style: const TextStyle(color: Colors.red),
                   ),
-  margin: const EdgeInsets.only(bottom: 12),
-  child: Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.person, color: Theme.of(context).brightness == Brightness.light ?Constants.maincolor: Constants.mainDarkmodecolor),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                lead.name ?? "No Name",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            Spacer(),
-            TextButton(onPressed: (){
-              Navigator.push(context,MaterialPageRoute(builder:(context)=> MarketerLeadDetailsScreen(leedId: lead.id!,leadName: lead.name,leadEmail: lead.email,leadPhone: lead.phone,leadStageId: lead.stage!.id!,salesfcmtoken: lead.sales!.userlog!.fcmtokenn!,
-              leadStage: lead.stage!.name,leadChannel: lead.chanel!.name!,leadCreationDate:DateTime.parse(lead.createdAt!).toUtc().toString(),leadLastComment: lead.lastcommentdate,leadCreationTime: lead.createdAt,leadNotes: lead.notes,leadProject: lead.project!.name,leadcampaign: lead.campaign!.name,leaddeveloper: lead.project!.developer!.name,) ));
-            }, child: Text("view more", style: TextStyle(color: Theme.of(context).brightness == Brightness.light ?Constants.maincolor: Constants.mainDarkmodecolor))),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Icon(Icons.phone, color: Theme.of(context).brightness == Brightness.light ?Constants.maincolor: Constants.mainDarkmodecolor),
-            const SizedBox(width: 8),
-            Text(lead.phone ?? "No Phone"),
-          ],
-        ),
-        const SizedBox(height: 8),
-        if (lead.email != null) ...[
-          Row(
-            children: [
-              Icon(Icons.email, color: Theme.of(context).brightness == Brightness.light ?Constants.maincolor: Constants.mainDarkmodecolor),
-              const SizedBox(width: 8),
-              Text(lead.email!),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.chat_bubble_outline, color: Theme.of(context).brightness == Brightness.light ?Constants.maincolor: Constants.mainDarkmodecolor),
-              const SizedBox(width: 8),
-              Text(lead.stage!.name!),
-            ],  
-          )
-        ],
-      ],
-    ),
-  ),
-);
-
-                }),
+                ] else if (state is GetLeadsMarketerSuccess) ...[
+                  Text(
+                    "Results: ${state.leadsResponse.data!.length}",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  ...state.leadsResponse.data!.map((lead) {
+                    return Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.person,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    lead.name ?? "No Name",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                Spacer(),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => BlocProvider(
+                                            create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                                              child: MarketerLeadDetailsScreen(
+                                                leedId: lead.id!,
+                                                leadName: lead.name,
+                                                leadEmail: lead.email,
+                                                leadPhone: lead.phone,
+                                                leadStageId: lead.stage!.id!,
+                                                salesfcmtoken:
+                                                    lead
+                                                        .sales!
+                                                        .userlog!
+                                                        .fcmtokenn!,
+                                                leadStage: lead.stage!.name,
+                                                leadChannel: lead.chanel!.name!,
+                                                leadCreationDate:
+                                                    DateTime.parse(
+                                                      lead.createdAt!,
+                                                    ).toUtc().toString(),
+                                                leadLastComment:
+                                                    lead.lastcommentdate,
+                                                leadCreationTime:
+                                                    lead.createdAt,
+                                                leadNotes: lead.notes,
+                                                leadProject: lead.project!.name,
+                                                leadcampaign:
+                                                    lead.campaign!.name,
+                                                leaddeveloper:
+                                                    lead
+                                                        .project!
+                                                        .developer!
+                                                        .name,
+                                              ),
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    "view more",
+                                    style: TextStyle(
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.phone,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(lead.phone ?? "No Phone"),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (lead.email != null) ...[
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.email,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(lead.email!),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.chat_bubble_outline,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(lead.stage!.name!),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
               ],
-            ],
             ],
           ),
         );
       },
     );
   }
+
   Widget _buildDropdown(
     String label,
     List<String> items,

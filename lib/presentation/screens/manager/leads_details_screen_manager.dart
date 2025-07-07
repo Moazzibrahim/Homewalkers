@@ -425,23 +425,15 @@ String _formatDate(String? dateStr) {
                                           .toString() ??
                                       "",
                                 )?.toUtc();
-                            final isFirstValid =
-                                isClearHistoryy != true ||
-                                (clearHistoryTimee !=
-                                        null && // <-- ADD THIS CHECK
-                                    firstcommentdate != null &&
-                                    firstcommentdate.isAfter(
-                                      clearHistoryTimee!,
-                                    ));
+                                final isFirstValid = isClearHistoryy != true ||
+    (firstcommentdate != null &&
+     clearHistoryTimee != null &&
+     firstcommentdate.isAfter(clearHistoryTimee!));
 
-                            final isSecondValid =
-                                isClearHistoryy != true ||
-                                (clearHistoryTimee !=
-                                        null && // <-- AND ADD THIS CHECK
-                                    secondcommentdate != null &&
-                                    secondcommentdate.isAfter(
-                                      clearHistoryTimee!,
-                                    ));
+final isSecondValid = isClearHistoryy != true ||
+    (secondcommentdate != null &&
+     clearHistoryTimee != null &&
+     secondcommentdate.isAfter(clearHistoryTimee!));
                             if ((isFirstValid &&
                                 firstComment?.firstcomment?.text != null)) {
                               return Column(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/presentation/viewModels/cities/cubit/get_cities_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/get_all_users_signup/cubit/getalluserssignup_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 // قم باستيراد نماذج البيانات الخاصة بك
@@ -9,12 +10,14 @@ import 'package:homewalkers_app/data/models/all_sales_model.dart'; // تأكد �
 class AddSalesDialog extends StatefulWidget {
   final void Function({
     required String name,
+    required String userId,
     required List<String> city, // ستستمر هذه القائمة في استقبال IDs كـ String
     required String teamleaderId,
     required String managerId,
     required bool isActive,
     required String notes,
-  }) onAdd;
+  })
+  onAdd;
 
   const AddSalesDialog({super.key, required this.onAdd});
 
@@ -29,6 +32,7 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
   bool _isActive = true;
   String? _selectedManagerId;
   String? _selectedTeamLeaderId;
+  String? _selectedUserId;
   // تم التغيير لتخزين IDs المدن بدلاً من الأسماء
   final List<String> _selectedCityIds = [];
 
@@ -37,7 +41,8 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
     super.initState();
     // جلب البيانات اللازمة للنموذج عند بدء التشغيل
     context.read<GetCitiesCubit>().fetchCities();
-    context.read<SalesCubit>().fetchAllSales(); // جلب المستخدمين للقوائم المنسدلة
+    context.read<SalesCubit>().fetchAllSales();
+    context.read<GetalluserssignupCubit>().fetchUsers();
   }
 
   @override
@@ -53,17 +58,19 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
             children: [
               _buildTextField(_nameController, 'Name'),
               const SizedBox(height: 16),
-
+              _buildUser(),
+              const SizedBox(height: 16),
               // Dropdowns for Manager and Team Leader
               _buildUserDropdowns(),
-
               const SizedBox(height: 16),
-              const Text("Select Cities:", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                "Select Cities:",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               // Cities Checkboxes
               _buildCityCheckboxes(),
-
               const SizedBox(height: 8),
-              _buildTextField(_notesController, 'Notes'),
+              _buildTextField(_notesController, 'Notes', isRequired: false),
               Row(
                 children: [
                   const Text("Active"),
@@ -96,7 +103,7 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
                 _selectedTeamLeaderId != null) {
               widget.onAdd(
                 name: _nameController.text,
-                // إرسال قائمة الـ IDs
+                userId: _selectedUserId!,
                 city: _selectedCityIds,
                 teamleaderId: _selectedTeamLeaderId!,
                 managerId: _selectedManagerId!,
@@ -106,7 +113,10 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
               Navigator.of(context).pop();
             } else if (_selectedCityIds.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please select at least one city.')));
+                const SnackBar(
+                  content: Text('Please select at least one city.'),
+                ),
+              );
             }
           },
           child: const Text("Add"),
@@ -123,27 +133,31 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
         }
         if (state is SalesLoaded) {
           final allUsers = state.salesData.data ?? [];
-
           // --- للمساعدة في اكتشاف الأخطاء: هذا السطر سيطبع كل الأدوار في الـ console ---
           allUsers.forEach((user) => print('User Role: ${user.userlog?.role}'));
           // --------------------------------------------------------------------------
-
           final Map<String, SalesData> uniqueUsers = {
-            for (var user in allUsers.where((u) => u.id != null)) user.id!: user
+            for (var user in allUsers.where((u) => u.id != null))
+              user.id!: user,
           };
-
           // فلترة المدراء من القائمة الفريدة، مع مقارنة الدور بدون حساسية لحالة الأحرف
-          final managers = uniqueUsers.values
-              .where((user) =>
-                  user.userlog?.role?.toLowerCase() == 'manager' && user.name != null)
-              .toList();
-
+          final managers =
+              uniqueUsers.values
+                  .where(
+                    (user) =>
+                        user.userlog?.role?.toLowerCase() == 'manager' &&
+                        user.name != null,
+                  )
+                  .toList();
           // فلترة قادة الفرق
-          final teamLeaders = uniqueUsers.values
-              .where((user) =>
-                  user.userlog?.role?.toLowerCase() == 'team leader' && user.name != null)
-              .toList();
-
+          final teamLeaders =
+              uniqueUsers.values
+                  .where(
+                    (user) =>
+                        user.userlog?.role?.toLowerCase() == 'team leader' &&
+                        user.name != null,
+                  )
+                  .toList();
           return Column(
             children: [
               _buildDropdown(
@@ -177,7 +191,48 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
       },
     );
   }
-  
+Widget _buildUser() {
+  return BlocBuilder<GetalluserssignupCubit, GetalluserssignupState>(
+    builder: (context, state) {
+      if (state is GetalluserssignupLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (state is GetalluserssignupSuccess) {
+        final users = state.users.data ?? [];
+
+        return DropdownButtonFormField<String>(
+          decoration: const InputDecoration(
+            labelText: 'Users',
+            border: OutlineInputBorder(),
+          ),
+          hint: const Text('Select User'),
+          value: _selectedUserId, // أو استخدم متغير آخر حسب الدور
+          validator: (value) =>
+              value == null || value.isEmpty ? 'Please select a user' : null,
+          onChanged: (value) {
+            setState(() {
+              _selectedUserId = value; // يمكنك تغييرها حسب الاستخدام
+            });
+          },
+          items: users
+              .where((user) => user.id != null && user.name != null)
+              .map((user) {
+            return DropdownMenuItem<String>(
+              value: user.id!,
+              child: Text(user.name!),
+            );
+          }).toList(),
+        );
+      }
+      if (state is GetalluserssignupFailure) {
+        return Text("Failed to load users: ${state.message}");
+      }
+      return const Text("Loading users...");
+    },
+  );
+}
+
+
   Widget _buildCityCheckboxes() {
     return BlocBuilder<GetCitiesCubit, GetCitiesState>(
       builder: (context, state) {
@@ -186,29 +241,30 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
         } else if (state is GetCitiesSuccess && state.cities != null) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: state.cities!.map((city) {
-              // التحقق من أن للمدينة اسم و ID
-              if (city.id == null || city.name == null) {
-                return const SizedBox.shrink(); // تجاهل المدينة إذا كانت بياناتها غير مكتملة
-              }
-              return CheckboxListTile(
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
-                // التحقق من وجود ID المدينة في القائمة المحددة
-                value: _selectedCityIds.contains(city.id),
-                title: Text(city.name!),
-                onChanged: (selected) {
-                  setState(() {
-                    final cityId = city.id!;
-                    if (selected == true) {
-                      _selectedCityIds.add(cityId);
-                    } else {
-                      _selectedCityIds.remove(cityId);
-                    }
-                  });
-                },
-              );
-            }).toList(),
+            children:
+                state.cities!.map((city) {
+                  // التحقق من أن للمدينة اسم و ID
+                  if (city.id == null || city.name == null) {
+                    return const SizedBox.shrink(); // تجاهل المدينة إذا كانت بياناتها غير مكتملة
+                  }
+                  return CheckboxListTile(
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    // التحقق من وجود ID المدينة في القائمة المحددة
+                    value: _selectedCityIds.contains(city.id),
+                    title: Text(city.name!),
+                    onChanged: (selected) {
+                      setState(() {
+                        final cityId = city.id!;
+                        if (selected == true) {
+                          _selectedCityIds.add(cityId);
+                        } else {
+                          _selectedCityIds.remove(cityId);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
           );
         } else {
           return const Text("Failed to load cities.");
@@ -217,20 +273,27 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-        validator: (value) =>
-            value == null || value.isEmpty ? 'This field is required' : null,
+  Widget _buildTextField(
+  TextEditingController controller,
+  String label, {
+  bool isRequired = true,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
       ),
-    );
-  }
+      validator: isRequired
+          ? (value) =>
+              value == null || value.isEmpty ? 'This field is required' : null
+          : null,
+    ),
+  );
+}
+
 
   // ويدجت مساعد لإنشاء القوائم المنسدلة
   Widget _buildDropdown({
@@ -248,14 +311,19 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
         ),
         hint: Text(' ${label.toLowerCase()}s '),
         value: selectedValue,
-        validator: (value) => value == null || value.isEmpty ? 'Please select a $label' : null,
+        validator:
+            (value) =>
+                value == null || value.isEmpty
+                    ? 'Please select a $label'
+                    : null,
         onChanged: onChanged,
-        items: items.map((user) {
-          return DropdownMenuItem<String>(
-            value: user.id,
-            child: Text(user.name ?? 'Unnamed User'),
-          );
-        }).toList(),
+        items:
+            items.map((user) {
+              return DropdownMenuItem<String>(
+                value: user.id,
+                child: Text(user.name ?? 'Unnamed User'),
+              );
+            }).toList(),
       ),
     );
   }

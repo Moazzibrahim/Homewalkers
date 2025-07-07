@@ -39,47 +39,48 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
   final TextStyle commentTextStyle = TextStyle(fontSize: 14);
   bool? isClearHistory;
   DateTime? clearHistoryTime;
-
+  
   @override
   void initState() {
     super.initState();
-    checkClearHistoryTime();
-    checkIsClearHistory();
-    log('leedId: ${widget.leedId}');
+    _initialize();
+    debugPrint('Lead ID: ${widget.leedId}');
+  }
+
+  Future<void> _initialize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('role');
+
+    if (role != "Admin") {
+      await _loadClearHistoryStatus(prefs);
+    }
+  }
+
+  Future<void> _loadClearHistoryStatus(SharedPreferences prefs) async {
+    final timeString = prefs.getString('clear_history_time');
+    final isCleared = prefs.getBool('clearHistory');
+
+    if (mounted) {
+      setState(() {
+        clearHistoryTime = timeString != null
+            ? DateTime.tryParse(timeString)?.toUtc()
+            : null;
+        isClearHistory = isCleared;
+      });
+    }
+
+    debugPrint('Clear History Time: $clearHistoryTime');
+    debugPrint('Is Clear History: $isClearHistory');
   }
 
   Future<String> checkAuthName() async {
     final prefs = await SharedPreferences.getInstance();
-    final name = prefs.getString('name');
-    return name ?? 'User';
+    return prefs.getString('name') ?? 'User';
   }
 
   Future<String> checkRoleName() async {
     final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('role');
-    return role ?? 'User';
-  }
-
-  Future<void> checkClearHistoryTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final time = prefs.getString('clear_history_time');
-    if (time != null) {
-      setState(() {
-        clearHistoryTime = DateTime.tryParse(time)?.toUtc();
-      });
-      debugPrint('آخر مرة تم فيها الضغط على Clear History: $clearHistoryTime');
-    }
-  }
-
-  Future<void> checkIsClearHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final iscleared = prefs.getBool('clearHistory');
-    if (mounted) {
-      setState(() {
-        isClearHistory = iscleared;
-      });
-    }
-    debugPrint('Clear History: $iscleared');
+    return prefs.getString('role') ?? 'User';
   }
 
   @override
@@ -90,7 +91,8 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
           create:
               (_) =>
                   LeadCommentsCubit(GetAllLeadCommentsApiService())
-                    ..fetchLeadComments(widget.leedId)..fetchLeadAssignedData(widget.leedId),
+                    ..fetchLeadComments(widget.leedId)
+                    ..fetchLeadAssignedData(widget.leedId),
         ),
         BlocProvider(create: (_) => EditCommentCubit(EditCommentApiService())),
       ],
@@ -122,9 +124,9 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
         ],
         child: Scaffold(
           backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "comments",
             onBack: () => Navigator.pop(context),
@@ -202,12 +204,16 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
     log('firstDate: $firstDate');
     log("secondDate: $secondDate");
     final isFirstValid =
-    isClearHistory != true ||
-    (firstDate != null && clearHistoryTime != null && firstDate.isAfter(clearHistoryTime!));
+        isClearHistory != true ||
+        (firstDate != null &&
+            clearHistoryTime != null &&
+            firstDate.isAfter(clearHistoryTime!));
 
     final isSecondValid =
-    isClearHistory != true ||
-    (secondDate != null && clearHistoryTime != null && secondDate.isAfter(clearHistoryTime!));
+        isClearHistory != true ||
+        (secondDate != null &&
+            clearHistoryTime != null &&
+            secondDate.isAfter(clearHistoryTime!));
 
     // لو لا يوجد ولا كومنت يظهر بعد clear history، متعرضش الكارت أصلاً
     if (!isFirstValid && !isSecondValid) return SizedBox();
@@ -400,7 +406,8 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                       .read<NotificationCubit>()
                                       .sendNotificationToToken(
                                         title: "Comment Reply",
-                                        body: "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
+                                        body:
+                                            "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
                                         fcmtokennnn: widget.fcmtoken!,
                                       );
                                 }
@@ -435,7 +442,6 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return SizedBox();
                   }
-
                   if (snapshot.hasData && snapshot.data == "Admin") {
                     return Align(
                       alignment: Alignment.centerRight,
@@ -493,9 +499,12 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                       final secondText =
                                           secondTextController.text.trim();
                                       Navigator.pop(ctx);
-                                      context.read<EditCommentCubit>().editComment(
+                                      context
+                                          .read<EditCommentCubit>()
+                                          .editComment(
                                             commentId:
-                                                dataItem.comments?.first.id ?? '',
+                                                dataItem.comments?.first.id ??
+                                                '',
                                             firstText: firstText,
                                             secondText: secondText,
                                           )

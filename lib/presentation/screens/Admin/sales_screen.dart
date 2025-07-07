@@ -5,10 +5,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_users_for_signup_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_cities_api_service.dart';
 import 'package:homewalkers_app/data/models/all_sales_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/cities/cubit/get_cities_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/get_all_users_signup/cubit/getalluserssignup_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/widgets/add_sales_dialog.dart';
@@ -28,7 +30,7 @@ class SalesScreen extends StatelessWidget {
           if (state is AddInMenuSuccess) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text('added successfully')));
+            ).showSnackBar(const SnackBar(content: Text('Done successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
             context.read<SalesCubit>().fetchAllSales();
           } else if (state is AddInMenuError) {
@@ -68,11 +70,13 @@ class SalesScreen extends StatelessWidget {
                                   ),
                                   BlocProvider<GetCitiesCubit>( create: (_) => GetCitiesCubit(GetCitiesApiService()),),
                                   BlocProvider<SalesCubit>(create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),),
+                                  BlocProvider(create: (_) => GetalluserssignupCubit( GetAllUsersForSignupApiService())..fetchUsers()),
                                 ],
                                 child: AddSalesDialog(
                                   onAdd: ({
                                     required name,
                                     required city,
+                                    required userId,
                                     required teamleaderId,
                                     required managerId,
                                     required isActive,
@@ -81,6 +85,7 @@ class SalesScreen extends StatelessWidget {
                                     context.read<AddInMenuCubit>().addSales(
                                       name,
                                       city,
+                                      userId,
                                       teamleaderId,
                                       managerId,
                                       isActive,

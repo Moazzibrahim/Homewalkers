@@ -51,6 +51,7 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
   Future<void> addSales(
     String name,
     List<String> city,
+    String userlogid,
     String teamleaderId,
     String managerId,
     bool isactive,
@@ -61,6 +62,7 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
       await _apiService.addSales(
         name,
         city,
+        userlogid,
         teamleaderId,
         managerId,
         isactive,
@@ -79,6 +81,7 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
     String password,
     String confirmpassword,
     String role,
+    String image
   ) async {
     emit(AddInMenuLoading());
     try {
@@ -89,6 +92,7 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
         password,
         confirmpassword,
         role,
+        image
       );
       emit(AddInMenuSuccess(message: 'Added successfully'));
     } catch (e) {

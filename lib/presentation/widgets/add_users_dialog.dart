@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+
+import 'package:image_picker/image_picker.dart';
 
 class AddUsersDialog extends StatefulWidget {
   final void Function({
@@ -8,6 +11,7 @@ class AddUsersDialog extends StatefulWidget {
     required String password,
     required String passwordConfirm,
     required String role,
+    String? imagePath, // 👈 تم إضافته
   }) onAdd;
 
   const AddUsersDialog({super.key, required this.onAdd});
@@ -24,6 +28,18 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   String _selectedRole = 'Admin';
+  String? _selectedImagePath; // 👈 مسار الصورة
+
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source, imageQuality: 70);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImagePath = pickedFile.path;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +57,8 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
               _buildTextField(_passwordController, 'Password', obscure: true),
               _buildTextField(_confirmPasswordController, 'Confirm Password', obscure: true),
               _buildRoleDropdown(),
+              const SizedBox(height: 10),
+              _buildImagePickerSection(),
             ],
           ),
         ),
@@ -60,6 +78,7 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
                 password: _passwordController.text,
                 passwordConfirm: _confirmPasswordController.text,
                 role: _selectedRole,
+                imagePath: _selectedImagePath, // 👈 تمرير الصورة
               );
               Navigator.of(context).pop();
             }
@@ -114,6 +133,41 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
           }
         },
       ),
+    );
+  }
+
+  Widget _buildImagePickerSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Upload Profile Image", style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            ElevatedButton.icon(
+              onPressed: () => _pickImage(ImageSource.gallery),
+              icon: const Icon(Icons.photo),
+              label: const Text("Gallery",style: TextStyle(fontSize: 10),),),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: () => _pickImage(ImageSource.camera),
+              icon: const Icon(Icons.camera_alt),
+              label: const Text("Camera",style: TextStyle(fontSize: 10),),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (_selectedImagePath != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.file(
+              File(_selectedImagePath!),
+              height: 80,
+              width: 80,
+              fit: BoxFit.cover,
+            ),
+          ),
+      ],
     );
   }
 }

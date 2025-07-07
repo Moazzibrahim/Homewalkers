@@ -20,13 +20,12 @@ class AdminAdvancedSearch extends StatefulWidget {
       _MarketerAdvancedSearchScreenState();
 }
 
-class _MarketerAdvancedSearchScreenState
-    extends State<AdminAdvancedSearch> {
+class _MarketerAdvancedSearchScreenState extends State<AdminAdvancedSearch> {
   String? selectedFilterType;
   // ✅  الخطوة 1: تعديل المتغيرات للتعامل مع الـ ID
   String? selectedSalesId; // <-- بدلاً من selectedSales
   Map<String, String> salesMap = {}; // <-- Map لتخزين (ID, Name)
-  
+
   String? selectedCountry;
   String? selectedUser;
   final TextEditingController _dateController = TextEditingController();
@@ -44,34 +43,42 @@ class _MarketerAdvancedSearchScreenState
   ];
 
   // لتحويل التاريخ إلى بداية اليوم
-// ✅ دالة مُعدّلة: تحول التاريخ المحلي إلى بداية اليوم بالتوقيت العالمي
-// ✅ دالة مُعدّلة: تحول التاريخ المحلي إلى بداية اليوم بالتوقيت العالمي (UTC)
-String _formatFullDate(String date) {
-  try {
-    // 1. تحليل التاريخ كنص للحصول على كائن DateTime بالتوقيت المحلي
-    final localDate = DateTime.parse(date);
-    // 2. تحويله إلى التوقيت العالمي المنسق (UTC) وإرجاعه كنص
-    return localDate.toUtc().toIso8601String();
-  } catch (e) {
-    // Fallback في حال كان التنسيق مختلفاً
-    return date;
+  // ✅ دالة مُعدّلة: تحول التاريخ المحلي إلى بداية اليوم بالتوقيت العالمي
+  // ✅ دالة مُعدّلة: تحول التاريخ المحلي إلى بداية اليوم بالتوقيت العالمي (UTC)
+  String _formatFullDate(String date) {
+    try {
+      // 1. تحليل التاريخ كنص للحصول على كائن DateTime بالتوقيت المحلي
+      final localDate = DateTime.parse(date);
+      // 2. تحويله إلى التوقيت العالمي المنسق (UTC) وإرجاعه كنص
+      return localDate.toUtc().toIso8601String();
+    } catch (e) {
+      // Fallback في حال كان التنسيق مختلفاً
+      return date;
+    }
   }
-}
 
-// ✅ دالة جديدة وأكثر دقة: تحسب نهاية اليوم المحدد وتحولها إلى UTC
-String _formatEndDate(String date) {
-  try {
-    // 1. تحليل التاريخ كنص للحصول على بداية اليوم بالتوقيت المحلي
-    final localDate = DateTime.parse(date);
-    // 2. حساب نهاية اليوم بإضافة يوم كامل وطرح ميلي ثانية واحدة
-    final endOfDay = DateTime(localDate.year, localDate.month, localDate.day, 23, 59, 59, 999);
-    // 3. تحويل لحظة نهاية اليوم إلى التوقيت العالمي (UTC) وإرجاعها كنص
-    return endOfDay.toUtc().toIso8601String();
-  } catch (e) {
-    // Fallback
-    return date;
+  // ✅ دالة جديدة وأكثر دقة: تحسب نهاية اليوم المحدد وتحولها إلى UTC
+  String _formatEndDate(String date) {
+    try {
+      // 1. تحليل التاريخ كنص للحصول على بداية اليوم بالتوقيت المحلي
+      final localDate = DateTime.parse(date);
+      // 2. حساب نهاية اليوم بإضافة يوم كامل وطرح ميلي ثانية واحدة
+      final endOfDay = DateTime(
+        localDate.year,
+        localDate.month,
+        localDate.day,
+        23,
+        59,
+        59,
+        999,
+      );
+      // 3. تحويل لحظة نهاية اليوم إلى التوقيت العالمي (UTC) وإرجاعها كنص
+      return endOfDay.toUtc().toIso8601String();
+    } catch (e) {
+      // Fallback
+      return date;
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -82,18 +89,19 @@ String _formatEndDate(String date) {
         ),
         // ✅ الخطوة 2: تصحيح إنشاء الـ Cubit واستدعاء الدالة لجلب البيانات
         BlocProvider<GetAllUsersCubit>(
-          create: (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchAllUsers(),
+          create:
+              (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchAllUsers(),
         ),
       ],
       child: Scaffold(
-      backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Constants.backgroundlightmode
+                : Constants.backgroundDarkmode,
         appBar: CustomAppBar(
           title: "Advanced Search",
           onBack: () {
-            Navigator.pop(context );
+            Navigator.pop(context);
           },
         ),
         // ✅ الخطوة 3: استخدام BlocListener للاستماع لحالة SalesCubit وتعبئة الـ Map
@@ -104,7 +112,7 @@ String _formatEndDate(String date) {
                 salesMap = {
                   for (var sale in state.salesData.data!)
                     if (sale.id != null && sale.name != null)
-                      sale.id!: sale.name!
+                      sale.id!: sale.name!,
                 };
               });
             }
@@ -123,16 +131,23 @@ String _formatEndDate(String date) {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Choose", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              const Text(
+                "Choose",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 isExpanded: true,
                 value: selectedFilterType,
                 decoration: _dropdownDecoration(),
                 hint: const Text("Select filter"),
-                items: filterTypes
-                    .map((type) => DropdownMenuItem(value: type, child: Text(type)))
-                    .toList(),
+                items:
+                    filterTypes
+                        .map(
+                          (type) =>
+                              DropdownMenuItem(value: type, child: Text(type)),
+                        )
+                        .toList(),
                 onChanged: (value) {
                   setState(() {
                     selectedFilterType = value;
@@ -150,16 +165,31 @@ String _formatEndDate(String date) {
               ] else if (selectedFilterType == 'Country') ...[
                 _buildCountryPicker("Choose Country"),
               ] else if (selectedFilterType == 'Creation Date') ...[
-                _buildDatePickerField("Select Creation Date", controller: _dateController),
-              ] else if (selectedFilterType == 'All Lead Between Different Dates') ...[
-                _buildDatePickerField("From Date", controller: _fromDateController),
+                _buildDatePickerField(
+                  "Select Creation Date",
+                  controller: _dateController,
+                ),
+              ] else if (selectedFilterType ==
+                  'All Lead Between Different Dates') ...[
+                _buildDatePickerField(
+                  "From Date",
+                  controller: _fromDateController,
+                ),
                 _buildDatePickerField("To Date", controller: _toDateController),
-              ] else if (selectedFilterType == 'All Leads With Sales Between Different 2 Date') ...[
+              ] else if (selectedFilterType ==
+                  'All Leads With Sales Between Different 2 Date') ...[
                 _buildSalesDropdown("Choose Sales"),
-                _buildDatePickerField("From Date", controller: _fromDateController),
+                _buildDatePickerField(
+                  "From Date",
+                  controller: _fromDateController,
+                ),
                 _buildDatePickerField("To Date", controller: _toDateController),
-              ] else if (selectedFilterType == 'All Leads With Last Comment Date') ...[
-                _buildDatePickerField("Comment Date", controller: _commentDateController),
+              ] else if (selectedFilterType ==
+                  'All Leads With Last Comment Date') ...[
+                _buildDatePickerField(
+                  "Comment Date",
+                  controller: _commentDateController,
+                ),
               ],
               const SizedBox(height: 35),
               Row(
@@ -168,7 +198,7 @@ String _formatEndDate(String date) {
                   Expanded(
                     child: OutlinedButton(
                       // ... (Cancel Button code remains the same)
-                        style: OutlinedButton.styleFrom(
+                      style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFF2B6777)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -185,7 +215,7 @@ String _formatEndDate(String date) {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
+                      style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2B6777),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -195,23 +225,40 @@ String _formatEndDate(String date) {
                       onPressed: () {
                         setState(() => _hasSearched = true);
                         // ✅ الخطوة 5: تمرير الـ ID بدلاً من الاسم
-                        context.read<GetAllUsersCubit>().filterLeadsAdminForAdvancedSearch(
+                        context
+                            .read<GetAllUsersCubit>()
+                            .filterLeadsAdminForAdvancedSearch(
                               salesId: selectedSalesId, // <-- تمرير الـ ID
                               country: selectedCountry,
                               user: selectedUser,
-                              creationDate: _dateController.text.isNotEmpty
-    ? _formatFullDate(_dateController.text)
-    : null,
-fromDate: _fromDateController.text.isNotEmpty
-    ? _formatFullDate(_fromDateController.text)
-    : null,
-toDate: _toDateController.text.isNotEmpty
-    ? _formatEndDate(_toDateController.text) // ✅  دقيق جدًا
-    : null,
-                              commentDate: _commentDateController.text.isNotEmpty ? _commentDateController.text : null,
+                              creationDate:
+                                  _dateController.text.isNotEmpty
+                                      ? _formatFullDate(_dateController.text)
+                                      : null,
+                              fromDate:
+                                  _fromDateController.text.isNotEmpty
+                                      ? _formatFullDate(
+                                        _fromDateController.text,
+                                      )
+                                      : null,
+                              toDate:
+                                  _toDateController.text.isNotEmpty
+                                      ? _formatEndDate(
+                                        _toDateController.text,
+                                      ) // ✅  دقيق جدًا
+                                      : null,
+                              commentDate:
+                                  _commentDateController.text.isNotEmpty
+                                      ? _formatFullDate(
+                                        _commentDateController.text,
+                                      )
+                                      : null,
                             );
                       },
-                      child: const Text("Search", style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        "Search",
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -219,83 +266,169 @@ toDate: _toDateController.text.isNotEmpty
               const SizedBox(height: 40),
               // Search Results
               if (_hasSearched) ...[
-                  if (state is GetAllUsersLoading)
+                if (state is GetAllUsersLoading)
                   const Center(child: CircularProgressIndicator())
                 else if (state is GetAllUsersFailure)
-                  Center(child: Text(state.error, style: const TextStyle(color: Colors.red)))
+                  Center(
+                    child: Text(
+                      state.error,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  )
                 else if (state is GetAllUsersSuccess) ...[
                   if (state.users.data!.isEmpty)
                     const Center(child: Text("No results found."))
                   else ...[
-                    const Text("Results:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      "Results (${state.users.data!.length}):",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     ...state.users.data!.map((lead) {
-                       return Card(
+                      return Card(
                         // ... (Card UI for results remains the same)
-                         elevation: 3,
-                         shape: RoundedRectangleBorder(
-                           borderRadius: BorderRadius.circular(12),
-                         ),
-                         margin: const EdgeInsets.only(bottom: 12),
-                         child: Padding(
-                           padding: const EdgeInsets.all(16.0),
-                           child: Column(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             children: [
-                               Row(
-                                 children: [
-                                   Icon(Icons.person, color: Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor),
-                                   const SizedBox(width: 8),
-                                   Expanded(
-                                     child: Text(
-                                       lead.name ?? "No Name",
-                                       style: const TextStyle(
-                                         fontWeight: FontWeight.bold,
-                                         fontSize: 16,
-                                       ),
-                                     ),
-                                   ),
-                                   TextButton(
-                                       onPressed: () {
-                                         Navigator.push(context, MaterialPageRoute(builder: (context) => AdminLeadDetails(leedId: lead.id!, leadName: lead.name, leadEmail: lead.email, leadPhone: lead.phone, leadStageId: lead.stage?.id ?? '', leadStage: lead.stage?.name ?? '', leadChannel: lead.chanel?.name ?? '', leadCreationDate: lead.createdAt??"", leadLastComment: lead.lastcommentdate, leadCreationTime: lead.createdAt, leadNotes: "", leadProject: lead.project?.name ?? '', leadcampaign: lead.campaign?.campainName ?? '', leaddeveloper: lead.project?.developer?.name ?? '')));
-                                       },
-                                       child: Text("view more", style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor))),
-                                 ],
-                               ),
-                               const SizedBox(height: 8),
-                               Row(
-                                 children: [
-                                   Icon(Icons.phone, color: Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor),
-                                   const SizedBox(width: 8),
-                                   Text(lead.phone ?? "No Phone"),
-                                 ],
-                               ),
-                               const SizedBox(height: 8),
-                               if (lead.email != null) ...[
-                                 Row(
-                                   children: [
-                                     Icon(Icons.email, color: Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor),
-                                     const SizedBox(width: 8),
-                                     Text(lead.email!),
-                                   ],
-                                 ),
-                                 const SizedBox(height: 8),
-                               ],
-                                if (lead.stage?.name != null)
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.person,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      lead.name ?? "No Name",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) => AdminLeadDetails(
+                                                leedId: lead.id!,
+                                                leadName: lead.name,
+                                                leadEmail: lead.email,
+                                                leadPhone: lead.phone,
+                                                leadStageId:
+                                                    lead.stage?.id ?? '',
+                                                leadStage:
+                                                    lead.stage?.name ?? '',
+                                                leadChannel:
+                                                    lead.chanel?.name ?? '',
+                                                leadCreationDate:
+                                                    lead.createdAt ?? "",
+                                                leadLastComment:
+                                                    lead.lastcommentdate,
+                                                leadCreationTime:
+                                                    lead.createdAt,
+                                                leadNotes: "",
+                                                leadProject:
+                                                    lead.project?.name ?? '',
+                                                leadcampaign:
+                                                    lead
+                                                        .campaign
+                                                        ?.campainName ??
+                                                    '',
+                                                leaddeveloper:
+                                                    lead
+                                                        .project
+                                                        ?.developer
+                                                        ?.name ??
+                                                    '',
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      "view more",
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Constants.maincolor
+                                                : Constants.mainDarkmodecolor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.phone,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(lead.phone ?? "No Phone"),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (lead.email != null) ...[
                                 Row(
-                                   children: [
-                                     Icon(Icons.chat_bubble_outline, color: Theme.of(context).brightness == Brightness.light ?Constants.maincolor: Constants.mainDarkmodecolor),
-                                     const SizedBox(width: 8),
-                                     Text(lead.stage!.name!),
-                                   ],
-                                 )
-                             ],
-                           ),
-                         ),
-                       );
+                                  children: [
+                                    Icon(
+                                      Icons.email,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(lead.email!),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                              if (lead.stage?.name != null)
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.chat_bubble_outline,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(lead.stage!.name!),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
                     }),
                   ],
-                ]
+                ],
               ],
             ],
           ),
@@ -309,7 +442,10 @@ toDate: _toDateController.text.isNotEmpty
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           isExpanded: true,
@@ -317,9 +453,15 @@ toDate: _toDateController.text.isNotEmpty
           decoration: _dropdownDecoration(),
           hint: Text(label),
           // عرض أسماء الموظفين
-          items: salesMap.entries
-              .map((entry) => DropdownMenuItem(value: entry.key, child: Text(entry.value)))
-              .toList(),
+          items:
+              salesMap.entries
+                  .map(
+                    (entry) => DropdownMenuItem(
+                      value: entry.key,
+                      child: Text(entry.value),
+                    ),
+                  )
+                  .toList(),
           // عند الاختيار، قم بتخزين الـ ID
           onChanged: (val) => setState(() => selectedSalesId = val),
         ),
@@ -327,11 +469,14 @@ toDate: _toDateController.text.isNotEmpty
       ],
     );
   }
-  
+
   // (DatePicker and CountryPicker methods remain the same)
-  Widget _buildDatePickerField(String label, {required TextEditingController controller}) {
-     // ... same as your code
-      return Column(
+  Widget _buildDatePickerField(
+    String label, {
+    required TextEditingController controller,
+  }) {
+    // ... same as your code
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -374,8 +519,8 @@ toDate: _toDateController.text.isNotEmpty
   }
 
   Widget _buildCountryPicker(String label) {
-     // ... same as your code
-        return Column(
+    // ... same as your code
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -385,7 +530,9 @@ toDate: _toDateController.text.isNotEmpty
         const SizedBox(height: 8),
         TextFormField(
           readOnly: true,
-          controller: TextEditingController(text: selectedCountry != null ? "+$selectedCountry" : ""),
+          controller: TextEditingController(
+            text: selectedCountry != null ? "+$selectedCountry" : "",
+          ),
           decoration: InputDecoration(
             hintText: "Select Country",
             contentPadding: const EdgeInsets.symmetric(
@@ -416,8 +563,8 @@ toDate: _toDateController.text.isNotEmpty
   }
 
   InputDecoration _dropdownDecoration() {
-     // ... same as your code
-        return InputDecoration(
+    // ... same as your code
+    return InputDecoration(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),

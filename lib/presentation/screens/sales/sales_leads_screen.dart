@@ -757,44 +757,49 @@ class SalesLeadsScreen extends StatelessWidget {
                                             context,
                                             MaterialPageRoute(
                                               builder:
-                                                  (
-                                                    _,
-                                                  ) => SalesLeadsDetailsScreen(
-                                                    leedId: lead.id!,
-                                                    leadName: lead.name ?? '',
-                                                    leadPhone: lead.phone ?? '',
-                                                    leadEmail: lead.email ?? '',
-                                                    leadStage:
-                                                        lead.stage?.name ?? '',
-                                                    leadStageId:
-                                                        lead.stage?.id ?? '',
-                                                    leadChannel:
-                                                        lead.chanel?.name ?? '',
-                                                    leadCreationDate:
-                                                        lead.createdAt != null
-                                                            ? formatDateTime(
-                                                              lead.createdAt!,
-                                                            )
-                                                            : '',
-                                                    leadProject:
-                                                        lead.project?.name ??
-                                                        '',
-                                                    leadLastComment:
-                                                        lead.lastcommentdate ??
-                                                        '',
-                                                    leadcampaign:
-                                                        lead.campaign?.name ??
-                                                        "campaign",
-                                                    leadNotes:
-                                                        lead.notes ??
-                                                        "no notes",
-                                                    leaddeveloper:
-                                                        lead
-                                                            .project
-                                                            ?.developer
-                                                            ?.name ??
-                                                        "no developer",
-                                                    fcmtoken: salesfcmtoken,
+                                                  (_) => BlocProvider(
+                                                    create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                                                    child: SalesLeadsDetailsScreen(
+                                                      leedId: lead.id!,
+                                                      leadName: lead.name ?? '',
+                                                      leadPhone:
+                                                          lead.phone ?? '',
+                                                      leadEmail:
+                                                          lead.email ?? '',
+                                                      leadStage:
+                                                          lead.stage?.name ??
+                                                          '',
+                                                      leadStageId:
+                                                          lead.stage?.id ?? '',
+                                                      leadChannel:
+                                                          lead.chanel?.name ??
+                                                          '',
+                                                      leadCreationDate:
+                                                          lead.createdAt != null
+                                                              ? formatDateTime(
+                                                                lead.createdAt!,
+                                                              )
+                                                              : '',
+                                                      leadProject:
+                                                          lead.project?.name ??
+                                                          '',
+                                                      leadLastComment:
+                                                          lead.lastcommentdate ??
+                                                          '',
+                                                      leadcampaign:
+                                                          lead.campaign?.name ??
+                                                          "campaign",
+                                                      leadNotes:
+                                                          lead.notes ??
+                                                          "no notes",
+                                                      leaddeveloper:
+                                                          lead
+                                                              .project
+                                                              ?.developer
+                                                              ?.name ??
+                                                          "no developer",
+                                                      fcmtoken: salesfcmtoken,
+                                                    ),
                                                   ),
                                             ),
                                           );

@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/communication_ways/cubit/get_communication_ways_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 
 class EditLeadDialog extends StatefulWidget {
   final String userId;
@@ -16,6 +22,7 @@ class EditLeadDialog extends StatefulWidget {
   final String? initialCampaignId;
   final String? initialCommunicationWayId;
   final bool? isCold;
+  final void Function()? onSuccess;
 
   const EditLeadDialog({
     super.key,
@@ -30,6 +37,7 @@ class EditLeadDialog extends StatefulWidget {
     this.initialCampaignId,
     this.initialCommunicationWayId,
     this.isCold,
+    this.onSuccess,
   });
 
   @override
@@ -97,6 +105,133 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
               decoration: const InputDecoration(labelText: 'Notes'),
               maxLines: 2,
             ),
+            BlocBuilder<ProjectsCubit, ProjectsState>(
+              builder: (context, state) {
+                if (state is ProjectsSuccess) {
+                  return DropdownButtonFormField<String>(
+                    value: selectedProjectId,
+                    decoration: const InputDecoration(labelText: 'Project'),
+                    items:
+                        state.projectsModel.data!.map((project) {
+                          return DropdownMenuItem<String>(
+                            value: project.id.toString(),
+                            child: Text(project.name!),
+                          );
+                        }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedProjectId = value;
+                      });
+                    },
+                  );
+                } else if (state is ProjectsLoading) {
+                  return const CircularProgressIndicator();
+                }
+                return const SizedBox();
+              },
+            ),
+            BlocBuilder<StagesCubit, StagesState>(
+              builder: (context, state) {
+                if (state is StagesLoaded) {
+                  return DropdownButtonFormField<String>(
+                    value: selectedStageId,
+                    decoration: const InputDecoration(labelText: 'Stage'),
+                    items:
+                        state.stages.map((stage) {
+                          return DropdownMenuItem<String>(
+                            value: stage.id.toString(),
+                            child: Text(stage.name!),
+                          );
+                        }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedStageId = value;
+                      });
+                    },
+                  );
+                } else if (state is StagesLoading) {
+                  return const CircularProgressIndicator();
+                }
+                return const SizedBox();
+              },
+            ),
+            BlocBuilder<ChannelCubit, ChannelState>(
+              builder: (context, state) {
+                if (state is ChannelLoaded) {
+                  return DropdownButtonFormField<String>(
+                    value: selectedChannelId,
+                    decoration: const InputDecoration(labelText: 'Channel'),
+                    items:
+                        state.channelResponse.data.map((channel) {
+                          return DropdownMenuItem<String>(
+                            value: channel.id.toString(),
+                            child: Text(channel.name),
+                          );
+                        }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedChannelId = value;
+                      });
+                    },
+                  );
+                } else if (state is ChannelLoading) {
+                  return const CircularProgressIndicator();
+                }
+                return const SizedBox();
+              },
+            ),
+            BlocBuilder<GetCampaignsCubit, GetCampaignsState>(
+              builder: (context, state) {
+                if (state is GetCampaignsSuccess) {
+                  return DropdownButtonFormField<String>(
+                    value: selectedCampaignId,
+                    decoration: const InputDecoration(labelText: 'Campaign'),
+                    items:
+                        state.campaigns.data!.map((campaign) {
+                          return DropdownMenuItem<String>(
+                            value: campaign.id.toString(),
+                            child: Text(campaign.campainName!),
+                          );
+                        }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedCampaignId = value;
+                      });
+                    },
+                  );
+                } else if (state is GetCampaignsLoading) {
+                  return const CircularProgressIndicator();
+                }
+                return const SizedBox();
+              },
+            ),
+            BlocBuilder<GetCommunicationWaysCubit, GetCommunicationWaysState>(
+              builder: (context, state) {
+                if (state is GetCommunicationWaysLoaded) {
+                  return DropdownButtonFormField<String>(
+                    value: selectedCommunicationWayId,
+                    decoration: const InputDecoration(
+                      labelText: 'Communication Way',
+                    ),
+                    items:
+                        state.response.data!.map((way) {
+                          return DropdownMenuItem<String>(
+                            value: way.id.toString(),
+                            child: Text(way.name!),
+                          );
+                        }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedCommunicationWayId = value;
+                      });
+                    },
+                  );
+                } else if (state is GetCommunicationWaysLoading) {
+                  return const CircularProgressIndicator();
+                }
+                return const SizedBox();
+              },
+            ),
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -115,11 +250,11 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
                           isCold = value;
                         });
                       },
-                    )
+                    ),
                   ],
-                )
+                ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -132,6 +267,7 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
           listener: (context, state) {
             if (state is EditLeadSuccess) {
               Navigator.pop(context);
+                if (widget.onSuccess != null) widget.onSuccess!(); // 👈 Call callback
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Edited Successfully')),
               );
@@ -151,26 +287,30 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
               ),
               onPressed: () {
                 context.read<EditLeadCubit>().editLead(
-                      userId: widget.userId,
-                      name: nameController.text.trim().isEmpty
+                  userId: widget.userId,
+                  name:
+                      nameController.text.trim().isEmpty
                           ? null
                           : nameController.text.trim(),
-                      email: emailController.text.trim().isEmpty
+                  email:
+                      emailController.text.trim().isEmpty
                           ? null
                           : emailController.text.trim(),
-                      phone: phoneController.text.trim().isEmpty
+                  phone:
+                      phoneController.text.trim().isEmpty
                           ? null
                           : phoneController.text.trim(),
-                      notes: notesController.text.trim().isEmpty
+                  notes:
+                      notesController.text.trim().isEmpty
                           ? null
                           : notesController.text.trim(),
-                      project: selectedProjectId,
-                      stage: selectedStageId,
-                      chanel: selectedChannelId,
-                      communicationway: selectedCommunicationWayId,
-                      leedtype: isCold ? "Cold" : "Fresh",
-                      campaign: selectedCampaignId,
-                    );
+                  project: selectedProjectId,
+                  stage: selectedStageId,
+                  chanel: selectedChannelId,
+                  communicationway: selectedCommunicationWayId,
+                  leedtype: isCold ? "Cold" : "Fresh",
+                  campaign: selectedCampaignId,
+                );
               },
               child: const Text('Save', style: TextStyle(color: Colors.white)),
             );

@@ -29,7 +29,7 @@ class CampaignScreen extends StatelessWidget {
           if (state is AddInMenuSuccess) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text('added successfully')));
+            ).showSnackBar(const SnackBar(content: Text('Done successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
             context.read<GetCampaignsCubit>().fetchCampaigns();
           } else if (state is AddInMenuError) {
@@ -39,7 +39,7 @@ class CampaignScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
-             backgroundColor:
+          backgroundColor:
                   Theme.of(context).brightness == Brightness.light
                       ? Constants.backgroundlightmode
                       : Constants.backgroundDarkmode,

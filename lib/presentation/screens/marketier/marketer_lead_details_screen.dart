@@ -425,18 +425,15 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                           .toString() ??
                                       "",
                                 )?.toUtc();
-                            final isFirstValid =
-                                isClearHistoryy != true ||
-                                (firstcommentdate != null &&
-                                    firstcommentdate.isAfter(
-                                      clearHistoryTimee!,
-                                    ));
-                            final isSecondValid =
-                                isClearHistoryy != true ||
-                                (secondcommentdate != null &&
-                                    secondcommentdate.isAfter(
-                                      clearHistoryTimee!,
-                                    ));
+                                final isFirstValid = isClearHistoryy != true ||
+    (firstcommentdate != null &&
+     clearHistoryTimee != null &&
+     firstcommentdate.isAfter(clearHistoryTimee!));
+
+final isSecondValid = isClearHistoryy != true ||
+    (secondcommentdate != null &&
+     clearHistoryTimee != null &&
+     secondcommentdate.isAfter(clearHistoryTimee!));
                             if ((isFirstValid &&
                                 firstComment?.firstcomment?.text != null)) {
                               return Column(

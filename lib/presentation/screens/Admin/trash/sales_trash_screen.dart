@@ -26,7 +26,7 @@ class SalesTrashScreen extends StatelessWidget {
           if (state is AddInMenuSuccess) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text('added successfully')));
+            ).showSnackBar(const SnackBar(content: Text('Done successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
             context.read<SalesCubit>().fetchAllSalesInTrash();
           } else if (state is AddInMenuError) {
@@ -71,6 +71,7 @@ class SalesTrashScreen extends StatelessWidget {
                                   onAdd: ({
                                     required name,
                                     required city,
+                                    required userId,
                                     required teamleaderId,
                                     required managerId,
                                     required isActive,
@@ -79,6 +80,7 @@ class SalesTrashScreen extends StatelessWidget {
                                     context.read<AddInMenuCubit>().addSales(
                                       name,
                                       city,
+                                      userId,
                                       teamleaderId,
                                       managerId,
                                       isActive,

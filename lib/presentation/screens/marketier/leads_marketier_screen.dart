@@ -16,6 +16,7 @@ import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/data/models/add_comment_model.dart';
+import 'package:homewalkers_app/data/models/lead_comments_model.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_lead_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
@@ -960,19 +961,19 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                             final String
                                                             firstCommentText =
                                                                 firstCommentEntry
-                                                                    ?.firstComment
+                                                                    ?.firstcomment!
                                                                     .text ??
                                                                 'No comments available.';
                                                             final String
                                                             secondCommentText =
                                                                 firstCommentEntry
-                                                                    ?.secondComment
+                                                                    ?.secondcomment!
                                                                     .text ??
                                                                 'No comment available.';
                                                             final firstCommentDate =
                                                                 DateTime.tryParse(
                                                                   firstCommentEntry
-                                                                          ?.firstComment
+                                                                          ?.firstcomment!
                                                                           .date
                                                                           .toString() ??
                                                                       "",
@@ -980,7 +981,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                             final secondCommentDate =
                                                                 DateTime.tryParse(
                                                                   firstCommentEntry
-                                                                          ?.secondComment
+                                                                          ?.secondcomment!
                                                                           .date
                                                                           .toString() ??
                                                                       "",
@@ -1361,42 +1362,46 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                           context,
                                           MaterialPageRoute(
                                             builder:
-                                                (
-                                                  _,
-                                                ) => MarketerLeadDetailsScreen(
-                                                  leedId: lead.id!,
-                                                  leadName: lead.name ?? '',
-                                                  leadPhone: lead.phone ?? '',
-                                                  leadEmail: lead.email ?? '',
-                                                  leadStage:
-                                                      lead.stage?.name ?? '',
-                                                  leadStageId:
-                                                      lead.stage?.id ?? '',
-                                                  leadChannel:
-                                                      lead.chanel?.name ?? '',
-                                                  leadCreationDate:
-                                                      lead.createdAt != null
-                                                          ? formatDateTime(
-                                                            lead.createdAt!,
-                                                          )
-                                                          : '',
-                                                  leadProject:
-                                                      lead.project?.name ?? '',
-                                                  leadLastComment:
-                                                      lead.lastcommentdate ??
-                                                      '',
-                                                  leadcampaign:
-                                                      lead.campaign?.name ??
-                                                      "campaign",
-                                                  leadNotes:
-                                                      lead.notes ?? "no notes",
-                                                  leaddeveloper:
-                                                      lead
-                                                          .project
-                                                          ?.developer
-                                                          ?.name ??
-                                                      "no developer",
-                                                  salesfcmtoken: salesfcmtoken!,
+                                                (_) => BlocProvider(
+                                                  create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                                                  child: MarketerLeadDetailsScreen(
+                                                    leedId: lead.id!,
+                                                    leadName: lead.name ?? '',
+                                                    leadPhone: lead.phone ?? '',
+                                                    leadEmail: lead.email ?? '',
+                                                    leadStage:
+                                                        lead.stage?.name ?? '',
+                                                    leadStageId:
+                                                        lead.stage?.id ?? '',
+                                                    leadChannel:
+                                                        lead.chanel?.name ?? '',
+                                                    leadCreationDate:
+                                                        lead.createdAt != null
+                                                            ? formatDateTime(
+                                                              lead.createdAt!,
+                                                            )
+                                                            : '',
+                                                    leadProject:
+                                                        lead.project?.name ??
+                                                        '',
+                                                    leadLastComment:
+                                                        lead.lastcommentdate ??
+                                                        '',
+                                                    leadcampaign:
+                                                        lead.campaign?.name ??
+                                                        "campaign",
+                                                    leadNotes:
+                                                        lead.notes ??
+                                                        "no notes",
+                                                    leaddeveloper:
+                                                        lead
+                                                            .project
+                                                            ?.developer
+                                                            ?.name ??
+                                                        "no developer",
+                                                    salesfcmtoken:
+                                                        salesfcmtoken!,
+                                                  ),
                                                 ),
                                           ),
                                         );

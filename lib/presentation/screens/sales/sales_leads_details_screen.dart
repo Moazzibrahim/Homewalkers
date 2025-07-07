@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable
+// ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable, avoid_print
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -63,11 +63,37 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
 
 class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   String userRole = '';
+  bool? isClearHistoryy;
+  DateTime? clearHistoryTimee;
   @override
   void initState() {
     super.initState();
     print("fcmtoken: ${widget.fcmtoken}");
     checkRoleName();
+    checkClearHistoryTime();
+    checkIsClearHistory();
+  }
+
+  Future<void> checkClearHistoryTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final time = prefs.getString('clear_history_time');
+    if (time != null) {
+      setState(() {
+        clearHistoryTimee = DateTime.tryParse(time);
+      });
+      debugPrint('آخر مرة تم فيها الضغط على Clear History: $time');
+    }
+  }
+
+  Future<void> checkIsClearHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final iscleared = prefs.getBool('clearHistory');
+    if (mounted) {
+      setState(() {
+        isClearHistoryy = iscleared;
+      });
+    }
+    debugPrint('Clear History: $iscleared');
   }
 
   Future<void> checkRoleName() async {
@@ -79,23 +105,22 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   }
 
   String _formatDate(String? dateStr) {
-  if (dateStr == null) return 'N/A';
+    if (dateStr == null) return 'N/A';
 
-  try {
-    // أول محاولة: ISO format
-    final parsed = DateTime.parse(dateStr);
-    return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
-  } catch (_) {
     try {
-      // محاولة تانية: format مثل "04/07/2025 - 10:36"
-      final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+      // أول محاولة: ISO format
+      final parsed = DateTime.parse(dateStr);
       return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
-    } catch (e) {
-      return 'Invalid Date';
+    } catch (_) {
+      try {
+        // محاولة تانية: format مثل "04/07/2025 - 10:36"
+        final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+        return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
+      } catch (e) {
+        return 'Invalid Date';
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -360,7 +385,8 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                           InfoRow(
                             icon: Icons.calendar_today,
                             label: 'Creation Date',
-  value: _formatDate(widget.leadCreationDate),                          ),
+                            value: _formatDate(widget.leadCreationDate),
+                          ),
                           InfoRow(
                             icon: Icons.link,
                             label: 'Channel',
@@ -390,64 +416,88 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                 leadComments.data!.isEmpty) {
                               return Center(child: Text('No comments found'));
                             }
-                            // استخراج أول DataItem
                             final firstItem = leadComments.data!.first;
                             final firstComment = firstItem.comments?.first;
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Last Comment",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14.sp,
-                                    color: Color(0xff6A6A75),
+                            final firstcommentdate =
+                                DateTime.tryParse(
+                                  firstComment?.firstcomment?.date.toString() ??
+                                      "",
+                                )?.toUtc();
+                            final secondcommentdate =
+                                DateTime.tryParse(
+                                  firstComment?.secondcomment?.date
+                                          .toString() ??
+                                      "",
+                                )?.toUtc();
+                            final isFirstValid =
+                                isClearHistoryy != true ||
+                                (firstcommentdate != null &&
+                                    clearHistoryTimee != null &&
+                                    firstcommentdate.isAfter(
+                                      clearHistoryTimee!,
+                                    ));
+                            final isSecondValid =
+                                isClearHistoryy != true ||
+                                (secondcommentdate != null &&
+                                    clearHistoryTimee != null &&
+                                    secondcommentdate.isAfter(
+                                      clearHistoryTimee!,
+                                    ));
+                            if ((isFirstValid &&
+                                firstComment?.firstcomment?.text != null)) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Last Comment",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14.sp,
+                                      color: Color(0xff6A6A75),
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 10.h),
-                                // First Comment Title
-                                Text(
-                                  "Comment",
-                                  style: TextStyle(
-                                    color: Constants.maincolor,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
+                                  SizedBox(height: 10.h),
+                                  Text(
+                                    "Comment",
+                                    style: TextStyle(
+                                      color: Constants.maincolor,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 7.h),
-                                // First Comment Text
-                                Text(
-                                  firstComment?.firstcomment?.text ??
-                                      'No comment available.',
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
+                                  SizedBox(height: 7.h),
+                                  Text(
+                                    firstComment?.firstcomment?.text ??
+                                        'No comment available.',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w400,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 7.h),
-                                // Second Comment Title
-                                Text(
-                                  "Action (Plan)",
-                                  style: TextStyle(
-                                    color: Constants.maincolor,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
+                                  SizedBox(height: 7.h),
+                                  Text(
+                                    "Action (Plan)",
+                                    style: TextStyle(
+                                      color: Constants.maincolor,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 7.h),
-                                // Second Comment Text
-                                Text(
-                                  firstComment?.secondcomment?.text ??
-                                      'No comment available.',
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
+                                  SizedBox(height: 7.h),
+                                  Text(
+                                    firstComment?.secondcomment?.text ??
+                                        'No comment available.',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w400,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            );
+                                ],
+                              );
+                            }
+                            return Center(child: Text('No comments found'));
                           } else {
-                            return SizedBox(); // أو Placeholder
+                            return SizedBox(); // Or a Placeholder
                           }
                         },
                       ),
@@ -505,22 +555,30 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                               ),
                             ),
                             onPressed: () {
-                             Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => BlocProvider(
-      create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService())
-        ..fetchLeadComments(widget.leedId)
-        ..fetchLeadAssignedData(widget.leedId),
-      child: SalesCommentsScreen(
-        leedId: widget.leedId,
-        fcmtoken: widget.fcmtoken,
-        leadName: widget.leadName,
-      ),
-    ),
-  ),
-);
-
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => BlocProvider(
+                                        create:
+                                            (_) =>
+                                                LeadCommentsCubit(
+                                                    GetAllLeadCommentsApiService(),
+                                                  )
+                                                  ..fetchLeadComments(
+                                                    widget.leedId,
+                                                  )
+                                                  ..fetchLeadAssignedData(
+                                                    widget.leedId,
+                                                  ),
+                                        child: SalesCommentsScreen(
+                                          leedId: widget.leedId,
+                                          fcmtoken: widget.fcmtoken,
+                                          leadName: widget.leadName,
+                                        ),
+                                      ),
+                                ),
+                              );
                             },
                             child: Text(
                               'All Comments',

@@ -45,7 +45,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   String? _selectedChannelId;
   String? _selectedCampaignId;
   String? _selectedSalesId;
-  bool isCold = true; // أو false حسب الافتراضي
+  bool isCold = false; // أو false حسب الافتراضي
   String? _fullPhoneNumber;
   String? _selectedSalesFcmToken;
 

@@ -36,7 +36,7 @@ class _UsersScreenState extends State<UsersScreen> {
           if (state is AddInMenuSuccess) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text('added successfully')));
+            ).showSnackBar(const SnackBar(content: Text('Done successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
             context.read<GetalluserssignupCubit>().fetchUsers();
           } else if (state is AddInMenuError) {
@@ -86,24 +86,27 @@ class _UsersScreenState extends State<UsersScreen> {
                                   ),
                                 ],
                                 child: AddUsersDialog(
-                                  onAdd: ({
-                                    required String name,
-                                    required String email,
-                                    required String phone,
-                                    required String password,
-                                    required String passwordConfirm,
-                                    required String role,
-                                  }) {
-                                    context.read<AddInMenuCubit>().addUsers(
-                                      name,
-                                      email,
-                                      phone,
-                                      password,
-                                      passwordConfirm,
-                                      role,
-                                    );
-                                  },
-                                ),
+  onAdd: ({
+    required String name,
+    String? imagePath, // ✅ تعديل هنا: بدل image --> imagePath
+    required String email,
+    required String phone,
+    required String password,
+    required String passwordConfirm,
+    required String role,
+  }) {
+    context.read<AddInMenuCubit>().addUsers(
+      name,
+      email,
+      phone,
+      password,
+      passwordConfirm,
+      role,
+      imagePath!, // ✅ تمرير المسار هنا
+    );
+  },
+),
+
                               ),
                         );
                       },

@@ -25,7 +25,7 @@ class UsersTrashScreen extends StatelessWidget {
           if (state is AddInMenuSuccess) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text('added successfully')));
+            ).showSnackBar(const SnackBar(content: Text('Done successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
             context.read<GetalluserssignupCubit>().fetchUsersInTrash();
           } else if (state is AddInMenuError) {
@@ -35,10 +35,10 @@ class UsersTrashScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
-        backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "users",
             onBack: () {
@@ -77,6 +77,8 @@ class UsersTrashScreen extends StatelessWidget {
                                 child: AddUsersDialog(
                                   onAdd: ({
                                     required String name,
+                                    String?
+                                    imagePath, // ✅ تعديل هنا: بدل image --> imagePath
                                     required String email,
                                     required String phone,
                                     required String password,
@@ -90,6 +92,7 @@ class UsersTrashScreen extends StatelessWidget {
                                       password,
                                       passwordConfirm,
                                       role,
+                                      imagePath!, // ✅ تمرير المسار هنا
                                     );
                                   },
                                 ),
@@ -184,14 +187,17 @@ class UsersTrashScreen extends StatelessWidget {
           _infoRow(context, Icons.email, "Email: $email"),
           const SizedBox(height: 12),
           _infoRow(context, Icons.phone, "Phone: $phone"),
-          const SizedBox(height: 12,),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-                InkWell(
+              InkWell(
                 child: Icon(
                   Icons.restore_from_trash,
-                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
                   size: 30.0,
                 ),
                 onTap: () {
@@ -202,8 +208,7 @@ class UsersTrashScreen extends StatelessWidget {
                 },
               ),
             ],
-          )
-          
+          ),
         ],
       ),
     );

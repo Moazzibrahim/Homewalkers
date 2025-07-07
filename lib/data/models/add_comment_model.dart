@@ -19,7 +19,7 @@ class CommentResponse {
 }
 
 class CommentData {
-  final List<Comment> comments;
+  final List<Comments> comments;
   final String leed;
   final String id;
   final String createdAt;
@@ -37,8 +37,8 @@ class CommentData {
 
   factory CommentData.fromJson(Map<String, dynamic> json) {
     return CommentData(
-      comments: List<Comment>.from(
-        json['Comments'].map((x) => Comment.fromJson(x)),
+      comments: List<Comments>.from(
+        json['Comments'].map((x) => Comments.fromJson(x)),
       ),
       leed: json['leed'],
       id: json['_id'],
@@ -49,7 +49,7 @@ class CommentData {
   }
 }
 
-class Comment {
+class Comments {
   final String sales;
   final CommentDetail firstComment;
   final CommentDetail secondComment;
@@ -57,7 +57,7 @@ class Comment {
   final String stageDate;
   final List<dynamic> replies;
 
-  Comment({
+  Comments({
     required this.sales,
     required this.firstComment,
     required this.secondComment,
@@ -66,8 +66,8 @@ class Comment {
     required this.replies,
   });
 
-  factory Comment.fromJson(Map<String, dynamic> json) {
-    return Comment(
+  factory Comments.fromJson(Map<String, dynamic> json) {
+    return Comments(
       sales: json['sales'],
       firstComment: CommentDetail.fromJson(json['firstcomment']),
       secondComment: CommentDetail.fromJson(json['secondcomment']),

@@ -28,7 +28,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('salesId');
   }
-  bool _isActive = false;
+  bool _isActive = true;
   DateTime? _selectedDate;
   @override
   void dispose() {

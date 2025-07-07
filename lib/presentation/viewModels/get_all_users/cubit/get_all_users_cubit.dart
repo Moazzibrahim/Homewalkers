@@ -5,17 +5,18 @@ import 'package:homewalkers_app/data/models/all_users_model.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 part 'get_all_users_state.dart';
+
 class GetAllUsersCubit extends Cubit<GetAllUsersState> {
   final GetAllUsersApiService apiService;
   AllUsersModel? _originalLeadsResponse;
-  LeadResponse? _originalLeadsResponseee; 
+  LeadResponse? _originalLeadsResponseee;
   final Map<String, int> _salesLeadCount = {};
   Map<String, int> get salesLeadCount => _salesLeadCount;
   List<String> salesNames = [];
   List<String> teamLeaderNames = [];
 
   GetAllUsersCubit(this.apiService) : super(GetAllUsersInitial());
- Future<void> fetchLeadCounts() async {
+  Future<void> fetchLeadCounts() async {
     // No need for a loading state here as it runs in the background
     try {
       final response = await apiService.getUsers();
@@ -36,15 +37,20 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
         emit(const GetAllUsersFailure('Failed to fetch lead counts.'));
       }
     } catch (e) {
-      emit(GetAllUsersFailure('An error occurred while counting leads: ${e.toString()}'));
+      emit(
+        GetAllUsersFailure(
+          'An error occurred while counting leads: ${e.toString()}',
+        ),
+      );
     }
   }
+
   Future<void> fetchAllUsers({String? stageFilter}) async {
     emit(GetAllUsersLoading());
     try {
       final response = await apiService.getUsers();
-      _originalLeadsResponse = response; 
-      
+      _originalLeadsResponse = response;
+
       if (response != null) {
         // ... (your existing logic for salesNames, teamLeaderNames etc.)
         final salesSet = <String>{};
@@ -63,7 +69,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
         }
         salesNames = salesSet.toList();
         teamLeaderNames = teamLeaderSet.toList();
-        
+
         emit(GetAllUsersSuccess(response));
       } else {
         emit(GetAllUsersFailure('Failed to fetch users.'));
@@ -73,16 +79,21 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
     }
   }
 
-Future<void> fetchLeadsInTrash() async {
-  emit(GetLeadsInTrashLoading());
-  try {
-    final leadsInTrash = await apiService.getLeadsDataInTrash();
-    _originalLeadsResponseee = leadsInTrash; // حفظ نسخة من البيانات
-    emit(GetLeadsInTrashSuccess(leadsInTrash));
-  } catch (e) {
-    emit(GetLeadsInTrashFailure(' Failed to fetch leads in trash: ${e.toString()}'));
+  Future<void> fetchLeadsInTrash() async {
+    emit(GetLeadsInTrashLoading());
+    try {
+      final leadsInTrash = await apiService.getLeadsDataInTrash();
+      _originalLeadsResponseee = leadsInTrash; // حفظ نسخة من البيانات
+      emit(GetLeadsInTrashSuccess(leadsInTrash));
+    } catch (e) {
+      emit(
+        GetLeadsInTrashFailure(
+          ' Failed to fetch leads in trash: ${e.toString()}',
+        ),
+      );
+    }
   }
-}
+
   void filterLeadsAdmin({
     String? name, // 🟡 هذا الباراميتر هو نفسه 'query' لو بحثت بالاسم فقط
     String? email,
@@ -159,7 +170,8 @@ Future<void> fetchLeadsInTrash() async {
                   communicationWay.toLowerCase());
           final matchCampaign =
               campaign == null ||
-              (lead.campaign?.campainName?.toLowerCase() == campaign.toLowerCase());
+              (lead.campaign?.campainName?.toLowerCase() ==
+                  campaign.toLowerCase());
           return matchCountry &&
               matchDev &&
               matchProject &&
@@ -191,75 +203,97 @@ Future<void> fetchLeadsInTrash() async {
     }
   }
   // ✅ الخطوة 7: تحديث دالة الفلترة
- // ✅ الكود الكامل والصحيح للدالة
-void filterLeadsAdminForAdvancedSearch({
-  String? salesId,
-  String? country,
-  String? creationDate,
-  String? fromDate,
-  String? toDate,
-  String? user,
-  String? commentDate,
-}) {
-  if (_originalLeadsResponse == null || _originalLeadsResponse!.data == null) {
-    emit(const GetAllUsersFailure("No original data to filter."));
-    return;
+  // ✅ الكود الكامل والصحيح للدالة
+  void filterLeadsAdminForAdvancedSearch({
+    String? salesId,
+    String? country,
+    String? creationDate,
+    String? fromDate,
+    String? toDate,
+    String? user,
+    String? commentDate,
+  }) {
+    if (_originalLeadsResponse == null ||
+        _originalLeadsResponse!.data == null) {
+      emit(const GetAllUsersFailure("No original data to filter."));
+      return;
+    }
+
+    List<Lead> filteredLeads = List.from(_originalLeadsResponse!.data!);
+
+    // --- التحويلات تتم مرة واحدة هنا لتجنب التكرار وتحسين الأداء ---
+    final DateTime? startDate =
+        fromDate != null ? DateTime.tryParse(fromDate) : null;
+    final DateTime? endDate = toDate != null ? DateTime.tryParse(toDate) : null;
+    final DateTime? creationDateObj =
+        creationDate != null ? DateTime.tryParse(creationDate) : null;
+    final DateTime? commentDateObj =
+        commentDate != null ? DateTime.tryParse(commentDate) : null;
+
+    filteredLeads =
+        filteredLeads.where((lead) {
+          final matchSales = salesId == null || (lead.sales?.id == salesId);
+          final matchUser =
+              user == null ||
+              (lead.addby?.name?.toLowerCase() == user.toLowerCase());
+
+          final leadPhoneCode =
+              lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
+          final matchCountry =
+              country == null || (leadPhoneCode?.startsWith(country) ?? false);
+
+          final DateTime? leadCreatedAt =
+              lead.createdAt != null
+                  ? DateTime.tryParse(lead.createdAt!)
+                  : null;
+          final DateTime? leadCommentDate =
+              lead.lastcommentdate != null
+                  ? DateTime.tryParse(lead.lastcommentdate!)
+                  : null;
+          // --- منطق مقارنة التواريخ المصحح ---
+          // 1. فلتر نطاق التاريخ (From/To)
+          final matchFromToDate =
+              (startDate == null || endDate == null)
+                  ? true // إذا كان أحد التواريخ غير موجود، تجاهل هذا الفلتر
+                  : (leadCreatedAt != null &&
+                      (leadCreatedAt.isAfter(startDate) ||
+                          leadCreatedAt.isAtSameMomentAs(startDate)) &&
+                      (leadCreatedAt.isBefore(endDate) ||
+                          leadCreatedAt.isAtSameMomentAs(endDate)));
+          // 2. فلتر تاريخ الإنشاء (يوم واحد)
+          final matchCreationDate =
+              creationDateObj == null
+                  ? true
+                  : (leadCreatedAt != null &&
+                      leadCreatedAt.isAfter(creationDateObj) &&
+                      leadCreatedAt.isBefore(
+                        creationDateObj.add(const Duration(days: 1)),
+                      )); // البحث خلال 24 ساعة من تاريخ البدء
+
+          // 3. فلتر تاريخ آخر تعليق
+          final matchCommentDate =
+              commentDateObj == null
+                  ? true
+                  : (leadCommentDate != null && 
+                      (leadCommentDate.isAtSameMomentAs(commentDateObj) ||
+                          leadCommentDate.isAfter(commentDateObj)) &&
+                      (leadCommentDate.isBefore(
+                            commentDateObj.add(const Duration(days: 1)),) ||
+                          leadCommentDate.isAtSameMomentAs(
+                            commentDateObj.add(const Duration(days: 1)),
+                          )));
+          // --- دمج كل الفلاتر ---
+          return matchSales &&
+              matchCountry &&
+              matchUser &&
+              // يتم دمج فلاتر التاريخ هنا
+              (startDate != null ? matchFromToDate : true) &&
+              (creationDateObj != null ? matchCreationDate : true) &&
+              (commentDateObj != null ? matchCommentDate : true);
+        }).toList();
+
+    emit(GetAllUsersSuccess(AllUsersModel(data: filteredLeads)));
   }
-
-  List<Lead> filteredLeads = List.from(_originalLeadsResponse!.data!);
-
-  // --- التحويلات تتم مرة واحدة هنا لتجنب التكرار وتحسين الأداء ---
-  final DateTime? startDate = fromDate != null ? DateTime.tryParse(fromDate) : null;
-  final DateTime? endDate = toDate != null ? DateTime.tryParse(toDate) : null;
-  final DateTime? creationDateObj = creationDate != null ? DateTime.tryParse(creationDate) : null;
-  final DateTime? commentDateObj = commentDate != null ? DateTime.tryParse(commentDate) : null;
-
-  filteredLeads = filteredLeads.where((lead) {
-    final matchSales = salesId == null || (lead.sales?.id == salesId);
-    final matchUser = user == null || (lead.addby?.name?.toLowerCase() == user.toLowerCase());
-
-    final leadPhoneCode = lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
-    final matchCountry = country == null || (leadPhoneCode?.startsWith(country) ?? false);
-    
-    final DateTime? leadCreatedAt = lead.createdAt != null ? DateTime.tryParse(lead.createdAt!) : null;
-    final DateTime? leadCommentDate = lead.lastcommentdate != null ? DateTime.tryParse(lead.lastcommentdate!) : null;
-
-    // --- منطق مقارنة التواريخ المصحح ---
-
-    // 1. فلتر نطاق التاريخ (From/To)
-    final matchFromToDate = (startDate == null || endDate == null)
-        ? true // إذا كان أحد التواريخ غير موجود، تجاهل هذا الفلتر
-        : (leadCreatedAt != null &&
-            (leadCreatedAt.isAfter(startDate) || leadCreatedAt.isAtSameMomentAs(startDate)) &&
-            (leadCreatedAt.isBefore(endDate) || leadCreatedAt.isAtSameMomentAs(endDate)));
-
-    // 2. فلتر تاريخ الإنشاء (يوم واحد)
-    final matchCreationDate = creationDateObj == null
-        ? true
-        : (leadCreatedAt != null &&
-            leadCreatedAt.isAfter(creationDateObj) &&
-            leadCreatedAt.isBefore(creationDateObj.add(const Duration(days: 1)))); // البحث خلال 24 ساعة من تاريخ البدء
-
-    // 3. فلتر تاريخ آخر تعليق
-    final matchCommentDate = commentDateObj == null
-        ? true
-        : (leadCommentDate != null &&
-            leadCommentDate.isAfter(commentDateObj) &&
-            leadCommentDate.isBefore(commentDateObj.add(const Duration(days: 1))));
-
-    // --- دمج كل الفلاتر ---
-    return matchSales &&
-        matchCountry &&
-        matchUser &&
-        // يتم دمج فلاتر التاريخ هنا
-        (startDate != null ? matchFromToDate : true) &&
-        (creationDateObj != null ? matchCreationDate : true) &&
-        (commentDateObj != null ? matchCommentDate : true);
-
-  }).toList();
-  
-  emit(GetAllUsersSuccess(AllUsersModel(data: filteredLeads)));
-}
 
   String? getPhoneCodeFromPhone(String phone) {
     String cleanedPhone = phone.replaceAll(RegExp(r'\D'), '');

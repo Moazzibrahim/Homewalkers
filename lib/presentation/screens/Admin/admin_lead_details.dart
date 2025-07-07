@@ -59,14 +59,10 @@ class AdminLeadDetails extends StatefulWidget {
 
 class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
   String userRole = '';
-  bool? isClearHistoryy;
-  DateTime? clearHistoryTimee;
   @override
   void initState() {
     super.initState();
     checkRoleName();
-    checkClearHistoryTime();
-    checkIsClearHistory();
   }
 
   Future<void> checkRoleName() async {
@@ -77,46 +73,23 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
     });
   }
 
-  Future<void> checkClearHistoryTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final time = prefs.getString('clear_history_time');
-    if (time != null) {
-      setState(() {
-        clearHistoryTimee = DateTime.tryParse(time);
-      });
-      debugPrint('آخر مرة تم فيها الضغط على Clear History: $time');
-    }
-  }
-
-  Future<void> checkIsClearHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final iscleared = prefs.getBool('clearHistory');
-    if (mounted) {
-      setState(() {
-        isClearHistoryy = iscleared;
-      });
-    }
-    debugPrint('Clear History: $iscleared');
-  }
-
   String _formatDate(String? dateStr) {
-  if (dateStr == null) return 'N/A';
+    if (dateStr == null) return 'N/A';
 
-  try {
-    // أول محاولة: ISO format
-    final parsed = DateTime.parse(dateStr);
-    return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
-  } catch (_) {
     try {
-      // محاولة تانية: format مثل "04/07/2025 - 10:36"
-      final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+      // أول محاولة: ISO format
+      final parsed = DateTime.parse(dateStr);
       return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
-    } catch (e) {
-      return 'Invalid Date';
+    } catch (_) {
+      try {
+        // محاولة تانية: format مثل "04/07/2025 - 10:36"
+        final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+        return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
+      } catch (e) {
+        return 'Invalid Date';
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -398,17 +371,9 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                       "",
                                 )?.toUtc();
                             final isFirstValid =
-                                isClearHistoryy != true ||
-                                (firstcommentdate != null &&
-                                    firstcommentdate.isAfter(
-                                      clearHistoryTimee!,
-                                    ));
+                                (firstcommentdate != null);
                             final isSecondValid =
-                                isClearHistoryy != true ||
-                                (secondcommentdate != null &&
-                                    secondcommentdate.isAfter(
-                                      clearHistoryTimee!,
-                                    ));
+                                (secondcommentdate != null);
                             if ((isFirstValid &&
                                 firstComment?.firstcomment?.text != null)) {
                               return Column(
@@ -521,21 +486,16 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                             ),
                             onPressed: () {
                               Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => BlocProvider(
-      create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService())
-        ..fetchLeadComments(widget.leedId)
-        ..fetchLeadAssignedData(widget.leedId),
-      child: SalesCommentsScreen(
-        leedId: widget.leedId,
-        fcmtoken: widget.salesfcmToken,
-        leadName: widget.leadName,
-      ),
-    ),
-  ),
-);
-
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => SalesCommentsScreen(
+                                        leedId: widget.leedId,
+                                        fcmtoken: widget.salesfcmToken,
+                                        leadName: widget.leadName,
+                                      ),
+                                ),
+                              );
                             },
                             child: Text(
                               'All Comments',
