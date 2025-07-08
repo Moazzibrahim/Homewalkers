@@ -39,20 +39,24 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
   final TextStyle commentTextStyle = TextStyle(fontSize: 14);
   bool? isClearHistory;
   DateTime? clearHistoryTime;
-  
+  bool isPrefsLoaded = false;
+  bool hasFetchedCommentsOnce = false;
+
   @override
   void initState() {
     super.initState();
     _initialize();
-    debugPrint('Lead ID: ${widget.leedId}');
   }
 
   Future<void> _initialize() async {
     final prefs = await SharedPreferences.getInstance();
     final role = prefs.getString('role');
-
-    if (role != "Admin") {
+    if (role != "Admin" && role != "Marketer") {
       await _loadClearHistoryStatus(prefs);
+    } else {
+      setState(() {
+        isPrefsLoaded = true;
+      });
     }
   }
 
@@ -62,10 +66,10 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
 
     if (mounted) {
       setState(() {
-        clearHistoryTime = timeString != null
-            ? DateTime.tryParse(timeString)?.toUtc()
-            : null;
+        clearHistoryTime =
+            timeString != null ? DateTime.tryParse(timeString)?.toUtc() : null;
         isClearHistory = isCleared;
+        isPrefsLoaded = true; // تم تحميل البيانات
       });
     }
 
@@ -88,11 +92,13 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create:
-              (_) =>
-                  LeadCommentsCubit(GetAllLeadCommentsApiService())
-                    ..fetchLeadComments(widget.leedId)
-                    ..fetchLeadAssignedData(widget.leedId),
+          create: (_) {
+            final cubit = LeadCommentsCubit(GetAllLeadCommentsApiService());
+            cubit.fetchLeadAssignedData(widget.leedId).then((_) {
+              cubit.fetchLeadComments(widget.leedId);
+            });
+            return cubit;
+          },
         ),
         BlocProvider(create: (_) => EditCommentCubit(EditCommentApiService())),
       ],
@@ -101,10 +107,11 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
           BlocListener<LeadCommentsCubit, LeadCommentsState>(
             listener: (context, state) {
               if (state is ReplySentSuccessfully) {
-                // ✅ إعادة جلب الكومنتات بعد إرسال الرد
-                context.read<LeadCommentsCubit>().fetchLeadComments(
-                  widget.leedId,
-                );
+                Future.delayed(Duration(milliseconds: 500), () {
+                  context.read<LeadCommentsCubit>().fetchLeadComments(
+                    widget.leedId,
+                  );
+                });
               }
             },
           ),
@@ -133,36 +140,47 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
           ),
           body: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
             builder: (context, state) {
-              if (state is LeadCommentsLoading) {
+              if (!isPrefsLoaded) {
                 return Center(child: CircularProgressIndicator());
-              } else if (state is LeadCommentsError) {
-                return Center(child: Text('Error: ////${state.message}'));
-              } else if (state is LeadCommentsLoaded) {
+              }
+
+              if (state is LeadCommentsLoading && !hasFetchedCommentsOnce) {
+                return Center(child: CircularProgressIndicator());
+              }
+
+              if (state is LeadCommentsError) {
+                return Center(child: Text('Error: ${state.message}'));
+              }
+              if (state is LeadCommentsLoaded && isPrefsLoaded) {
+                hasFetchedCommentsOnce = true;
                 final leadComments = state.leadComments;
                 final List<DataItem> filteredData =
                     leadComments.data!.where((item) {
-                      if (isClearHistory == true && clearHistoryTime != null) {
-                        final firstDate =
-                            DateTime.tryParse(
-                              item.comments?.first.firstcomment?.date
-                                      ?.toString() ??
-                                  '',
-                            )?.toUtc();
-                        final secondDate =
-                            DateTime.tryParse(
-                              item.comments?.first.secondcomment?.date
-                                      ?.toString() ??
-                                  '',
-                            )?.toUtc();
-                        final isFirstValid =
-                            firstDate != null &&
-                            firstDate.isAfter(clearHistoryTime!);
-                        final isSecondValid =
-                            secondDate != null &&
-                            secondDate.isAfter(clearHistoryTime!);
-                        return isFirstValid || isSecondValid;
-                      }
-                      return true;
+                      final firstComment = item.comments?.first.firstcomment;
+                      final secondComment = item.comments?.first.secondcomment;
+                      final firstDate =
+                          DateTime.tryParse(
+                            firstComment?.date?.toString() ?? '',
+                          )?.toUtc();
+                      final secondDate =
+                          DateTime.tryParse(
+                            secondComment?.date?.toString() ?? '',
+                          )?.toUtc();
+                      final isFirstValid =
+                          (isClearHistory == true &&
+                              firstDate != null &&
+                              clearHistoryTime != null &&
+                              firstDate.isAfter(clearHistoryTime!) &&
+                              firstComment?.text?.isNotEmpty == true) ||
+                          isClearHistory != true;
+                      final isSecondValid =
+                          (isClearHistory == true &&
+                              secondDate != null &&
+                              clearHistoryTime != null &&
+                              secondDate.isAfter(clearHistoryTime!) &&
+                              secondComment?.text?.isNotEmpty == true) ||
+                          isClearHistory != true;
+                      return isFirstValid || isSecondValid;
                     }).toList();
                 if (filteredData.isEmpty) {
                   return Center(child: Text('No comments found'));
@@ -172,13 +190,11 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                   itemCount: filteredData.length,
                   itemBuilder: (context, index) {
                     final dataItem = filteredData[index];
-                    // نقدر نبني كارت لكل DataItem ويعرض أول comment عنده
                     return buildCommentCard(context, dataItem);
                   },
                 );
-              } else {
-                return Container();
               }
+              return SizedBox.shrink();
             },
           ),
         ),
@@ -214,9 +230,6 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
         (secondDate != null &&
             clearHistoryTime != null &&
             secondDate.isAfter(clearHistoryTime!));
-
-    // لو لا يوجد ولا كومنت يظهر بعد clear history، متعرضش الكارت أصلاً
-    if (!isFirstValid && !isSecondValid) return SizedBox();
 
     String formatDate(DateTime? date) {
       if (date == null) return '';
@@ -559,7 +572,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
         ),
       );
     } else {
-      return Center(child: Text("No Comments"));
+      return SizedBox.shrink();
     }
   }
 }

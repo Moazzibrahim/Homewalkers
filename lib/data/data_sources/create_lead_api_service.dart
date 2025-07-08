@@ -45,7 +45,7 @@ class CreateLeadApiService {
       "addby": salesid,
       "updatedby": salesid,
       "campaign": campaign,
-      "lastcommentdate": currentDateTime,
+      "lastcommentdate": "_",
       "lastdateassign": currentDateTime,
       "stagedateupdated": currentDateTime,
     };

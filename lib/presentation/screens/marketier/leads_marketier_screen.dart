@@ -15,7 +15,6 @@ import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart'
 import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
-import 'package:homewalkers_app/data/models/add_comment_model.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_lead_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
@@ -68,8 +67,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
   void initState() {
     super.initState();
     _nameSearchController = TextEditingController();
-    checkClearHistoryTime();
-    checkIsClearHistory();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final stage = widget.stageName;
@@ -101,28 +98,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
       communicationWay: _selectedCommunicationWayFilter,
       campaign: _selectedCampaignFilter,
     );
-  }
-
-  Future<void> checkClearHistoryTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final time = prefs.getString('clear_history_time');
-    if (time != null) {
-      setState(() {
-        clearHistoryTimee = DateTime.tryParse(time);
-      });
-      debugPrint('آخر مرة تم فيها الضغط على Clear History: $time');
-    }
-  }
-
-  Future<void> checkIsClearHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final iscleared = prefs.getBool('clearHistory');
-    if (mounted) {
-      setState(() {
-        isClearHistoryy = iscleared;
-      });
-    }
-    debugPrint('Clear History: $iscleared');
   }
 
   String formatDateTime(String dateStr) {
@@ -1362,46 +1337,43 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                           context,
                                           MaterialPageRoute(
                                             builder:
-                                                (_) => BlocProvider(
-                                                  create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService()),
-                                                  child: MarketerLeadDetailsScreen(
-                                                    leedId: lead.id!,
-                                                    leadName: lead.name ?? '',
-                                                    leadPhone: lead.phone ?? '',
-                                                    leadEmail: lead.email ?? '',
-                                                    leadStage:
-                                                        lead.stage?.name ?? '',
-                                                    leadStageId:
-                                                        lead.stage?.id ?? '',
-                                                    leadChannel:
-                                                        lead.chanel?.name ?? '',
-                                                    leadCreationDate:
-                                                        lead.createdAt != null
-                                                            ? formatDateTime(
-                                                              lead.createdAt!,
-                                                            )
-                                                            : '',
-                                                    leadProject:
-                                                        lead.project?.name ??
-                                                        '',
-                                                    leadLastComment:
-                                                        lead.lastcommentdate ??
-                                                        '',
-                                                    leadcampaign:
-                                                        lead.campaign?.name ??
-                                                        "campaign",
-                                                    leadNotes:
-                                                        lead.notes ??
-                                                        "no notes",
-                                                    leaddeveloper:
-                                                        lead
-                                                            .project
-                                                            ?.developer
-                                                            ?.name ??
-                                                        "no developer",
-                                                    salesfcmtoken:
-                                                        salesfcmtoken!,
-                                                  ),
+                                                (_) => MarketerLeadDetailsScreen(
+                                                  leedId: lead.id!,
+                                                  leadName: lead.name ?? '',
+                                                  leadPhone: lead.phone ?? '',
+                                                  leadEmail: lead.email ?? '',
+                                                  leadStage:
+                                                      lead.stage?.name ?? '',
+                                                  leadStageId:
+                                                      lead.stage?.id ?? '',
+                                                  leadChannel:
+                                                      lead.chanel?.name ?? '',
+                                                  leadCreationDate:
+                                                      lead.createdAt != null
+                                                          ? formatDateTime(
+                                                            lead.createdAt!,
+                                                          )
+                                                          : '',
+                                                  leadProject:
+                                                      lead.project?.name ??
+                                                      '',
+                                                  leadLastComment:
+                                                      lead.lastcommentdate ??
+                                                      '',
+                                                  leadcampaign:
+                                                      lead.campaign?.name ??
+                                                      "campaign",
+                                                  leadNotes:
+                                                      lead.notes ??
+                                                      "no notes",
+                                                  leaddeveloper:
+                                                      lead
+                                                          .project
+                                                          ?.developer
+                                                          ?.name ??
+                                                      "no developer",
+                                                  salesfcmtoken:
+                                                      salesfcmtoken!,
                                                 ),
                                           ),
                                         );

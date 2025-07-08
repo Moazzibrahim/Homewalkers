@@ -234,7 +234,7 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                     },
                     builder: (context, state) {
                       return ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async{
                           final text1 = _firstCommentController.text.trim();
                           final text2 = _secondCommentController.text.trim();
                           final date = _dateController.text.trim();
@@ -252,6 +252,7 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                               userlog: userlogId!,
                               usernamelog: userlogId!,
                             );
+                            await context.read<AddCommentCubit>().editLastDateComment(widget.leadId!);
                             log("text 1: $text1, text 2: $text2, date: $date");
                           } else {
                             showDialog(

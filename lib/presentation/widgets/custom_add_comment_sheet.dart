@@ -234,16 +234,18 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                     },
                     builder: (context, state) {
                       return ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           final text1 = _firstCommentController.text.trim();
                           final text2 = _secondCommentController.text.trim();
                           final date = _dateController.text.trim();
+
                           if (salesId != null &&
                               text1.isNotEmpty &&
                               text2.isNotEmpty &&
                               date.isNotEmpty &&
                               userlogId != null) {
-                            context.read<AddCommentCubit>().addComment(
+                            // ✅ نفذ الإضافة واستنى النجاح
+                            await context.read<AddCommentCubit>().addComment(
                               sales: salesId!,
                               text1: text1,
                               text2: text2,
@@ -252,15 +254,20 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                               userlog: userlogId!,
                               usernamelog: userlogId!,
                             );
+                            // ✅ بعد ما يتم إضافة التعليق بنجاح، عدل الـ lastcommentdate
+                            await context
+                                .read<AddCommentCubit>()
+                                .editLastDateComment(widget.leadId!);
+
                             log("text 1: $text1, text 2: $text2, date: $date");
                           } else {
                             showDialog(
                               context: context,
                               builder:
                                   (context) => const AlertDialog(
-                                    title: Text("warning"),
+                                    title: Text("Warning"),
                                     content: Text(
-                                      " Please fill in all the required fields.",
+                                      "Please fill in all the required fields.",
                                     ),
                                   ),
                             );

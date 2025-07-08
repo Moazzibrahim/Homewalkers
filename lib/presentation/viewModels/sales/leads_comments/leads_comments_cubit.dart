@@ -19,7 +19,6 @@ class LeadCommentsCubit extends Cubit<LeadCommentsState> {
   }
 
   Future<void> fetchLeadAssignedData(String id) async {
-    emit(LeadCommentsLoading()); // أو تقدر تعمل حالة مخصصة لو حبيت
     try {
       final assigned = await apiService.fetchLeadAssigned(id);
       emit(LeadAssignedLoaded(assigned));
@@ -27,12 +26,11 @@ class LeadCommentsCubit extends Cubit<LeadCommentsState> {
       emit(LeadCommentsError(e.toString()));
     }
   }
-   // ✅ New function to post a reply to a comment
+  // ✅ إرسال رد من غير ما نعمل تحميل تاني
   Future<void> sendReplyToComment({
     required String commentId,
     required String replyText,
   }) async {
-    emit(LeadCommentsLoading()); // Optional: or use a separate state like ReplySending
     try {
       await apiService.postReply(
         commentId: commentId,

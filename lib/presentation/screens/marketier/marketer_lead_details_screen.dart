@@ -61,14 +61,10 @@ class MarketerLeadDetailsScreen extends StatefulWidget {
 
 class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
   String userRole = '';
-  bool? isClearHistoryy;
-  DateTime? clearHistoryTimee;
   @override
   void initState() {
     super.initState();
     checkRoleName();
-    checkClearHistoryTime();
-    checkIsClearHistory();
   }
 
   Future<void> checkRoleName() async {
@@ -78,29 +74,6 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
       userRole = role;
     });
   }
-
-  Future<void> checkClearHistoryTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final time = prefs.getString('clear_history_time');
-    if (time != null) {
-      setState(() {
-        clearHistoryTimee = DateTime.tryParse(time);
-      });
-      debugPrint('آخر مرة تم فيها الضغط على Clear History: $time');
-    }
-  }
-
-  Future<void> checkIsClearHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final iscleared = prefs.getBool('clearHistory');
-    if (mounted) {
-      setState(() {
-        isClearHistoryy = iscleared;
-      });
-    }
-    debugPrint('Clear History: $iscleared');
-  }
-
   String _formatDate(String? dateStr) {
     if (dateStr == null) return 'N/A';
 
@@ -118,7 +91,6 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
       }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     // Use MultiBlocProvider to provide all necessary cubits at the top level of this screen.
@@ -425,15 +397,8 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                           .toString() ??
                                       "",
                                 )?.toUtc();
-                                final isFirstValid = isClearHistoryy != true ||
-    (firstcommentdate != null &&
-     clearHistoryTimee != null &&
-     firstcommentdate.isAfter(clearHistoryTimee!));
-
-final isSecondValid = isClearHistoryy != true ||
-    (secondcommentdate != null &&
-     clearHistoryTimee != null &&
-     secondcommentdate.isAfter(clearHistoryTimee!));
+                            final isFirstValid = (firstcommentdate != null);
+                            final isSecondValid = (secondcommentdate != null);
                             if ((isFirstValid &&
                                 firstComment?.firstcomment?.text != null)) {
                               return Column(
@@ -551,16 +516,9 @@ final isSecondValid = isClearHistoryy != true ||
                                   builder:
                                       (context) => BlocProvider(
                                         create:
-                                            (_) =>
-                                                LeadCommentsCubit(
-                                                    GetAllLeadCommentsApiService(),
-                                                  )
-                                                  ..fetchLeadComments(
-                                                    widget.leedId,
-                                                  )
-                                                  ..fetchLeadAssignedData(
-                                                    widget.leedId,
-                                                  ),
+                                            (_) => LeadCommentsCubit(
+                                              GetAllLeadCommentsApiService(),
+                                            )..fetchLeadComments(widget.leedId),
                                         child: SalesCommentsScreen(
                                           leedId: widget.leedId,
                                           fcmtoken: widget.salesfcmtoken,
@@ -629,6 +587,7 @@ final isSecondValid = isClearHistoryy != true ||
                                           widget
                                               .salesfcmtoken, // تأكد إن الاسم متطابق مع `NotificationCubit`
                                     );
+                                    debugPrint("fcmtoken: ${widget.salesfcmtoken}");
                               }
                             },
                             child: Text(

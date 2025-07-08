@@ -254,11 +254,9 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
     }
     return null;
   }
-
-  // ✅ الكود الكامل والصحيح للدالة
   void filterLeadsMarketerForAdvancedSearch({
-    String? sales,
-    String? country,
+    String? sales, // This is the sales ID
+    String? country, // This is the country phone code (e.g., "971")
     String? creationDate,
     String? fromDate,
     String? toDate,
@@ -272,84 +270,99 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
       );
       return;
     }
+
+    emit(GetLeadsMarketerLoading()); // Show loading state during filtering
+
     List<LeadData> filteredLeads = List.from(_originalLeadsResponse!.data!);
-    // --- التحويلات تتم مرة واحدة هنا لتحسين الأداء ---
+
+    // Parse filter dates once for efficiency
     final DateTime? startDate =
-        fromDate != null ? DateTime.tryParse(fromDate) : null;
-    final DateTime? endDate = toDate != null ? DateTime.tryParse(toDate) : null;
+        fromDate != null ? DateTime.tryParse(fromDate)?.toUtc() : null;
+    final DateTime? endDate =
+        toDate != null ? DateTime.tryParse(toDate)?.toUtc() : null;
     final DateTime? creationDateObj =
-        creationDate != null ? DateTime.tryParse(creationDate) : null;
+        creationDate != null ? DateTime.tryParse(creationDate)?.toUtc() : null;
     final DateTime? commentDateObj =
-        commentDate != null ? DateTime.tryParse(commentDate) : null;
+        commentDate != null ? DateTime.tryParse(commentDate)?.toUtc() : null;
 
     filteredLeads =
         filteredLeads.where((lead) {
-          // --- الفلاتر الأخرى كما هي ---
-          final matchSales =
-              sales == null ||
-              (lead.sales?.name?.toLowerCase() == sales.toLowerCase());
+          // --- Sales Filter (by ID) ---
+          final matchSales = sales == null || lead.sales?.id == sales;
+
+          // --- Country Filter (by Phone Code) ---
+          final String? cleanedLeadPhone = lead.phone?.replaceAll(
+            RegExp(r'[^0-9]'),
+            '',
+          );
+          final matchCountry =
+              country == null ||
+              (cleanedLeadPhone?.startsWith(country) ?? false);
+
+          // --- User Filter ---
           final matchUser =
               user == null ||
               (lead.addby?.name?.toLowerCase() == user.toLowerCase());
-          final leadPhoneCode =
-              lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
-          final matchCountry =
-              country == null || (leadPhoneCode?.startsWith(country) ?? false);
-          // --- تحويل تواريخ العميل مرة واحدة ---
+
+          // --- Date Filters ---
           final DateTime? leadCreatedAt =
               lead.createdAt != null
-                  ? DateTime.tryParse(lead.createdAt!)
+                  ? DateTime.tryParse(lead.createdAt!)?.toUtc()
                   : null;
+
+          // تأكد من صلاحية lastcommentdate (غير null، غير "_"، غير فارغ)
+          final bool hasValidCommentDate =
+              lead.lastcommentdate != null &&
+              lead.lastcommentdate != "_" &&
+              lead.lastcommentdate!.isNotEmpty;
           final DateTime? leadCommentDate =
-              lead.lastcommentdate != null
-                  ? DateTime.tryParse(lead.lastcommentdate!)
+              hasValidCommentDate
+                  ? DateTime.tryParse(lead.lastcommentdate!)?.toUtc()
                   : null;
-          // --- 💡 منطق مقارنة التواريخ المصحح ---
-          // 1. فلتر نطاق التاريخ (From/To)
+
+          // تحقق من تاريخ الإنشاء بين fromDate و toDate (شامل)
           final matchFromToDate =
-              (startDate == null || endDate == null)
-                  ? true // إذا كان أحد التواريخ غير موجود، تجاهل هذا الفلتر
-                  : (leadCreatedAt != null &&
-                      (leadCreatedAt.isAfter(startDate) ||
-                          leadCreatedAt.isAtSameMomentAs(startDate)) &&
-                      (leadCreatedAt.isBefore(endDate) ||
-                          leadCreatedAt.isAtSameMomentAs(endDate)));
-          // 2. فلتر تاريخ الإنشاء (يوم واحد)
-          final matchCreationDate =
-              creationDateObj == null
+              (startDate == null || endDate == null || leadCreatedAt == null)
                   ? true
-                  : (leadCreatedAt != null &&
-                      leadCreatedAt.isAfter(creationDateObj) &&
+                  : (!leadCreatedAt.isBefore(startDate) &&
+                      !leadCreatedAt.isAfter(endDate));
+
+          // تحقق من تاريخ الإنشاء يطابق creationDate (نفس اليوم)
+          final matchCreationDate =
+              (creationDateObj == null || leadCreatedAt == null)
+                  ? true
+                  : (leadCreatedAt.isAfter(
+                        creationDateObj.subtract(
+                          const Duration(milliseconds: 1),
+                        ),
+                      ) &&
                       leadCreatedAt.isBefore(
                         creationDateObj.add(const Duration(days: 1)),
                       ));
-          // 3. فلتر تاريخ آخر تعليق
+
+          // تحقق من تاريخ التعليق يطابق commentDate (نفس اليوم)
           final matchCommentDate =
-              commentDateObj == null
+              (commentDateObj == null)
                   ? true
                   : (leadCommentDate != null &&
-                      leadCommentDate.isAfter(commentDateObj) &&
+                      leadCommentDate.isAfter(
+                        commentDateObj.subtract(
+                          const Duration(milliseconds: 1),
+                        ),
+                      ) &&
                       leadCommentDate.isBefore(
                         commentDateObj.add(const Duration(days: 1)),
                       ));
-          // --- دمج كل الفلاتر ---
-          bool isDateFilterActive =
-              startDate != null ||
-              creationDateObj != null ||
-              commentDateObj != null;
-          bool dateMatch =
-              (startDate != null ? matchFromToDate : true) &&
-              (creationDateObj != null ? matchCreationDate : true) &&
-              (commentDateObj != null ? matchCommentDate : true);
 
+          // دمج جميع شروط الفلترة
           return matchSales &&
               matchCountry &&
               matchUser &&
-              (!isDateFilterActive ||
-                  dateMatch); // طبق فلتر التاريخ فقط إذا كان نشطًا
+              matchFromToDate &&
+              matchCreationDate &&
+              matchCommentDate;
         }).toList();
 
-    // يفضل دائمًا إرسال حالة نجاح، والواجهة هي التي تقرر عرض رسالة "لا توجد نتائج"
     emit(GetLeadsMarketerSuccess(LeadResponse(data: filteredLeads)));
   }
 }

@@ -102,7 +102,7 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                 salesOnly.map((sale) {
                                   final userId = sale.id;
                                   return ListTile(
-                                    title: Text(sale.userlog!.name!),
+                                    title: Text(sale.name!),
                                     subtitle: Text(
                                       sale.userlog!.role!,
                                       style: TextStyle(color: widget.mainColor),

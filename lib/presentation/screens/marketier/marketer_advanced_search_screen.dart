@@ -2,14 +2,13 @@ import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_lead_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 
 class MarketerAdvancedSearchScreen extends StatefulWidget {
@@ -23,7 +22,10 @@ class MarketerAdvancedSearchScreen extends StatefulWidget {
 class _MarketerAdvancedSearchScreenState
     extends State<MarketerAdvancedSearchScreen> {
   String? selectedFilterType;
-  String? selectedSales;
+  // ✅  الخطوة 1: تعديل المتغيرات للتعامل مع الـ ID
+  String? selectedSalesId; // <-- بدلاً من selectedSales
+  Map<String, String> salesMap = {}; // <-- Map لتخزين (ID, Name)
+
   String? selectedCountry;
   String? selectedUser;
   final TextEditingController _dateController = TextEditingController();
@@ -40,19 +42,27 @@ class _MarketerAdvancedSearchScreenState
     'All Leads With Last Comment Date',
   ];
 
-  // ✅ الخطوة 1: إضافة دوال معالجة التاريخ الدقيقة
+  // لتحويل التاريخ إلى بداية اليوم
+  // ✅ دالة مُعدّلة: تحول التاريخ المحلي إلى بداية اليوم بالتوقيت العالمي
+  // ✅ دالة مُعدّلة: تحول التاريخ المحلي إلى بداية اليوم بالتوقيت العالمي (UTC)
   String _formatFullDate(String date) {
     try {
+      // 1. تحليل التاريخ كنص للحصول على كائن DateTime بالتوقيت المحلي
       final localDate = DateTime.parse(date);
+      // 2. تحويله إلى التوقيت العالمي المنسق (UTC) وإرجاعه كنص
       return localDate.toUtc().toIso8601String();
     } catch (e) {
+      // Fallback في حال كان التنسيق مختلفاً
       return date;
     }
   }
 
+  // ✅ دالة جديدة وأكثر دقة: تحسب نهاية اليوم المحدد وتحولها إلى UTC
   String _formatEndDate(String date) {
     try {
+      // 1. تحليل التاريخ كنص للحصول على بداية اليوم بالتوقيت المحلي
       final localDate = DateTime.parse(date);
+      // 2. حساب نهاية اليوم بإضافة يوم كامل وطرح ميلي ثانية واحدة
       final endOfDay = DateTime(
         localDate.year,
         localDate.month,
@@ -62,15 +72,12 @@ class _MarketerAdvancedSearchScreenState
         59,
         999,
       );
+      // 3. تحويل لحظة نهاية اليوم إلى التوقيت العالمي (UTC) وإرجاعها كنص
       return endOfDay.toUtc().toIso8601String();
     } catch (e) {
+      // Fallback
       return date;
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
   }
 
   @override
@@ -80,45 +87,48 @@ class _MarketerAdvancedSearchScreenState
         BlocProvider<SalesCubit>(
           create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
         ),
+        // ✅ الخطوة 2: تصحيح إنشاء الـ Cubit واستدعاء الدالة لجلب البيانات
+        BlocProvider<GetLeadsMarketerCubit>(
+          create:
+              (_) =>
+                  GetLeadsMarketerCubit(GetLeadsService())
+                    ..getLeadsByMarketer(),
+        ),
       ],
-      child: BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
-        builder: (context, leadsState) {
-          return Scaffold(
-            backgroundColor:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.backgroundlightmode
-                    : Constants.backgroundDarkmode,
-            appBar: CustomAppBar(
-              title: "Advanced Search",
-              onBack: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MarketierTabsScreen(),
-                  ),
-                );
-              },
-            ),
-            body: BlocBuilder<SalesCubit, SalesState>(
-              builder: (context, salesState) {
-                List<String> salesList = [];
-                if (salesState is SalesLoaded) {
-                  salesList =
-                      salesState.salesData.data!
-                          .map((e) => e.name ?? '')
-                          .where((name) => name.isNotEmpty)
-                          .toList();
-                }
-                return _buildBody(context, salesList);
-              },
-            ),
-          );
-        },
+      child: Scaffold(
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Constants.backgroundlightmode
+                : Constants.backgroundDarkmode,
+        appBar: CustomAppBar(
+          title: "Advanced Search",
+          onBack: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MarketierTabsScreen()),
+            );
+          },
+        ),
+        // ✅ الخطوة 3: استخدام BlocListener للاستماع لحالة SalesCubit وتعبئة الـ Map
+        body: BlocListener<SalesCubit, SalesState>(
+          listener: (context, state) {
+            if (state is SalesLoaded) {
+              setState(() {
+                salesMap = {
+                  for (var sale in state.salesData.data!)
+                    if (sale.id != null && sale.name != null)
+                      sale.id!: sale.name!,
+                };
+              });
+            }
+          },
+          child: _buildBody(context),
+        ),
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, List<String> salesOptions) {
+  Widget _buildBody(BuildContext context) {
     return BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
       builder: (context, state) {
         return SingleChildScrollView(
@@ -146,21 +156,17 @@ class _MarketerAdvancedSearchScreenState
                 onChanged: (value) {
                   setState(() {
                     selectedFilterType = value;
-                    selectedSales = null;
+                    selectedSalesId = null;
                     selectedUser = null;
                     selectedCountry = null;
                   });
                 },
               ),
               const SizedBox(height: 24),
-              // Dropdowns حسب الفلتر
+              // Conditional UI based on filter
               if (selectedFilterType == 'Sales') ...[
-                _buildDropdown(
-                  "Choose Sales",
-                  salesOptions,
-                  selectedSales,
-                  (val) => setState(() => selectedSales = val),
-                ),
+                // ✅ الخطوة 4: تعديل Dropdown الخاص بالـ Sales
+                _buildSalesDropdown("Choose Sales"),
               ] else if (selectedFilterType == 'Country') ...[
                 _buildCountryPicker("Choose Country"),
               ] else if (selectedFilterType == 'Creation Date') ...[
@@ -177,12 +183,7 @@ class _MarketerAdvancedSearchScreenState
                 _buildDatePickerField("To Date", controller: _toDateController),
               ] else if (selectedFilterType ==
                   'All Leads With Sales Between Different 2 Date') ...[
-                _buildDropdown(
-                  "Choose Sales",
-                  salesOptions,
-                  selectedSales,
-                  (val) => setState(() => selectedSales = val),
-                ),
+                _buildSalesDropdown("Choose Sales"),
                 _buildDatePickerField(
                   "From Date",
                   controller: _fromDateController,
@@ -201,6 +202,7 @@ class _MarketerAdvancedSearchScreenState
                 children: [
                   Expanded(
                     child: OutlinedButton(
+                      // ... (Cancel Button code remains the same)
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFF2B6777)),
                         shape: RoundedRectangleBorder(
@@ -208,13 +210,7 @@ class _MarketerAdvancedSearchScreenState
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed:
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MarketierTabsScreen(),
-                            ),
-                          ),
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MarketierTabsScreen())),
                       child: const Text(
                         "Cancel",
                         style: TextStyle(color: Color(0xFF2B6777)),
@@ -232,29 +228,37 @@ class _MarketerAdvancedSearchScreenState
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       onPressed: () {
-                        final cubit = context.read<GetLeadsMarketerCubit>();
-                        setState(() => _hasSearched = true); // <-- هنا
-                        cubit.filterLeadsMarketerForAdvancedSearch(
-                          sales: selectedSales,
-                          country: selectedCountry,
-                          user: selectedUser,
-                          creationDate:
-                              _dateController.text.isNotEmpty
-                                  ? _formatFullDate(_dateController.text)
-                                  : null,
-                          fromDate:
-                              _fromDateController.text.isNotEmpty
-                                  ? _formatFullDate(_fromDateController.text)
-                                  : null,
-                          toDate:
-                              _toDateController.text.isNotEmpty
-                                  ? _formatEndDate(_toDateController.text)
-                                  : null,
-                          commentDate:
-                              _commentDateController.text.isNotEmpty
-                                  ? _formatFullDate(_commentDateController.text)
-                                  : null,
-                        );
+                        setState(() => _hasSearched = true);
+                        // ✅ الخطوة 5: تمرير الـ ID بدلاً من الاسم
+                        context
+                            .read<GetLeadsMarketerCubit>()
+                            .filterLeadsMarketerForAdvancedSearch(
+                              sales: selectedSalesId, // <-- تمرير الـ ID
+                              country: selectedCountry,
+                              user: selectedUser,
+                              creationDate:
+                                  _dateController.text.isNotEmpty
+                                      ? _formatFullDate(_dateController.text)
+                                      : null,
+                              fromDate:
+                                  _fromDateController.text.isNotEmpty
+                                      ? _formatFullDate(
+                                        _fromDateController.text,
+                                      )
+                                      : null,
+                              toDate:
+                                  _toDateController.text.isNotEmpty
+                                      ? _formatEndDate(
+                                        _toDateController.text,
+                                      ) // ✅  دقيق جدًا
+                                      : null,
+                              commentDate:
+                                  _commentDateController.text.isNotEmpty
+                                      ? _formatFullDate(
+                                        _commentDateController.text,
+                                      )
+                                      : null,
+                            );
                       },
                       child: const Text(
                         "Search",
@@ -265,131 +269,46 @@ class _MarketerAdvancedSearchScreenState
                 ],
               ),
               const SizedBox(height: 40),
-              // ✅ نتائج البحث
+              // Search Results
               if (_hasSearched) ...[
-                if (state is GetLeadsMarketerLoading) ...[
-                  const Center(child: CircularProgressIndicator()),
-                ] else if (state is GetLeadsMarketerFailure) ...[
-                  Text(
-                    state.errorMessage,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ] else if (state is GetLeadsMarketerSuccess) ...[
-                  Text(
-                    "Results: ${state.leadsResponse.data!.length}",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  ...state.leadsResponse.data!.map((lead) {
-                    return Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                if (state is GetLeadsMarketerLoading)
+                  const Center(child: CircularProgressIndicator())
+                else if (state is GetLeadsMarketerFailure)
+                  Center(
+                    child: Text(
+                      state.errorMessage,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  )
+                else if (state is GetLeadsMarketerSuccess) ...[
+                  if (state.leadsResponse.data!.isEmpty)
+                    const Center(child: Text("No results found."))
+                  else ...[
+                    Text(
+                      "Results (${state.leadsResponse.data!.length}):",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.person,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    lead.name ?? "No Name",
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                Spacer(),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => BlocProvider(
-                                            create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService()),
-                                              child: MarketerLeadDetailsScreen(
-                                                leedId: lead.id!,
-                                                leadName: lead.name,
-                                                leadEmail: lead.email,
-                                                leadPhone: lead.phone,
-                                                leadStageId: lead.stage!.id!,
-                                                salesfcmtoken:
-                                                    lead
-                                                        .sales!
-                                                        .userlog!
-                                                        .fcmtokenn!,
-                                                leadStage: lead.stage!.name,
-                                                leadChannel: lead.chanel!.name!,
-                                                leadCreationDate:
-                                                    DateTime.parse(
-                                                      lead.createdAt!,
-                                                    ).toUtc().toString(),
-                                                leadLastComment:
-                                                    lead.lastcommentdate,
-                                                leadCreationTime:
-                                                    lead.createdAt,
-                                                leadNotes: lead.notes,
-                                                leadProject: lead.project!.name,
-                                                leadcampaign:
-                                                    lead.campaign!.name,
-                                                leaddeveloper:
-                                                    lead
-                                                        .project!
-                                                        .developer!
-                                                        .name,
-                                              ),
-                                            ),
-                                      ),
-                                    );
-                                  },
-                                  child: Text(
-                                    "view more",
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Constants.maincolor
-                                              : Constants.mainDarkmodecolor,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.phone,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(lead.phone ?? "No Phone"),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            if (lead.email != null) ...[
+                    ),
+                    const SizedBox(height: 16),
+                    ...state.leadsResponse.data!.map((lead) {
+                      return Card(
+                        // ... (Card UI for results remains the same)
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(
                                 children: [
                                   Icon(
-                                    Icons.email,
+                                    Icons.person,
                                     color:
                                         Theme.of(context).brightness ==
                                                 Brightness.light
@@ -397,14 +316,80 @@ class _MarketerAdvancedSearchScreenState
                                             : Constants.mainDarkmodecolor,
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(lead.email!),
+                                  Expanded(
+                                    child: Text(
+                                      lead.name ?? "No Name",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) => MarketerLeadDetailsScreen(
+                                                leedId: lead.id!,
+                                                leadName: lead.name,
+                                                leadEmail: lead.email,
+                                                leadPhone: lead.phone,
+                                                leadStageId:
+                                                    lead.stage?.id ?? '',
+                                                leadStage:
+                                                    lead.stage?.name ??
+                                                    '',
+                                                leadChannel:
+                                                    lead.chanel?.name ??
+                                                    '',
+                                                leadCreationDate:
+                                                    lead.createdAt ?? "",
+                                                leadLastComment:
+                                                    lead.lastcommentdate,
+                                                leadCreationTime:
+                                                    lead.createdAt,
+                                                leadNotes: "",
+                                                leadProject:
+                                                    lead.project?.name ??
+                                                    '',
+                                                leadcampaign:
+                                                    lead.campaign?.name ??
+                                                    '',
+                                                leaddeveloper:
+                                                    lead
+                                                        .project
+                                                        ?.developer
+                                                        ?.name ??
+                                                    '',
+                                                salesfcmtoken:
+                                                    lead
+                                                        .sales!
+                                                        .userlog!
+                                                        .fcmtokenn!,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      "view more",
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Constants.maincolor
+                                                : Constants.mainDarkmodecolor,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 8),
                               Row(
                                 children: [
                                   Icon(
-                                    Icons.chat_bubble_outline,
+                                    Icons.phone,
                                     color:
                                         Theme.of(context).brightness ==
                                                 Brightness.light
@@ -412,15 +397,48 @@ class _MarketerAdvancedSearchScreenState
                                             : Constants.mainDarkmodecolor,
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(lead.stage!.name!),
+                                  Text(lead.phone ?? "No Phone"),
                                 ],
                               ),
+                              const SizedBox(height: 8),
+                              if (lead.email != null) ...[
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.email,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(lead.email!),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                              if (lead.stage?.name != null)
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.chat_bubble_outline,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(lead.stage!.name!),
+                                  ],
+                                ),
                             ],
-                          ],
+                          ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    }),
+                  ],
                 ],
               ],
             ],
@@ -430,12 +448,8 @@ class _MarketerAdvancedSearchScreenState
     );
   }
 
-  Widget _buildDropdown(
-    String label,
-    List<String> items,
-    String? selectedValue,
-    Function(String?) onChanged,
-  ) {
+  // ✅ الخطوة 6: إنشاء دالة خاصة بـ Sales Dropdown
+  Widget _buildSalesDropdown(String label) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -446,26 +460,33 @@ class _MarketerAdvancedSearchScreenState
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           isExpanded: true,
-          value: selectedValue,
+          value: selectedSalesId,
           decoration: _dropdownDecoration(),
           hint: Text(label),
+          // عرض أسماء الموظفين
           items:
-              items
+              salesMap.entries
                   .map(
-                    (item) => DropdownMenuItem(value: item, child: Text(item)),
+                    (entry) => DropdownMenuItem(
+                      value: entry.key,
+                      child: Text(entry.value),
+                    ),
                   )
                   .toList(),
-          onChanged: onChanged,
+          // عند الاختيار، قم بتخزين الـ ID
+          onChanged: (val) => setState(() => selectedSalesId = val),
         ),
         const SizedBox(height: 24),
       ],
     );
   }
 
+  // (DatePicker and CountryPicker methods remain the same)
   Widget _buildDatePickerField(
     String label, {
     required TextEditingController controller,
   }) {
+    // ... same as your code
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -509,6 +530,7 @@ class _MarketerAdvancedSearchScreenState
   }
 
   Widget _buildCountryPicker(String label) {
+    // ... same as your code
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -519,7 +541,9 @@ class _MarketerAdvancedSearchScreenState
         const SizedBox(height: 8),
         TextFormField(
           readOnly: true,
-          controller: TextEditingController(text: selectedCountry),
+          controller: TextEditingController(
+            text: selectedCountry != null ? "+$selectedCountry" : "",
+          ),
           decoration: InputDecoration(
             hintText: "Select Country",
             contentPadding: const EdgeInsets.symmetric(
@@ -550,6 +574,7 @@ class _MarketerAdvancedSearchScreenState
   }
 
   InputDecoration _dropdownDecoration() {
+    // ... same as your code
     return InputDecoration(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(

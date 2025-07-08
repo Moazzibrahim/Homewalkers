@@ -202,6 +202,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       emit(GetAllUsersSuccess(AllUsersModel(data: filteredLeads)));
     }
   }
+
   // ✅ الخطوة 7: تحديث دالة الفلترة
   // ✅ الكود الكامل والصحيح للدالة
   void filterLeadsAdminForAdvancedSearch({
@@ -218,7 +219,6 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       emit(const GetAllUsersFailure("No original data to filter."));
       return;
     }
-
     List<Lead> filteredLeads = List.from(_originalLeadsResponse!.data!);
 
     // --- التحويلات تتم مرة واحدة هنا لتجنب التكرار وتحسين الأداء ---
@@ -236,19 +236,13 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
           final matchUser =
               user == null ||
               (lead.addby?.name?.toLowerCase() == user.toLowerCase());
-
           final leadPhoneCode =
               lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
           final matchCountry =
               country == null || (leadPhoneCode?.startsWith(country) ?? false);
-
           final DateTime? leadCreatedAt =
               lead.createdAt != null
                   ? DateTime.tryParse(lead.createdAt!)
-                  : null;
-          final DateTime? leadCommentDate =
-              lead.lastcommentdate != null
-                  ? DateTime.tryParse(lead.lastcommentdate!)
                   : null;
           // --- منطق مقارنة التواريخ المصحح ---
           // 1. فلتر نطاق التاريخ (From/To)
@@ -269,19 +263,28 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
                       leadCreatedAt.isBefore(
                         creationDateObj.add(const Duration(days: 1)),
                       )); // البحث خلال 24 ساعة من تاريخ البدء
-
           // 3. فلتر تاريخ آخر تعليق
+          final bool hasValidCommentDate =
+              lead.lastcommentdate != null &&
+              lead.lastcommentdate != "_" &&
+              lead.lastcommentdate!.isNotEmpty;
+          final DateTime? leadCommentDate =
+              hasValidCommentDate
+                  ? DateTime.tryParse(lead.lastcommentdate!)?.toUtc()
+                  : null;
+
           final matchCommentDate =
-              commentDateObj == null
+              (commentDateObj == null)
                   ? true
-                  : (leadCommentDate != null && 
-                      (leadCommentDate.isAtSameMomentAs(commentDateObj) ||
-                          leadCommentDate.isAfter(commentDateObj)) &&
-                      (leadCommentDate.isBefore(
-                            commentDateObj.add(const Duration(days: 1)),) ||
-                          leadCommentDate.isAtSameMomentAs(
-                            commentDateObj.add(const Duration(days: 1)),
-                          )));
+                  : (leadCommentDate != null &&
+                      leadCommentDate.isAfter(
+                        commentDateObj.subtract(
+                          const Duration(milliseconds: 1),
+                        ),
+                      ) &&
+                      leadCommentDate.isBefore(
+                        commentDateObj.add(const Duration(days: 1)),
+                      ));
           // --- دمج كل الفلاتر ---
           return matchSales &&
               matchCountry &&
