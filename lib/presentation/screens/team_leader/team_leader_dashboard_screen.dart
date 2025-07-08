@@ -298,9 +298,9 @@ class TeamLeaderDashboardScreen extends StatelessWidget {
       child: Container(
         height: 100,
         decoration: BoxDecoration(
-          color:
+        color:
               Theme.of(context).brightness == Brightness.light
-                  ? Color(0xffF5F8F9)
+                  ? Colors.white
                   : Color(0xff1e1e1e),
           borderRadius: BorderRadius.circular(16),
         ),

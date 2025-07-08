@@ -257,10 +257,10 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
       child: Container(
         height: 100, // الارتفاع كان مفقودًا في الكود الأصلي
         decoration: BoxDecoration(
-          color:
+        color:
               Theme.of(context).brightness == Brightness.light
-                  ? const Color(0xffF5F8F9)
-                  : const Color(0xff1e1e1e),
+                  ? Colors.white
+                  : Color(0xff1e1e1e),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(

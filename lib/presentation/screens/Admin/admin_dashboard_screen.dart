@@ -306,7 +306,10 @@ class AdminDashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           // Dynamic background color for the card
-          color: Theme.of(context).cardColor,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.white
+                  : Color(0xff1e1e1e),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(

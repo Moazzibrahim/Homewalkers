@@ -12,14 +12,12 @@ import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
-import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_lead_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
-import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
@@ -31,7 +29,6 @@ import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/lea
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/edit_lead_dialog.dart';
 // 🟡 استيراد الـ Dialog الجديد اللي هيرجع القيم
 import 'package:homewalkers_app/presentation/widgets/marketer/filter_leads_dialog.dart'; // تأكد أن المسار صحيح
 import 'package:shared_preferences/shared_preferences.dart';
@@ -1071,46 +1068,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                       ),
                                       Row(
                                         children: [
-                                          // Edit Button with logic from your new code
-                                          InkWell(
-                                            onTap: () {
-                                              showDialog(
-                                                context: context,
-                                                builder:
-                                                    (context) => BlocProvider(
-                                                      create:
-                                                          (_) => EditLeadCubit(
-                                                            EditLeadApiService(),
-                                                          ),
-                                                      child: EditLeadDialog(
-                                                        userId: lead.id!,
-                                                        initialName: lead.name,
-                                                        initialEmail:
-                                                            lead.email,
-                                                        initialPhone:
-                                                            lead.phone,
-                                                      ),
-                                                    ),
-                                              );
-                                            },
-                                            child: CircleAvatar(
-                                              radius: 18,
-                                              backgroundColor:
-                                                  Theme.of(
-                                                            context,
-                                                          ).brightness ==
-                                                          Brightness.light
-                                                      ? Constants.maincolor
-                                                      : Constants
-                                                          .mainDarkmodecolor,
-                                              child: Icon(
-                                                Icons.edit_outlined,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ), // Using a more appropriate icon for Edit
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
                                           // Copy Button with logic from your new code
                                           InkWell(
                                             onTap: () {

@@ -24,6 +24,7 @@ import 'package:homewalkers_app/presentation/screens/marketier/communication_way
 import 'package:homewalkers_app/presentation/screens/marketier/developer_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/project_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/region_screen.dart';
+import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -400,7 +401,9 @@ class AdminMenuScreen extends StatelessWidget {
                     ],
                   ),
                   const Spacer(),
-                  const Icon(Icons.notifications_none_rounded, size: 28),
+                  InkWell(child: const Icon(Icons.notifications_none_rounded, size: 28), onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SalesNotificationsScreen()));
+                  },),
                 ],
               ),
               SizedBox(height: 20.h),
