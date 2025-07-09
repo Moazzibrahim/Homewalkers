@@ -3,11 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class AddStageTypeDialog extends StatefulWidget {
-  final void Function(
-    String name,
-    String comment,
-  )?
-  onAdd;
+  final void Function(String name, String comment)? onAdd;
   final String? title;
   const AddStageTypeDialog({super.key, this.onAdd, this.title});
 
@@ -71,19 +67,21 @@ class _AddProjectDialogState extends State<AddStageTypeDialog> {
                 ],
               ),
               const SizedBox(height: 20),
-    
+
               /// Project Name
               TextField(
                 controller: _nameController,
                 decoration: _inputDecoration("stage type Name"),
               ),
               const SizedBox(height: 14),
+
               /// code
               TextField(
                 controller: _commentController,
                 decoration: _inputDecoration("comment"),
               ),
               const SizedBox(height: 24),
+
               /// Buttons
               Row(
                 children: [
@@ -91,13 +89,20 @@ class _AddProjectDialogState extends State<AddStageTypeDialog> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Constants.mainDarkmodecolor,
                         side: const BorderSide(color: Color(0xFF003D48)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
                         "Cancel",
-                        style: GoogleFonts.montserrat(
-                          color: const Color(0xFF003D48),
+                        style: TextStyle(
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Colors.black
+                                  : Colors.white,
                         ),
                       ),
                     ),
@@ -125,7 +130,12 @@ class _AddProjectDialogState extends State<AddStageTypeDialog> {
                       ),
                       child: Text(
                         "Add",
-                        style: GoogleFonts.montserrat(color: Colors.white),
+                        style: TextStyle(
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Colors.black
+                                  : Colors.white,
+                        ),
                       ),
                     ),
                   ),

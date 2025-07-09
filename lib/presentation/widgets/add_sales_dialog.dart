@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/viewModels/cities/cubit/get_cities_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users_signup/cubit/getalluserssignup_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
@@ -91,10 +92,22 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
       ),
       actions: [
         TextButton(
+          style: TextButton.styleFrom(
+          backgroundColor:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+            
+          ),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
-        ),
+          child: Text("Cancel",style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),),),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          ),
           onPressed: () {
             // تحقق من أن النموذج صالح وأن المدن والمستخدمين قد تم اختيارهم
             if (_formKey.currentState!.validate() &&
@@ -119,7 +132,7 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
               );
             }
           },
-          child: const Text("Add"),
+          child: Text("Add",style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),),
         ),
       ],
     );
@@ -191,47 +204,51 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
       },
     );
   }
-Widget _buildUser() {
-  return BlocBuilder<GetalluserssignupCubit, GetalluserssignupState>(
-    builder: (context, state) {
-      if (state is GetalluserssignupLoading) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (state is GetalluserssignupSuccess) {
-        final users = state.users.data ?? [];
 
-        return DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-            labelText: 'Users',
-            border: OutlineInputBorder(),
-          ),
-          hint: const Text('Select User'),
-          value: _selectedUserId, // أو استخدم متغير آخر حسب الدور
-          validator: (value) =>
-              value == null || value.isEmpty ? 'Please select a user' : null,
-          onChanged: (value) {
-            setState(() {
-              _selectedUserId = value; // يمكنك تغييرها حسب الاستخدام
-            });
-          },
-          items: users
-              .where((user) => user.id != null && user.name != null)
-              .map((user) {
-            return DropdownMenuItem<String>(
-              value: user.id!,
-              child: Text(user.name!),
-            );
-          }).toList(),
-        );
-      }
-      if (state is GetalluserssignupFailure) {
-        return Text("Failed to load users: ${state.message}");
-      }
-      return const Text("Loading users...");
-    },
-  );
-}
+  Widget _buildUser() {
+    return BlocBuilder<GetalluserssignupCubit, GetalluserssignupState>(
+      builder: (context, state) {
+        if (state is GetalluserssignupLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state is GetalluserssignupSuccess) {
+          final users = state.users.data ?? [];
 
+          return DropdownButtonFormField<String>(
+            decoration: const InputDecoration(
+              labelText: 'Users',
+              border: OutlineInputBorder(),
+            ),
+            hint: const Text('Select User'),
+            value: _selectedUserId, // أو استخدم متغير آخر حسب الدور
+            validator:
+                (value) =>
+                    value == null || value.isEmpty
+                        ? 'Please select a user'
+                        : null,
+            onChanged: (value) {
+              setState(() {
+                _selectedUserId = value; // يمكنك تغييرها حسب الاستخدام
+              });
+            },
+            items:
+                users.where((user) => user.id != null && user.name != null).map(
+                  (user) {
+                    return DropdownMenuItem<String>(
+                      value: user.id!,
+                      child: Text(user.name!),
+                    );
+                  },
+                ).toList(),
+          );
+        }
+        if (state is GetalluserssignupFailure) {
+          return Text("Failed to load users: ${state.message}");
+        }
+        return const Text("Loading users...");
+      },
+    );
+  }
 
   Widget _buildCityCheckboxes() {
     return BlocBuilder<GetCitiesCubit, GetCitiesState>(
@@ -274,26 +291,28 @@ Widget _buildUser() {
   }
 
   Widget _buildTextField(
-  TextEditingController controller,
-  String label, {
-  bool isRequired = true,
-}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0),
-    child: TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
+    TextEditingController controller,
+    String label, {
+    bool isRequired = true,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        validator:
+            isRequired
+                ? (value) =>
+                    value == null || value.isEmpty
+                        ? 'This field is required'
+                        : null
+                : null,
       ),
-      validator: isRequired
-          ? (value) =>
-              value == null || value.isEmpty ? 'This field is required' : null
-          : null,
-    ),
-  );
-}
-
+    );
+  }
 
   // ويدجت مساعد لإنشاء القوائم المنسدلة
   Widget _buildDropdown({

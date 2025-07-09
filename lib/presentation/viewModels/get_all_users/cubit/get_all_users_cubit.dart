@@ -1,9 +1,9 @@
 // ignore_for_file: unused_field, unnecessary_null_comparison
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:homewalkers_app/data/models/all_users_model.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
 part 'get_all_users_state.dart';
 
 class GetAllUsersCubit extends Cubit<GetAllUsersState> {
@@ -94,115 +94,217 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
     }
   }
 
+  // تم دمج فلتر 'name' مع 'query' لتبسيط المناداة على الدالة
   void filterLeadsAdmin({
-    String? name, // 🟡 هذا الباراميتر هو نفسه 'query' لو بحثت بالاسم فقط
-    String? email,
-    String? phone,
-    String? country,
-    String? developer,
-    String? project,
-    String? stage,
-    String? channel,
-    String? sales,
-    String? communicationWay,
-    String? campaign,
-    String? query, // 🟡 نص البحث العام من TextField
-  }) {
-    if (_originalLeadsResponse == null ||
-        _originalLeadsResponse!.data == null) {
-      emit(
-        const GetAllUsersFailure("No leads data available for filtering."),
-      ); // رسالة أوضح
-      return;
-    }
-    // ابدأ دائمًا من البيانات الأصلية غير المُفلترة
-    List<Lead> filteredLeads = List.from(_originalLeadsResponse!.data!);
-    // 1. تطبيق الفلترة النصية (query) أولاً
-    // هذا الـ 'query' يمثل نص البحث العام من TextField (اسم، إيميل، هاتف)
-    if (query != null && query.isNotEmpty) {
-      final q = query.toLowerCase();
-      filteredLeads =
-          filteredLeads.where((lead) {
-            final matchName = lead.name?.toLowerCase().contains(q) ?? false;
-            final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
-            final matchPhone = lead.phone?.contains(q) ?? false;
-            return matchName || matchEmail || matchPhone;
-          }).toList();
-    }
-    // 2. تطبيق الفلترة بالـ 'name' (إذا تم إرساله من الـ dialog كبحث بالاسم فقط)
-    // هذا يمكن دمجه مع الـ 'query' إذا كان البحث العام يغطي الاسم.
-    // لكن إذا كنت تريد البحث بالاسم فقط من الـ dialog بشكل منفصل عن الـ query العام:
-    if (name != null && name.isNotEmpty) {
-      final n = name.toLowerCase();
-      filteredLeads =
-          filteredLeads
-              .where((lead) => lead.name?.toLowerCase().contains(n) ?? false)
-              .toList();
-    }
-    // 3. تطبيق باقي الفلاتر بناءً على البيانات المُفلترة من الخطوات السابقة
-    filteredLeads =
-        filteredLeads.where((lead) {
-          final leadPhoneCode =
-              lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
+  String? query,
+  String? email,
+  String? phone,
+  String? country,
+  String? developer,
+  String? project,
+  String? stage,
+  String? channel,
+  String? sales,
+  String? communicationWay,
+  String? campaign,
+  String? addedBy,
+  String? assignedFrom,
+  String? assignedTo,
+  DateTime? startDate,
+  DateTime? endDate,
+  DateTime? lastStageUpdateStart,
+  DateTime? lastStageUpdateEnd,
+  DateTime? lastCommentDateStart,
+  DateTime? lastCommentDateEnd,
+  String? oldStageName,
+  DateTime? oldStageDateStart,
+  DateTime? oldStageDateEnd,
+}) {
+  DateTime getDateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
-          final matchCountry =
-              country == null ||
-              (leadPhoneCode != null && leadPhoneCode.startsWith(country));
-          final matchDev =
-              developer == null ||
-              (lead.project?.developer?.name?.toLowerCase() ==
-                  developer.toLowerCase());
-          final matchProject =
-              project == null ||
-              (lead.project?.name?.toLowerCase() == project.toLowerCase());
-          final matchChannel =
-              channel == null ||
-              (lead.chanel?.name?.toLowerCase() == channel.toLowerCase());
-          final matchStage =
-              stage == null ||
-              (lead.stage?.name?.toLowerCase() == stage.toLowerCase());
-          final matchSales =
-              sales == null ||
-              (lead.sales?.name?.toLowerCase() == sales.toLowerCase());
-          final matchCommunicationWay =
-              communicationWay == null ||
-              (lead.communicationway?.name?.toLowerCase() ==
-                  communicationWay.toLowerCase());
-          final matchCampaign =
-              campaign == null ||
-              (lead.campaign?.campainName?.toLowerCase() ==
-                  campaign.toLowerCase());
-          return matchCountry &&
-              matchDev &&
-              matchProject &&
-              matchStage &&
-              matchChannel &&
-              matchSales &&
-              matchCommunicationWay &&
-              matchCampaign;
-        }).toList();
-    if (filteredLeads.isEmpty &&
-        ((query != null && query.isNotEmpty) ||
-            (name != null && name.isNotEmpty) || // إذا كان name منفصل عن query
-            country != null ||
-            developer != null ||
-            project != null ||
-            stage != null ||
-            channel != null ||
-            sales != null ||
-            communicationWay != null ||
-            campaign != null)) {
-      emit(
-        const GetAllUsersFailure("No leads found matching your criteria."),
-      ); // رسالة أوضح
-    } else if (filteredLeads.isEmpty) {
-      // إذا كانت القائمة فارغة ولكن لا توجد فلاتر مطبقة، فهذا يعني لا توجد بيانات من الأساس
-      emit(const GetAllUsersFailure("No leads found."));
-    } else {
-      emit(GetAllUsersSuccess(AllUsersModel(data: filteredLeads)));
+  DateTime? parseNullableDate(String? dateStr) {
+    if (dateStr == null) return null;
+    final trimmed = dateStr.trim();
+    if (trimmed.isEmpty || trimmed == '-') return null;
+    DateTime? parsedDate = DateTime.tryParse(trimmed);
+    if (parsedDate == null) {
+      try {
+        parsedDate = DateTime.parse(trimmed);
+      } catch (e) {
+        return null;
+      }
     }
+    return parsedDate;
   }
 
+  if (_originalLeadsResponse?.data == null) {
+    emit(const GetAllUsersFailure("No leads data available for filtering."));
+    return;
+  }
+
+  List<Lead> filteredLeads = List.from(_originalLeadsResponse!.data!);
+
+  // General query filter
+  if (query != null && query.isNotEmpty) {
+    final q = query.toLowerCase();
+    filteredLeads = filteredLeads.where((lead) {
+      final matchName = lead.name?.toLowerCase().contains(q) ?? false;
+      final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
+      final matchPhone = lead.phone?.contains(q) ?? false;
+      return matchName || matchEmail || matchPhone;
+    }).toList();
+  }
+
+  // Detailed filters
+  filteredLeads = filteredLeads.where((lead) {
+    final matchCountry = country == null ||
+        (lead.phone != null && lead.phone!.startsWith(country));
+    final matchDev = developer == null ||
+        (lead.project?.developer?.name?.toLowerCase() == developer.toLowerCase());
+    final matchProject = project == null ||
+        (lead.project?.name?.toLowerCase() == project.toLowerCase());
+    final matchStage = stage == null ||
+        (lead.stage?.name?.toLowerCase() == stage.toLowerCase());
+    final matchChannel = channel == null ||
+        (lead.chanel?.name?.toLowerCase() == channel.toLowerCase());
+    final matchSales = sales == null ||
+        (lead.sales?.name?.toLowerCase() == sales.toLowerCase());
+    final matchCommunicationWay = communicationWay == null ||
+        (lead.communicationway?.name?.toLowerCase() ==
+            communicationWay.toLowerCase());
+    final matchCampaign = campaign == null ||
+        (lead.campaign?.campainName?.toLowerCase() == campaign.toLowerCase());
+    final matchAddedBy = addedBy == null ||
+        (lead.addby?.name?.toLowerCase() == addedBy.toLowerCase());
+    final matchAssignedFrom = assignedFrom == null ||
+        (lead.leadAssigns?.any((a) =>
+            a.assignedFrom?.name?.toLowerCase() ==
+            assignedFrom.toLowerCase()) ??
+        false);
+    final matchAssignedTo = assignedTo == null ||
+        (lead.leadAssigns?.any((a) =>
+            a.assignedTo?.name?.toLowerCase() ==
+            assignedTo.toLowerCase()) ??
+        false);
+
+    final matchOldStage = oldStageName == null ||
+        (lead.leadStages?.any((s) =>
+            s.stage?.name?.toLowerCase() == oldStageName.toLowerCase()) ??
+        false);
+
+    final matchOldStageDate = (oldStageDateStart == null && oldStageDateEnd == null) ||
+    (lead.leadStages?.any((s) {
+      final oldStageNameMatch = oldStageName == null ||
+          (s.stage?.name?.toLowerCase() == oldStageName.toLowerCase());
+
+      final createdAtDate = parseNullableDate(s.createdAt) ??
+          parseNullableDate(s.dateselectedforstage);
+
+      // If no date is available for this stage history, it cannot match.
+      if (createdAtDate == null) return false;
+
+      // Normalize dates to compare days only.
+      final createdAtOnly = getDateOnly(createdAtDate);
+      final oldStageStartOnly =
+          oldStageDateStart != null ? getDateOnly(oldStageDateStart) : null;
+      final oldStageEndOnly =
+          oldStageDateEnd != null ? getDateOnly(oldStageDateEnd) : null;
+
+      // Correctly check if the date is within the specified range (inclusive).
+      final matchRange =
+          (oldStageStartOnly == null || !createdAtOnly.isBefore(oldStageStartOnly)) &&
+          (oldStageEndOnly == null || !createdAtOnly.isAfter(oldStageEndOnly));
+
+      // A match requires both the stage name (if provided) and the date range to be valid.
+      return oldStageNameMatch && matchRange;
+    }) ??
+    false);
+
+    final recordDate = parseNullableDate(lead.date);
+    final recordDateOnly = recordDate != null ? getDateOnly(recordDate) : null;
+    final startDateOnly = startDate != null ? getDateOnly(startDate) : null;
+    final endDateOnly = endDate != null ? getDateOnly(endDate) : null;
+
+    final matchDateRange = (startDate == null && endDate == null) ||
+        (recordDateOnly != null &&
+            (startDateOnly == null || !recordDateOnly.isBefore(startDateOnly)) &&
+            (endDateOnly == null || !recordDateOnly.isAfter(endDateOnly)));
+
+    final lastStageUpdated = parseNullableDate(lead.lastStageDateUpdated);
+    final lastStageUpdatedOnly = lastStageUpdated != null
+        ? getDateOnly(lastStageUpdated)
+        : null;
+    final lastStageUpdateStartOnly = lastStageUpdateStart != null
+        ? getDateOnly(lastStageUpdateStart)
+        : null;
+    final lastStageUpdateEndOnly = lastStageUpdateEnd != null
+        ? getDateOnly(lastStageUpdateEnd)
+        : null;
+
+    final matchLastStageUpdated = (lastStageUpdateStart == null && lastStageUpdateEnd == null) ||
+        (lastStageUpdatedOnly != null &&
+            (lastStageUpdateStartOnly == null ||
+                !lastStageUpdatedOnly.isBefore(lastStageUpdateStartOnly)) &&
+            (lastStageUpdateEndOnly == null ||
+                !lastStageUpdatedOnly.isAfter(lastStageUpdateEndOnly)));
+
+    final lastCommentDate = parseNullableDate(lead.lastcommentdate);
+    final lastCommentDateOnly = lastCommentDate != null
+        ? getDateOnly(lastCommentDate)
+        : null;
+    final lastCommentDateStartOnly = lastCommentDateStart != null
+        ? getDateOnly(lastCommentDateStart)
+        : null;
+    final lastCommentDateEndOnly = lastCommentDateEnd != null
+        ? getDateOnly(lastCommentDateEnd)
+        : null;
+
+    final matchLastCommentDate = (lastCommentDateStart == null && lastCommentDateEnd == null) ||
+        (lastCommentDateOnly != null &&
+            (lastCommentDateStartOnly == null ||
+                !lastCommentDateOnly.isBefore(lastCommentDateStartOnly)) &&
+            (lastCommentDateEndOnly == null ||
+                !lastCommentDateOnly.isAfter(lastCommentDateEndOnly)));
+
+    return matchCountry &&
+        matchDev &&
+        matchProject &&
+        matchStage &&
+        matchChannel &&
+        matchSales &&
+        matchCommunicationWay &&
+        matchCampaign &&
+        matchAddedBy &&
+        matchAssignedFrom &&
+        matchAssignedTo &&
+        matchDateRange &&
+        matchLastStageUpdated &&
+        matchLastCommentDate &&
+        matchOldStage &&
+        matchOldStageDate;
+  }).toList();
+
+  final bool hasActiveFilters =
+      query?.isNotEmpty == true ||
+      country != null ||
+      developer != null ||
+      project != null ||
+      stage != null ||
+      channel != null ||
+      sales != null ||
+      communicationWay != null ||
+      campaign != null;
+
+  if (filteredLeads.isEmpty) {
+    if (hasActiveFilters) {
+      emit(const GetAllUsersFailure("No leads found matching your criteria."));
+    } else {
+      emit(const GetAllUsersFailure("No leads found."));
+    }
+  } else {
+    emit(GetAllUsersSuccess(AllUsersModel(data: filteredLeads)));
+  }
+}
   // ✅ الخطوة 7: تحديث دالة الفلترة
   // ✅ الكود الكامل والصحيح للدالة
   void filterLeadsAdminForAdvancedSearch({
@@ -229,7 +331,6 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
         creationDate != null ? DateTime.tryParse(creationDate) : null;
     final DateTime? commentDateObj =
         commentDate != null ? DateTime.tryParse(commentDate) : null;
-
     filteredLeads =
         filteredLeads.where((lead) {
           final matchSales = salesId == null || (lead.sales?.id == salesId);
@@ -272,7 +373,6 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
               hasValidCommentDate
                   ? DateTime.tryParse(lead.lastcommentdate!)?.toUtc()
                   : null;
-
           final matchCommentDate =
               (commentDateObj == null)
                   ? true
@@ -307,17 +407,6 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       if (cleanedPhone.startsWith('20')) return '20'; // Egypt
       if (cleanedPhone.startsWith('966')) return '966'; // Saudi Arabia
       if (cleanedPhone.startsWith('971')) return '971'; // UAE
-      // أضف المزيد من أكواد الدول حسب حاجتك
-      // أو يمكنك البحث عن الكود في قائمة البلدان المتاحة (selectedCountry?.phoneCode)
-      // أفضل حل هو مقارنة الكود بالبداية وليس البحث في cleanedPhone كله
-      // مثلاً: لو Country Picker بيرجع "20"
-      // يبقى لو رقم التليفون +201012345678 يبقى check lead.phone.startsWith('+'+countryCode)
-      // لو الـ selectedCountry.phoneCode هو String، يبقى لازم تقارنه String.
-
-      // هنا أفضل طريقة:
-      // return cleanedPhone.substring(0, cleanedPhone.length > 4 ? 4 : cleanedPhone.length);
-      // دي ممكن ترجع جزء من الرقم مش كود الدولة بالظبط
-      // الأفضل هي الطريقة اللي كنت كاتبها في LeadsMarketierScreen
     }
     return null;
   }

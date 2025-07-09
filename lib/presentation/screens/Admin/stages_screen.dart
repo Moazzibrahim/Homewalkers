@@ -105,7 +105,10 @@ class _StagesScreenState extends State<StagesScreen>
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Constants.maincolor,
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Constants.mainDarkmodecolor,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),

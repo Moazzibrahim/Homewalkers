@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'dart:io';
 
 import 'package:image_picker/image_picker.dart';
@@ -12,7 +13,8 @@ class AddUsersDialog extends StatefulWidget {
     required String passwordConfirm,
     required String role,
     String? imagePath, // 👈 تم إضافته
-  }) onAdd;
+  })
+  onAdd;
 
   const AddUsersDialog({super.key, required this.onAdd});
 
@@ -26,14 +28,18 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   String _selectedRole = 'Admin';
   String? _selectedImagePath; // 👈 مسار الصورة
 
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage(ImageSource source) async {
-    final pickedFile = await _picker.pickImage(source: source, imageQuality: 70);
+    final pickedFile = await _picker.pickImage(
+      source: source,
+      imageQuality: 70,
+    );
     if (pickedFile != null) {
       setState(() {
         _selectedImagePath = pickedFile.path;
@@ -55,7 +61,11 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
               _buildTextField(_emailController, 'Email'),
               _buildTextField(_phoneController, 'Phone'),
               _buildTextField(_passwordController, 'Password', obscure: true),
-              _buildTextField(_confirmPasswordController, 'Confirm Password', obscure: true),
+              _buildTextField(
+                _confirmPasswordController,
+                'Confirm Password',
+                obscure: true,
+              ),
               _buildRoleDropdown(),
               const SizedBox(height: 10),
               _buildImagePickerSection(),
@@ -65,10 +75,21 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
       ),
       actions: [
         TextButton(
+          style: TextButton.styleFrom(
+              backgroundColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.maincolor
+                        : Constants.mainDarkmodecolor,),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          child:  Text("Cancel",style: TextStyle( color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),),
         ),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.maincolor
+                        : Constants.mainDarkmodecolor,
+              ),
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               widget.onAdd(
@@ -83,13 +104,17 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
               Navigator.of(context).pop();
             }
           },
-          child: const Text("Add"),
+          child:  Text("Add",style: TextStyle(color:  Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),),
         ),
       ],
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, {bool obscure = false}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label, {
+    bool obscure = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
@@ -119,12 +144,10 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
           labelText: 'Role',
           border: OutlineInputBorder(),
         ),
-        items: roles.map((role) {
-          return DropdownMenuItem(
-            value: role,
-            child: Text(role),
-          );
-        }).toList(),
+        items:
+            roles.map((role) {
+              return DropdownMenuItem(value: role, child: Text(role));
+            }).toList(),
         onChanged: (value) {
           if (value != null) {
             setState(() {
@@ -140,19 +163,35 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Upload Profile Image", style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text(
+          "Upload Profile Image",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
         Row(
           children: [
             ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.maincolor
+                        : Constants.mainDarkmodecolor,
+              ),
               onPressed: () => _pickImage(ImageSource.gallery),
-              icon: const Icon(Icons.photo),
-              label: const Text("Gallery",style: TextStyle(fontSize: 10),),),
+              icon:   Icon(Icons.photo,color:  Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
+              label:  Text("Gallery", style: TextStyle(fontSize: 10 ,color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white)),
+            ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.maincolor
+                        : Constants.mainDarkmodecolor,
+              ),
               onPressed: () => _pickImage(ImageSource.camera),
-              icon: const Icon(Icons.camera_alt),
-              label: const Text("Camera",style: TextStyle(fontSize: 10),),
+              icon:  Icon(Icons.camera_alt,color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
+              label: Text("Camera", style: TextStyle(fontSize: 10,color:  Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white)),
             ),
           ],
         ),

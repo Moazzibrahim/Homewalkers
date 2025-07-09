@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_users_for_signup_api_service.dart';
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/get_all_users_signup/cubit/getalluserssignup_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
@@ -107,6 +109,7 @@ class MyApp extends StatelessWidget {
           create: (_) => GetLeadsMarketerCubit(GetLeadsService())..getLeadsByMarketer(),
         ),
         BlocProvider(create: (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchAllUsers()..fetchLeadsInTrash()),
+        BlocProvider(create: (_) => GetalluserssignupCubit( GetAllUsersForSignupApiService())..fetchUsers()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {

@@ -6,7 +6,7 @@ class AddDialog extends StatefulWidget {
   final void Function(String)? onAdd;
   final String? title;
 
-  const AddDialog({super.key, this.onAdd,this.title});
+  const AddDialog({super.key, this.onAdd, this.title});
 
   @override
   State<AddDialog> createState() => _NewCommunicationDialogState();
@@ -17,7 +17,16 @@ class _NewCommunicationDialogState extends State<AddDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor = isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+    final textColor = isLight ? Colors.black : Colors.white;
+    final backgroundColor = isLight ? Colors.white : const Color(0xFF1E1E1E);
+    final hintTextColor = isLight ? Colors.grey : Colors.grey[400];
+    final borderColor = mainColor;
+    final cancelTextColor = isLight ? const Color(0xFF003D48) : Colors.grey[300];
+
     return Dialog(
+      backgroundColor: backgroundColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -29,9 +38,7 @@ class _NewCommunicationDialogState extends State<AddDialog> {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor:  Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
+                  backgroundColor: mainColor,
                   child: Image.asset("assets/images/Vector.png"),
                 ),
                 const SizedBox(width: 10),
@@ -41,13 +48,13 @@ class _NewCommunicationDialogState extends State<AddDialog> {
                     style: GoogleFonts.montserrat(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Colors.black,
+                      color: textColor,
                     ),
                   ),
                 ),
                 GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
-                  child: const Icon(Icons.close, color: Colors.black),
+                  child: Icon(Icons.close, color: textColor),
                 ),
               ],
             ),
@@ -55,12 +62,22 @@ class _NewCommunicationDialogState extends State<AddDialog> {
             // Input Field
             TextField(
               controller: _controller,
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 hintText: "${widget.title} Name",
-                hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+                hintStyle: GoogleFonts.montserrat(color: hintTextColor),
                 contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: mainColor, width: 2),
                 ),
               ),
             ),
@@ -72,10 +89,13 @@ class _NewCommunicationDialogState extends State<AddDialog> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF003D48)),
+                      side: BorderSide(color: mainColor),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text("Cancel", style: GoogleFonts.montserrat(color: Color(0xFF003D48))),
+                    child: Text(
+                      "Cancel",
+                      style: GoogleFonts.montserrat(color: cancelTextColor),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -88,12 +108,13 @@ class _NewCommunicationDialogState extends State<AddDialog> {
                       Navigator.of(context).pop();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:  Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
+                      backgroundColor: mainColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text("Add", style: GoogleFonts.montserrat(color: Colors.white)),
+                    child: Text(
+                      "Add",
+                      style: GoogleFonts.montserrat(color: Colors.white),
+                    ),
                   ),
                 ),
               ],

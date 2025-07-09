@@ -57,6 +57,19 @@ class _FilterDialogState extends State<FilterDialog> {
   String? _selectedCommunicationWay;
   String? _selectedCampaign;
   String? _selectedSales;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  DateTime? _lastStageUpdateStart;
+  DateTime? _lastStageUpdateEnd;
+  DateTime? _lastCommentDateStart;
+  DateTime? _lastCommentDateEnd;
+
+  String? _selectedAddedBy;
+  String? _selectedAssignedFrom;
+  String? _selectedAssignedTo;
+  String? _selectedOldStage;
+  DateTime? _oldStageStartDate;
+  DateTime? _oldStageEndDate;
 
   @override
   void initState() {
@@ -81,6 +94,58 @@ class _FilterDialogState extends State<FilterDialog> {
   void dispose() {
     _nameController.dispose(); // 🟡 مهم: التخلص من الـ controller
     super.dispose();
+  }
+
+  Widget buildDateField(
+    String label,
+    DateTime? value,
+    Function(DateTime) onDatePicked,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: GestureDetector(
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: value ?? DateTime.now(),
+            firstDate: DateTime(2000),
+            lastDate: DateTime.now().add(const Duration(days: 365)),
+          );
+          if (picked != null) onDatePicked(picked);
+        },
+        child: InputDecorator(
+          decoration: InputDecoration(
+            hintText: label,
+            hintStyle: const TextStyle(
+              fontSize: 14,
+              color: Color.fromRGBO(143, 146, 146, 1),
+              fontWeight: FontWeight.w400,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xffE1E1E1)),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 16,
+            ),
+            suffixIcon: const Icon(Icons.calendar_today, size: 20),
+          ),
+          child: Text(
+            value != null ? "${value.toLocal()}".split(' ')[0] : label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? const Color(0xff080719)
+                      : const Color(0xffFFFFFF),
+              fontFamily: 'Montserrat',
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -126,7 +191,7 @@ class _FilterDialogState extends State<FilterDialog> {
                 controller: _nameController,
               ),
               const SizedBox(height: 12),
-               GestureDetector(
+              GestureDetector(
                 onTap: () {
                   showCountryPicker(
                     context: context,
@@ -180,7 +245,9 @@ class _FilterDialogState extends State<FilterDialog> {
                     final filteredSales =
                         state.salesData.data?.where((sales) {
                           final role = sales.userlog?.role?.toLowerCase();
-                          return role == 'sales' || role == 'team leader'|| role == 'manager';
+                          return role == 'sales' ||
+                              role == 'team leader' ||
+                              role == 'manager';
                         }).toList() ??
                         [];
                     return CustomDropdownField(
@@ -363,6 +430,94 @@ class _FilterDialogState extends State<FilterDialog> {
                   }
                 },
               ),
+              const SizedBox(height: 12),
+              buildDateField(" Stage Date (Start)", _oldStageStartDate, (
+                picked,
+              ) {
+                setState(() => _oldStageStartDate = picked);
+              }),
+              const SizedBox(height: 14),
+              buildDateField(" Stage Date (End)", _oldStageEndDate, (
+                picked,
+              ) {
+                setState(() => _oldStageEndDate = picked);
+              }),
+              const SizedBox(height: 12),
+              BlocBuilder<SalesCubit, SalesState>(
+                builder: (context, state) {
+                  if (state is SalesLoaded) {
+                    final users = state.salesData.data ?? [];
+                    return Column(
+                      children: [
+                        CustomDropdownField(
+                          hint: "Choose Added By",
+                          items:
+                              users.map((e) => e.userlog?.name ?? '').toList(),
+                          value: _selectedAddedBy,
+                          onChanged:
+                              (val) => setState(() => _selectedAddedBy = val),
+                        ),
+                        const SizedBox(height: 12),
+                        CustomDropdownField(
+                          hint: "Choose Assigned From",
+                          items:
+                              users.map((e) => e.userlog?.name ?? '').toList(),
+                          value: _selectedAssignedFrom,
+                          onChanged:
+                              (val) =>
+                                  setState(() => _selectedAssignedFrom = val),
+                        ),
+                        const SizedBox(height: 12),
+                        CustomDropdownField(
+                          hint: "Choose Assigned To",
+                          items: users.map((e) => e.name ?? '').toList(),
+                          value: _selectedAssignedTo,
+                          onChanged:
+                              (val) =>
+                                  setState(() => _selectedAssignedTo = val),
+                        ),
+                      ],
+                    );
+                  }
+                  return const SizedBox();
+                },
+              ),
+              const SizedBox(height: 14),
+              buildDateField("creation Date (start)", _startDate, (picked) {
+                setState(() => _startDate = picked);
+              }),
+              const SizedBox(height: 12),
+              buildDateField(" creation Date (end)", _endDate, (picked) {
+                setState(() => _endDate = picked);
+              }),
+              const SizedBox(height: 14),
+              buildDateField(
+                "Last Stage Update (Start)",
+                _lastStageUpdateStart,
+                (picked) {
+                  setState(() => _lastStageUpdateStart = picked);
+                },
+              ),
+              const SizedBox(height: 14),
+              buildDateField("Last Stage Update (End)", _lastStageUpdateEnd, (
+                picked,
+              ) {
+                setState(() => _lastStageUpdateEnd = picked);
+              }),
+              const SizedBox(height: 14),
+              buildDateField(
+                "Last Comment Date (Start)",
+                _lastCommentDateStart,
+                (picked) {
+                  setState(() => _lastCommentDateStart = picked);
+                },
+              ),
+              const SizedBox(height: 14),
+              buildDateField("Last Comment Date (End)", _lastCommentDateEnd, (
+                picked,
+              ) {
+                setState(() => _lastCommentDateEnd = picked);
+              }),
               const SizedBox(height: 20),
               Row(
                 children: [
@@ -395,15 +550,30 @@ class _FilterDialogState extends State<FilterDialog> {
                         });
                         // 🟡 عند الـ Reset، نرجع قيم فارغة (أو null) للشاشة الرئيسية ونقفل الـ Dialog
                         Navigator.pop(context, {
-                          'name': null,
-                          'country': null,
-                          'developer': null,
-                          'project': null,
-                          'stage': null,
-                          'channel': null,
-                          'sales': null,
-                          'communicationWay': null,
-                          'campaign': null,
+                          'name':
+                              _nameController.text.trim().isEmpty
+                                  ? null
+                                  : _nameController.text.trim(),
+                          'country': _selectedCountry,
+                          'developer': _selectedDeveloper,
+                          'project': _selectedProject,
+                          'stage': _selectedStage,
+                          'channel': _selectedChannel,
+                          'sales': _selectedSales,
+                          'communicationWay': _selectedCommunicationWay,
+                          'campaign': _selectedCampaign,
+                          'addedBy': _selectedAddedBy,
+                          'assignedFrom': _selectedAssignedFrom,
+                          'assignedTo': _selectedAssignedTo,
+                          'startDate': _startDate,
+                          'endDate': _endDate,
+                          'lastStageUpdateStart': _lastStageUpdateStart,
+                          'lastStageUpdateEnd': _lastStageUpdateEnd,
+                          'lastCommentDateStart': _lastCommentDateStart,
+                          'lastCommentDateEnd': _lastCommentDateEnd,
+                          'oldStageName': _selectedOldStage,
+                          'oldStageDateStart': _oldStageStartDate,
+                          'oldStageDateEnd': _oldStageEndDate,
                         });
                       },
                       child: const Text(
@@ -420,6 +590,68 @@ class _FilterDialogState extends State<FilterDialog> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
+                        bool isValidDateRange(DateTime? start, DateTime? end) {
+                          return (start == null && end == null) ||
+                              (start != null && end != null);
+                        }
+
+                        // ✅ دالة إظهار التنبيه
+                        Future<void> showValidationDialog(
+                          String message,
+                        ) async {
+                          return showDialog(
+                            context: context,
+                            builder:
+                                (_) => AlertDialog(
+                                  title: const Text("Incomplete Date Range"),
+                                  content: Text(message),
+                                  actions: [
+                                    TextButton(
+                                      onPressed:
+                                          () => Navigator.of(context).pop(),
+                                      child: const Text("OK"),
+                                    ),
+                                  ],
+                                ),
+                          );
+                        }
+
+                        // ✅ التحقق من التواريخ
+                        if (!isValidDateRange(_startDate, _endDate)) {
+                          showValidationDialog(
+                            "Please select both start and end date for creation date.",
+                          );
+                          return;
+                        }
+
+                        if (!isValidDateRange(
+                          _lastStageUpdateStart,
+                          _lastStageUpdateEnd,
+                        )) {
+                          showValidationDialog(
+                            "Please select both start and end date for last stage update.",
+                          );
+                          return;
+                        }
+
+                        if (!isValidDateRange(
+                          _lastCommentDateStart,
+                          _lastCommentDateEnd,
+                        )) {
+                          showValidationDialog(
+                            "Please select both start and end date for last comment date.",
+                          );
+                          return;
+                        }
+                        if (!isValidDateRange(
+                          _oldStageStartDate,
+                          _oldStageEndDate,
+                        )) {
+                          showValidationDialog(
+                            "Please select both start and end date for old stage date.",
+                          );
+                          return;
+                        }
                         // 🟡 عند الـ Apply، نرجع كل قيم الفلاتر المختارة
                         Navigator.pop(context, {
                           'name':
@@ -434,6 +666,18 @@ class _FilterDialogState extends State<FilterDialog> {
                           'sales': _selectedSales,
                           'communicationWay': _selectedCommunicationWay,
                           'campaign': _selectedCampaign,
+                          'addedBy': _selectedAddedBy,
+                          'assignedFrom': _selectedAssignedFrom,
+                          'assignedTo': _selectedAssignedTo,
+                          'oldStageName': _selectedOldStage,
+                          'startDate': _startDate,
+                          'endDate': _endDate,
+                          'lastStageUpdateStart': _lastStageUpdateStart,
+                          'lastStageUpdateEnd': _lastStageUpdateEnd,
+                          'lastCommentDateStart': _lastCommentDateStart,
+                          'lastCommentDateEnd': _lastCommentDateEnd,
+                          'oldStageDateStart': _oldStageStartDate,
+                          'oldStageDateEnd': _oldStageEndDate,
                         });
                         // ❌ لا تستدعي filterLeadsMarketer هنا. الشاشة الرئيسية هي اللي هتستدعيها.
                         // context.read<GetLeadsMarketerCubit>().filterLeadsMarketer(...)

@@ -2,13 +2,12 @@
 
 import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/data/models/all_users_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
 import 'package:http/http.dart' as http;
 
 class GetAllUsersApiService {
-  static const String _baseUrl = '${Constants.baseUrl}/users?leadisactive=true';
-
+  static const String _baseUrl = '${Constants.baseUrl}/users/leads-with-stages';
   Future<AllUsersModel?> getUsers() async {
     try {
       final response = await http.get(Uri.parse(_baseUrl));

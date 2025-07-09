@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/stage_types/cubit/get_stage_types_cubit.dart';
 
@@ -87,10 +88,20 @@ class _AddStageDialogState extends State<AddStageDialog> {
       ),
       actions: [
         TextButton(
+          style: TextButton.styleFrom( backgroundColor:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          ),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
+          child: Text("Cancel",style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white)),
         ),
         ElevatedButton(
+                style: TextButton.styleFrom( backgroundColor:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          ),
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               widget.onAdd(
@@ -101,7 +112,7 @@ class _AddStageDialogState extends State<AddStageDialog> {
               Navigator.of(context).pop();
             }
           },
-          child: const Text("Add"),
+          child: Text("Add",style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white)),
         ),
       ],
     );

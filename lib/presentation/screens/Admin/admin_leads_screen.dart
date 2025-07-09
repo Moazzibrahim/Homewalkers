@@ -57,6 +57,18 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   String? _selectedSalesFilter;
   String? _selectedCommunicationWayFilter;
   String? _selectedCampaignFilter;
+  String? _addedByFilter;
+  String? _assignedFromFilter;
+  String? _assignedToFilter;
+  DateTime? _startDateFilter;
+  DateTime? _endDateFilter;
+  DateTime? _lastStageUpdateStartFilter;
+  DateTime? _lastStageUpdateEndFilter;
+  DateTime? _lastCommentDateStartFilter;
+  DateTime? _lastCommentDateEndFilter;
+  String? _oldStageNameFilter;
+  DateTime? _oldStageDateStartFilter;
+  DateTime? _oldStageDateEndFilter;
 
   @override
   void initState() {
@@ -91,6 +103,18 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       sales: _selectedSalesFilter,
       communicationWay: _selectedCommunicationWayFilter,
       campaign: _selectedCampaignFilter,
+      addedBy: _addedByFilter,
+      assignedFrom: _assignedFromFilter,
+      assignedTo: _assignedToFilter,
+      startDate: _startDateFilter,
+      endDate: _endDateFilter,
+      lastStageUpdateStart: _lastStageUpdateStartFilter,
+      lastStageUpdateEnd: _lastStageUpdateEndFilter,
+      lastCommentDateStart: _lastCommentDateStartFilter,
+      lastCommentDateEnd: _lastCommentDateEndFilter,
+      oldStageName: _oldStageNameFilter,
+      oldStageDateStart: _oldStageDateStartFilter,
+      oldStageDateEnd: _oldStageDateEndFilter,
     );
   }
 
@@ -381,6 +405,24 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             _selectedCommunicationWayFilter =
                                 filters['communicationWay'];
                             _selectedCampaignFilter = filters['campaign'];
+                            _addedByFilter = filters['addedBy'];
+                            _assignedFromFilter = filters['assignedFrom'];
+                            _assignedToFilter = filters['assignedTo'];
+                            _startDateFilter = filters['startDate'];
+                            _endDateFilter = filters['endDate'];
+                            _lastStageUpdateStartFilter =
+                                filters['lastStageUpdateStart'];
+                            _lastStageUpdateEndFilter =
+                                filters['lastStageUpdateEnd'];
+                            _lastCommentDateStartFilter =
+                                filters['lastCommentDateStart'];
+                            _lastCommentDateEndFilter =
+                                filters['lastCommentDateEnd'];
+                            // ✅✅ أضف هذا الجزء هنا لحل المشكلة ✅✅
+                            _oldStageNameFilter = filters['oldStageName'];
+                            _oldStageDateStartFilter =
+                                filters['oldStageDateStart'];
+                            _oldStageDateEndFilter = filters['oldStageDateEnd'];
                           });
                           _applyCurrentFilters();
                         }
@@ -844,125 +886,206 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: [
-                                     ElevatedButton.icon(
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Theme.of(context).brightness == Brightness.light
-        ? Constants.maincolor
-        : Constants.mainDarkmodecolor,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-  ),
-  onPressed: () {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: BlocProvider(
-            create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService())
-              ..fetchLeadComments(lead.id!),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
-                builder: (context, commentState) {
-                  if (commentState is LeadCommentsLoading) {
-                    return const SizedBox(
-                      height: 100,
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  } else if (commentState is LeadCommentsError) {
-                    return SizedBox(
-                      height: 100,
-                      child: Center(
-                        child: Text(
-                          "No comments available: ${commentState.message}",
-                        ),
-                      ),
-                    );
-                  } else if (commentState is LeadCommentsLoaded) {
-                    final commentsData = commentState.leadComments.data;
-                    if (commentsData == null || commentsData.isEmpty) {
-                      return const Text('No comments available.');
-                    }
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              Theme.of(context).brightness ==
+                                                      Brightness.light
+                                                  ? Constants.maincolor
+                                                  : Constants.mainDarkmodecolor,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (_) {
+                                              return Dialog(
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: BlocProvider(
+                                                  create:
+                                                      (_) => LeadCommentsCubit(
+                                                        GetAllLeadCommentsApiService(),
+                                                      )..fetchLeadComments(
+                                                        lead.id!,
+                                                      ),
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          16.0,
+                                                        ),
+                                                    child: BlocBuilder<
+                                                      LeadCommentsCubit,
+                                                      LeadCommentsState
+                                                    >(
+                                                      builder: (
+                                                        context,
+                                                        commentState,
+                                                      ) {
+                                                        if (commentState
+                                                            is LeadCommentsLoading) {
+                                                          return const SizedBox(
+                                                            height: 100,
+                                                            child: Center(
+                                                              child:
+                                                                  CircularProgressIndicator(),
+                                                            ),
+                                                          );
+                                                        } else if (commentState
+                                                            is LeadCommentsError) {
+                                                          return SizedBox(
+                                                            height: 100,
+                                                            child: Center(
+                                                              child: Text(
+                                                                "No comments available: ${commentState.message}",
+                                                              ),
+                                                            ),
+                                                          );
+                                                        } else if (commentState
+                                                            is LeadCommentsLoaded) {
+                                                          final commentsData =
+                                                              commentState
+                                                                  .leadComments
+                                                                  .data;
+                                                          if (commentsData ==
+                                                                  null ||
+                                                              commentsData
+                                                                  .isEmpty) {
+                                                            return const Text(
+                                                              'No comments available.',
+                                                            );
+                                                          }
 
-                    final commentsList = commentsData.first.comments ?? [];
+                                                          final commentsList =
+                                                              commentsData
+                                                                  .first
+                                                                  .comments ??
+                                                              [];
 
-                    // ✅ نفلتر الكومنتات اللي فيها نص فعلي
-                    final validComments = commentsList.where((c) =>
-                      (c.firstcomment?.text?.isNotEmpty ?? false) ||
-                      (c.secondcomment?.text?.isNotEmpty ?? false)
-                    ).toList();
+                                                          // ✅ نفلتر الكومنتات اللي فيها نص فعلي
+                                                          final validComments =
+                                                              commentsList
+                                                                  .where(
+                                                                    (c) =>
+                                                                        (c.firstcomment?.text?.isNotEmpty ??
+                                                                            false) ||
+                                                                        (c.secondcomment?.text?.isNotEmpty ??
+                                                                            false),
+                                                                  )
+                                                                  .toList();
 
-                    final Comment? firstCommentEntry = validComments.isNotEmpty ? validComments.first : null;
+                                                          final Comment?
+                                                          firstCommentEntry =
+                                                              validComments
+                                                                      .isNotEmpty
+                                                                  ? validComments
+                                                                      .first
+                                                                  : null;
 
-                    final String firstCommentText =
-                        firstCommentEntry?.firstcomment?.text ?? 'No comments available.';
-                    final String secondCommentText =
-                        firstCommentEntry?.secondcomment?.text ?? 'No action available.';
+                                                          final String
+                                                          firstCommentText =
+                                                              firstCommentEntry
+                                                                  ?.firstcomment
+                                                                  ?.text ??
+                                                              'No comments available.';
+                                                          final String
+                                                          secondCommentText =
+                                                              firstCommentEntry
+                                                                  ?.secondcomment
+                                                                  ?.text ??
+                                                              'No action available.';
 
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Last Comment",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          firstCommentText,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          "Action (Plan)",
-                          style: TextStyle(
-                            color: Constants.maincolor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          secondCommentText,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    );
-                  } else {
-                    return const SizedBox(
-                      height: 100,
-                      child: Text("No comments"),
-                    );
-                  }
-                },
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  },
-  icon: const Icon(
-    Icons.chat_bubble_outline,
-    color: Colors.white,
-    size: 16,
-  ),
-  label: const Text(
-    "Last Comment",
-    style: TextStyle(
-      color: Colors.white,
-      fontWeight: FontWeight.w600,
-    ),
-  ),
-),
+                                                          return Column(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              const Text(
+                                                                "Last Comment",
+                                                                style: TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                ),
+                                                              ),
+                                                              const SizedBox(
+                                                                height: 5,
+                                                              ),
+                                                              Text(
+                                                                firstCommentText,
+                                                                maxLines: 2,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                              ),
+                                                              const SizedBox(
+                                                                height: 10,
+                                                              ),
+                                                              const Text(
+                                                                "Action (Plan)",
+                                                                style: TextStyle(
+                                                                  color:
+                                                                      Constants
+                                                                          .maincolor,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                ),
+                                                              ),
+                                                              const SizedBox(
+                                                                height: 5,
+                                                              ),
+                                                              Text(
+                                                                secondCommentText,
+                                                                maxLines: 2,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                              ),
+                                                            ],
+                                                          );
+                                                        } else {
+                                                          return const SizedBox(
+                                                            height: 100,
+                                                            child: Text(
+                                                              "No comments",
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.chat_bubble_outline,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        label: const Text(
+                                          "Last Comment",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
 
                                       Row(
                                         children: [
@@ -1050,6 +1173,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                             lead.project?.id,
                                                         initialStageId:
                                                             lead.stage?.id,
+                                                        isCold:
+                                                            lead.leedtype ==
+                                                                    "Fresh"
+                                                                ? false
+                                                                : true,
                                                         onSuccess: () {
                                                           context
                                                               .read<

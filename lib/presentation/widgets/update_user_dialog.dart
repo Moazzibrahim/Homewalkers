@@ -193,7 +193,6 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                         final newName = _nameController.text.trim();
                         final newEmail = _emailController.text.trim();
                         final newPhone = _phoneController.text.trim();
-
                         final isSomethingChanged =
                             newName != widget.name ||
                             newEmail != widget.email ||
