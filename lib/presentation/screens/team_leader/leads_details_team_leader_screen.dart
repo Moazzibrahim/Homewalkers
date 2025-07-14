@@ -37,6 +37,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
   final String? userlogname;
   final String? teamleadername;
   final String fcmtoken;
+  final String? managerfcmtoken;
 
   LeadsDetailsTeamLeaderScreen({
     super.key,
@@ -57,6 +58,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
     this.userlogname,
     this.teamleadername,
     required this.fcmtoken,
+    this.managerfcmtoken,
   });
   @override
   State<LeadsDetailsTeamLeaderScreen> createState() =>
@@ -575,6 +577,7 @@ final isSecondValid = isClearHistoryy != true ||
                                           leedId: widget.leedId,
                                           fcmtoken: widget.fcmtoken,
                                           leadName: widget.leadName,
+                                          managerfcm: widget.managerfcmtoken,
                                         ),
                                       ),
                                 ),
@@ -638,6 +641,16 @@ final isSecondValid = isClearHistoryy != true ||
                                       fcmtokennnn:
                                           widget
                                               .fcmtoken, // تأكد إن الاسم متطابق مع `NotificationCubit`
+                                    );
+                                     context
+                                    .read<NotificationCubit>()
+                                    .sendNotificationToToken(
+                                      title: "Lead Comment",
+                                      body:
+                                          " ${widget.leadName} تم إضافة تعليق جديد ✅",
+                                      fcmtokennnn:
+                                          widget
+                                              .managerfcmtoken!, // تأكد إن الاسم متطابق مع `NotificationCubit`
                                     );
                               }
                             },

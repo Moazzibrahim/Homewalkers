@@ -3,19 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
-import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';// Import user service
-import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';// Import user cubit
+import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/data/models/all_sales_model.dart';
+import 'package:shimmer/shimmer.dart';
 
 class AdminSalesSceen extends StatelessWidget {
   const AdminSalesSceen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Use MultiBlocProvider to have access to both cubits in the widget tree
     return MultiBlocProvider(
       providers: [
         BlocProvider(
@@ -26,7 +26,9 @@ class AdminSalesSceen extends StatelessWidget {
         ),
       ],
       child: Scaffold(
-        backgroundColor: Theme.of(context).brightness == Brightness.light ? Constants.backgroundlightmode : Constants.backgroundDarkmode,
+        backgroundColor: Theme.of(context).brightness == Brightness.light
+            ? Constants.backgroundlightmode
+            : Constants.backgroundDarkmode,
         appBar: CustomAppBar(
           title: "Sales",
           onBack: () {
@@ -36,38 +38,33 @@ class AdminSalesSceen extends StatelessWidget {
             );
           },
         ),
-        // This builder is for the main list of sales from SalesCubit
         body: BlocBuilder<SalesCubit, SalesState>(
           builder: (context, salesState) {
             if (salesState is SalesLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return _buildShimmerList();
             }
+
             if (salesState is SalesError) {
               return Center(child: Text(salesState.message));
             }
-            if (salesState is SalesLoaded) {
-              final List<SalesData> allSales = salesState.salesData.data ?? [];
 
-              // This builder gets the lead counts from GetAllUsersCubit
+            if (salesState is SalesLoaded) {
+              final allSales = salesState.salesData.data ?? [];
+
               return BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
                 builder: (context, usersState) {
-                  // Get the map of lead counts. If the state is not success, use an empty map.
                   final leadCounts = (usersState is UsersLeadCountSuccess)
                       ? usersState.leadCounts
                       : <String, int>{};
 
-                  // Map the sales data to a new list that includes the lead count
-                  final List<_SalesWithLeadCount> salesList = allSales
+                  final salesList = allSales
                       .where((s) => s.userlog != null)
                       .map((s) => _SalesWithLeadCount(
                             user: s.userlog!,
-                            // Look up the count from the map. If not found, default to 0.
                             leadCount: leadCounts[s.userlog!.id] ?? 0,
                           ))
-                      .toList();
-
-                  // Sort the final list by lead count in descending order
-                  salesList.sort((a, b) => b.leadCount.compareTo(a.leadCount));
+                      .toList()
+                    ..sort((a, b) => b.leadCount.compareTo(a.leadCount));
 
                   return ListView.builder(
                     padding: const EdgeInsets.all(16),
@@ -100,15 +97,47 @@ class AdminSalesSceen extends StatelessWidget {
                 },
               );
             }
-            return const SizedBox.shrink(); // Default empty state
+
+            return const SizedBox.shrink();
           },
         ),
       ),
     );
   }
+
+  // 🔆 Shimmer loading list while waiting for data
+  Widget _buildShimmerList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Card(
+            elevation: 2,
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: ListTile(
+              title: Container(height: 16, color: Colors.white),
+              subtitle: Container(height: 12, margin: const EdgeInsets.only(top: 8), color: Colors.white),
+              trailing: Container(
+                width: 60,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
-// Helper class to hold the combined data for the UI
+// 🔁 Helper class to hold user and lead count
 class _SalesWithLeadCount {
   final UserLogsModel user;
   final int leadCount;

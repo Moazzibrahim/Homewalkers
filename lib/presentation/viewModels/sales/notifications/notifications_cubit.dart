@@ -1,18 +1,18 @@
-// ignore_for_file: unused_local_variable
-
+// ignore_for_file: unused_local_variable, avoid_print
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/notifications_model.dart';
-import 'package:homewalkers_app/main.dart'; // تأكد أن فيه navigatorKey
+import 'package:homewalkers_app/main.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
 
-// حالة لإدارة إشعارات التطبيق
+/// 🧠 State class for NotificationCubit
 class NotificationState {
   final String? token;
   final String? error;
@@ -37,19 +37,18 @@ class NotificationState {
   }
 }
 
-
+/// 🚀 NotificationCubit class to handle Firebase messaging and API requests
 class NotificationCubit extends Cubit<NotificationState> {
   NotificationCubit() : super(NotificationState());
 
   List<NotificationItem> notifications = [];
 
-
-  void initNotifications() async {
+  /// 🔔 Initializes notification system and handles listeners
+  Future<void> initNotifications() async {
     try {
-      FirebaseMessaging messaging = FirebaseMessaging.instance;
+      final messaging = FirebaseMessaging.instance;
 
-      // طلب الإذن من المستخدم
-      NotificationSettings settings = await messaging.requestPermission(
+      final settings = await messaging.requestPermission(
         alert: true,
         badge: true,
         sound: true,
@@ -58,32 +57,26 @@ class NotificationCubit extends Cubit<NotificationState> {
       log("🔐 Permission status: ${settings.authorizationStatus}");
 
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
-        log("❌ Notifications permission denied");
-        emit(NotificationState(error: "Permission denied"));
+        emit(state.copyWith(error: "Permission denied"));
         return;
       }
-      
 
-      // أخذ التوكن وتخزينه
       final token = await messaging.getToken();
-      log("🔑 FCM Token: $token");
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('fcm_token', token ?? '');
-
-// ⬇️ لو كنت مخزن الـ role وقت تسجيل الدخول
       final role = prefs.getString('role');
-      final userId = prefs.getString('salesId'); // أو id المستخدم
+      final userId = prefs.getString('salesId');
+
+      await prefs.setString('fcm_token', token ?? '');
+      emit(state.copyWith(token: token));
 
       log("🔑 FCM Token: $token");
-      log("👤 Current User ID: $userId");
-      log("🧑‍💼 Current User Role: $role");
-      await prefs.setString('fcm_token', token ?? '');
-      emit(NotificationState(token: token));
+      log("👤 User ID: $userId");
+      log("🧑‍💼 Role: $role");
 
-      // اشتراك في topic (اختياري)
+      // Subscribe to common topic
       await messaging.subscribeToTopic('all_users');
 
-      // إنشاء قناة الإشعارات للأندرويد
+      // Android notification channel
       if (Platform.isAndroid) {
         const androidChannel = AndroidNotificationChannel(
           'high_importance_channel',
@@ -91,100 +84,68 @@ class NotificationCubit extends Cubit<NotificationState> {
           description: 'This channel is used for important notifications.',
           importance: Importance.high,
         );
-
         await flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
                 AndroidFlutterLocalNotificationsPlugin>()
             ?.createNotificationChannel(androidChannel);
       }
 
-      // إعدادات الإشعارات لـ iOS
+      // iOS permissions
       if (Platform.isIOS) {
         await flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
                 IOSFlutterLocalNotificationsPlugin>()
-            ?.requestPermissions(
-              alert: true,
-              badge: true,
-              sound: true,
-            );
+            ?.requestPermissions(alert: true, badge: true, sound: true);
       }
 
-      // إشعار أثناء تشغيل التطبيق (foreground)
+      // Foreground message
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        log("📩 Received foreground message: ${message.data}");
-
-        final notification = message.notification;
-        final androidData = notification?.android;
-
-        String title = notification?.title ?? message.data['title'] ?? '📢 إشعار';
-        String body = notification?.body ?? message.data['body'] ?? '📬 لديك رسالة جديدة';
-
-        flutterLocalNotificationsPlugin.show(
-          notification.hashCode,
-          title,
-          body,
-          const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'high_importance_channel',
-              'High Importance Notifications',
-              importance: Importance.max,
-              priority: Priority.high,
-              icon: '@mipmap/ic_launcher',
-            ),
-            iOS: DarwinNotificationDetails(),
-          ),
-        );
+        _showLocalNotification(message);
       });
 
-      // التطبيق في الخلفية وتم الضغط على الإشعار
+      // Background click handler
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        log("📲 Notification clicked with data: ${message.data}");
+        log("📲 Notification clicked: ${message.data}");
         _handleNotificationNavigation(message.data);
       });
 
-      // تم فتح التطبيق من إشعار أثناء termination
+      // App launched from terminated state
       RemoteMessage? initialMessage = await messaging.getInitialMessage();
       if (initialMessage != null) {
-        log("📦 App opened from terminated state: ${initialMessage.data}");
+        log("📦 Opened from terminated: ${initialMessage.data}");
         _handleNotificationNavigation(initialMessage.data);
       }
     } catch (e) {
-      log("⚠️ Error initializing notifications: $e");
-      emit(NotificationState(error: e.toString()));
+      log("⚠️ initNotifications error: $e");
+      emit(state.copyWith(error: e.toString()));
     }
   }
 
-  void sendNotificationToToken({
-  required String title,
-  required String body,
-  required String fcmtokennnn,
-}) async {
-  try {
-    final String url = '${Constants.baseUrl}/Notification/send-fcm';
+  /// 💬 Show local push notification
+  void _showLocalNotification(RemoteMessage message) {
+    final notification = message.notification;
+    final title = notification?.title ?? message.data['title'] ?? '📢 إشعار';
+    final body = notification?.body ?? message.data['body'] ?? '📬 رسالة جديدة';
 
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "fcmToken": fcmtokennnn,
-        "title": title,
-        "body": body,
-      }),
+    flutterLocalNotificationsPlugin.show(
+      notification.hashCode,
+      title,
+      body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'high_importance_channel',
+          'High Importance Notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
     );
-
-    if (response.statusCode == 200) {
-      log('✅ Notification sent successfully to: $fcmtokennnn');
-    } else {
-      log('❌ Failed to send notification: ${response.statusCode}');
-      log('Response body: ${response.body}');
-    }
-  } catch (e) {
-    log('❌ Error sending notification: $e');
   }
-}
+
+  /// 🧭 Navigate based on notification data
   void _handleNotificationNavigation(Map<String, dynamic> data) {
-    // مثال على التنقل حسب نوع الإشعار
     final target = data['target'];
     final id = data['id'];
 
@@ -193,59 +154,84 @@ class NotificationCubit extends Cubit<NotificationState> {
     } else if (target == 'chat') {
       navigatorKey.currentState?.pushNamed('/chat');
     } else {
-      // تنقل افتراضي
       navigatorKey.currentState?.pushNamed('/notifications');
     }
   }
+
+  /// 🚀 Send notification to a specific FCM token
+  Future<void> sendNotificationToToken({
+    required String title,
+    required String body,
+    required String fcmtokennnn,
+  }) async {
+    try {
+      final url = Uri.parse('${Constants.baseUrl}/Notification/send-fcm');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "fcmToken": fcmtokennnn,
+          "title": title,
+          "body": body,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        log('✅ Notification sent to: $fcmtokennnn');
+      } else {
+        log('❌ Failed to send: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      log('❌ Error sending notification: $e');
+    }
+  }
+
+  /// 📥 Fetch notifications for specific salesId
   Future<void> fetchNotifications() async {
-  try {
-    emit(state.copyWith(isLoading: true, error: null));
-    final prefs = await SharedPreferences.getInstance();
-    final receiverId = prefs.getString('salesId');
+    try {
+      emit(state.copyWith(isLoading: true, error: null));
+      final prefs = await SharedPreferences.getInstance();
+      final receiverId = prefs.getString('salesId');
 
-    if (receiverId == null || receiverId.isEmpty) {
-      log("❌ No salesId found in SharedPreferences");
-      emit(state.copyWith(isLoading: false, error: 'No salesId found'));
-      return;
+      if (receiverId == null || receiverId.isEmpty) {
+        emit(state.copyWith(isLoading: false, error: 'No salesId found'));
+        return;
+      }
+
+      final url = Uri.parse('${Constants.baseUrl}/Notification?receiver=$receiverId');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final model = NotificationModel.fromJson(decoded);
+        notifications = model.data ?? [];
+        emit(state.copyWith(isLoading: false));
+      } else {
+        emit(state.copyWith(isLoading: false, error: 'Failed to load notifications'));
+      }
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
-
-    final url = Uri.parse('${Constants.baseUrl}/Notification?receiver=$receiverId');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      final model = NotificationModel.fromJson(decoded);
-      notifications = model.data ?? [];
-      log("✅ Notifications fetched: ${notifications.length}");
-      emit(state.copyWith(isLoading: false));
-    } else {
-      log("❌ Failed to fetch notifications: ${response.statusCode}");
-      emit(state.copyWith(isLoading: false, error: 'Failed to load notifications'));
-    }
-  } catch (e) {
-    log("❌ Error fetching notifications: $e");
-    emit(state.copyWith(isLoading: false, error: e.toString()));
   }
-}
 
-Future<void> fetchAllNotifications() async {
-  try {
-    emit(state.copyWith(isLoading: true, error: null));
-    final url = Uri.parse('${Constants.baseUrl}/Notification');
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
-      final model = NotificationModel.fromJson(decoded);
-      notifications = model.data ?? [];
-      log("✅ Notifications fetched: ${notifications.length}");
-      emit(state.copyWith(isLoading: false));
-    } else {
-      log("❌ Failed to fetch notifications: ${response.statusCode}");
-      emit(state.copyWith(isLoading: false, error: 'Failed to load notifications'));
+  /// 📦 Fetch all notifications (admin or global access)
+  Future<void> fetchAllNotifications() async {
+    try {
+      emit(state.copyWith(isLoading: true, error: null));
+
+      final url = Uri.parse('${Constants.baseUrl}/Notification');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final model = NotificationModel.fromJson(decoded);
+        notifications = model.data ?? [];
+        emit(state.copyWith(isLoading: false));
+      } else {
+        emit(state.copyWith(isLoading: false, error: 'Failed to load notifications'));
+      }
+    } catch (e) {
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
-  } catch (e) {
-    log("❌ Error fetching notifications: $e");
-    emit(state.copyWith(isLoading: false, error: e.toString()));
   }
-}
 }

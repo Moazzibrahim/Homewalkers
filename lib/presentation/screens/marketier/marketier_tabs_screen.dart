@@ -35,10 +35,10 @@ class _TabsScreenState extends State<MarketierTabsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.backgroundlightmode
+              : Constants.backgroundDarkmode,
       body: WillPopScope(
         onWillPop: () async {
           // منع الرجوع إلى الشاشة السابقة
@@ -67,7 +67,10 @@ class _TabsScreenState extends State<MarketierTabsScreen> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color:  Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الخلفية
+                : Colors.black,
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
         child: Container(
@@ -118,12 +121,10 @@ class _TabsScreenState extends State<MarketierTabsScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor:
-            Theme.of(context).brightness == Brightness.light
-                ? Constants.maincolor
-                : Constants.mainDarkmodecolor,
+        backgroundColor: Constants.maincolor,
+        elevation: 6,
+        shape: const CircleBorder(),
         onPressed: () {
-          // أضف وظيفة الزر هنا
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const CreateLeadScreen()),

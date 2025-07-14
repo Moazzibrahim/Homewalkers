@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: non_constant_identifier_names, avoid_print
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +17,8 @@ class AssignDialog extends StatefulWidget {
   final List? leadIds;
   final String? leadId;
   final String? fcmtoken; // Optional: if you want to pass a specific lead ID
+  final String? teamleaderfcmtoken;
+  final String? managerfcmtoken;
 
   const AssignDialog({
     super.key,
@@ -25,6 +27,8 @@ class AssignDialog extends StatefulWidget {
     this.leadId,
     this.leadIds,
     this.fcmtoken,
+    this.teamleaderfcmtoken,
+    this.managerfcmtoken,
   });
 
   @override
@@ -188,11 +192,21 @@ class _AssignDialogState extends State<AssignDialog> {
                                       "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}",
                                   teamleadersId: teamLeaderId!,
                                 );
-                                  context.read<NotificationCubit>().sendNotificationToToken(
+                                context
+                                    .read<NotificationCubit>()
+                                    .sendNotificationToToken(
                                       // 👈 هنعرف دي تحت
                                       title: "Lead",
                                       body: "Lead assigned successfully ✅",
                                       fcmtokennnn: widget.fcmtoken!,
+                                    );
+                                    context
+                                    .read<NotificationCubit>()
+                                    .sendNotificationToToken(
+                                      // 👈 هنعرف دي تحت
+                                      title: "Lead",
+                                      body: "Lead assigned successfully ✅",
+                                      fcmtokennnn: widget.managerfcmtoken!,
                                     );
                               } else {
                                 ScaffoldMessenger.of(

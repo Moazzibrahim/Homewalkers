@@ -38,6 +38,8 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
   final String? leadNotes;
   final String? leaddeveloper;
   final String? fcmtoken;
+  final String? teamleaderfcmtoken;
+  final String? managerfcmtoken;
   SalesLeadsDetailsScreen({
     super.key,
     required this.leedId,
@@ -55,6 +57,8 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
     this.leadNotes,
     this.leaddeveloper,
     this.fcmtoken,
+    this.teamleaderfcmtoken,
+    this.managerfcmtoken,
   });
   @override
   State<SalesLeadsDetailsScreen> createState() =>
@@ -273,6 +277,8 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                                                     .mainDarkmodecolor,
                                                         leadResponse:
                                                             state.assignedModel,
+                                                            managerfcmtoken: widget.managerfcmtoken,
+                                                            teamleaderfcmtoken: widget.teamleaderfcmtoken,
                                                       ),
                                                     ),
                                               );
@@ -575,6 +581,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                           leedId: widget.leedId,
                                           fcmtoken: widget.fcmtoken,
                                           leadName: widget.leadName,
+                                          managerfcm: widget.managerfcmtoken,
                                         ),
                                       ),
                                 ),
@@ -639,6 +646,16 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                         fcmtokennnn:
                                             widget
                                                 .fcmtoken!, // تأكد إن الاسم متطابق مع `NotificationCubit`
+                                      );
+                                      context
+                                      .read<NotificationCubit>()
+                                      .sendNotificationToToken(
+                                        title: "Lead Comment",
+                                        body:
+                                            " ${widget.leadName} تم إضافة تعليق جديد ✅",
+                                        fcmtokennnn:
+                                            widget
+                                                .managerfcmtoken!, // تأكد إن الاسم متطابق مع `NotificationCubit`
                                       );
                                 }
                               }

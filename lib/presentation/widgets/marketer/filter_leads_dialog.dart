@@ -205,34 +205,35 @@ class _FilterDialogState extends State<FilterDialog> {
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 16,
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      hintText: "Select Country",
+                      hintStyle: const TextStyle(
+                        fontSize: 14,
+                        color: Color.fromRGBO(143, 146, 146, 1),
+                        fontWeight: FontWeight.w400,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xffE1E1E1)),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
+                      suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
                     ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _selectedCountry ?? "Select Country",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? const Color(0xff080719)
-                                      : const Color(0xffFFFFFF),
-                              fontFamily: 'Montserrat',
-                            ),
-                          ),
-                        ),
-                        const Icon(Icons.keyboard_arrow_down_rounded),
-                      ],
+                    child: Text(
+                      _selectedCountry ?? "Select Country",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? const Color(0xff080719)
+                                : const Color(0xffFFFFFF),
+                        fontFamily: 'Montserrat',
+                      ),
                     ),
                   ),
                 ),
@@ -437,9 +438,7 @@ class _FilterDialogState extends State<FilterDialog> {
                 setState(() => _oldStageStartDate = picked);
               }),
               const SizedBox(height: 14),
-              buildDateField(" Stage Date (End)", _oldStageEndDate, (
-                picked,
-              ) {
+              buildDateField(" Stage Date (End)", _oldStageEndDate, (picked) {
                 setState(() => _oldStageEndDate = picked);
               }),
               const SizedBox(height: 12),

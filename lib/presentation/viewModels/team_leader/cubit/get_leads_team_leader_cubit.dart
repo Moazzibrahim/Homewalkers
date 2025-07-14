@@ -25,6 +25,11 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
 
     try {
       final leadsResponse = await _getLeadsService.getLeadsDataByTeamLeader();
+      leadsResponse.data?.sort((a, b) {
+        final aDate = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
+        final bDate = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
+        return bDate.compareTo(aDate); // الأحدث أولاً
+      });
       _originalLeadsResponse = leadsResponse;
 
       _salesLeadCount = await _getLeadsService.getLeadCountPerStage();
@@ -115,10 +120,30 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
     String? channel,
     String? sales,
     String? query,
+    DateTime? startDate,
+    DateTime? endDate,
+    DateTime? lastStageUpdateStart,
+    DateTime? lastStageUpdateEnd,
   }) {
     if (_originalLeadsResponse?.data == null) {
       emit(const GetLeadsTeamLeaderError("لا توجد بيانات Leads لفلترتها."));
       return;
+    }
+    DateTime getDateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+
+    DateTime? parseNullableDate(String? dateStr) {
+      if (dateStr == null) return null;
+      final trimmed = dateStr.trim();
+      if (trimmed.isEmpty || trimmed == '-') return null;
+      DateTime? parsedDate = DateTime.tryParse(trimmed);
+      if (parsedDate == null) {
+        try {
+          parsedDate = DateTime.parse(trimmed);
+        } catch (e) {
+          return null;
+        }
+      }
+      return parsedDate;
     }
 
     final q = query?.toLowerCase() ?? '';
@@ -140,8 +165,40 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
           final matchProject = project == null || lead.project?.name == project;
           final matchStage = stage == null || lead.stage?.name == stage;
           final matchChannel = channel == null || lead.chanel?.name == channel;
-          final matchSales =
-              sales == null || lead.sales?.name == sales;
+          final matchSales = sales == null || lead.sales?.name == sales;
+          final recordDate = parseNullableDate(lead.date);
+          final recordDateOnly =
+              recordDate != null ? getDateOnly(recordDate) : null;
+          final startDateOnly =
+              startDate != null ? getDateOnly(startDate) : null;
+          final endDateOnly = endDate != null ? getDateOnly(endDate) : null;
+          final matchDateRange =
+              (startDate == null && endDate == null) ||
+              (recordDateOnly != null &&
+                  (startDateOnly == null ||
+                      !recordDateOnly.isBefore(startDateOnly)) &&
+                  (endDateOnly == null ||
+                      !recordDateOnly.isAfter(endDateOnly)));
+          final lastStageUpdated = parseNullableDate(lead.lastStageDateUpdated);
+          final lastStageUpdatedOnly =
+              lastStageUpdated != null ? getDateOnly(lastStageUpdated) : null;
+          final lastStageUpdateStartOnly =
+              lastStageUpdateStart != null
+                  ? getDateOnly(lastStageUpdateStart)
+                  : null;
+          final lastStageUpdateEndOnly =
+              lastStageUpdateEnd != null
+                  ? getDateOnly(lastStageUpdateEnd)
+                  : null;
+          final matchLastStageUpdated =
+              (lastStageUpdateStart == null && lastStageUpdateEnd == null) ||
+              (lastStageUpdatedOnly != null &&
+                  (lastStageUpdateStartOnly == null ||
+                      !lastStageUpdatedOnly.isBefore(
+                        lastStageUpdateStartOnly,
+                      )) &&
+                  (lastStageUpdateEndOnly == null ||
+                      !lastStageUpdatedOnly.isAfter(lastStageUpdateEndOnly)));
 
           return matchQuery &&
               matchCountry &&
@@ -149,6 +206,8 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
               matchProject &&
               matchStage &&
               matchChannel &&
+              matchDateRange &&
+              matchLastStageUpdated &&
               matchSales;
         }).toList();
 

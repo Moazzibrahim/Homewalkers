@@ -18,12 +18,14 @@ class SalesCommentsScreen extends StatefulWidget {
   final String leedId;
   final String? fcmtoken;
   final String? leadName;
+  final String? managerfcm;
 
   const SalesCommentsScreen({
     super.key,
     required this.leedId,
     required this.fcmtoken,
     required this.leadName,
+    this.managerfcm,
   });
 
   @override
@@ -423,6 +425,14 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                             "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
                                         fcmtokennnn: widget.fcmtoken!,
                                       );
+                                  context
+                                      .read<NotificationCubit>()
+                                      .sendNotificationToToken(
+                                        title: "Comment Reply",
+                                        body:
+                                            "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
+                                        fcmtokennnn: widget.managerfcm!,
+                                      );
                                 }
                                 // Optional: refresh comments
                                 context
@@ -538,6 +548,17 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                                       fcmtokennnn:
                                                           widget.fcmtoken!,
                                                     );
+                                                if (widget.managerfcm != null) {
+                                                  context
+                                                      .read<NotificationCubit>()
+                                                      .sendNotificationToToken(
+                                                        title: "Lead",
+                                                        body:
+                                                            " comment has been edited ✅ on ${widget.leadName}",
+                                                        fcmtokennnn:
+                                                            widget.managerfcm!,
+                                                      );
+                                                }
                                               }
                                             } else {
                                               // اختياري: عرض رسالة فشل

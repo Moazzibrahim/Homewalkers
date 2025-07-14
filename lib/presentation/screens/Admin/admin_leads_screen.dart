@@ -545,7 +545,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.add, size: 10, color: Colors.white),
+                  icon: const Icon(Icons.add, size: 11, color: Colors.white),
                   label: Text(
                     'Create Lead',
                     style: GoogleFonts.montserrat(
@@ -749,12 +749,12 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                       Row(
                                         children: [
                                           getStatusIcon(lead.stage?.name ?? ""),
-                                          const SizedBox(width: 6),
+                                          const SizedBox(width: 5),
                                           Text(
                                             lead.stage?.name ?? "none",
                                             style: GoogleFonts.montserrat(
-                                              fontSize: 11.sp,
-                                              fontWeight: FontWeight.w400,
+                                              fontSize: 10.sp,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ],
@@ -789,7 +789,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                     ],
                                   ),
                                   SizedBox(height: 12.h),
-
                                   // ---------- Row 4: WhatsApp and Phone Call ----------
                                   Row(
                                     mainAxisAlignment:

@@ -29,8 +29,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/lea
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-// 🟡 استيراد الـ Dialog الجديد اللي هيرجع القيم
-import 'package:homewalkers_app/presentation/widgets/marketer/filter_leads_dialog.dart'; // تأكد أن المسار صحيح
+import 'package:homewalkers_app/presentation/widgets/marketer/marketer_filter_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -60,6 +59,10 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
   String? _selectedSalesFilter;
   String? _selectedCommunicationWayFilter;
   String? _selectedCampaignFilter;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  DateTime? _lastStageUpdateStart;
+  DateTime? _lastStageUpdateEnd;
   @override
   void initState() {
     super.initState();
@@ -94,6 +97,10 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
       sales: _selectedSalesFilter,
       communicationWay: _selectedCommunicationWayFilter,
       campaign: _selectedCampaignFilter,
+      startDate: _startDate,
+      endDate: _endDate,
+      lastStageUpdateStart: _lastStageUpdateStart,
+      lastStageUpdateEnd: _lastStageUpdateEnd,
     );
   }
 
@@ -334,7 +341,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                             ..fetchAllSales(),
                                 ),
                               ],
-                              child: FilterDialog(
+                              child: MarketerFilterDialog(
                                 // 🟡 تمرير القيم الحالية للـ dialog عشان يعرضها
                                 initialCountry: _selectedCountryFilter,
                                 initialDeveloper: _selectedDeveloperFilter,
@@ -348,6 +355,11 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                 initialSearchName:
                                     _nameSearchController
                                         .text, // 🟡 تمرير نص البحث الحالي
+                                initialStartDate: _startDate,
+                                initialEndDate: _endDate,
+                                initialLastStageUpdateStart:
+                                    _lastStageUpdateStart,
+                                initialLastStageUpdateEnd: _lastStageUpdateEnd,
                               ),
                             );
                           },
@@ -368,6 +380,10 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                             _selectedCommunicationWayFilter =
                                 filters['communicationWay'];
                             _selectedCampaignFilter = filters['campaign'];
+                            _startDate = filters['startDate'];
+                            _endDate = filters['endDate'];
+                            _lastStageUpdateStart = filters['lastStageUpdateStart'];
+                            _lastStageUpdateEnd = filters['lastStageUpdateEnd'];
                           });
                           _applyCurrentFilters(); // 🟡 تطبيق الفلاتر الجديدة
                         }
@@ -428,7 +444,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 15),
                     GestureDetector(
                       onTap: () {
                         setState(() {
@@ -475,6 +491,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(width: 2),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
@@ -485,7 +502,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
+                      horizontal: 10,
                       vertical: 10,
                     ),
                   ),
@@ -497,13 +514,13 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                  icon: const Icon(Icons.add, size: 11, color: Colors.white),
                   label: Text(
                     'Create Lead',
                     style: GoogleFonts.montserrat(
-                      fontSize: 14,
+                      fontSize: 11.sp,
                       color: Colors.white,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -676,12 +693,12 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                       Row(
                                         children: [
                                           getStatusIcon(lead.stage?.name ?? ""),
-                                          const SizedBox(width: 6),
+                                          const SizedBox(width: 3),
                                           Text(
                                             lead.stage?.name ?? "none",
                                             style: GoogleFonts.montserrat(
-                                              fontSize: 11.sp,
-                                              fontWeight: FontWeight.w400,
+                                              fontSize: 10.sp,
+                                              fontWeight: FontWeight.w500,
                                             ),
                                           ),
                                         ],
@@ -1294,7 +1311,9 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                           context,
                                           MaterialPageRoute(
                                             builder:
-                                                (_) => MarketerLeadDetailsScreen(
+                                                (
+                                                  _,
+                                                ) => MarketerLeadDetailsScreen(
                                                   leedId: lead.id!,
                                                   leadName: lead.name ?? '',
                                                   leadPhone: lead.phone ?? '',
@@ -1312,8 +1331,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                           )
                                                           : '',
                                                   leadProject:
-                                                      lead.project?.name ??
-                                                      '',
+                                                      lead.project?.name ?? '',
                                                   leadLastComment:
                                                       lead.lastcommentdate ??
                                                       '',
@@ -1321,16 +1339,14 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                       lead.campaign?.name ??
                                                       "campaign",
                                                   leadNotes:
-                                                      lead.notes ??
-                                                      "no notes",
+                                                      lead.notes ?? "no notes",
                                                   leaddeveloper:
                                                       lead
                                                           .project
                                                           ?.developer
                                                           ?.name ??
                                                       "no developer",
-                                                  salesfcmtoken:
-                                                      salesfcmtoken!,
+                                                  salesfcmtoken: salesfcmtoken!,
                                                 ),
                                           ),
                                         );

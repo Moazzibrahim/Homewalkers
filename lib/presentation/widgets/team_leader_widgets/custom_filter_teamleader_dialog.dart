@@ -75,6 +75,10 @@ class _FilterDialogState extends State<FilterDialog> {
   List<Country> countries = [];
   String? selectedSales;
   String? teamleaderid;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  DateTime? _lastStageUpdateStart;
+  DateTime? _lastStageUpdateEnd;
 
   @override
   void initState() {
@@ -89,6 +93,58 @@ class _FilterDialogState extends State<FilterDialog> {
       teamleaderid = prefs.getString("teamLeaderIddspecific");
     });
     debugPrint("teamleaderid: $teamleaderid");
+  }
+
+  Widget buildDateField(
+    String label,
+    DateTime? value,
+    Function(DateTime) onDatePicked,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: GestureDetector(
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: value ?? DateTime.now(),
+            firstDate: DateTime(2000),
+            lastDate: DateTime.now().add(const Duration(days: 365)),
+          );
+          if (picked != null) onDatePicked(picked);
+        },
+        child: InputDecorator(
+          decoration: InputDecoration(
+            hintText: label,
+            hintStyle: const TextStyle(
+              fontSize: 14,
+              color: Color.fromRGBO(143, 146, 146, 1),
+              fontWeight: FontWeight.w400,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xffE1E1E1)),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 16,
+            ),
+            suffixIcon: const Icon(Icons.calendar_today, size: 20),
+          ),
+          child: Text(
+            value != null ? "${value.toLocal()}".split(' ')[0] : label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? const Color(0xff080719)
+                      : const Color(0xffFFFFFF),
+              fontFamily: 'Montserrat',
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -140,34 +196,35 @@ class _FilterDialogState extends State<FilterDialog> {
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 16,
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      hintText: "Select Country",
+                      hintStyle: const TextStyle(
+                        fontSize: 14,
+                        color: Color.fromRGBO(143, 146, 146, 1),
+                        fontWeight: FontWeight.w400,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xffE1E1E1)),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
+                      suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
                     ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            selectedCountry?.name ?? "Select Country",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? const Color(0xff080719)
-                                      : const Color(0xffFFFFFF),
-                              fontFamily: 'Montserrat',
-                            ),
-                          ),
-                        ),
-                        const Icon(Icons.keyboard_arrow_down_rounded),
-                      ],
+                    child: Text(
+                      selectedCountry?.name ?? "Select Country",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? const Color(0xff080719)
+                                : const Color(0xffFFFFFF),
+                        fontFamily: 'Montserrat',
+                      ),
                     ),
                   ),
                 ),
@@ -187,12 +244,15 @@ class _FilterDialogState extends State<FilterDialog> {
                         [];
                     return CustomDropdownField(
                       hint: "Choose Sales",
-                      items: filteredSales.map((e) => e.salesName ?? '').toList(),
+                      items:
+                          filteredSales.map((e) => e.salesName ?? '').toList(),
                       value: selectedSales,
                       onChanged: (value) {
                         setState(() => selectedSales = value);
                         log("Selected Sales: $value");
-                        log("sales: ${filteredSales.map((e) => e.salesName).toList()}");
+                        log(
+                          "sales: ${filteredSales.map((e) => e.salesName).toList()}",
+                        );
                       },
                     );
                   } else if (state is SalesLoading) {
@@ -312,6 +372,28 @@ class _FilterDialogState extends State<FilterDialog> {
                   }
                 },
               ),
+              const SizedBox(height: 12),
+              buildDateField(
+                "Last Stage Update (Start)",
+                _lastStageUpdateStart,
+                (picked) {
+                  setState(() => _lastStageUpdateStart = picked);
+                },
+              ),
+              const SizedBox(height: 14),
+              buildDateField("Last Stage Update (End)", _lastStageUpdateEnd, (
+                picked,
+              ) {
+                setState(() => _lastStageUpdateEnd = picked);
+              }),
+              const SizedBox(height: 14),
+              buildDateField("creation Date (start)", _startDate, (picked) {
+                setState(() => _startDate = picked);
+              }),
+              const SizedBox(height: 12),
+              buildDateField(" creation Date (end)", _endDate, (picked) {
+                setState(() => _endDate = picked);
+              }),
               const SizedBox(height: 20),
               Row(
                 children: [
@@ -339,6 +421,10 @@ class _FilterDialogState extends State<FilterDialog> {
                           selectedStage = null;
                           selectedChannel = null;
                           selectedSales = null;
+                          _startDate = null;
+                          _endDate = null;
+                          _lastStageUpdateStart = null;
+                          _lastStageUpdateEnd = null;
                         });
                       },
                       child: const Text(
@@ -355,6 +441,48 @@ class _FilterDialogState extends State<FilterDialog> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
+                        bool isValidDateRange(DateTime? start, DateTime? end) {
+                          return (start == null && end == null) ||
+                              (start != null && end != null);
+                        }
+
+                        // ✅ دالة إظهار التنبيه
+                        Future<void> showValidationDialog(
+                          String message,
+                        ) async {
+                          return showDialog(
+                            context: context,
+                            builder:
+                                (_) => AlertDialog(
+                                  title: const Text("Incomplete Date Range"),
+                                  content: Text(message),
+                                  actions: [
+                                    TextButton(
+                                      onPressed:
+                                          () => Navigator.of(context).pop(),
+                                      child: const Text("OK"),
+                                    ),
+                                  ],
+                                ),
+                          );
+                        }
+
+                        // ✅ التحقق من التواريخ
+                        if (!isValidDateRange(_startDate, _endDate)) {
+                          showValidationDialog(
+                            "Please select both start and end date for creation date.",
+                          );
+                          return;
+                        }
+                        if (!isValidDateRange(
+                          _lastStageUpdateStart,
+                          _lastStageUpdateEnd,
+                        )) {
+                          showValidationDialog(
+                            "Please select both start and end date for last stage update.",
+                          );
+                          return;
+                        }
                         log("selectedDeveloper: $selectedDeveloper");
                         log("selectedsales: $selectedSales");
                         context
@@ -370,6 +498,10 @@ class _FilterDialogState extends State<FilterDialog> {
                               stage: selectedStage,
                               channel: selectedChannel,
                               sales: selectedSales,
+                              startDate: _startDate,
+                              endDate: _endDate,
+                              lastStageUpdateStart: _lastStageUpdateStart,
+                              lastStageUpdateEnd: _lastStageUpdateEnd,
                             );
                         Navigator.pop(context); // ✅ اقفل الـDialog بعد التطبيق
                       },

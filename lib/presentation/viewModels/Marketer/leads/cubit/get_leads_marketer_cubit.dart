@@ -60,6 +60,12 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
                 )
                 .toList();
       }
+      // ترتيب من الأحدث إلى الأقدم
+      filteredData?.sort((a, b) {
+        final aDate = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
+        final bDate = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
+        return bDate.compareTo(aDate);
+      });
 
       log("✅ تم جلب البيانات بنجاح.");
       emit(GetLeadsMarketerSuccess(LeadResponse(data: filteredData)));
@@ -135,6 +141,10 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
     String? communicationWay,
     String? campaign,
     String? query, // 🟡 نص البحث العام من TextField
+    DateTime? startDate,
+    DateTime? endDate,
+    DateTime? lastStageUpdateStart,
+    DateTime? lastStageUpdateEnd,
   }) {
     if (_originalLeadsResponse == null ||
         _originalLeadsResponse!.data == null) {
@@ -142,6 +152,22 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
         const GetLeadsMarketerFailure("No leads data available for filtering."),
       ); // رسالة أوضح
       return;
+    }
+    DateTime getDateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+
+    DateTime? parseNullableDate(String? dateStr) {
+      if (dateStr == null) return null;
+      final trimmed = dateStr.trim();
+      if (trimmed.isEmpty || trimmed == '-') return null;
+      DateTime? parsedDate = DateTime.tryParse(trimmed);
+      if (parsedDate == null) {
+        try {
+          parsedDate = DateTime.parse(trimmed);
+        } catch (e) {
+          return null;
+        }
+      }
+      return parsedDate;
     }
     // ابدأ دائمًا من البيانات الأصلية غير المُفلترة
     List<LeadData> filteredLeads = List.from(_originalLeadsResponse!.data!);
@@ -157,7 +183,6 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
             return matchName || matchEmail || matchPhone;
           }).toList();
     }
-
     // 2. تطبيق الفلترة بالـ 'name' (إذا تم إرساله من الـ dialog كبحث بالاسم فقط)
     // هذا يمكن دمجه مع الـ 'query' إذا كان البحث العام يغطي الاسم.
     // لكن إذا كنت تريد البحث بالاسم فقط من الـ dialog بشكل منفصل عن الـ query العام:
@@ -173,7 +198,6 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
         filteredLeads.where((lead) {
           final leadPhoneCode =
               lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
-
           final matchCountry =
               country == null ||
               (leadPhoneCode != null && leadPhoneCode.startsWith(country));
@@ -200,6 +224,39 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
           final matchCampaign =
               campaign == null ||
               (lead.campaign?.name?.toLowerCase() == campaign.toLowerCase());
+              final recordDate = parseNullableDate(lead.date);
+          final recordDateOnly =
+              recordDate != null ? getDateOnly(recordDate) : null;
+          final startDateOnly =
+              startDate != null ? getDateOnly(startDate) : null;
+          final endDateOnly = endDate != null ? getDateOnly(endDate) : null;
+          final matchDateRange =
+              (startDate == null && endDate == null) ||
+              (recordDateOnly != null &&
+                  (startDateOnly == null ||
+                      !recordDateOnly.isBefore(startDateOnly)) &&
+                  (endDateOnly == null ||
+                      !recordDateOnly.isAfter(endDateOnly)));
+          final lastStageUpdated = parseNullableDate(lead.lastStageDateUpdated);
+          final lastStageUpdatedOnly =
+              lastStageUpdated != null ? getDateOnly(lastStageUpdated) : null;
+          final lastStageUpdateStartOnly =
+              lastStageUpdateStart != null
+                  ? getDateOnly(lastStageUpdateStart)
+                  : null;
+          final lastStageUpdateEndOnly =
+              lastStageUpdateEnd != null
+                  ? getDateOnly(lastStageUpdateEnd)
+                  : null;
+          final matchLastStageUpdated =
+              (lastStageUpdateStart == null && lastStageUpdateEnd == null) ||
+              (lastStageUpdatedOnly != null &&
+                  (lastStageUpdateStartOnly == null ||
+                      !lastStageUpdatedOnly.isBefore(
+                        lastStageUpdateStartOnly,
+                      )) &&
+                  (lastStageUpdateEndOnly == null ||
+                      !lastStageUpdatedOnly.isAfter(lastStageUpdateEndOnly)));
           return matchCountry &&
               matchDev &&
               matchProject &&
@@ -207,6 +264,8 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
               matchChannel &&
               matchSales &&
               matchCommunicationWay &&
+              matchDateRange &&
+              matchLastStageUpdated &&
               matchCampaign;
         }).toList();
     if (filteredLeads.isEmpty &&
@@ -219,6 +278,10 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
             channel != null ||
             sales != null ||
             communicationWay != null ||
+            startDate != null ||
+            endDate != null ||
+            lastStageUpdateStart != null ||
+            lastStageUpdateEnd != null ||
             campaign != null)) {
       emit(
         const GetLeadsMarketerFailure("No leads found matching your criteria."),
@@ -254,6 +317,7 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
     }
     return null;
   }
+
   void filterLeadsMarketerForAdvancedSearch({
     String? sales, // This is the sales ID
     String? country, // This is the country phone code (e.g., "971")

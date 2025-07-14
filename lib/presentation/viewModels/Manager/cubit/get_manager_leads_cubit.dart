@@ -23,6 +23,13 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
 
     try {
       final leadsResponse = await _getLeadsService.getLeadsDataByManager();
+      // ترتيب من الأحدث إلى الأقدم
+      leadsResponse.data?.sort((a, b) {
+        final aDate = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
+        final bDate = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
+        return bDate.compareTo(aDate);
+      });
+
       _originalLeadsResponse = leadsResponse; // 🟡 حفظ البيانات الأصلية
       // تحميل عدد الـ leads لكل مرحلة
       _salesLeadCount = await _getLeadsService.getLeadCountPerStageInManager();
@@ -98,11 +105,31 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
     String? channel,
     String? sales,
     String? query,
+    DateTime? startDate,
+    DateTime? endDate,
+    DateTime? lastStageUpdateStart,
+    DateTime? lastStageUpdateEnd,
   }) {
     if (_originalLeadsResponse == null ||
         _originalLeadsResponse!.data == null) {
       emit(GetManagerLeadsFailure("لا توجد بيانات Leads لفلترتها."));
       return;
+    }
+    DateTime getDateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+
+    DateTime? parseNullableDate(String? dateStr) {
+      if (dateStr == null) return null;
+      final trimmed = dateStr.trim();
+      if (trimmed.isEmpty || trimmed == '-') return null;
+      DateTime? parsedDate = DateTime.tryParse(trimmed);
+      if (parsedDate == null) {
+        try {
+          parsedDate = DateTime.parse(trimmed);
+        } catch (e) {
+          return null;
+        }
+      }
+      return parsedDate;
     }
     final filtered =
         _originalLeadsResponse!.data!.where((lead) {
@@ -122,12 +149,47 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
           final matchChannel = channel == null || lead.chanel?.name == channel;
           final matchStage = stage == null || lead.stage?.name == stage;
           final matchSales = sales == null || lead.sales?.name == sales;
+          final recordDate = parseNullableDate(lead.date);
+          final recordDateOnly =
+              recordDate != null ? getDateOnly(recordDate) : null;
+          final startDateOnly =
+              startDate != null ? getDateOnly(startDate) : null;
+          final endDateOnly = endDate != null ? getDateOnly(endDate) : null;
+          final matchDateRange =
+              (startDate == null && endDate == null) ||
+              (recordDateOnly != null &&
+                  (startDateOnly == null ||
+                      !recordDateOnly.isBefore(startDateOnly)) &&
+                  (endDateOnly == null ||
+                      !recordDateOnly.isAfter(endDateOnly)));
+          final lastStageUpdated = parseNullableDate(lead.lastStageDateUpdated);
+          final lastStageUpdatedOnly =
+              lastStageUpdated != null ? getDateOnly(lastStageUpdated) : null;
+          final lastStageUpdateStartOnly =
+              lastStageUpdateStart != null
+                  ? getDateOnly(lastStageUpdateStart)
+                  : null;
+          final lastStageUpdateEndOnly =
+              lastStageUpdateEnd != null
+                  ? getDateOnly(lastStageUpdateEnd)
+                  : null;
+          final matchLastStageUpdated =
+              (lastStageUpdateStart == null && lastStageUpdateEnd == null) ||
+              (lastStageUpdatedOnly != null &&
+                  (lastStageUpdateStartOnly == null ||
+                      !lastStageUpdatedOnly.isBefore(
+                        lastStageUpdateStartOnly,
+                      )) &&
+                  (lastStageUpdateEndOnly == null ||
+                      !lastStageUpdatedOnly.isAfter(lastStageUpdateEndOnly)));
           return matchQuery &&
               matchCountry &&
               matchDev &&
               matchProject &&
               matchStage &&
               matchChannel &&
+              matchDateRange &&
+              matchLastStageUpdated &&
               matchSales;
         }).toList();
     emit(GetManagerLeadsSuccess(LeadResponse(data: filtered)));
@@ -148,11 +210,12 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
     if (_originalLeadsResponse?.data == null) return {};
     for (final lead in _originalLeadsResponse!.data!) {
       final sales = lead.sales;
+      final teamleader= lead.sales?.teamleader;
       final teamLeaderName = sales?.teamleader?.name;
       log(
         "👀 Lead: ${lead.name}, Sales: ${sales?.name}, TeamLeader: $teamLeaderName",
       );
-      if (teamLeaderName != null && sales?.name != null) {
+      if (teamLeaderName != null && sales?.name != null && teamleader?.role?.toLowerCase() == "team leader") {
         grouped.putIfAbsent(teamLeaderName, () => []);
         grouped[teamLeaderName]!.add(lead);
       }

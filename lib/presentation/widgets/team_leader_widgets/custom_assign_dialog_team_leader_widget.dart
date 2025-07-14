@@ -20,6 +20,7 @@ class CustomAssignDialogTeamLeaderWidget extends StatefulWidget {
   final List? leadIds;
   final String? leadId;
   final String fcmyoken;
+  final String? managerfcm;
 
   const CustomAssignDialogTeamLeaderWidget({
     super.key,
@@ -28,6 +29,7 @@ class CustomAssignDialogTeamLeaderWidget extends StatefulWidget {
     this.leadId,
     this.leadIds,
     required this.fcmyoken,
+    this.managerfcm,
   });
 
   @override
@@ -261,6 +263,12 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                                       title: "Lead",
                                       body: "Lead assigned successfully ✅",
                                       fcmtokennnn: widget.fcmyoken,
+                                    );
+                                    context.read<NotificationCubit>().sendNotificationToToken(
+                                      // 👈 هنعرف دي تحت
+                                      title: "Lead",
+                                      body: "Lead assigned successfully ✅",
+                                      fcmtokennnn: widget.managerfcm!,
                                     );
                                 cubit.apiService.fetchLeadAssigned(
                                   widget.leadId!,

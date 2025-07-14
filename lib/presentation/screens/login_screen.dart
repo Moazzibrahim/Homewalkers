@@ -192,6 +192,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(
+                                      color:
+                                          Constants
+                                              .maincolor, // ← لما يتم التركيز
+                                      width: 1.5,
+                                    ),
+                                  ),
                                   errorText:
                                       isEmailError
                                           ? errorMessage // أو "Invalid email or password"
@@ -199,18 +208,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                               ? "Invalid Email Address"
                                               : null),
                                   errorStyle: const TextStyle(
-                                    color: Colors.red,
+                                    color: Color(0xffFF0000),
                                   ),
                                   errorBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                     borderSide: const BorderSide(
-                                      color: Colors.red,
+                                      color: Color(0xffFF0000),
                                       width: 1.5,
                                     ),
                                   ),
                                 ),
                               ),
-
                               const SizedBox(height: 20),
                               // Password Field
                               const Text(
@@ -252,23 +260,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(
+                                      color:
+                                          Constants
+                                              .maincolor, // ← لما يتم التركيز
+                                      width: 1.5,
+                                    ),
+                                  ),
                                   errorText:
                                       isPasswordError ? errorMessage : null,
                                   errorStyle: const TextStyle(
-                                    color: Colors.red,
+                                    color: Color(0xffFF0000),
                                   ),
                                   errorBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                     borderSide: const BorderSide(
-                                      color: Colors.red,
+                                      color: Color(0xffFF0000),
                                       width: 1.5,
                                     ),
                                   ),
                                 ),
                               ),
-
                               const SizedBox(height: 10),
-
                               // Remember Me
                               Row(
                                 children: [

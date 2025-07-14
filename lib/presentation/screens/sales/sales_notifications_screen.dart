@@ -125,9 +125,9 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
 
             return TabBarView(
               children: [
-                _buildNotificationList(allNotifications),
-                _buildNotificationList(comments),
-                _buildNotificationList(assigns),
+                _buildNotificationList(context,allNotifications),
+                _buildNotificationList(context,comments),
+                _buildNotificationList(context,assigns),
               ],
             );
           },
@@ -136,16 +136,27 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationList(List<NotificationItem> notifications) {
-    if (notifications.isEmpty) {
-      return const Center(
-        child: Text(
-          "No notifications in this category.",
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
-    return ListView.builder(
+  Widget _buildNotificationList(BuildContext context, List<NotificationItem> notifications) {
+  if (notifications.isEmpty) {
+    return const Center(
+      child: Text(
+        "No notifications in this category.",
+        style: TextStyle(color: Colors.grey),
+      ),
+    );
+  }
+
+  return RefreshIndicator(
+    onRefresh: () async {
+      final prefs = await SharedPreferences.getInstance();
+      final role = prefs.getString('role');
+      if (role == "Admin") {
+        await context.read<NotificationCubit>().fetchAllNotifications();
+      } else {
+        await context.read<NotificationCubit>().fetchNotifications();
+      }
+    },
+    child: ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: notifications.length,
       itemBuilder: (context, index) {
@@ -159,8 +170,10 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
         }
         return _buildCommentOrassignTile(item);
       },
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildCommentOrassignTile(NotificationItem item) {
     final isLight = Theme.of(context).brightness == Brightness.light;

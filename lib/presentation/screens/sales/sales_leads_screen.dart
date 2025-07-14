@@ -403,62 +403,7 @@ class SalesLeadsScreen extends StatelessWidget {
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 12.h),
-
-                                    // ---------- Row 3: Stage Info ----------
-                                    // Total Submissions is removed as it's not in the provided code logic
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            getStatusIcon(
-                                              lead.stage?.name ?? "",
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              lead.stage?.name ?? "none",
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: 11.sp,
-                                                fontWeight: FontWeight.w400,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              "Σ",
-                                              style: TextStyle(
-                                                color:
-                                                    Theme.of(
-                                                              context,
-                                                            ).brightness ==
-                                                            Brightness.light
-                                                        ? Constants.maincolor
-                                                        : Constants
-                                                            .mainDarkmodecolor,
-                                                fontSize: 18.sp,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 3),
-                                            Text(
-                                              // Logic from your new code
-                                              "Total Submission: ${lead.totalSubmissions}",
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 12.h),
-
-                                    // ---------- Row 4: WhatsApp and Phone Call ----------
+                                    SizedBox(height: 14.h),
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
@@ -508,7 +453,7 @@ class SalesLeadsScreen extends StatelessWidget {
                                               Text(
                                                 lead.phone ?? '',
                                                 style: TextStyle(
-                                                  fontSize: 11.sp,
+                                                  fontSize: 12.sp,
                                                 ),
                                               ),
                                             ],
@@ -546,203 +491,222 @@ class SalesLeadsScreen extends StatelessWidget {
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 16.h),
-
-                                    // ---------- Row 5: Last Comment Button ----------
-                                    // The action icons (Edit, Copy) are removed as they are not in the provided logic or are requested to be removed.
+                                    SizedBox(height: 12.h),
+                                    // ---------- Row 3: Stage Info ----------
+                                    // Total Submissions is removed as it's not in the provided code logic
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
                                       children: [
-                                        ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Constants.maincolor
-                                                    : Constants
-                                                        .mainDarkmodecolor,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
+                                        Row(
+                                          children: [
+                                            getStatusIcon(
+                                              lead.stage?.name ?? "",
                                             ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              lead.stage?.name ?? "none",
+                                              style: GoogleFonts.montserrat(
+                                                fontSize: 10.sp,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
-                                          ),
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (_) {
-                                                return Dialog(
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                  child: BlocProvider(
-                                                    create:
-                                                        (
-                                                          _,
-                                                        ) => LeadCommentsCubit(
-                                                          GetAllLeadCommentsApiService(),
-                                                        )..fetchLeadComments(
-                                                          lead.id!,
-                                                        ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                            16.0,
-                                                          ),
-                                                      child: BlocBuilder<
-                                                        LeadCommentsCubit,
-                                                        LeadCommentsState
-                                                      >(
-                                                        builder: (
-                                                          context,
-                                                          state,
-                                                        ) {
-                                                          if (state
-                                                              is LeadCommentsLoading) {
-                                                            return const SizedBox(
-                                                              height: 100,
-                                                              child: Center(
-                                                                child:
-                                                                    CircularProgressIndicator(),
-                                                              ),
-                                                            );
-                                                          } else if (state
-                                                              is LeadCommentsError) {
-                                                            return SizedBox(
-                                                              height: 100,
-                                                              child: Center(
-                                                                child: Text(
-                                                                  "No comments available.",
-                                                                ),
-                                                              ),
-                                                            );
-                                                          } else if (state
-                                                              is LeadCommentsLoaded) {
-                                                            final data =
-                                                                state
-                                                                    .leadComments
-                                                                    .data;
-                                                            if (data == null ||
-                                                                data.isEmpty) {
-                                                              return const Text(
-                                                                'No comments available.',
-                                                              );
-                                                            }
-                                                            final firstItem =
-                                                                data.first;
-                                                            final firstComment =
-                                                                firstItem
-                                                                            .comments
-                                                                            ?.isNotEmpty ==
-                                                                        true
-                                                                    ? firstItem
-                                                                        .comments!
-                                                                        .first
-                                                                    : null;
-                                                            return Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              children: [
-                                                                const Text(
-                                                                  "Last Comment",
-                                                                  style: TextStyle(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                  ),
-                                                                ),
-                                                                const SizedBox(
-                                                                  height: 10,
-                                                                ),
-                                                                const Text(
-                                                                  "Comment",
-                                                                  style: TextStyle(
-                                                                    color:
-                                                                        Constants
-                                                                            .maincolor,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                  ),
-                                                                ),
-                                                                const SizedBox(
-                                                                  height: 5,
-                                                                ),
-                                                                Text(
-                                                                  firstComment
-                                                                          ?.firstcomment
-                                                                          ?.text ??
-                                                                      'No comment available.',
-                                                                ),
-                                                                const SizedBox(
-                                                                  height: 10,
-                                                                ),
-                                                                const Text(
-                                                                  "Action (Plan)",
-                                                                  style: TextStyle(
-                                                                    color:
-                                                                        Constants
-                                                                            .maincolor,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                  ),
-                                                                ),
-                                                                const SizedBox(
-                                                                  height: 5,
-                                                                ),
-                                                                Text(
-                                                                  firstComment
-                                                                          ?.secondcomment
-                                                                          ?.text ??
-                                                                      'No action available.',
-                                                                ),
-                                                              ],
-                                                            );
-                                                          } else {
-                                                            return const SizedBox(
-                                                              height: 100,
-                                                              child: Text(
-                                                                "no comments",
-                                                              ),
-                                                            );
-                                                          }
-                                                        },
-                                                      ),
+                                          ],
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            ElevatedButton.icon(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    Theme.of(
+                                                              context,
+                                                            ).brightness ==
+                                                            Brightness.light
+                                                        ? Constants.maincolor
+                                                        : Constants
+                                                            .mainDarkmodecolor,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 8,
                                                     ),
-                                                  ),
+                                              ),
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) {
+                                                    return Dialog(
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                      ),
+                                                      child: BlocProvider(
+                                                        create:
+                                                            (
+                                                              _,
+                                                            ) => LeadCommentsCubit(
+                                                              GetAllLeadCommentsApiService(),
+                                                            )..fetchLeadComments(
+                                                              lead.id!,
+                                                            ),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                16.0,
+                                                              ),
+                                                          child: BlocBuilder<
+                                                            LeadCommentsCubit,
+                                                            LeadCommentsState
+                                                          >(
+                                                            builder: (
+                                                              context,
+                                                              state,
+                                                            ) {
+                                                              if (state
+                                                                  is LeadCommentsLoading) {
+                                                                return const SizedBox(
+                                                                  height: 100,
+                                                                  child: Center(
+                                                                    child:
+                                                                        CircularProgressIndicator(),
+                                                                  ),
+                                                                );
+                                                              } else if (state
+                                                                  is LeadCommentsError) {
+                                                                return SizedBox(
+                                                                  height: 100,
+                                                                  child: Center(
+                                                                    child: Text(
+                                                                      "No comments available.",
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              } else if (state
+                                                                  is LeadCommentsLoaded) {
+                                                                final data =
+                                                                    state
+                                                                        .leadComments
+                                                                        .data;
+                                                                if (data ==
+                                                                        null ||
+                                                                    data.isEmpty) {
+                                                                  return const Text(
+                                                                    'No comments available.',
+                                                                  );
+                                                                }
+                                                                final firstItem =
+                                                                    data.first;
+                                                                final firstComment =
+                                                                    firstItem.comments?.isNotEmpty ==
+                                                                            true
+                                                                        ? firstItem
+                                                                            .comments!
+                                                                            .first
+                                                                        : null;
+                                                                return Column(
+                                                                  mainAxisSize:
+                                                                      MainAxisSize
+                                                                          .min,
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
+                                                                  children: [
+                                                                    const Text(
+                                                                      "Last Comment",
+                                                                      style: TextStyle(
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height:
+                                                                          10,
+                                                                    ),
+                                                                    const Text(
+                                                                      "Comment",
+                                                                      style: TextStyle(
+                                                                        color:
+                                                                            Constants.maincolor,
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height: 5,
+                                                                    ),
+                                                                    Text(
+                                                                      firstComment
+                                                                              ?.firstcomment
+                                                                              ?.text ??
+                                                                          'No comment available.',
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height:
+                                                                          10,
+                                                                    ),
+                                                                    const Text(
+                                                                      "Action (Plan)",
+                                                                      style: TextStyle(
+                                                                        color:
+                                                                            Constants.maincolor,
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height: 5,
+                                                                    ),
+                                                                    Text(
+                                                                      firstComment
+                                                                              ?.secondcomment
+                                                                              ?.text ??
+                                                                          'No action available.',
+                                                                    ),
+                                                                  ],
+                                                                );
+                                                              } else {
+                                                                return const SizedBox(
+                                                                  height: 100,
+                                                                  child: Text(
+                                                                    "no comments",
+                                                                  ),
+                                                                );
+                                                              }
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
                                                 );
                                               },
-                                            );
-                                          },
-                                          icon: const Icon(
-                                            Icons.chat_bubble_outline,
-                                            color: Colors.white,
-                                            size: 16,
-                                          ),
-                                          label: const Text(
-                                            "Last Comment",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w600,
+                                              icon: const Icon(
+                                                Icons.chat_bubble_outline,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                              label: const Text(
+                                                "Last Comment",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
                                             ),
-                                          ),
+                                            // Empty container as there are no action buttons on the right
+                                            const SizedBox.shrink(),
+                                          ],
                                         ),
-                                        // Empty container as there are no action buttons on the right
-                                        const SizedBox.shrink(),
                                       ],
                                     ),
 
@@ -758,7 +722,12 @@ class SalesLeadsScreen extends StatelessWidget {
                                             MaterialPageRoute(
                                               builder:
                                                   (_) => BlocProvider(
-                                                    create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                                                    create:
+                                                        (
+                                                          _,
+                                                        ) => LeadCommentsCubit(
+                                                          GetAllLeadCommentsApiService(),
+                                                        ),
                                                     child: SalesLeadsDetailsScreen(
                                                       leedId: lead.id!,
                                                       leadName: lead.name ?? '',
@@ -799,6 +768,16 @@ class SalesLeadsScreen extends StatelessWidget {
                                                               ?.name ??
                                                           "no developer",
                                                       fcmtoken: salesfcmtoken,
+                                                      managerfcmtoken:
+                                                          lead
+                                                              .sales
+                                                              ?.manager
+                                                              ?.fcmtokenn,
+                                                      teamleaderfcmtoken:
+                                                          lead
+                                                              .sales
+                                                              ?.teamleader
+                                                              ?.fcmtokenn,
                                                     ),
                                                   ),
                                             ),

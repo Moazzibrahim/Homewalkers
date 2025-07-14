@@ -88,9 +88,18 @@ class _StagesScreenState extends State<StagesScreen>
                     Expanded(
                       child: TabBar(
                         controller: _tabController,
-                        labelColor: Theme.of(context).primaryColor,
-                        unselectedLabelColor: Colors.grey,
-                        indicatorColor: Theme.of(context).primaryColor,
+                        labelColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Colors.white, // أو أي لون مناسب للدارك مود
+                        unselectedLabelColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.grey
+                                : Colors.grey[400],
+                        indicatorColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Colors.white,
                         indicatorSize: TabBarIndicatorSize.tab,
                         tabs: const [Tab(text: "Stages"), Tab(text: "Types")],
                       ),

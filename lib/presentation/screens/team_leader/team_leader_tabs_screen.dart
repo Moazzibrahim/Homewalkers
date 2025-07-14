@@ -35,10 +35,10 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.backgroundlightmode
+              : Constants.backgroundDarkmode,
       body: WillPopScope(
         onWillPop: () async {
           // منع الرجوع إلى الشاشة السابقة
@@ -67,7 +67,10 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الخلفية
+                : Colors.black,
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
         child: Container(
@@ -88,7 +91,7 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
                 onTap: () => _onTap(1),
                 child: _bottomBarItem(
                   Icons.groups,
-                  'sales',
+                  'Sales',
                   _currentIndex == 1,
                 ),
               ),
@@ -97,7 +100,7 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
                 onTap: () => _onTap(2),
                 child: _bottomBarItem(
                   Icons.assignment,
-                  'assign',
+                  'Assign',
                   _currentIndex == 2,
                 ),
               ),
@@ -113,13 +116,11 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton( 
-        backgroundColor:
-            Theme.of(context).brightness == Brightness.light
-                ? Constants.maincolor
-                : Constants.mainDarkmodecolor,
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Constants.maincolor,
+        elevation: 6,
+        shape: const CircleBorder(),
         onPressed: () {
-          // أضف وظيفة الزر هنا
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const CreateLeadScreen()),

@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
@@ -13,6 +14,7 @@ import 'package:homewalkers_app/presentation/screens/team_leader/leads_details_t
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/custom_assign_dialog_team_leader_widget.dart';
@@ -35,6 +37,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   String? leadIdd;
   TextEditingController searchController = TextEditingController();
   String? salesfcmtoken;
+  String? managerfcmtoken;
   // isOutdated is a state variable and should be managed per lead, not globally.
   // We will calculate it inside the buildUserTile or pass it from itemBuilder.
 
@@ -213,7 +216,6 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                         return const Center(child: CircularProgressIndicator());
                       } else if (state is GetLeadsTeamLeaderSuccess) {
                         _leads = state.leadsData.data ?? [];
-
                         // تأكد من مزامنة selected مع طول البيانات
                         if (selected.length != _leads.length) {
                           selected = List.generate(
@@ -241,12 +243,12 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                               );
                               log("fcmToken of sales: $salesfcmtoken");
                               leadIdd = lead.id.toString();
+                              managerfcmtoken = lead.sales?.manager?.fcmtokenn;
                               final leadstageupdated = lead.stagedateupdated;
                               final leadStagetype = lead.stage?.name ?? "";
                               DateTime? stageUpdatedDate;
                               bool isOutdatedLocal =
                                   false; // Local variable for each lead
-
                               if (leadstageupdated != null) {
                                 try {
                                   stageUpdatedDate = DateTime.parse(
@@ -308,6 +310,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 isOutdated: isOutdatedLocal,
                                 fcmtoken:
                                     salesfcmtoken!, // Pass the calculated boolean
+                                    managerFcmtoken: lead.sales?.manager?.fcmtokenn ?? '',
+
                               );
                             },
                           ),
@@ -375,6 +379,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                         ? Constants.maincolor
                         : Constants.mainDarkmodecolor,
                 fcmyoken: salesfcmtoken!,
+                managerfcm:managerfcmtoken ,
               ),
             );
           },
@@ -427,6 +432,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     required String leadStagetype, // Add this parameter
     required bool isOutdated,
     required String fcmtoken, // Add this parameter
+    required String managerFcmtoken,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -435,7 +441,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
         color:
             Theme.of(context).brightness == Brightness.light
                 ? Colors.white
-                : Colors.grey[800],
+                : Colors.grey[900],
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
@@ -499,34 +505,18 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
             ],
           ),
           const Divider(height: 16, thickness: 1),
-          _buildInfoRow(
-            context,
-            Icons.category,
-            'stage',
-            status,
-            valueColor:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
+          _buildInfoRow(context, Icons.person_pin_outlined, '', salesName),
+          SizedBox(height: 10.h),
+          _buildContactRow(context, lead.phone),
+          SizedBox(height: 10.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildStageAndSubmissionRow(context, lead.stage?.name ?? "", lead.totalSubmissions ?? 0),
+                _buildLastCommentButton(context, lead),
+            ],
           ),
-          _buildInfoRow(context, Icons.person, 'Sales', salesName),
-          InkWell(
-            onTap: () {
-              makePhoneCall(phone);
-            },
-            child: _buildInfoRow(
-              context,
-              Icons.phone,
-              'Phone',
-              phone,
-              valueColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.maincolor
-                      : Constants.mainDarkmodecolor,
-              isUnderlined: true,
-            ),
-          ),
-          _buildInfoRow(context, Icons.email, 'Email', email),
+        
           const SizedBox(height: 10),
           Align(
             alignment: Alignment.centerRight,
@@ -555,6 +545,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             userlogname: userlogname,
                             teamleadername: teamleadername,
                             fcmtoken: fcmtoken,
+                            managerfcmtoken: managerFcmtoken,
                           ),
                         ),
                   ),
@@ -602,7 +593,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            '$label: ',
+            '$label ',
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -633,6 +624,224 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
       ),
     );
   }
+  Widget _buildStageAndSubmissionRow(BuildContext context, String stageName, int totalSubmissions) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Row(
+        children: [
+          getStatusIcon(stageName),
+          const SizedBox(width: 5),
+          Text(
+            stageName.isNotEmpty ? stageName : "none",
+            style: GoogleFonts.montserrat(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+Widget _buildContactRow(BuildContext context, String? phone) {
+  final cleanPhone = phone?.replaceAll(RegExp(r'\D'), '') ?? '';
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      InkWell(
+        onTap: () async {
+          final url = "https://wa.me/$cleanPhone";
+          if (await canLaunchUrl(Uri.parse(url))) {
+            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Could not open WhatsApp.")),
+            );
+          }
+        },
+        child: Row(
+          children: [
+            FaIcon(
+              FontAwesomeIcons.whatsapp,
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              phone ?? '',
+              style: TextStyle(fontSize: 12.sp),
+            ),
+          ],
+        ),
+      ),
+      InkWell(
+        onTap: () => makePhoneCall(phone ?? ''),
+        child: Row(
+          children: [
+            Icon(
+              Icons.phone,
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              phone ?? '',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+Widget _buildLastCommentButton(BuildContext context, LeadData lead) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).brightness == Brightness.light
+              ? Constants.maincolor
+              : Constants.mainDarkmodecolor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        ),
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (_) => Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: BlocProvider(
+                create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService())
+                  ..fetchLeadComments(lead.id!),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
+                    builder: (context, state) {
+                      if (state is LeadCommentsLoading) {
+                        return const SizedBox(
+                          height: 100,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      } else if (state is LeadCommentsError) {
+                        return const SizedBox(
+                          height: 100,
+                          child: Center(child: Text("No comments available.")),
+                        );
+                      } else if (state is LeadCommentsLoaded) {
+                        final data = state.leadComments.data;
+                        if (data == null || data.isEmpty) {
+                          return const Text('No comments available.');
+                        }
+                        final comment = data.first.comments?.first;
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("Last Comment", style: TextStyle(fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 10),
+                            const Text("Comment", style: TextStyle(color: Constants.maincolor, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 5),
+                            Text(comment?.firstcomment?.text ?? 'No comment available.'),
+                            const SizedBox(height: 10),
+                            const Text("Action (Plan)", style: TextStyle(color: Constants.maincolor, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 5),
+                            Text(comment?.secondcomment?.text ?? 'No action available.'),
+                          ],
+                        );
+                      } else {
+                        return const Text("no comments");
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+        icon: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 16),
+        label: const Text("Last Comment", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+      ),
+      const SizedBox.shrink(),
+    ],
+  );
+}
+
+  Widget getStatusIcon(String status) {
+      switch (status) {
+        case 'Follow Up':
+          return Icon(
+            Icons.mark_email_unread_outlined,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Follow':
+          return Icon(
+            Icons.mark_email_unread_outlined,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Meeting':
+          return Icon(
+            Icons.chat_bubble_outline,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Done Deal':
+          return Icon(
+            Icons.check_box_outlined,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Interested':
+          return Icon(
+            FontAwesomeIcons.check,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Not Interested':
+          return Icon(
+            FontAwesomeIcons.timesCircle,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Fresh':
+          return Icon(
+            Icons.new_releases,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Transfer':
+          return Icon(
+            Icons.no_transfer,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        default:
+          return const Icon(Icons.info_outline);
+      }
+    }
 
   void makePhoneCall(String phoneNumber) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);

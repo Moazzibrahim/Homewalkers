@@ -35,6 +35,14 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     if (showLoading) emit(GetLeadsLoading());
     try {
       final data = await apiService.getAssignedData();
+
+      // ترتيب الـ leads من الأحدث إلى الأقدم
+      data.data?.sort((a, b) {
+        final aDate = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
+        final bDate = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
+        return bDate.compareTo(aDate); // الحديث قبل القديم
+      });
+
       _cachedLeads = data;
       final prefs = await SharedPreferences.getInstance();
       final String? teamleaderId = data.data?.first.sales?.teamleader?.id;
@@ -110,11 +118,32 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     String? stage,
     String? channel,
     String? query,
+    DateTime? startDate,
+    DateTime? endDate,
+    DateTime? lastStageUpdateStart,
+    DateTime? lastStageUpdateEnd,
   }) {
     if (_cachedLeads == null || _cachedLeads!.data == null) {
       emit(GetLeadsError("لا توجد بيانات Leads لفلترتها."));
       return;
     }
+    DateTime getDateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+
+    DateTime? parseNullableDate(String? dateStr) {
+      if (dateStr == null) return null;
+      final trimmed = dateStr.trim();
+      if (trimmed.isEmpty || trimmed == '-') return null;
+      DateTime? parsedDate = DateTime.tryParse(trimmed);
+      if (parsedDate == null) {
+        try {
+          parsedDate = DateTime.parse(trimmed);
+        } catch (e) {
+          return null;
+        }
+      }
+      return parsedDate;
+    }
+
     final filtered =
         _cachedLeads!.data!.where((lead) {
           final q = query?.toLowerCase() ?? '';
@@ -132,11 +161,46 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
           final matchProject = project == null || lead.project?.name == project;
           final matchChannel = channel == null || lead.chanel?.name == channel;
           final matchStage = stage == null || lead.stage?.name == stage;
+          final recordDate = parseNullableDate(lead.date);
+          final recordDateOnly =
+              recordDate != null ? getDateOnly(recordDate) : null;
+          final startDateOnly =
+              startDate != null ? getDateOnly(startDate) : null;
+          final endDateOnly = endDate != null ? getDateOnly(endDate) : null;
+          final matchDateRange =
+              (startDate == null && endDate == null) ||
+              (recordDateOnly != null &&
+                  (startDateOnly == null ||
+                      !recordDateOnly.isBefore(startDateOnly)) &&
+                  (endDateOnly == null ||
+                      !recordDateOnly.isAfter(endDateOnly)));
+          final lastStageUpdated = parseNullableDate(lead.lastStageDateUpdated);
+          final lastStageUpdatedOnly =
+              lastStageUpdated != null ? getDateOnly(lastStageUpdated) : null;
+          final lastStageUpdateStartOnly =
+              lastStageUpdateStart != null
+                  ? getDateOnly(lastStageUpdateStart)
+                  : null;
+          final lastStageUpdateEndOnly =
+              lastStageUpdateEnd != null
+                  ? getDateOnly(lastStageUpdateEnd)
+                  : null;
+          final matchLastStageUpdated =
+              (lastStageUpdateStart == null && lastStageUpdateEnd == null) ||
+              (lastStageUpdatedOnly != null &&
+                  (lastStageUpdateStartOnly == null ||
+                      !lastStageUpdatedOnly.isBefore(
+                        lastStageUpdateStartOnly,
+                      )) &&
+                  (lastStageUpdateEndOnly == null ||
+                      !lastStageUpdatedOnly.isAfter(lastStageUpdateEndOnly)));
           return matchQuery &&
               matchCountry &&
               matchDev &&
               matchProject &&
               matchChannel &&
+              matchDateRange &&
+              matchLastStageUpdated &&
               matchStage;
         }).toList();
     emit(GetLeadsSuccess(LeadResponse(data: filtered)));

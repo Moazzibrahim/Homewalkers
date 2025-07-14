@@ -450,58 +450,6 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                       ],
                                     ),
                                     SizedBox(height: 12.h),
-
-                                    // ---------- Row 3: Stage and Total Submissions ----------
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            getStatusIcon(
-                                              lead.stage?.name ?? "",
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              lead.stage?.name ?? "none",
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: 11.sp,
-                                                fontWeight: FontWeight.w400,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              "Σ",
-                                              style: TextStyle(
-                                                color:
-                                                    Theme.of(
-                                                              context,
-                                                            ).brightness ==
-                                                            Brightness.light
-                                                        ? Constants.maincolor
-                                                        : Constants
-                                                            .mainDarkmodecolor,
-                                                fontSize: 18.sp,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 3),
-                                            Text(
-                                              "Total Submission: ${lead.totalSubmissions}",
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 12.h),
-
                                     // ---------- Row 4: WhatsApp and Phone Call ----------
                                     Row(
                                       mainAxisAlignment:
@@ -590,10 +538,27 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 16.h),
-
-                                    // ---------- Row 5: Last Comment Button and Action Icons ----------
+                                    SizedBox(height: 12.h),
                                     Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            getStatusIcon(
+                                              lead.stage?.name ?? "",
+                                            ),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              lead.stage?.name ?? "none",
+                                              style: GoogleFonts.montserrat(
+                                                fontSize: 10.sp,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       crossAxisAlignment:
@@ -825,227 +790,10 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             ),
                                           ),
                                         ),
-                                        Row(
-                                          children: [
-                                            // Edit button is REMOVED as requested.
-                                            // Copy Button with its specific logic
-                                            InkWell(
-                                              onTap: () {
-                                                if (lead.totalSubmissions! >
-                                                    1) {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder:
-                                                        (context) => Dialog(
-                                                          shape: RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  16,
-                                                                ),
-                                                          ),
-                                                          child: Padding(
-                                                            padding:
-                                                                const EdgeInsets.all(
-                                                                  16.0,
-                                                                ),
-                                                            child: SingleChildScrollView(
-                                                              child: Column(
-                                                                mainAxisSize:
-                                                                    MainAxisSize
-                                                                        .min,
-                                                                children: [
-                                                                  Row(
-                                                                    children: [
-                                                                      CircleAvatar(
-                                                                        backgroundColor:
-                                                                            Theme.of(
-                                                                                      context,
-                                                                                    ).brightness ==
-                                                                                    Brightness.light
-                                                                                ? Constants.maincolor
-                                                                                : Constants.mainDarkmodecolor,
-                                                                        child: Icon(
-                                                                          Icons
-                                                                              .copy,
-                                                                          color:
-                                                                              Colors.white,
-                                                                        ),
-                                                                      ),
-                                                                      const SizedBox(
-                                                                        width:
-                                                                            12,
-                                                                      ),
-                                                                      Text(
-                                                                        "Show Duplicate",
-                                                                        style: TextStyle(
-                                                                          fontSize:
-                                                                              18,
-                                                                          fontWeight:
-                                                                              FontWeight.bold,
-                                                                        ),
-                                                                      ),
-                                                                      Spacer(),
-                                                                      IconButton(
-                                                                        icon: Icon(
-                                                                          Icons
-                                                                              .close,
-                                                                        ),
-                                                                        onPressed:
-                                                                            () => Navigator.pop(
-                                                                              context,
-                                                                            ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 16,
-                                                                  ),
-                                                                  Row(
-                                                                    children: [
-                                                                      Text(
-                                                                        lead.name ??
-                                                                            "",
-                                                                        style: TextStyle(
-                                                                          fontWeight:
-                                                                              FontWeight.bold,
-                                                                          fontSize:
-                                                                              16,
-                                                                        ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 20,
-                                                                  ),
-                                                                  Align(
-                                                                    alignment:
-                                                                        Alignment
-                                                                            .centerLeft,
-                                                                    child: Text(
-                                                                      "Lead Information :",
-                                                                      style: TextStyle(
-                                                                        fontWeight:
-                                                                            FontWeight.w600,
-                                                                        color:
-                                                                            Colors.grey[700],
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 10,
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons
-                                                                        .location_city,
-                                                                    "Project",
-                                                                    lead
-                                                                        .allVersions!
-                                                                        .first
-                                                                        .projectName!,
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons
-                                                                        .settings,
-                                                                    "Developer",
-                                                                    lead
-                                                                        .allVersions!
-                                                                        .first
-                                                                        .developerName!,
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons.chat,
-                                                                    "Communication Way",
-                                                                    lead
-                                                                        .allVersions!
-                                                                        .first
-                                                                        .communicationWay!,
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons
-                                                                        .date_range,
-                                                                    "Creation Date",
-                                                                    DateTime.parse(
-                                                                      lead
-                                                                          .allVersions!
-                                                                          .first
-                                                                          .versionDate!,
-                                                                    ).toLocal().toString(),
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons
-                                                                        .device_hub,
-                                                                    "Channel",
-                                                                    lead
-                                                                        .allVersions!
-                                                                        .first
-                                                                        .channelName!,
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons
-                                                                        .campaign,
-                                                                    "Campaign",
-                                                                    lead
-                                                                        .allVersions!
-                                                                        .first
-                                                                        .campaignName!,
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                  );
-                                                } else {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder:
-                                                        (
-                                                          context,
-                                                        ) => AlertDialog(
-                                                          title: const Text(
-                                                            "No Duplicates",
-                                                          ),
-                                                          content: const Text(
-                                                            "This lead has no duplicates.",
-                                                          ),
-                                                          actions: [
-                                                            TextButton(
-                                                              onPressed:
-                                                                  () =>
-                                                                      Navigator.pop(
-                                                                        context,
-                                                                      ),
-                                                              child: const Text(
-                                                                "OK",
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                  );
-                                                }
-                                              },
-                                              child: CircleAvatar(
-                                                radius: 18,
-                                                backgroundColor:
-                                                    Theme.of(
-                                                              context,
-                                                            ).brightness ==
-                                                            Brightness.light
-                                                        ? Constants.maincolor
-                                                        : Constants
-                                                            .mainDarkmodecolor,
-                                                child: Icon(
-                                                  Icons.content_copy_outlined,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
                                       ],
                                     ),
-
+                                      ],
+                                    ),
                                     // ---------- Row 6: View More Link ----------
                                     SizedBox(height: 8.h),
                                     Align(

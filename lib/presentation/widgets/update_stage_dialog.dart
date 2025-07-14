@@ -69,13 +69,13 @@ class _NewCommunicationDialogState extends State<UpdateStageDialog> {
                     style: GoogleFonts.montserrat(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Colors.black,
+                      color:Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
                     ),
                   ),
                 ),
                 GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
-                  child: const Icon(Icons.close, color: Colors.black),
+                  child: Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
                 ),
               ],
             ),
@@ -159,10 +159,14 @@ class _NewCommunicationDialogState extends State<UpdateStageDialog> {
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFF003D48)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
                     ),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.montserrat(color: Color(0xFF003D48)),
+                      style: GoogleFonts.montserrat(color: Colors.white),
                     ),
                   ),
                 ),
