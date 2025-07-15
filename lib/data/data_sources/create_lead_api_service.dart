@@ -21,6 +21,7 @@ class CreateLeadApiService {
     required String dayonly, // لازم يكون بصيغة yyyy-MM-dd
     required String lastStageDateUpdated,
     required String campaign,
+    required String budget
   }) async {
     final url = Uri.parse('${Constants.baseUrl}/users');
     final now = DateTime.now().toUtc(); // بتوقيت UTC زي المطلوب
@@ -48,6 +49,7 @@ class CreateLeadApiService {
       "lastcommentdate": "_",
       "lastdateassign": currentDateTime,
       "stagedateupdated": currentDateTime,
+      "budget": budget
     };
     final response = await http.post(
       url,

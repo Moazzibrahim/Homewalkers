@@ -13,40 +13,51 @@ class UpdateCampaignDialog extends StatefulWidget {
     String cost,
     String addBy,
     String updatedBy,
-  )? onAdd;
+  )?
+  onAdd;
   final String? title;
   final String? initialName;
-final String? initialCost;
-final String? initialDate;
-final bool? initialIsActive;
+  final String? initialCost;
+  final String? initialDate;
+  final bool? initialIsActive;
 
-  const UpdateCampaignDialog({super.key, this.onAdd, this.title, this.initialName, this.initialCost, this.initialDate, this.initialIsActive});
+  const UpdateCampaignDialog({
+    super.key,
+    this.onAdd,
+    this.title,
+    this.initialName,
+    this.initialCost,
+    this.initialDate,
+    this.initialIsActive,
+  });
 
   @override
   State<UpdateCampaignDialog> createState() => _AddProjectDialogState();
 }
+
 class _AddProjectDialogState extends State<UpdateCampaignDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _costController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
 
   @override
-void initState() {
-  super.initState();
-  _nameController.text = widget.initialName ?? '';
-  _costController.text = widget.initialCost ?? '';
-  _dateController.text = widget.initialDate ?? '';
-  _isActive = widget.initialIsActive ?? false;
+  void initState() {
+    super.initState();
+    _nameController.text = widget.initialName ?? '';
+    _costController.text = widget.initialCost ?? '';
+    _dateController.text = widget.initialDate ?? '';
+    _isActive = widget.initialIsActive ?? false;
 
-  if (widget.initialDate != null) {
-    _selectedDate = DateTime.tryParse(widget.initialDate!);
+    if (widget.initialDate != null) {
+      _selectedDate = DateTime.tryParse(widget.initialDate!);
+    }
   }
-}
 
   Future<String?> getSalesIdFromSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('salesId');
   }
+
   bool _isActive = false;
   DateTime? _selectedDate;
   @override
@@ -72,6 +83,7 @@ void initState() {
       });
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -102,38 +114,52 @@ void initState() {
                       style: GoogleFonts.montserrat(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.black
+                                : Colors.white,
                       ),
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
-                    child:  Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
+                    child: Icon(
+                      Icons.close,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Colors.black
+                              : Colors.white,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
+
               /// Campaign Name
               TextField(
                 controller: _nameController,
                 decoration: _inputDecoration("Campaign Name"),
               ),
               const SizedBox(height: 14),
+
               /// Cost
               TextField(
                 controller: _costController,
                 decoration: _inputDecoration("Cost"),
               ),
               const SizedBox(height: 14),
+
               /// Date Picker
               TextField(
                 controller: _dateController,
                 readOnly: true,
                 onTap: () => _pickDate(context),
                 decoration: _inputDecoration("Select Date").copyWith(
-                suffixIcon: const Icon(Icons.calendar_today),), // أيقونة التقويم
+                  suffixIcon: const Icon(Icons.calendar_today),
+                ), // أيقونة التقويم
               ),
               const SizedBox(height: 14),
+
               /// Active Switch
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -144,7 +170,10 @@ void initState() {
                   ),
                   Switch(
                     value: _isActive,
-                    activeColor: Constants.maincolor,
+                    activeColor:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
                     onChanged: (value) {
                       setState(() {
                         _isActive = value;
@@ -154,6 +183,7 @@ void initState() {
                 ],
               ),
               const SizedBox(height: 24),
+
               /// Buttons
               Row(
                 children: [
@@ -163,22 +193,21 @@ void initState() {
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFF003D48)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Theme.of(context).brightness == Brightness.light
-                      ? Constants.maincolor
-                      : Constants.mainDarkmodecolor,
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Constants.mainDarkmodecolor,
                       ),
                       child: Text(
                         "Cancel",
-                        style: GoogleFonts.montserrat(
-                          color:  Colors.white,
-                        ),
+                        style: GoogleFonts.montserrat(color: Colors.white),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () async{
+                      onPressed: () async {
                         if (widget.onAdd != null) {
                           if (_nameController.text.trim().isNotEmpty &&
                               _costController.text.trim().isNotEmpty &&
@@ -216,6 +245,7 @@ void initState() {
       ),
     );
   }
+
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,

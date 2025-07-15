@@ -95,13 +95,22 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                       style: GoogleFonts.montserrat(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color:Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.black
+                                : Colors.white,
                       ),
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
-                    child: Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
+                    child: Icon(
+                      Icons.close,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Colors.black
+                              : Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -150,6 +159,10 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
 
               // Toggle switches
               SwitchListTile(
+                activeColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.maincolor
+                        : Constants.mainDarkmodecolor,
                 title: Text("Open Comments", style: GoogleFonts.montserrat()),
                 value: _openComments,
                 onChanged: (value) {
@@ -157,6 +170,10 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                 },
               ),
               SwitchListTile(
+                activeColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.maincolor
+                        : Constants.mainDarkmodecolor,
                 title: Text(
                   "Close Done Deal Comments",
                   style: GoogleFonts.montserrat(),

@@ -77,6 +77,10 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
                   const Text("Active"),
                   const SizedBox(width: 10),
                   Switch(
+                    activeColor:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
                     value: _isActive,
                     onChanged: (value) {
                       setState(() {
@@ -93,14 +97,22 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
       actions: [
         TextButton(
           style: TextButton.styleFrom(
-          backgroundColor:
+            backgroundColor:
                 Theme.of(context).brightness == Brightness.light
                     ? Constants.maincolor
                     : Constants.mainDarkmodecolor,
-            
           ),
           onPressed: () => Navigator.of(context).pop(),
-          child: Text("Cancel",style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),),),
+          child: Text(
+            "Cancel",
+            style: TextStyle(
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Colors.black
+                      : Colors.white,
+            ),
+          ),
+        ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor:
@@ -132,7 +144,15 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
               );
             }
           },
-          child: Text("Add",style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),),
+          child: Text(
+            "Add",
+            style: TextStyle(
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Colors.black
+                      : Colors.white,
+            ),
+          ),
         ),
       ],
     );

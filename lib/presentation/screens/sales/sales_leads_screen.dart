@@ -148,6 +148,12 @@ class SalesLeadsScreen extends StatelessWidget {
             children: [
               // Search & filter
               Container(
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Colors.white
+                          : Constants.backgroundDarkmode,
+                ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
@@ -328,6 +334,9 @@ class SalesLeadsScreen extends StatelessWidget {
                               print("isOutdated: $isOutdated");
                             }
                             return Card(
+                              color: Theme.of(context).brightness == Brightness.light
+                                      ? Colors.white
+                                      : Colors.grey[900],
                               margin: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 8,

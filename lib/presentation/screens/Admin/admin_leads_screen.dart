@@ -242,6 +242,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
         child: Column(
           children: [
             Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.light
+                        ? Colors.white
+                        : Constants.backgroundDarkmode,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
@@ -581,6 +586,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                         itemBuilder: (context, index) {
                           final lead = leads[index];
                           return Card(
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.white
+                                    : Colors.grey[900],
                             margin: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,
@@ -667,6 +676,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             log("isOutdated: $isOutdated");
                           }
                           return Card(
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.white
+                                    : Colors.grey[900],
                             margin: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,

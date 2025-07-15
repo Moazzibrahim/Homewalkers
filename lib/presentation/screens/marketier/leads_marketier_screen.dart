@@ -215,6 +215,9 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
             // Search & filter
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration( color: Theme.of(context).brightness == Brightness.light
+                                ? Colors.white
+                                : Constants.backgroundDarkmode,),
               child: Row(
                 children: [
                   Expanded(
@@ -607,6 +610,9 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                           // Assuming the context and all variables like 'lead', 'isOutdated', 'selectedTab', etc.
                           // from your new code are available.
                           return Card(
+                            color: Theme.of(context).brightness == Brightness.light
+                                      ? Colors.white
+                                      : Colors.grey[900],
                             margin: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,

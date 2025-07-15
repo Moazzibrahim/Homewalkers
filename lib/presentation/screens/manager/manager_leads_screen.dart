@@ -193,6 +193,11 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
             children: [
               // Search & filter
               Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.white
+                          : Constants.backgroundDarkmode,
+                ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
@@ -374,6 +379,11 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                               log("isOutdated: $isOutdated");
                             }
                             return Card(
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Colors.white
+                                      : Colors.grey[900],
                               margin: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 8,
@@ -558,240 +568,237 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             ),
                                           ],
                                         ),
-                                      Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Constants.maincolor
-                                                    : Constants
-                                                        .mainDarkmodecolor,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (_) {
-                                                return Dialog(
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                  child: BlocProvider(
-                                                    create:
-                                                        (
-                                                          _,
-                                                        ) => LeadCommentsCubit(
-                                                          GetAllLeadCommentsApiService(),
-                                                        )..fetchLeadComments(
-                                                          lead.id!,
-                                                        ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                            16.0,
-                                                          ),
-                                                      child: BlocBuilder<
-                                                        LeadCommentsCubit,
-                                                        LeadCommentsState
-                                                      >(
-                                                        builder: (
-                                                          context,
-                                                          state,
-                                                        ) {
-                                                          if (state
-                                                              is LeadCommentsLoading) {
-                                                            return const SizedBox(
-                                                              height: 100,
-                                                              child: Center(
-                                                                child:
-                                                                    CircularProgressIndicator(),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            ElevatedButton.icon(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    Theme.of(
+                                                              context,
+                                                            ).brightness ==
+                                                            Brightness.light
+                                                        ? Constants.maincolor
+                                                        : Constants
+                                                            .mainDarkmodecolor,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 8,
+                                                    ),
+                                              ),
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) {
+                                                    return Dialog(
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                      ),
+                                                      child: BlocProvider(
+                                                        create:
+                                                            (
+                                                              _,
+                                                            ) => LeadCommentsCubit(
+                                                              GetAllLeadCommentsApiService(),
+                                                            )..fetchLeadComments(
+                                                              lead.id!,
+                                                            ),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                16.0,
                                                               ),
-                                                            );
-                                                          } else if (state
-                                                              is LeadCommentsError) {
-                                                            return SizedBox(
-                                                              height: 100,
-                                                              child: Center(
-                                                                child: Text(
-                                                                  "No comments available.",
-                                                                ),
-                                                              ),
-                                                            );
-                                                          } else if (state
-                                                              is LeadCommentsLoaded) {
-                                                            final data =
-                                                                state
-                                                                    .leadComments
-                                                                    .data;
-                                                            if (data == null ||
-                                                                data.isEmpty) {
-                                                              return const Text(
-                                                                'No comments available.',
-                                                              );
-                                                            }
-                                                            final firstItem =
-                                                                data.first;
-                                                            final firstComment =
-                                                                firstItem
-                                                                    .comments
-                                                                    ?.first;
-                                                            final firstcommentdate =
-                                                                DateTime.tryParse(
-                                                                  firstComment
-                                                                          ?.firstcomment
-                                                                          ?.date
-                                                                          .toString() ??
-                                                                      "",
-                                                                )?.toUtc();
-                                                            final secondcommentdate =
-                                                                DateTime.tryParse(
-                                                                  firstComment
-                                                                          ?.secondcomment
-                                                                          ?.date
-                                                                          .toString() ??
-                                                                      "",
-                                                                )?.toUtc();
-                                                            final isFirstValid =
-                                                                isClearHistoryy !=
-                                                                    true ||
-                                                                (firstcommentdate !=
-                                                                        null &&
-                                                                    firstcommentdate
-                                                                        .isAfter(
-                                                                          clearHistoryTimee!,
-                                                                        ));
-                                                            final isSecondValid =
-                                                                isClearHistoryy !=
-                                                                    true ||
-                                                                (secondcommentdate !=
-                                                                        null &&
-                                                                    secondcommentdate
-                                                                        .isAfter(
-                                                                          clearHistoryTimee!,
-                                                                        ));
-                                                            if ((isFirstValid &&
-                                                                firstComment
-                                                                        ?.firstcomment
-                                                                        ?.text !=
-                                                                    null)) {
-                                                              return Column(
-                                                                mainAxisSize:
-                                                                    MainAxisSize
-                                                                        .min,
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .start,
-                                                                children: [
-                                                                  const Text(
-                                                                    "Last Comment",
-                                                                    style: TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
+                                                          child: BlocBuilder<
+                                                            LeadCommentsCubit,
+                                                            LeadCommentsState
+                                                          >(
+                                                            builder: (
+                                                              context,
+                                                              state,
+                                                            ) {
+                                                              if (state
+                                                                  is LeadCommentsLoading) {
+                                                                return const SizedBox(
+                                                                  height: 100,
+                                                                  child: Center(
+                                                                    child:
+                                                                        CircularProgressIndicator(),
+                                                                  ),
+                                                                );
+                                                              } else if (state
+                                                                  is LeadCommentsError) {
+                                                                return SizedBox(
+                                                                  height: 100,
+                                                                  child: Center(
+                                                                    child: Text(
+                                                                      "No comments available.",
                                                                     ),
                                                                   ),
-                                                                  const SizedBox(
-                                                                    height: 10,
-                                                                  ),
-                                                                  const Text(
-                                                                    "Comment",
-                                                                    style: TextStyle(
-                                                                      color:
-                                                                          Constants
-                                                                              .maincolor,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                    ),
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 5,
-                                                                  ),
-                                                                  Text(
+                                                                );
+                                                              } else if (state
+                                                                  is LeadCommentsLoaded) {
+                                                                final data =
+                                                                    state
+                                                                        .leadComments
+                                                                        .data;
+                                                                if (data ==
+                                                                        null ||
+                                                                    data.isEmpty) {
+                                                                  return const Text(
+                                                                    'No comments available.',
+                                                                  );
+                                                                }
+                                                                final firstItem =
+                                                                    data.first;
+                                                                final firstComment =
+                                                                    firstItem
+                                                                        .comments
+                                                                        ?.first;
+                                                                final firstcommentdate =
+                                                                    DateTime.tryParse(
+                                                                      firstComment
+                                                                              ?.firstcomment
+                                                                              ?.date
+                                                                              .toString() ??
+                                                                          "",
+                                                                    )?.toUtc();
+                                                                final secondcommentdate =
+                                                                    DateTime.tryParse(
+                                                                      firstComment
+                                                                              ?.secondcomment
+                                                                              ?.date
+                                                                              .toString() ??
+                                                                          "",
+                                                                    )?.toUtc();
+                                                                final isFirstValid =
+                                                                    isClearHistoryy !=
+                                                                        true ||
+                                                                    (firstcommentdate !=
+                                                                            null &&
+                                                                        firstcommentdate.isAfter(
+                                                                          clearHistoryTimee!,
+                                                                        ));
+                                                                final isSecondValid =
+                                                                    isClearHistoryy !=
+                                                                        true ||
+                                                                    (secondcommentdate !=
+                                                                            null &&
+                                                                        secondcommentdate.isAfter(
+                                                                          clearHistoryTimee!,
+                                                                        ));
+                                                                if ((isFirstValid &&
                                                                     firstComment
                                                                             ?.firstcomment
-                                                                            ?.text ??
-                                                                        'No comment available.',
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 10,
-                                                                  ),
-                                                                  const Text(
-                                                                    "Action (Plan)",
-                                                                    style: TextStyle(
-                                                                      color:
-                                                                          Constants
-                                                                              .maincolor,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
+                                                                            ?.text !=
+                                                                        null)) {
+                                                                  return Column(
+                                                                    mainAxisSize:
+                                                                        MainAxisSize
+                                                                            .min,
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: [
+                                                                      const Text(
+                                                                        "Last Comment",
+                                                                        style: TextStyle(
+                                                                          fontWeight:
+                                                                              FontWeight.w600,
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(
+                                                                        height:
+                                                                            10,
+                                                                      ),
+                                                                      const Text(
+                                                                        "Comment",
+                                                                        style: TextStyle(
+                                                                          color:
+                                                                              Constants.maincolor,
+                                                                          fontWeight:
+                                                                              FontWeight.w600,
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(
+                                                                        height:
+                                                                            5,
+                                                                      ),
+                                                                      Text(
+                                                                        firstComment?.firstcomment?.text ??
+                                                                            'No comment available.',
+                                                                      ),
+                                                                      const SizedBox(
+                                                                        height:
+                                                                            10,
+                                                                      ),
+                                                                      const Text(
+                                                                        "Action (Plan)",
+                                                                        style: TextStyle(
+                                                                          color:
+                                                                              Constants.maincolor,
+                                                                          fontWeight:
+                                                                              FontWeight.w600,
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(
+                                                                        height:
+                                                                            5,
+                                                                      ),
+                                                                      Text(
+                                                                        firstComment?.secondcomment?.text ??
+                                                                            'No comment available.',
+                                                                      ),
+                                                                    ],
+                                                                  );
+                                                                } else {
+                                                                  return const SizedBox(
+                                                                    child: Text(
+                                                                      "no comments",
                                                                     ),
+                                                                  );
+                                                                }
+                                                              } else {
+                                                                return const SizedBox(
+                                                                  height: 100,
+                                                                  child: Text(
+                                                                    "no comments",
                                                                   ),
-                                                                  const SizedBox(
-                                                                    height: 5,
-                                                                  ),
-                                                                  Text(
-                                                                    firstComment
-                                                                            ?.secondcomment
-                                                                            ?.text ??
-                                                                        'No comment available.',
-                                                                  ),
-                                                                ],
-                                                              );
-                                                            } else {
-                                                              return const SizedBox(
-                                                                child: Text(
-                                                                  "no comments",
-                                                                ),
-                                                              );
-                                                            }
-                                                          } else {
-                                                            return const SizedBox(
-                                                              height: 100,
-                                                              child: Text(
-                                                                "no comments",
-                                                              ),
-                                                            );
-                                                          }
-                                                        },
+                                                                );
+                                                              }
+                                                            },
+                                                          ),
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ),
+                                                    );
+                                                  },
                                                 );
                                               },
-                                            );
-                                          },
-                                          icon: const Icon(
-                                            Icons.chat_bubble_outline,
-                                            color: Colors.white,
-                                            size: 16,
-                                          ),
-                                          label: const Text(
-                                            "Last Comment",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w600,
+                                              icon: const Icon(
+                                                Icons.chat_bubble_outline,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                              label: const Text(
+                                                "Last Comment",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
                                             ),
-                                          ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
                                       ],
                                     ),
                                     // ---------- Row 6: View More Link ----------
@@ -806,7 +813,12 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             MaterialPageRoute(
                                               builder:
                                                   (_) => BlocProvider(
-                                                    create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                                                    create:
+                                                        (
+                                                          _,
+                                                        ) => LeadCommentsCubit(
+                                                          GetAllLeadCommentsApiService(),
+                                                        ),
                                                     child: LeadsDetailsScreenManager(
                                                       leedId: lead.id!,
                                                       leadName: lead.name ?? '',

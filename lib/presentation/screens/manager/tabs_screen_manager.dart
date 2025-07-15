@@ -121,7 +121,7 @@ class _TabsScreenState extends State<TabsScreenManager> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Constants.maincolor,
+        backgroundColor:Theme.of(context).brightness == Brightness.light ? Constants.maincolor :Constants.mainDarkmodecolor ,
         elevation: 6,
         shape: const CircleBorder(),
         onPressed: () {

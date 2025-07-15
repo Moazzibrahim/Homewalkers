@@ -1,6 +1,5 @@
 // ignore_for_file: use_build_context_synchronously
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -24,6 +23,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubi
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateLeadScreen extends StatefulWidget {
   const CreateLeadScreen({super.key});
@@ -38,6 +38,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _notesController = TextEditingController();
+  final _budgetController = TextEditingController();
   String? selectedProjectId;
   String? selectedStageId;
   String? selectedStageName; // 👈 -- الخطوة 1: إضافة متغير جديد لاسم المرحلة
@@ -48,6 +49,8 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   bool isCold = false; // أو false حسب الافتراضي
   String? _fullPhoneNumber;
   String? _selectedSalesFcmToken;
+  String? role;
+  String? id;
 
   Widget _buildDropdown<T>({
     required String hint,
@@ -71,6 +74,20 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    init();
+  }
+
+  void init() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      role = prefs.getString('role');
+      id = prefs.getString('salesId');
+    });
   }
 
   @override
@@ -265,49 +282,52 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       ),
                       const SizedBox(height: 12),
                       // ... other dropdowns ...
-                      BlocBuilder<SalesCubit, SalesState>(
-                        builder: (context, state) {
-                          if (state is SalesLoaded) {
-                            final filteredSales =
-                                state.salesData.data?.where((sales) {
-                                  final role =
-                                      sales.userlog?.role?.toLowerCase();
-                                  return role == 'sales' ||
-                                      role == 'team leader' ||
-                                      role == 'manager';
-                                }).toList() ??
-                                [];
-                            return _buildDropdown<String>(
-                              hint: "Choose Sales",
-                              value: _selectedSalesId,
-                              items:
-                                  filteredSales.map((sale) {
-                                    return DropdownMenuItem<String>(
-                                      value: sale.id,
-                                      child: Text(sale.name ?? 'Unnamed'),
+                      if (role != "Sales")
+                        BlocBuilder<SalesCubit, SalesState>(
+                          builder: (context, state) {
+                            if (state is SalesLoaded) {
+                              final filteredSales =
+                                  state.salesData.data?.where((sales) {
+                                    final role =
+                                        sales.userlog?.role?.toLowerCase();
+                                    return role == 'sales' ||
+                                        role == 'team leader' ||
+                                        role == 'manager';
+                                  }).toList() ??
+                                  [];
+                              return _buildDropdown<String>(
+                                hint: "Choose Sales",
+                                value: _selectedSalesId,
+                                items:
+                                    filteredSales.map((sale) {
+                                      return DropdownMenuItem<String>(
+                                        value: sale.id,
+                                        child: Text(sale.name ?? 'Unnamed'),
+                                      );
+                                    }).toList(),
+                                onChanged: (val) {
+                                  setState(() {
+                                    _selectedSalesId = val;
+                                    // Find the selected sales person and get their fcm token
+                                    _selectedSalesFcmToken =
+                                        filteredSales
+                                            .firstWhere(
+                                              (sale) => sale.id == val,
+                                            )
+                                            .userlog!
+                                            .fcmtoken;
+                                    log(
+                                      "Selected Sales FCM Token: $_selectedSalesFcmToken",
                                     );
-                                  }).toList(),
-                              onChanged: (val) {
-                                setState(() {
-                                  _selectedSalesId = val;
-                                  // Find the selected sales person and get their fcm token
-                                  _selectedSalesFcmToken =
-                                      filteredSales
-                                          .firstWhere((sale) => sale.id == val)
-                                          .userlog!
-                                          .fcmtoken;
-                                  log(
-                                    "Selected Sales FCM Token: $_selectedSalesFcmToken",
-                                  );
-                                });
-                              },
+                                  });
+                                },
+                              );
+                            }
+                            return const Center(
+                              child: CircularProgressIndicator(),
                             );
-                          }
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        },
-                      ),
+                          },
+                        ),
                       const SizedBox(height: 12),
                       BlocBuilder<ChannelCubit, ChannelState>(
                         builder: (context, state) {
@@ -358,9 +378,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       ),
                       const SizedBox(height: 12),
                       BlocBuilder<
-                        GetCommunicationWaysCubit,
-                        GetCommunicationWaysState
-                      >(
+                        GetCommunicationWaysCubit,GetCommunicationWaysState>(
                         builder: (context, state) {
                           if (state is GetCommunicationWaysLoaded) {
                             return _buildDropdown<String>(
@@ -386,6 +404,12 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       ),
                       const SizedBox(height: 12),
                       CustomTextField(
+                        hint: "Budget",
+                        controller: _budgetController,
+                        textInputType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 12),
+                      CustomTextField(
                         hint: "Notes",
                         controller: _notesController,
                       ),
@@ -408,6 +432,10 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                               ),
                               const SizedBox(width: 8),
                               Switch(
+                                activeColor:
+                                    Theme.of(context).brightness == Brightness.light
+                                        ? Constants.maincolor
+                                        : Constants.mainDarkmodecolor,
                                 value: isCold,
                                 onChanged: (value) {
                                   setState(() {
@@ -419,7 +447,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 20),
                       Row(
                         children: [
@@ -455,7 +482,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                               onPressed: () async {
                                 // ✅ تحقق من المدخلات قبل الإرسال
                                 if (_nameController.text.isEmpty ||
-                                    _emailController.text.isEmpty ||
                                     _phoneController.text.isEmpty ||
                                     selectedProjectId == null ||
                                     selectedStageId == null ||
@@ -481,7 +507,10 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                       email: _emailController.text,
                                       phone: formattedPhone,
                                       project: selectedProjectId ?? '',
-                                      sales: _selectedSalesId ?? '',
+                                      sales:
+                                          role == 'Sales'
+                                              ? id!
+                                              : _selectedSalesId!,
                                       notes: _notesController.text,
                                       leedtype: isCold ? "Cold" : "Fresh",
                                       stage: selectedStageId ?? '',
@@ -492,6 +521,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                       lastStageDateUpdated:
                                           _dateController.text,
                                       campaign: _selectedCampaignId ?? '',
+                                      budget: _budgetController.text,
                                     );
                                 if (isSuccess) {
                                   context

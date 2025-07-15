@@ -13,13 +13,15 @@ class AddCampaignDialog extends StatefulWidget {
     String cost,
     String addBy,
     String updatedBy,
-  )? onAdd;
+  )?
+  onAdd;
   final String? title;
   const AddCampaignDialog({super.key, this.onAdd, this.title});
 
   @override
   State<AddCampaignDialog> createState() => _AddProjectDialogState();
 }
+
 class _AddProjectDialogState extends State<AddCampaignDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _costController = TextEditingController();
@@ -28,6 +30,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('salesId');
   }
+
   bool _isActive = true;
   DateTime? _selectedDate;
   @override
@@ -53,6 +56,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
       });
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -94,27 +98,32 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
                 ],
               ),
               const SizedBox(height: 20),
+
               /// Campaign Name
               TextField(
                 controller: _nameController,
                 decoration: _inputDecoration("Campaign Name"),
               ),
               const SizedBox(height: 14),
+
               /// Cost
               TextField(
                 controller: _costController,
                 decoration: _inputDecoration("Cost"),
               ),
               const SizedBox(height: 14),
+
               /// Date Picker
               TextField(
                 controller: _dateController,
                 readOnly: true,
                 onTap: () => _pickDate(context),
                 decoration: _inputDecoration("Select Date").copyWith(
-                suffixIcon: const Icon(Icons.calendar_today),), // أيقونة التقويم
+                  suffixIcon: const Icon(Icons.calendar_today),
+                ), // أيقونة التقويم
               ),
               const SizedBox(height: 14),
+
               /// Active Switch
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -125,7 +134,10 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
                   ),
                   Switch(
                     value: _isActive,
-                    activeColor: Constants.maincolor,
+                    activeColor:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
                     onChanged: (value) {
                       setState(() {
                         _isActive = value;
@@ -135,6 +147,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
                 ],
               ),
               const SizedBox(height: 24),
+
               /// Buttons
               Row(
                 children: [
@@ -156,7 +169,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () async{
+                      onPressed: () async {
                         if (widget.onAdd != null) {
                           if (_nameController.text.trim().isNotEmpty &&
                               _costController.text.trim().isNotEmpty &&
@@ -194,6 +207,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
       ),
     );
   }
+
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,

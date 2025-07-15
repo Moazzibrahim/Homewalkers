@@ -48,9 +48,9 @@ class AdminDashboardScreen extends StatelessWidget {
           elevation: 0,
           toolbarHeight: 100,
           backgroundColor:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.backgroundlightmode
-                  : Constants.backgroundDarkmode,
+          Theme.of(context).brightness == Brightness.light
+              ? Colors.white
+              : Constants.backgroundDarkmode,
           automaticallyImplyLeading: false,
           title: Row(
             children: [

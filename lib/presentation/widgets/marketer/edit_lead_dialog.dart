@@ -244,6 +244,10 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
                   children: [
                     Text(isCold ? "Cold" : "Fresh"),
                     Switch(
+                      activeColor:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
                       value: isCold,
                       onChanged: (value) {
                         setState(() {
@@ -267,7 +271,8 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
           listener: (context, state) {
             if (state is EditLeadSuccess) {
               Navigator.pop(context);
-                if (widget.onSuccess != null) widget.onSuccess!(); // 👈 Call callback
+              if (widget.onSuccess != null)
+                widget.onSuccess!(); // 👈 Call callback
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Edited Successfully')),
               );

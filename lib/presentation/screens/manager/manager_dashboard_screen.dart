@@ -169,6 +169,10 @@ class ManagerDashboardScreen extends StatelessWidget {
                       ? Constants.backgroundlightmode
                       : Constants.backgroundDarkmode,
         appBar: AppBar(
+          backgroundColor:
+          Theme.of(context).brightness == Brightness.light
+              ? Colors.white
+              : Constants.backgroundDarkmode,
           elevation: 0,
           toolbarHeight: 100,
           automaticallyImplyLeading: false,

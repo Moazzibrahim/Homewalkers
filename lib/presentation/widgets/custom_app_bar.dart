@@ -22,7 +22,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
-              ? Constants.backgroundlightmode
+              ? Colors.white
               : Constants.backgroundDarkmode,
       elevation: 0,
       automaticallyImplyLeading: false,

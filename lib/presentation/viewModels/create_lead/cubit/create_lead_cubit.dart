@@ -23,6 +23,7 @@ class CreateLeadCubit extends Cubit<CreateLeadState> {
     required String dayonly,
     required String lastStageDateUpdated,
     required String campaign,
+    required String budget
   }) async {
     emit(CreateLeadLoading());
     try {
@@ -41,6 +42,7 @@ class CreateLeadCubit extends Cubit<CreateLeadState> {
         dayonly: dayonly,
         lastStageDateUpdated: lastStageDateUpdated,
         campaign: campaign,
+        budget: budget
       );
       emit(const CreateLeadSuccess('Lead created successfully.'));
       return true; // ✅ ترجع true عند النجاح

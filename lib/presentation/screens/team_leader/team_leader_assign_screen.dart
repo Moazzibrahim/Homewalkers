@@ -89,99 +89,70 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
               children: [
                 BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
                   builder: (context, state) {
-                    return Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: searchController,
-                              onChanged: (value) {
-                                context
-                                    .read<GetLeadsTeamLeaderCubit>()
-                                    .filterLeadsByName(value);
-                              },
-                              decoration: InputDecoration(
-                                hintText: 'Search',
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 0,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
+                    return Container(
+                      decoration: BoxDecoration(
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.white
+                                : Constants.backgroundDarkmode,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: searchController,
+                                onChanged: (value) {
+                                  context
+                                      .read<GetLeadsTeamLeaderCubit>()
+                                      .filterLeadsByName(value);
+                                },
+                                decoration: InputDecoration(
+                                  hintText: 'Search',
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 0,
                                   ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
                                   ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Container(
-                            height: 50.h,
-                            width: 50.w,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE8F1F2),
-                              border: Border.all(
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.filter_list,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
-                              ),
-                              onPressed: () {
-                                showFilterDialogTeamLeader(
-                                  context,
-                                  context.read<GetLeadsTeamLeaderCubit>(),
-                                );
-                              },
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          GestureDetector(
-                            onTapDown:
-                                (details) => _showAssignMenu(
-                                  context,
-                                  details.globalPosition,
-                                ),
-                            child: Container(
-                              padding: EdgeInsets.all(10),
+                            const SizedBox(width: 10),
+                            Container(
+                              height: 50.h,
+                              width: 50.w,
                               decoration: BoxDecoration(
+                                color: const Color(0xFFE8F1F2),
                                 border: Border.all(
                                   color:
                                       Theme.of(context).brightness ==
@@ -189,19 +160,56 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                           ? Constants.maincolor
                                           : Constants.mainDarkmodecolor,
                                 ),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Icon(
-                                Icons.more_vert,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.filter_list,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                ),
+                                onPressed: () {
+                                  showFilterDialogTeamLeader(
+                                    context,
+                                    context.read<GetLeadsTeamLeaderCubit>(),
+                                  );
+                                },
                               ),
                             ),
-                          ),
-                        ],
+                            SizedBox(width: 10),
+                            GestureDetector(
+                              onTapDown:
+                                  (details) => _showAssignMenu(
+                                    context,
+                                    details.globalPosition,
+                                  ),
+                              child: Container(
+                                padding: EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.more_vert,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -310,8 +318,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 isOutdated: isOutdatedLocal,
                                 fcmtoken:
                                     salesfcmtoken!, // Pass the calculated boolean
-                                    managerFcmtoken: lead.sales?.manager?.fcmtokenn ?? '',
-
+                                managerFcmtoken:
+                                    lead.sales?.manager?.fcmtokenn ?? '',
                               );
                             },
                           ),
@@ -379,7 +387,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                         ? Constants.maincolor
                         : Constants.mainDarkmodecolor,
                 fcmyoken: salesfcmtoken!,
-                managerfcm:managerfcmtoken ,
+                managerfcm: managerfcmtoken,
               ),
             );
           },
@@ -512,11 +520,15 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStageAndSubmissionRow(context, lead.stage?.name ?? "", lead.totalSubmissions ?? 0),
-                _buildLastCommentButton(context, lead),
+              _buildStageAndSubmissionRow(
+                context,
+                lead.stage?.name ?? "",
+                lead.totalSubmissions ?? 0,
+              ),
+              _buildLastCommentButton(context, lead),
             ],
           ),
-        
+
           const SizedBox(height: 10),
           Align(
             alignment: Alignment.centerRight,
@@ -527,7 +539,10 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   MaterialPageRoute(
                     builder:
                         (_) => BlocProvider(
-                            create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                          create:
+                              (_) => LeadCommentsCubit(
+                                GetAllLeadCommentsApiService(),
+                              ),
                           child: LeadsDetailsTeamLeaderScreen(
                             leedId: id,
                             leadName: name,
@@ -624,224 +639,274 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
       ),
     );
   }
-  Widget _buildStageAndSubmissionRow(BuildContext context, String stageName, int totalSubmissions) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Row(
-        children: [
-          getStatusIcon(stageName),
-          const SizedBox(width: 5),
-          Text(
-            stageName.isNotEmpty ? stageName : "none",
-            style: GoogleFonts.montserrat(
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
-}
-Widget _buildContactRow(BuildContext context, String? phone) {
-  final cleanPhone = phone?.replaceAll(RegExp(r'\D'), '') ?? '';
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      InkWell(
-        onTap: () async {
-          final url = "https://wa.me/$cleanPhone";
-          if (await canLaunchUrl(Uri.parse(url))) {
-            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Could not open WhatsApp.")),
-            );
-          }
-        },
-        child: Row(
+
+  Widget _buildStageAndSubmissionRow(
+    BuildContext context,
+    String stageName,
+    int totalSubmissions,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
           children: [
-            FaIcon(
-              FontAwesomeIcons.whatsapp,
-              color: Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
+            getStatusIcon(stageName),
+            const SizedBox(width: 5),
             Text(
-              phone ?? '',
-              style: TextStyle(fontSize: 12.sp),
-            ),
-          ],
-        ),
-      ),
-      InkWell(
-        onTap: () => makePhoneCall(phone ?? ''),
-        child: Row(
-          children: [
-            Icon(
-              Icons.phone,
-              color: Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              phone ?? '',
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-Widget _buildLastCommentButton(BuildContext context, LeadData lead) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).brightness == Brightness.light
-              ? Constants.maincolor
-              : Constants.mainDarkmodecolor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        ),
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (_) => Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: BlocProvider(
-                create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService())
-                  ..fetchLeadComments(lead.id!),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
-                    builder: (context, state) {
-                      if (state is LeadCommentsLoading) {
-                        return const SizedBox(
-                          height: 100,
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      } else if (state is LeadCommentsError) {
-                        return const SizedBox(
-                          height: 100,
-                          child: Center(child: Text("No comments available.")),
-                        );
-                      } else if (state is LeadCommentsLoaded) {
-                        final data = state.leadComments.data;
-                        if (data == null || data.isEmpty) {
-                          return const Text('No comments available.');
-                        }
-                        final comment = data.first.comments?.first;
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text("Last Comment", style: TextStyle(fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 10),
-                            const Text("Comment", style: TextStyle(color: Constants.maincolor, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 5),
-                            Text(comment?.firstcomment?.text ?? 'No comment available.'),
-                            const SizedBox(height: 10),
-                            const Text("Action (Plan)", style: TextStyle(color: Constants.maincolor, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 5),
-                            Text(comment?.secondcomment?.text ?? 'No action available.'),
-                          ],
-                        );
-                      } else {
-                        return const Text("no comments");
-                      }
-                    },
-                  ),
-                ),
+              stageName.isNotEmpty ? stageName : "none",
+              style: GoogleFonts.montserrat(
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          );
-        },
-        icon: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 16),
-        label: const Text("Last Comment", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-      ),
-      const SizedBox.shrink(),
-    ],
-  );
-}
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactRow(BuildContext context, String? phone) {
+    final cleanPhone = phone?.replaceAll(RegExp(r'\D'), '') ?? '';
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        InkWell(
+          onTap: () async {
+            final url = "https://wa.me/$cleanPhone";
+            if (await canLaunchUrl(Uri.parse(url))) {
+              await launchUrl(
+                Uri.parse(url),
+                mode: LaunchMode.externalApplication,
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Could not open WhatsApp.")),
+              );
+            }
+          },
+          child: Row(
+            children: [
+              FaIcon(
+                FontAwesomeIcons.whatsapp,
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.maincolor
+                        : Constants.mainDarkmodecolor,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(phone ?? '', style: TextStyle(fontSize: 12.sp)),
+            ],
+          ),
+        ),
+        InkWell(
+          onTap: () => makePhoneCall(phone ?? ''),
+          child: Row(
+            children: [
+              Icon(
+                Icons.phone,
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.maincolor
+                        : Constants.mainDarkmodecolor,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(phone ?? '', style: const TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLastCommentButton(BuildContext context, LeadData lead) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder:
+                  (_) => Dialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: BlocProvider(
+                      create:
+                          (_) =>
+                              LeadCommentsCubit(GetAllLeadCommentsApiService())
+                                ..fetchLeadComments(lead.id!),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child:
+                            BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
+                              builder: (context, state) {
+                                if (state is LeadCommentsLoading) {
+                                  return const SizedBox(
+                                    height: 100,
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                } else if (state is LeadCommentsError) {
+                                  return const SizedBox(
+                                    height: 100,
+                                    child: Center(
+                                      child: Text("No comments available."),
+                                    ),
+                                  );
+                                } else if (state is LeadCommentsLoaded) {
+                                  final data = state.leadComments.data;
+                                  if (data == null || data.isEmpty) {
+                                    return const Text('No comments available.');
+                                  }
+                                  final comment = data.first.comments?.first;
+                                  return Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "Last Comment",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      const Text(
+                                        "Comment",
+                                        style: TextStyle(
+                                          color: Constants.maincolor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        comment?.firstcomment?.text ??
+                                            'No comment available.',
+                                      ),
+                                      const SizedBox(height: 10),
+                                      const Text(
+                                        "Action (Plan)",
+                                        style: TextStyle(
+                                          color: Constants.maincolor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        comment?.secondcomment?.text ??
+                                            'No action available.',
+                                      ),
+                                    ],
+                                  );
+                                } else {
+                                  return const Text("no comments");
+                                }
+                              },
+                            ),
+                      ),
+                    ),
+                  ),
+            );
+          },
+          icon: const Icon(
+            Icons.chat_bubble_outline,
+            color: Colors.white,
+            size: 16,
+          ),
+          label: const Text(
+            "Last Comment",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox.shrink(),
+      ],
+    );
+  }
 
   Widget getStatusIcon(String status) {
-      switch (status) {
-        case 'Follow Up':
-          return Icon(
-            Icons.mark_email_unread_outlined,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Follow':
-          return Icon(
-            Icons.mark_email_unread_outlined,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Meeting':
-          return Icon(
-            Icons.chat_bubble_outline,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Done Deal':
-          return Icon(
-            Icons.check_box_outlined,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Interested':
-          return Icon(
-            FontAwesomeIcons.check,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Not Interested':
-          return Icon(
-            FontAwesomeIcons.timesCircle,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Fresh':
-          return Icon(
-            Icons.new_releases,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Transfer':
-          return Icon(
-            Icons.no_transfer,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        default:
-          return const Icon(Icons.info_outline);
-      }
+    switch (status) {
+      case 'Follow Up':
+        return Icon(
+          Icons.mark_email_unread_outlined,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Follow':
+        return Icon(
+          Icons.mark_email_unread_outlined,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Meeting':
+        return Icon(
+          Icons.chat_bubble_outline,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Done Deal':
+        return Icon(
+          Icons.check_box_outlined,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Interested':
+        return Icon(
+          FontAwesomeIcons.check,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Not Interested':
+        return Icon(
+          FontAwesomeIcons.timesCircle,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Fresh':
+        return Icon(
+          Icons.new_releases,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Transfer':
+        return Icon(
+          Icons.no_transfer,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      default:
+        return const Icon(Icons.info_outline);
     }
+  }
 
   void makePhoneCall(String phoneNumber) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
