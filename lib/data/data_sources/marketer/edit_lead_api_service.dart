@@ -76,4 +76,33 @@ class EditLeadApiService {
       print('❌ Error: $e');
     }
   }
+
+  Future<void> editLeadAssignValue({
+    required String userId,
+    bool? assign,
+  }) async {
+    final url = Uri.parse('$baseUrl/$userId');
+    // بناء البودي فقط من القيم غير null وغير الفارغة
+    Map<String, dynamic> body = {};
+
+    if (assign != null ) body['assign'] = assign;
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+      if (response.statusCode == 200) {
+        print('✅ Lead updated successfully');
+      } else {
+        print('❌ Failed to update lead: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Error: $e');
+    }
+  }
 }

@@ -47,4 +47,21 @@ class EditLeadCubit extends Cubit<EditLeadState> {
       emit(EditLeadFailure(error: e.toString()));
     }
   }
+
+    Future<void> editLeadAssignvalue({
+    required String userId,
+    bool? assign,
+  }) async {
+    emit(EditLeadLoading());
+
+    try {
+      await apiService.editLeadAssignValue(
+        userId: userId,
+        assign: assign
+      );
+      emit(EditLeadSuccess());
+    } catch (e) {
+      emit(EditLeadFailure(error: e.toString()));
+    }
+  }
 }

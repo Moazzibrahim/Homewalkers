@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, avoid_print, unused_local_variable
+// ignore_for_file: library_private_types_in_public_api, avoid_print, unused_local_variable, deprecated_member_use
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,9 +9,11 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/leads_details_team_leader_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
@@ -38,8 +40,24 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   TextEditingController searchController = TextEditingController();
   String? salesfcmtoken;
   String? managerfcmtoken;
+  bool? leadassign;
+  String? teamleadname;
+  String? teamleadid;
   // isOutdated is a state variable and should be managed per lead, not globally.
   // We will calculate it inside the buildUserTile or pass it from itemBuilder.
+  void init() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      teamleadname = prefs.getString('name');
+      teamleadid = prefs.getString('salesId');
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    init();
+  }
 
   String formatDateTime(String dateStr) {
     try {
@@ -241,6 +259,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             itemCount: _leads.length,
                             itemBuilder: (context, index) {
                               final lead = _leads[index];
+                              leadassign = lead.assign;
                               salesfcmtoken = lead.sales?.userlog?.fcmtokenn;
                               final prefs = SharedPreferences.getInstance();
                               final fcmToken = prefs.then(
@@ -320,6 +339,10 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                     salesfcmtoken!, // Pass the calculated boolean
                                 managerFcmtoken:
                                     lead.sales?.manager?.fcmtokenn ?? '',
+                                assign: leadassign!,
+                                userlogteamleadername:
+                                    lead.sales?.userlog?.name ??
+                                    'No Userlog Team Leader',
                               );
                             },
                           ),
@@ -355,12 +378,10 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
       );
       return;
     }
-
     final selectedLeads = selectedIndices.map((i) => _leads[i]).toList();
     log(
       "Selected Leads: ${selectedLeads.map((e) => 'ID: ${e.id}, Name: ${e.name}').join(', ')}",
     );
-
     await showDialog(
       context: context,
       builder: (context) {
@@ -441,6 +462,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     required bool isOutdated,
     required String fcmtoken, // Add this parameter
     required String managerFcmtoken,
+    required bool assign,
+    required String userlogteamleadername,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -528,57 +551,181 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
               _buildLastCommentButton(context, lead),
             ],
           ),
-
           const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: InkWell(
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (_) => BlocProvider(
-                          create:
-                              (_) => LeadCommentsCubit(
-                                GetAllLeadCommentsApiService(),
-                              ),
-                          child: LeadsDetailsTeamLeaderScreen(
-                            leedId: id,
-                            leadName: name,
-                            leadPhone: phone,
-                            leadEmail: email,
-                            leadStage: stage,
-                            leadStageId: stageid,
-                            leadChannel: channel,
-                            leadCreationDate: creationdate,
-                            leadProject: project,
-                            leadLastComment: lastcomment,
-                            leadcampaign: leadcampaign,
-                            leadNotes: leadNotes,
-                            leaddeveloper: leaddeveloper,
-                            userlogname: userlogname,
-                            teamleadername: teamleadername,
-                            fcmtoken: fcmtoken,
-                            managerfcmtoken: managerFcmtoken,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (leadassign == false &&
+                  userlogteamleadername == teamleadname) ...[
+                DotLoading(),
+                Spacer(),
+                SizedBox(width: 10),
+                InkWell(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return MultiBlocProvider(
+                          providers: [
+                            BlocProvider(
+                              create:
+                                  (_) => EditLeadCubit(EditLeadApiService()),
+                            ),
+                          ],
+                          child: Builder(
+                            builder: (innerContext) {
+                              return AlertDialog(
+                                title: Text("Confirmation"),
+                                content: Text(
+                                  "Are you sure to receive this lead?",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    style: TextButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(
+                                        context,
+                                      ).pop(); // Close dialog
+                                    },
+                                    child: Text(
+                                      "Cancel",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    style: TextButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                    onPressed: () {
+                                      innerContext
+                                          .read<EditLeadCubit>()
+                                          .editLeadAssignvalue(
+                                            userId: lead.id!,
+                                            assign: true,
+                                          );
+                                      Navigator.of(
+                                        innerContext,
+                                      ).pop(); // Close dialog
+                                      innerContext
+                                          .read<GetLeadsTeamLeaderCubit>()
+                                          .getLeadsByTeamLeader(); // Refresh
+                                    },
+                                    child: Text(
+                                      "OK",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
-                        ),
+                        );
+                      },
+                    );
+                  },
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
+                    child: Icon(Icons.download, color: Colors.white, size: 20),
                   ),
-                );
-              },
-              child: Text(
-                'View More',
-                style: GoogleFonts.montserrat(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                  decoration: TextDecoration.underline,
+                ),
+              ],
+              SizedBox(width: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: InkWell(
+                  onTap: () async {
+                    log("userlogteamleadername: $userlogteamleadername");
+                    log("teamleadname: $teamleadname");
+                    log("leadassign: $leadassign");
+                    if (leadassign == true ||(leadassign == false && userlogteamleadername != teamleadname)) {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (_) => BlocProvider(
+                                create:
+                                    (_) => LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                                child: LeadsDetailsTeamLeaderScreen(
+                                  leedId: id,
+                                  leadName: name,
+                                  leadPhone: phone,
+                                  leadEmail: email,
+                                  leadStage: stage,
+                                  leadStageId: stageid,
+                                  leadChannel: channel,
+                                  leadCreationDate: creationdate,
+                                  leadProject: project,
+                                  leadLastComment: lastcomment,
+                                  leadcampaign: leadcampaign,
+                                  leadNotes: leadNotes,
+                                  leaddeveloper: leaddeveloper,
+                                  userlogname: userlogname,
+                                  teamleadername: teamleadername,
+                                  fcmtoken: fcmtoken,
+                                  managerfcmtoken: managerFcmtoken,
+                                ),
+                              ),
+                        ),
+                      );
+                    } else if (leadassign == false &&
+                        userlogteamleadername == teamleadname) {
+                      // Show popup alert
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text("Attention"),
+                            content: Text("You must receive this lead first."),
+                            actions: [
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                ),
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: Text(
+                                  "OK",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    }
+                  },
+                  child: Text(
+                    'View More',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -916,5 +1063,81 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     } else {
       print('Could not launch $phoneUri');
     }
+  }
+}
+class DotLoading extends StatefulWidget {
+  const DotLoading({super.key});
+
+  @override
+  _DotLoadingState createState() => _DotLoadingState();
+}
+
+class _DotLoadingState extends State<DotLoading>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late List<Animation<double>> _animations;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(); // No reverse — smoother loop
+
+    _animations = List.generate(3, (index) {
+      final start = index * 0.2;
+      final end = start + 0.5;
+      return Tween<double>(begin: 0, end: 10).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Interval(start, end > 1.0 ? 1.0 : end, curve: Curves.easeInOut),
+        ),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 20,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(3, (index) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: _buildDot(_animations[index]),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildDot(Animation<double> animation) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, -animation.value),
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+              shape: BoxShape.circle,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }

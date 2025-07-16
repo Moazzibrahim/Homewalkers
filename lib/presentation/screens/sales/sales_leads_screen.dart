@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable
+// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, library_private_types_in_public_api
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -7,9 +7,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
+import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
@@ -19,9 +21,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class SalesLeadsScreen extends StatelessWidget {
+class SalesLeadsScreen extends StatefulWidget {
   final String? stageName;
   const SalesLeadsScreen({super.key, this.stageName});
+
+  @override
+  State<SalesLeadsScreen> createState() => _SalesLeadsScreenState();
+}
+
+class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
 
   @override
   Widget build(BuildContext context) {
@@ -124,10 +132,12 @@ class SalesLeadsScreen extends StatelessWidget {
 
     return BlocBuilder<GetLeadsCubit, GetLeadsState>(
       builder: (context, state) {
-        if (state is GetLeadsSuccess && stageName != null) {
+        if (state is GetLeadsSuccess && widget.stageName != null) {
           // نفلتر مرة واحدة فقط
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            context.read<GetLeadsCubit>().filterLeadsByStageName(stageName!);
+            context.read<GetLeadsCubit>().filterLeadsByStageName(
+              widget.stageName!,
+            );
           });
         }
         return Scaffold(
@@ -299,6 +309,7 @@ class SalesLeadsScreen extends StatelessWidget {
                             final lead = leads[index];
                             final salesfcmtoken =
                                 lead.sales?.teamleader?.fcmtokenn;
+                            final leadassign = lead.assign;
                             final prefs = SharedPreferences.getInstance();
                             final fcmToken = prefs.then(
                               (prefs) => prefs.setString(
@@ -334,7 +345,9 @@ class SalesLeadsScreen extends StatelessWidget {
                               print("isOutdated: $isOutdated");
                             }
                             return Card(
-                              color: Theme.of(context).brightness == Brightness.light
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
                                       ? Colors.white
                                       : Colors.grey[900],
                               margin: const EdgeInsets.symmetric(
@@ -718,99 +731,293 @@ class SalesLeadsScreen extends StatelessWidget {
                                         ),
                                       ],
                                     ),
-
                                     // ---------- Row 6: View More Link ----------
                                     SizedBox(height: 8.h),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: InkWell(
-                                        onTap: () async {
-                                          // Navigation and refresh logic from this specific code
-                                          await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (_) => BlocProvider(
-                                                    create:
-                                                        (
-                                                          _,
-                                                        ) => LeadCommentsCubit(
-                                                          GetAllLeadCommentsApiService(),
-                                                        ),
-                                                    child: SalesLeadsDetailsScreen(
-                                                      leedId: lead.id!,
-                                                      leadName: lead.name ?? '',
-                                                      leadPhone:
-                                                          lead.phone ?? '',
-                                                      leadEmail:
-                                                          lead.email ?? '',
-                                                      leadStage:
-                                                          lead.stage?.name ??
-                                                          '',
-                                                      leadStageId:
-                                                          lead.stage?.id ?? '',
-                                                      leadChannel:
-                                                          lead.chanel?.name ??
-                                                          '',
-                                                      leadCreationDate:
-                                                          lead.createdAt != null
-                                                              ? formatDateTime(
-                                                                lead.createdAt!,
-                                                              )
-                                                              : '',
-                                                      leadProject:
-                                                          lead.project?.name ??
-                                                          '',
-                                                      leadLastComment:
-                                                          lead.lastcommentdate ??
-                                                          '',
-                                                      leadcampaign:
-                                                          lead.campaign?.name ??
-                                                          "campaign",
-                                                      leadNotes:
-                                                          lead.notes ??
-                                                          "no notes",
-                                                      leaddeveloper:
-                                                          lead
-                                                              .project
-                                                              ?.developer
-                                                              ?.name ??
-                                                          "no developer",
-                                                      fcmtoken: salesfcmtoken,
-                                                      managerfcmtoken:
-                                                          lead
-                                                              .sales
-                                                              ?.manager
-                                                              ?.fcmtokenn,
-                                                      teamleaderfcmtoken:
-                                                          lead
-                                                              .sales
-                                                              ?.teamleader
-                                                              ?.fcmtokenn,
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        if (leadassign == false) ...[
+                                          DotLoading(),
+                                          Spacer(),
+                                          // Only show edit icon if leadassign == false
+                                          SizedBox(width: 10),
+                                          InkWell(
+                                            onTap: () {
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) {
+                                                  return MultiBlocProvider(
+                                                    providers: [
+                                                      BlocProvider(
+                                                        create:
+                                                            (
+                                                              _,
+                                                            ) => EditLeadCubit(
+                                                              EditLeadApiService(),
+                                                            ),
+                                                      ),
+                                                    ],
+                                                    child: Builder(
+                                                      builder: (innerContext) {
+                                                        return AlertDialog(
+                                                          title: Text(
+                                                            "Confirmation",
+                                                          ),
+                                                          content: Text(
+                                                            "Are you sure to receive this lead?",
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              style: TextButton.styleFrom(
+                                                                backgroundColor:
+                                                                    Theme.of(
+                                                                              context,
+                                                                            ).brightness ==
+                                                                            Brightness.light
+                                                                        ? Constants
+                                                                            .maincolor
+                                                                        : Constants
+                                                                            .mainDarkmodecolor,
+                                                              ),
+                                                              onPressed: () {
+                                                                Navigator.of(
+                                                                  context,
+                                                                ).pop(); // Close dialog
+                                                              },
+                                                              child: Text(
+                                                                "Cancel",
+                                                                style: TextStyle(
+                                                                  color:
+                                                                      Colors
+                                                                          .white,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            TextButton(
+                                                              style: TextButton.styleFrom(
+                                                                backgroundColor:
+                                                                    Theme.of(
+                                                                              context,
+                                                                            ).brightness ==
+                                                                            Brightness.light
+                                                                        ? Constants
+                                                                            .maincolor
+                                                                        : Constants
+                                                                            .mainDarkmodecolor,
+                                                              ),
+                                                              onPressed: () {
+                                                                innerContext
+                                                                    .read<
+                                                                      EditLeadCubit
+                                                                    >()
+                                                                    .editLeadAssignvalue(
+                                                                      userId:
+                                                                          lead.id!,
+                                                                      assign:
+                                                                          true,
+                                                                    );
+                                                                Navigator.of(
+                                                                  innerContext,
+                                                                ).pop(); // Close dialog
+                                                                innerContext
+                                                                    .read<
+                                                                      GetLeadsCubit
+                                                                    >()
+                                                                    .fetchLeads(); // Refresh
+                                                              },
+                                                              child: Text(
+                                                                "OK",
+                                                                style: TextStyle(
+                                                                  color:
+                                                                      Colors
+                                                                          .white,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      },
                                                     ),
-                                                  ),
+                                                  );
+                                                },
+                                              );
+                                            },
+                                            child: CircleAvatar(
+                                              radius: 18,
+                                              backgroundColor:
+                                                  Theme.of(
+                                                            context,
+                                                          ).brightness ==
+                                                          Brightness.light
+                                                      ? Constants.maincolor
+                                                      : Constants
+                                                          .mainDarkmodecolor,
+                                              child: Icon(
+                                                Icons.download,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
                                             ),
-                                          );
-                                          context
-                                              .read<GetLeadsCubit>()
-                                              .fetchLeads(showLoading: false);
-                                        },
-                                        child: Text(
-                                          'View More',
-                                          style: GoogleFonts.montserrat(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Constants.maincolor
-                                                    : Constants
-                                                        .mainDarkmodecolor,
-                                            decoration:
-                                                TextDecoration.underline,
+                                          ),
+                                        ],
+                                        SizedBox(width: 12),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: InkWell(
+                                            onTap: () async {
+                                              if (leadassign == true) {
+                                                // Navigate to details screen
+                                                await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (_) => BlocProvider(
+                                                          create:
+                                                              (
+                                                                _,
+                                                              ) => LeadCommentsCubit(
+                                                                GetAllLeadCommentsApiService(),
+                                                              ),
+                                                          child: SalesLeadsDetailsScreen(
+                                                            leedId: lead.id!,
+                                                            leadName:
+                                                                lead.name ?? '',
+                                                            leadPhone:
+                                                                lead.phone ??
+                                                                '',
+                                                            leadEmail:
+                                                                lead.email ??
+                                                                '',
+                                                            leadStage:
+                                                                lead
+                                                                    .stage
+                                                                    ?.name ??
+                                                                '',
+                                                            leadStageId:
+                                                                lead
+                                                                    .stage
+                                                                    ?.id ??
+                                                                '',
+                                                            leadChannel:
+                                                                lead
+                                                                    .chanel
+                                                                    ?.name ??
+                                                                '',
+                                                            leadCreationDate:
+                                                                lead.createdAt !=
+                                                                        null
+                                                                    ? formatDateTime(
+                                                                      lead.createdAt!,
+                                                                    )
+                                                                    : '',
+                                                            leadProject:
+                                                                lead
+                                                                    .project
+                                                                    ?.name ??
+                                                                '',
+                                                            leadLastComment:
+                                                                lead.lastcommentdate ??
+                                                                '',
+                                                            leadcampaign:
+                                                                lead
+                                                                    .campaign
+                                                                    ?.name ??
+                                                                "campaign",
+                                                            leadNotes:
+                                                                lead.notes ??
+                                                                "no notes",
+                                                            leaddeveloper:
+                                                                lead
+                                                                    .project
+                                                                    ?.developer
+                                                                    ?.name ??
+                                                                "no developer",
+                                                            fcmtoken:
+                                                                salesfcmtoken,
+                                                            managerfcmtoken:
+                                                                lead
+                                                                    .sales
+                                                                    ?.manager
+                                                                    ?.fcmtokenn,
+                                                            teamleaderfcmtoken:
+                                                                lead
+                                                                    .sales
+                                                                    ?.teamleader
+                                                                    ?.fcmtokenn,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                );
+                                                context
+                                                    .read<GetLeadsCubit>()
+                                                    .fetchLeads(
+                                                      showLoading: false,
+                                                    );
+                                              } else {
+                                                // Show popup alert
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (
+                                                    BuildContext context,
+                                                  ) {
+                                                    return AlertDialog(
+                                                      title: Text("Attention"),
+                                                      content: Text(
+                                                        "You must receive this lead first.",
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          style: TextButton.styleFrom(
+                                                            backgroundColor:
+                                                                Theme.of(
+                                                                          context,
+                                                                        ).brightness ==
+                                                                        Brightness
+                                                                            .light
+                                                                    ? Constants
+                                                                        .maincolor
+                                                                    : Constants
+                                                                        .mainDarkmodecolor,
+                                                          ),
+                                                          onPressed:
+                                                              () =>
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(),
+                                                          child: Text(
+                                                            "OK",
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                              }
+                                            },
+                                            child: Text(
+                                              'View More',
+                                              style: GoogleFonts.montserrat(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                                color:
+                                                    Theme.of(
+                                                              context,
+                                                            ).brightness ==
+                                                            Brightness.light
+                                                        ? Constants.maincolor
+                                                        : Constants
+                                                            .mainDarkmodecolor,
+                                                decoration:
+                                                    TextDecoration.underline,
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -832,5 +1039,80 @@ class SalesLeadsScreen extends StatelessWidget {
         );
       },
     );
+  }
+}class DotLoading extends StatefulWidget {
+  const DotLoading({super.key});
+
+  @override
+  _DotLoadingState createState() => _DotLoadingState();
+}
+
+class _DotLoadingState extends State<DotLoading>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late List<Animation<double>> _animations;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(); // No reverse — smoother loop
+
+    _animations = List.generate(3, (index) {
+      final start = index * 0.2;
+      final end = start + 0.5;
+      return Tween<double>(begin: 0, end: 10).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Interval(start, end > 1.0 ? 1.0 : end, curve: Curves.easeInOut),
+        ),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 20,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(3, (index) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: _buildDot(_animations[index]),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildDot(Animation<double> animation) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, -animation.value),
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+              shape: BoxShape.circle,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
