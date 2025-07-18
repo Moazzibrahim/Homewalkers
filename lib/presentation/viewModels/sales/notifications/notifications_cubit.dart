@@ -2,7 +2,6 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -62,6 +61,14 @@ class NotificationCubit extends Cubit<NotificationState> {
       }
 
       final token = await messaging.getToken();
+      // حفظ التوكن في SharedPreferences وإرسال للسيرفر
+      await _saveAndSendToken(token);
+
+      // الاستماع لتحديث التوكن
+      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+        log("🔁 FCM Token updated: $newToken");
+        await _saveAndSendToken(newToken);
+      });
       final prefs = await SharedPreferences.getInstance();
       final role = prefs.getString('role');
       final userId = prefs.getString('salesId');
@@ -118,6 +125,43 @@ class NotificationCubit extends Cubit<NotificationState> {
     } catch (e) {
       log("⚠️ initNotifications error: $e");
       emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  // دالة خاصة لحفظ التوكن في SharedPreferences وإرسالها للسيرفر
+  Future<void> _saveAndSendToken(String? token) async {
+    if (token == null || token.isEmpty) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('fcm_token', token);
+    emit(state.copyWith(token: token));
+
+    log("🔑 Saving and sending FCM Token: $token");
+
+    // هنا ابعت التوكن للسيرفر (تغير الـ URL حسب سيرفرك)
+    try {
+      final role = prefs.getString('role');
+      final userId = prefs.getString('salesId');
+
+      final url = Uri.parse('${Constants.baseUrl}/your-api-path-to-update-fcm-token');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': userId,
+          'role': role,
+          'fcmToken': token,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        log('✅ FCM token updated successfully on server.');
+      } else {
+        log('❌ Failed to update FCM token on server: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      log('❌ Error updating FCM token on server: $e');
     }
   }
 

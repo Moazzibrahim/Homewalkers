@@ -31,7 +31,6 @@ class ManagerLeadsScreen extends StatefulWidget {
 class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
   bool? isClearHistoryy;
   DateTime? clearHistoryTimee;
-  bool? leadassign;
   String? managername;
   String? managerid;
 
@@ -361,7 +360,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                             final lead = leads[index];
                             final salesfcmtoken =
                                 lead.sales?.userlog?.fcmtokenn;
-                            leadassign = lead.assign;
+                            print("assign of lead: ${lead.assign}");
                             final userlognamee = lead.sales?.userlog?.name;
                             final prefs = SharedPreferences.getInstance();
                             final fcmToken = prefs.then(
@@ -824,7 +823,8 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
-                                        if (leadassign == false &&
+                                          if (lead.assign == false) ...[const DotLoading(), const Spacer()],
+                                        if (lead.assign == false &&
                                             userlognamee == managername) ...[
                                           DotLoading(),
                                           Spacer(),
@@ -955,11 +955,8 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                               "userlogmanagername: $userlognamee",
                                             );
                                             log("manager name: $managername");
-                                            log("leadassign: $leadassign");
-                                            if (leadassign == true ||
-                                                (leadassign == false &&
-                                                    userlognamee !=
-                                                        managername)) {
+                                            log("leadassign: ${lead.assign}");
+                                            if (lead.assign == true ) {
                                               await Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
