@@ -48,9 +48,9 @@ class AdminDashboardScreen extends StatelessWidget {
           elevation: 0,
           toolbarHeight: 100,
           backgroundColor:
-          Theme.of(context).brightness == Brightness.light
-              ? Colors.white
-              : Constants.backgroundDarkmode,
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.white
+                  : Constants.backgroundDarkmode,
           automaticallyImplyLeading: false,
           title: Row(
             children: [
@@ -165,6 +165,13 @@ class AdminDashboardScreen extends StatelessWidget {
                         if (usersState is GetAllUsersSuccess &&
                             salesState is SalesLoaded) {
                           final allUsers = usersState.users.data ?? [];
+                          final duplicatesCount =
+                              allUsers
+                                  .where(
+                                    (user) =>
+                                        (user.allVersions?.length ?? 0) > 1,
+                                  )
+                                  .length;
                           final allSales = salesState.salesData.data ?? [];
                           final salesCount = allSales.length;
                           // Calculate counts for different lead stages from the users list.
@@ -224,6 +231,25 @@ class AdminDashboardScreen extends StatelessWidget {
                                     ),
                               );
                             }),
+                            if (duplicatesCount > 0)
+                              _dashboardCard(
+                                'Duplicates',
+                                '$duplicatesCount',
+                                Icons.copy_all, // أيقونة تمثّل التكرار
+                                context,
+                                onTap: () {
+                                  // ممكن تروح لصفحة فيها تفاصيل أو تعمل حاجة معينة
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => const AdminLeadsScreen(
+                                          showDuplicatesOnly: true,
+                                          ),
+                                    ),
+                                  );
+                                },
+                              ),
                           ];
                           return GridView.builder(
                             gridDelegate:

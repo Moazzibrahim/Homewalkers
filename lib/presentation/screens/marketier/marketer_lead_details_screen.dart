@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
@@ -19,6 +20,7 @@ import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart
 import 'package:homewalkers_app/presentation/widgets/marketer/assign_lead_markter_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MarketerLeadDetailsScreen extends StatefulWidget {
   final String leedId;
@@ -36,6 +38,7 @@ class MarketerLeadDetailsScreen extends StatefulWidget {
   final String? leadNotes;
   final String? leaddeveloper;
   final String salesfcmtoken;
+  final String? leadwhatsappnumber;
   MarketerLeadDetailsScreen({
     super.key,
     required this.leedId,
@@ -53,6 +56,7 @@ class MarketerLeadDetailsScreen extends StatefulWidget {
     this.leadNotes,
     this.leaddeveloper,
     required this.salesfcmtoken,
+    this.leadwhatsappnumber,
   });
   @override
   State<MarketerLeadDetailsScreen> createState() =>
@@ -74,6 +78,7 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
       userRole = role;
     });
   }
+
   String _formatDate(String? dateStr) {
     if (dateStr == null) return 'N/A';
 
@@ -91,6 +96,17 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
       }
     }
   }
+
+  void makePhoneCall(String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri, mode: LaunchMode.platformDefault);
+    } else {
+      print('Could not launch $phoneUri');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Use MultiBlocProvider to provide all necessary cubits at the top level of this screen.
@@ -153,13 +169,17 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                         : Constants.mainDarkmodecolor,
                               ),
                               SizedBox(width: 6.w),
-                              Text(
-                                '${widget.leadPhone}',
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w400,
+                              InkWell(
+                                onTap:
+                                    () => makePhoneCall(widget.leadPhone ?? ''),
+                                child: Text(
+                                  '${widget.leadPhone}',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
                               SizedBox(width: 13.w),
                               Icon(
@@ -182,6 +202,50 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                 ),
                               ),
                             ],
+                          ),
+                          SizedBox(height: 8.h),
+                          InkWell(
+                            onTap: () async {
+                              final phone = widget.leadwhatsappnumber
+                                  ?.replaceAll(RegExp(r'\D'), '');
+                              final url = "https://wa.me/$phone";
+                              if (await canLaunchUrl(Uri.parse(url))) {
+                                await launchUrl(
+                                  Uri.parse(url),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Could not open WhatsApp."),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                FaIcon(
+                                  FontAwesomeIcons.whatsapp,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                  size: 18,
+                                ),
+                                SizedBox(width: 3.w),
+                                Text(
+                                  widget.leadwhatsappnumber?.isNotEmpty == true
+                                      ? widget.leadwhatsappnumber!
+                                      : 'no whatsapp number',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           SizedBox(height: 12.h),
                           Row(
@@ -587,7 +651,7 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                           widget
                                               .salesfcmtoken, // تأكد إن الاسم متطابق مع `NotificationCubit`
                                     );
-                                    debugPrint("fcmtoken: ${widget.salesfcmtoken}");
+                                debugPrint("fcmtoken: ${widget.salesfcmtoken}");
                               }
                             },
                             child: Text(

@@ -315,6 +315,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 //  <--- التعديل الرئيسي: تمرير القيمة مباشرة من المصدر
                                 assign: lead.assign ?? false,
                                 userlogteamleadername: lead.sales?.userlog?.name ?? 'No Userlog Team Leader',
+                                leadwhatsappnumber: lead.whatsappnumber ?? 'no whatsapp number',
                               );
                             },
                           ),
@@ -435,6 +436,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     required String managerFcmtoken,
     required bool assign, //  <--- الآن هذا المتغير يستقبل القيمة الصحيحة لكل عنصر
     required String userlogteamleadername,
+    required String leadwhatsappnumber,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -507,7 +509,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           const Divider(height: 16, thickness: 1),
           _buildInfoRow(context, Icons.person_pin_outlined, '', salesName),
           SizedBox(height: 10.h),
-          _buildContactRow(context, lead.phone),
+          _buildContactRow(context,phone,lead.whatsappnumber?.isNotEmpty == true ? lead.whatsappnumber! : 'no whatsapp number',),
           SizedBox(height: 10.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -647,6 +649,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                               teamleadername: teamleadername,
                               fcmtoken: fcmtoken,
                               managerfcmtoken: managerFcmtoken,
+                              leadwhatsappnumber: leadwhatsappnumber,
                             ),
                           ),
                         ),
@@ -805,14 +808,15 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     );
   }
 
-  Widget _buildContactRow(BuildContext context, String? phone) {
+  Widget _buildContactRow(BuildContext context, String? phone, String? whatsapp) {
     final cleanPhone = phone?.replaceAll(RegExp(r'\D'), '') ?? '';
+    final cleanWhatsapp = whatsapp?.replaceAll(RegExp(r'\D'), '') ?? '';
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         InkWell(
           onTap: () async {
-            final url = "https://wa.me/$cleanPhone";
+            final url = "https://wa.me/$cleanWhatsapp";
             if (await canLaunchUrl(Uri.parse(url))) {
               await launchUrl(
                 Uri.parse(url),
@@ -835,7 +839,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                 size: 18,
               ),
               const SizedBox(width: 8),
-              Text(phone ?? '', style: TextStyle(fontSize: 12.sp)),
+              Text(whatsapp ?? '', style: TextStyle(fontSize: 12.sp)),
             ],
           ),
         ),
@@ -980,13 +984,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   Widget getStatusIcon(String status) {
     switch (status) {
       case 'Follow Up':
-        return Icon(
-          Icons.mark_email_unread_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
+      case 'Follow After Meeting':
       case 'Follow':
         return Icon(
           Icons.mark_email_unread_outlined,
@@ -1038,6 +1036,22 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
       case 'Transfer':
         return Icon(
           Icons.no_transfer,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+        case 'EOI':
+        return Icon(
+          Icons.event_outlined,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+        case 'Reservation':
+        return Icon(
+          Icons.task,
           color:
               Theme.of(context).brightness == Brightness.light
                   ? Constants.maincolor

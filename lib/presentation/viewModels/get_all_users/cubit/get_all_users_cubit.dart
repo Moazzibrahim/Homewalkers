@@ -126,6 +126,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
     String? oldStageName,
     DateTime? oldStageDateStart,
     DateTime? oldStageDateEnd,
+    bool duplicatesOnly = false,
   }) {
     DateTime getDateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
@@ -150,7 +151,11 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
     }
 
     List<Lead> filteredLeads = List.from(_originalLeadsResponse!.data!);
-
+    if (duplicatesOnly) {
+      filteredLeads =
+          filteredLeads
+              .where((lead) => (lead.allVersions?.length ?? 0) > 1).toList();
+    }
     // General query filter
     if (query != null && query.isNotEmpty) {
       final q = query.toLowerCase();
@@ -159,7 +164,15 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
             final matchName = lead.name?.toLowerCase().contains(q) ?? false;
             final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
             final matchPhone = lead.phone?.contains(q) ?? false;
-            return matchName || matchEmail || matchPhone;
+            final matchInVersions = (lead.allVersions?.length ?? 0) > 1
+        ? lead.allVersions!.any((v) {
+            final nameMatch = v.name?.toLowerCase().contains(q) ?? false;
+            final emailMatch = v.email?.toLowerCase().contains(q) ?? false;
+            final phoneMatch = v.phone?.contains(q) ?? false;
+            return nameMatch || emailMatch || phoneMatch;
+          })
+        : false;
+            return matchName || matchEmail || matchPhone || matchInVersions;
           }).toList();
     }
 
@@ -360,7 +373,6 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       emit(GetAllUsersSuccess(AllUsersModel(data: filteredLeads)));
     }
   }
-
   // ✅ الخطوة 7: تحديث دالة الفلترة
   // ✅ الكود الكامل والصحيح للدالة
   void filterLeadsAdminForAdvancedSearch({

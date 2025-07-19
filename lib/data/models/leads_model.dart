@@ -17,6 +17,9 @@ class LeadResponse {
 }
 
 class LeadData {
+  final String? whatsappnumber;
+  final String? secondphonenumber;
+  final String? jobdescription;
   final String? id;
   final String? name;
   final String? leadisactive;
@@ -53,6 +56,9 @@ class LeadData {
   final int? v;
 
   LeadData({
+    this.whatsappnumber,
+    this.secondphonenumber,
+    this.jobdescription,
     this.id,
     this.name,
     this.leadisactive,
@@ -92,6 +98,9 @@ class LeadData {
   factory LeadData.fromJson(Map<String, dynamic>? json) {
     if (json == null) return LeadData();
     return LeadData(
+      whatsappnumber: json['whatsappnumber'],
+      secondphonenumber: json['phonenumber2'],
+      jobdescription: json['jobdescription'],
       id: json['_id'],
       name: json['name'],
       leadisactive: json['leadisactive'],

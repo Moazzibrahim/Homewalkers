@@ -19,6 +19,8 @@ class ChangeStageCubit extends Cubit<ChangeStageState> {
     String? cashbackratio,
     String? cashbackmoney,
     String? unitnumber,
+    num? eoi,
+    num? reservation,
   }) async {
     emit(ChangeStageLoading());
     try {
@@ -33,6 +35,8 @@ class ChangeStageCubit extends Cubit<ChangeStageState> {
         cashbackratio: cashbackratio,
         cashbackmoney: cashbackmoney,
         unitnumber: unitnumber,
+        eoi: eoi,
+        reservation: reservation,
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

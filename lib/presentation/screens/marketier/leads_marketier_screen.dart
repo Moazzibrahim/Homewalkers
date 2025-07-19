@@ -36,7 +36,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LeadsMarketierScreen extends StatefulWidget {
   final String? stageName;
-  const LeadsMarketierScreen({super.key, this.stageName});
+  final bool showDuplicatesOnly;
+  const LeadsMarketierScreen({
+    super.key,
+    this.stageName,
+    this.showDuplicatesOnly = false,
+  });
 
   @override
   State<LeadsMarketierScreen> createState() => _ManagerLeadsScreenState();
@@ -63,6 +68,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
   DateTime? _endDate;
   DateTime? _lastStageUpdateStart;
   DateTime? _lastStageUpdateEnd;
+  late bool _showDuplicatesOnly;
   @override
   void initState() {
     super.initState();
@@ -71,9 +77,11 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final stage = widget.stageName;
       _selectedStageFilter = stage;
+      _showDuplicatesOnly = widget.showDuplicatesOnly;
 
       context.read<GetLeadsMarketerCubit>().getLeadsByMarketer(
         stageFilter: stage, // ⬅️ نمرر الفلتر مباشرة
+        duplicatesOnly: _showDuplicatesOnly,
       );
     });
   }
@@ -121,6 +129,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
   Widget getStatusIcon(String status) {
     switch (status) {
       case 'Follow Up':
+      case 'Follow After Meeting':
       case 'Follow':
         return Icon(
           Icons.mark_email_unread_outlined,
@@ -177,6 +186,22 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                   ? Constants.maincolor
                   : Constants.mainDarkmodecolor,
         );
+        case 'EOI':
+        return Icon(
+          Icons.event_outlined,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+        case 'Reservation':
+        return Icon(
+          Icons.task,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
       default:
         return const Icon(Icons.info_outline);
     }
@@ -215,9 +240,12 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
             // Search & filter
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration( color: Theme.of(context).brightness == Brightness.light
-                                ? Colors.white
-                                : Constants.backgroundDarkmode,),
+              decoration: BoxDecoration(
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Colors.white
+                        : Constants.backgroundDarkmode,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -385,7 +413,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                             _selectedCampaignFilter = filters['campaign'];
                             _startDate = filters['startDate'];
                             _endDate = filters['endDate'];
-                            _lastStageUpdateStart = filters['lastStageUpdateStart'];
+                            _lastStageUpdateStart =
+                                filters['lastStageUpdateStart'];
                             _lastStageUpdateEnd = filters['lastStageUpdateEnd'];
                           });
                           _applyCurrentFilters(); // 🟡 تطبيق الفلاتر الجديدة
@@ -610,9 +639,10 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                           // Assuming the context and all variables like 'lead', 'isOutdated', 'selectedTab', etc.
                           // from your new code are available.
                           return Card(
-                            color: Theme.of(context).brightness == Brightness.light
-                                      ? Colors.white
-                                      : Colors.grey[900],
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.white
+                                    : Colors.grey[900],
                             margin: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,
@@ -748,7 +778,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                     children: [
                                       InkWell(
                                         onTap: () async {
-                                          final phone = lead.phone?.replaceAll(
+                                          final phone = lead.whatsappnumber?.replaceAll(
                                             RegExp(r'\D'),
                                             '',
                                           );
@@ -791,7 +821,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              lead.phone ?? '',
+                                               lead.whatsappnumber?.isNotEmpty == true ? lead.whatsappnumber! : 'no whatsapp number',
                                               style: TextStyle(fontSize: 12.sp),
                                             ),
                                           ],
@@ -1353,6 +1383,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                           ?.name ??
                                                       "no developer",
                                                   salesfcmtoken: salesfcmtoken!,
+                                                  leadwhatsappnumber: lead.whatsappnumber ?? 'no whatsapp number',
                                                 ),
                                           ),
                                         );

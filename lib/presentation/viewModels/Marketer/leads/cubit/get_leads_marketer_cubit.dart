@@ -19,7 +19,7 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
   GetLeadsMarketerCubit(this._getLeadsService)
     : super(GetLeadsMarketerInitial());
 
-  Future<void> getLeadsByMarketer({String? stageFilter}) async {
+  Future<void> getLeadsByMarketer({String? stageFilter, bool duplicatesOnly = false, }) async {
     emit(GetLeadsMarketerLoading());
     try {
       final leadsResponse = await _getLeadsService.getLeadsDataByMarketer();
@@ -60,13 +60,19 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
                 )
                 .toList();
       }
-      // ترتيب من الأحدث إلى الأقدم
+      if (duplicatesOnly) {
+        filteredData = filteredData
+            ?.where((lead) => (lead.allVersions?.length ?? 0) > 1)
+            .toList();
+      }
+
+      // ترتيب مرة واحدة فقط
       filteredData?.sort((a, b) {
         final aDate = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
         final bDate = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
         return bDate.compareTo(aDate);
       });
-
+      log("✅ البيانات الأولية تم جلبها وفلترتها بنجاح. عدد النتائج: ${filteredData?.length ?? 0}");
       log("✅ تم جلب البيانات بنجاح.");
       emit(GetLeadsMarketerSuccess(LeadResponse(data: filteredData)));
     } catch (e) {
@@ -110,23 +116,6 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
       ); // رسالة أوضح
     }
   }
-  // ❌ حذف الدالة دي، لأن filterLeadsMarketer هتكون شاملة
-  // void filterLeadsByStageInMarketer(String query) {
-  //   if (_originalLeadsResponse?.data == null) return;
-  //   if (query.isEmpty) {
-  //     emit(GetLeadsMarketerSuccess(_originalLeadsResponse!));
-  //     return;
-  //   }
-  //   final filtered =
-  //       _originalLeadsResponse!.data!
-  //           .where(
-  //             (lead) =>
-  //                 lead.stage?.name != null &&
-  //                 lead.stage!.name!.toLowerCase().contains(query.toLowerCase()),
-  //           )
-  //           .toList();
-  //   emit(GetLeadsMarketerSuccess(LeadResponse(data: filtered)));
-  // }
 
   void filterLeadsMarketer({
     String? name, // 🟡 هذا الباراميتر هو نفسه 'query' لو بحثت بالاسم فقط
@@ -145,6 +134,7 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
     DateTime? endDate,
     DateTime? lastStageUpdateStart,
     DateTime? lastStageUpdateEnd,
+    bool duplicatesOnly = false,
   }) {
     if (_originalLeadsResponse == null ||
         _originalLeadsResponse!.data == null) {
@@ -169,6 +159,7 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
       }
       return parsedDate;
     }
+
     // ابدأ دائمًا من البيانات الأصلية غير المُفلترة
     List<LeadData> filteredLeads = List.from(_originalLeadsResponse!.data!);
     // 1. تطبيق الفلترة النصية (query) أولاً
@@ -180,7 +171,18 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
             final matchName = lead.name?.toLowerCase().contains(q) ?? false;
             final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
             final matchPhone = lead.phone?.contains(q) ?? false;
-            return matchName || matchEmail || matchPhone;
+            final matchInVersions =
+                (lead.allVersions?.length ?? 0) > 1
+                    ? lead.allVersions!.any((v) {
+                      final nameMatch =
+                          v.name?.toLowerCase().contains(q) ?? false;
+                      final emailMatch =
+                          v.email?.toLowerCase().contains(q) ?? false;
+                      final phoneMatch = v.phone?.contains(q) ?? false;
+                      return nameMatch || emailMatch || phoneMatch;
+                    })
+                    : false;
+            return matchName || matchEmail || matchPhone || matchInVersions;
           }).toList();
     }
     // 2. تطبيق الفلترة بالـ 'name' (إذا تم إرساله من الـ dialog كبحث بالاسم فقط)
@@ -224,7 +226,7 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
           final matchCampaign =
               campaign == null ||
               (lead.campaign?.name?.toLowerCase() == campaign.toLowerCase());
-              final recordDate = parseNullableDate(lead.date);
+          final recordDate = parseNullableDate(lead.date);
           final recordDateOnly =
               recordDate != null ? getDateOnly(recordDate) : null;
           final startDateOnly =
@@ -268,6 +270,7 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
               matchLastStageUpdated &&
               matchCampaign;
         }).toList();
+
     if (filteredLeads.isEmpty &&
         ((query != null && query.isNotEmpty) ||
             (name != null && name.isNotEmpty) || // إذا كان name منفصل عن query

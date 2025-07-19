@@ -25,6 +25,7 @@ class CustomChangeStageDialog {
     final commissionRatioController = TextEditingController();
     final cashbackRatioController = TextEditingController();
     final unitnumberController = TextEditingController();
+    final eoiController = TextEditingController();
     String? selectedStageName;
     String? selectedStageId;
     String commissionMoney = '0.00';
@@ -295,6 +296,22 @@ class CustomChangeStageDialog {
                                 ),
                               ],
                             ),
+                            if (selectedStageName == "EOI" || 
+                                selectedStageName == "Reservation")
+                            Column(
+                              children: [
+                                SizedBox(height: 12.h),
+                                CustomTextField(
+                                  hint: "Money",
+                                  controller: eoiController,
+                                  textInputType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  // onChanged is no longer needed here as we use a listener
+                                ),
+                              ],
+                            ),
                           SizedBox(height: 20.h),
 
                           /// Action Buttons
@@ -311,6 +328,7 @@ class CustomChangeStageDialog {
                                       commissionRatioController.clear();
                                       cashbackRatioController.clear();
                                       unitnumberController.clear();
+                                      eoiController.clear();
                                       // No need to call calculateValues() here,
                                       // the listeners will do it automatically when controllers are cleared.
                                     });
@@ -383,8 +401,17 @@ class CustomChangeStageDialog {
                                               .toUtc()
                                               .toIso8601String(),
                                       stage: selectedStageId!,
+                                      eoi: eoiController.text.isNotEmpty
+                                          ? num.tryParse(
+                                              eoiController.text,
+                                            )
+                                          : null,
+                                          reservation: eoiController.text.isNotEmpty
+                                          ? num.tryParse(
+                                              eoiController.text,
+                                            )
+                                          : null
                                     );
-
                                     // Check the state after the first call
                                     final stateAfterChange =
                                         changeStageCubit.state;
@@ -400,7 +427,6 @@ class CustomChangeStageDialog {
                                         stage: selectedStageId!,
                                         sales: savedSalesId,
                                       );
-
                                       // **Important**: Remove listeners before closing the dialog
                                       unitPriceController.removeListener(
                                         calculateValues,

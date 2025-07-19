@@ -49,77 +49,86 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
       }
     }
 
-    Widget getStatusIcon(String status) {
-      switch (status) {
-        case 'Follow Up':
-          return Icon(
-            Icons.mark_email_unread_outlined,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Follow':
-          return Icon(
-            Icons.mark_email_unread_outlined,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Meeting':
-          return Icon(
-            Icons.chat_bubble_outline,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Done Deal':
-          return Icon(
-            Icons.check_box_outlined,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Interested':
-          return Icon(
-            FontAwesomeIcons.check,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Not Interested':
-          return Icon(
-            FontAwesomeIcons.timesCircle,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Fresh':
-          return Icon(
-            Icons.new_releases,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Transfer':
-          return Icon(
-            Icons.no_transfer,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-          );
-        default:
-          return const Icon(Icons.info_outline);
-      }
+     Widget getStatusIcon(String status) {
+    switch (status) {
+      case 'Follow Up':
+      case 'Follow After Meeting':
+      case 'Follow':
+        return Icon(
+          Icons.mark_email_unread_outlined,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Meeting':
+        return Icon(
+          Icons.chat_bubble_outline,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Done Deal':
+        return Icon(
+          Icons.check_box_outlined,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Interested':
+        return Icon(
+          FontAwesomeIcons.check,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Not Interested':
+        return Icon(
+          FontAwesomeIcons.timesCircle,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Fresh':
+        return Icon(
+          Icons.new_releases,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      case 'Transfer':
+        return Icon(
+          Icons.no_transfer,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+        case 'EOI':
+        return Icon(
+          Icons.event_outlined,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+        case 'Reservation':
+        return Icon(
+          Icons.task,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+      default:
+        return const Icon(Icons.info_outline);
     }
-
+  }
     void makePhoneCall(String phoneNumber) async {
       final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
 
@@ -432,7 +441,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                       children: [
                                         InkWell(
                                           onTap: () async {
-                                            final phone = lead.phone
+                                            final phone = lead.whatsappnumber
                                                 ?.replaceAll(RegExp(r'\D'), '');
                                             final url = "https://wa.me/$phone";
                                             if (await canLaunchUrl(
@@ -473,9 +482,9 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
-                                                lead.phone ?? '',
+                                                lead.whatsappnumber?.isNotEmpty == true ? lead.whatsappnumber! : 'no whatsapp number',
                                                 style: TextStyle(
-                                                  fontSize: 12.sp,
+                                                  fontSize: 11.sp,
                                                 ),
                                               ),
                                             ],
@@ -944,6 +953,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                                                     .sales
                                                                     ?.teamleader
                                                                     ?.fcmtokenn,
+                                                                    leadwhatsappnumber: lead.whatsappnumber ?? 'no whatsapp number',
                                                           ),
                                                         ),
                                                   ),

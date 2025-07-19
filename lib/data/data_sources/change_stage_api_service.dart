@@ -14,6 +14,8 @@ class ChangeStageApiService {
     String? commissionmoney,
     String? cashbackratio,
     String? cashbackmoney,
+    num? eoi,
+    num? reservation,
   }) async {
     final url = Uri.parse('${Constants.baseUrl}/users/$leadId');
 
@@ -28,6 +30,8 @@ class ChangeStageApiService {
       "commissionmoney":commissionmoney,
       "cashbackratio":cashbackratio,
       "cashbackmoney":cashbackmoney,
+      "Reservation":reservation,
+      "Eoi":eoi,
     };
 
     try {

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
@@ -18,6 +19,7 @@ import 'package:homewalkers_app/presentation/widgets/custom_change_stage_dialog.
 import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
   final String leedId;
@@ -38,6 +40,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
   final String? teamleadername;
   final String fcmtoken;
   final String? managerfcmtoken;
+  final String? leadwhatsappnumber;
 
   LeadsDetailsTeamLeaderScreen({
     super.key,
@@ -59,6 +62,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
     this.teamleadername,
     required this.fcmtoken,
     this.managerfcmtoken,
+    this.leadwhatsappnumber,
   });
   @override
   State<LeadsDetailsTeamLeaderScreen> createState() =>
@@ -127,6 +131,16 @@ class _SalesLeadsDetailsScreenState
     }
   }
 
+  void makePhoneCall(String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri, mode: LaunchMode.platformDefault);
+    } else {
+      print('Could not launch $phoneUri');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -189,11 +203,15 @@ class _SalesLeadsDetailsScreenState
                                         : Constants.mainDarkmodecolor,
                               ),
                               SizedBox(width: 6.w),
-                              Text(
-                                '${widget.leadPhone}',
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w400,
+                              InkWell(
+                                onTap:
+                                    () => makePhoneCall(widget.leadPhone ?? ""),
+                                child: Text(
+                                  '${widget.leadPhone}',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
                                 ),
                               ),
                               SizedBox(width: 13.w),
@@ -218,6 +236,49 @@ class _SalesLeadsDetailsScreenState
                                 ),
                               ),
                             ],
+                          ),
+                          SizedBox(height: 8.h),
+                          InkWell(
+                            onTap: () async {
+                              final phone = widget.leadwhatsappnumber
+                                  ?.replaceAll(RegExp(r'\D'), '');
+                              final url = "https://wa.me/$phone";
+                              if (await canLaunchUrl(Uri.parse(url))) {
+                                await launchUrl(
+                                  Uri.parse(url),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Could not open WhatsApp."),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                FaIcon(
+                                  FontAwesomeIcons.whatsapp,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                  size: 18,
+                                ),
+                                SizedBox(width: 3.w),
+                                Text(
+                                  widget.leadwhatsappnumber ??
+                                      'no whatsapp number',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           SizedBox(height: 12.h),
                           Row(
@@ -423,15 +484,21 @@ class _SalesLeadsDetailsScreenState
                                           .toString() ??
                                       "",
                                 )?.toUtc();
-                            final isFirstValid = isClearHistoryy != true ||
-    (firstcommentdate != null &&
-     clearHistoryTimee != null &&
-     firstcommentdate.isAfter(clearHistoryTimee!));
+                            final isFirstValid =
+                                isClearHistoryy != true ||
+                                (firstcommentdate != null &&
+                                    clearHistoryTimee != null &&
+                                    firstcommentdate.isAfter(
+                                      clearHistoryTimee!,
+                                    ));
 
-final isSecondValid = isClearHistoryy != true ||
-    (secondcommentdate != null &&
-     clearHistoryTimee != null &&
-     secondcommentdate.isAfter(clearHistoryTimee!));
+                            final isSecondValid =
+                                isClearHistoryy != true ||
+                                (secondcommentdate != null &&
+                                    clearHistoryTimee != null &&
+                                    secondcommentdate.isAfter(
+                                      clearHistoryTimee!,
+                                    ));
 
                             if ((isFirstValid &&
                                 firstComment?.firstcomment?.text != null)) {
@@ -642,7 +709,7 @@ final isSecondValid = isClearHistoryy != true ||
                                           widget
                                               .fcmtoken, // تأكد إن الاسم متطابق مع `NotificationCubit`
                                     );
-                                     context
+                                context
                                     .read<NotificationCubit>()
                                     .sendNotificationToToken(
                                       title: "Lead Comment",

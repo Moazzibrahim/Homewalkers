@@ -39,7 +39,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AdminLeadsScreen extends StatefulWidget {
   final String? stageName;
-  const AdminLeadsScreen({super.key, this.stageName});
+  final bool showDuplicatesOnly;
+  const AdminLeadsScreen({super.key, this.stageName, this.showDuplicatesOnly = false,});
 
   @override
   State<AdminLeadsScreen> createState() => _ManagerLeadsScreenState();
@@ -69,17 +70,22 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   String? _oldStageNameFilter;
   DateTime? _oldStageDateStartFilter;
   DateTime? _oldStageDateEndFilter;
+  late bool _showDuplicatesOnly;
+
 
   @override
   void initState() {
     super.initState();
     _nameSearchController = TextEditingController();
     _selectedStageFilter = widget.stageName;
+    _showDuplicatesOnly = widget.showDuplicatesOnly;
     context.read<GetAllUsersCubit>().fetchAllUsers().then((_) {
-      if (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty) {
-        _applyCurrentFilters(); // نفذ الفلترة بعد التحميل
-      }
-    });
+  if (_showDuplicatesOnly) {
+    context.read<GetAllUsersCubit>().filterLeadsAdmin(duplicatesOnly: true);
+  } else if (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty) {
+    _applyCurrentFilters();
+  }
+});
   }
 
   @override
@@ -135,21 +141,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   Widget getStatusIcon(String status) {
     switch (status) {
       case 'Follow Up':
-        return Icon(
-          Icons.mark_email_read_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
       case 'Follow After Meeting':
-        return Icon(
-          Icons.mark_email_unread_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
       case 'Follow':
         return Icon(
           Icons.mark_email_unread_outlined,
@@ -201,6 +193,22 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       case 'Transfer':
         return Icon(
           Icons.no_transfer,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+        case 'EOI':
+        return Icon(
+          Icons.event_outlined,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+        );
+        case 'Reservation':
+        return Icon(
+          Icons.task,
           color:
               Theme.of(context).brightness == Brightness.light
                   ? Constants.maincolor
@@ -809,7 +817,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                     children: [
                                       InkWell(
                                         onTap: () async {
-                                          final phone = lead.phone?.replaceAll(
+                                          final phone = lead.whatsappnumber?.replaceAll(
                                             RegExp(r'\D'),
                                             '',
                                           );
@@ -852,8 +860,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              lead.phone ?? '',
-                                              style: TextStyle(fontSize: 12.sp),
+                                              lead.whatsappnumber?.isNotEmpty == true ? lead.whatsappnumber! : 'no whatsapp number',
+                                              style: TextStyle(fontSize: 11.sp),
                                             ),
                                           ],
                                         ),
@@ -1483,6 +1491,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                           ?.name ??
                                                       "no developer",
                                                   salesfcmToken: salesfcmtoken,
+                                                  leadwhatsappnumber: lead.whatsappnumber ?? 'no whatsapp number',
                                                 ),
                                           ),
                                         );

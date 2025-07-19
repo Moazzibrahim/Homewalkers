@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
@@ -18,6 +19,7 @@ import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart
 import 'package:homewalkers_app/presentation/widgets/marketer/assign_lead_markter_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AdminLeadDetails extends StatefulWidget {
   final String leedId;
@@ -35,6 +37,7 @@ class AdminLeadDetails extends StatefulWidget {
   final String? leadNotes;
   final String? leaddeveloper;
   final String? salesfcmToken;
+  final String? leadwhatsappnumber;
   AdminLeadDetails({
     super.key,
     required this.leedId,
@@ -52,6 +55,7 @@ class AdminLeadDetails extends StatefulWidget {
     this.leadNotes,
     this.leaddeveloper,
     this.salesfcmToken,
+    this.leadwhatsappnumber,
   });
   @override
   State<AdminLeadDetails> createState() => _SalesLeadsDetailsScreenState();
@@ -88,6 +92,16 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
       } catch (e) {
         return 'Invalid Date';
       }
+    }
+  }
+
+  void makePhoneCall(String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri, mode: LaunchMode.platformDefault);
+    } else {
+      print('Could not launch $phoneUri');
     }
   }
 
@@ -153,13 +167,17 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                         : Constants.mainDarkmodecolor,
                               ),
                               SizedBox(width: 6.w),
-                              Text(
-                                '${widget.leadPhone}',
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w400,
+                              InkWell(
+                                onTap:
+                                    () => makePhoneCall(widget.leadPhone ?? ''),
+                                child: Text(
+                                  '${widget.leadPhone}',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
                               SizedBox(width: 13.w),
                               Icon(
@@ -182,6 +200,50 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                 ),
                               ),
                             ],
+                          ),
+                          SizedBox(height: 8.h),
+                          InkWell(
+                            onTap: () async {
+                              final phone = widget.leadwhatsappnumber
+                                  ?.replaceAll(RegExp(r'\D'), '');
+                              final url = "https://wa.me/$phone";
+                              if (await canLaunchUrl(Uri.parse(url))) {
+                                await launchUrl(
+                                  Uri.parse(url),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Could not open WhatsApp."),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                FaIcon(
+                                  FontAwesomeIcons.whatsapp,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                  size: 18,
+                                ),
+                                SizedBox(width: 3.w),
+                                Text(
+                                  widget.leadwhatsappnumber?.isNotEmpty == true
+                                      ? widget.leadwhatsappnumber!
+                                      : 'no whatsapp number',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           SizedBox(height: 12.h),
                           Row(
@@ -370,10 +432,8 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                           .toString() ??
                                       "",
                                 )?.toUtc();
-                            final isFirstValid =
-                                (firstcommentdate != null);
-                            final isSecondValid =
-                                (secondcommentdate != null);
+                            final isFirstValid = (firstcommentdate != null);
+                            final isSecondValid = (secondcommentdate != null);
                             if ((isFirstValid &&
                                 firstComment?.firstcomment?.text != null)) {
                               return Column(
