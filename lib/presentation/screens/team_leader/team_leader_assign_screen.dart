@@ -316,6 +316,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 assign: lead.assign ?? false,
                                 userlogteamleadername: lead.sales?.userlog?.name ?? 'No Userlog Team Leader',
                                 leadwhatsappnumber: lead.whatsappnumber ?? 'no whatsapp number',
+                                jobdescription: lead.jobdescription ?? 'no job description',
+                                secondphonenumber: lead.secondphonenumber ?? 'no second phone number',
                               );
                             },
                           ),
@@ -437,6 +439,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     required bool assign, //  <--- الآن هذا المتغير يستقبل القيمة الصحيحة لكل عنصر
     required String userlogteamleadername,
     required String leadwhatsappnumber,
+    required String jobdescription,
+  required String secondphonenumber,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -650,6 +654,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                               fcmtoken: fcmtoken,
                               managerfcmtoken: managerFcmtoken,
                               leadwhatsappnumber: leadwhatsappnumber,
+                              jobdescription: jobdescription,
+                              secondphonenumber: secondphonenumber,
                             ),
                           ),
                         ),

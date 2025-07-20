@@ -1020,10 +1020,10 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                                   ?.developer
                                                                   ?.name ??
                                                               "no developer",
-                                                          fcmtokenn:
-                                                              salesfcmtoken!,
-                                                          leadwhatsappnumber:
-                                                              lead.whatsappnumber,
+                                                          fcmtokenn: salesfcmtoken!,
+                                                          leadwhatsappnumber: lead.whatsappnumber,
+                                                              jobdescription: lead.jobdescription ?? 'no job description',
+                                                          secondphonenumber: lead.secondphonenumber,
                                                         ),
                                                       ),
                                                 ),

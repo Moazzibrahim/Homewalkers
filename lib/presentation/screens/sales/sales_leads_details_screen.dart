@@ -43,6 +43,8 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
   final String? teamleaderfcmtoken;
   final String? managerfcmtoken;
   final String? leadwhatsappnumber;
+  final String? jobdescription;
+  final String? secondphonenumber;
   SalesLeadsDetailsScreen({
     super.key,
     required this.leedId,
@@ -63,6 +65,8 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
     this.teamleaderfcmtoken,
     this.managerfcmtoken,
     this.leadwhatsappnumber,
+    this.jobdescription,
+    this.secondphonenumber,
   });
   @override
   State<SalesLeadsDetailsScreen> createState() =>
@@ -189,96 +193,147 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                             style: TextStyle(color: Color(0xff0B603B)),
                           ),
                           SizedBox(height: 12.h),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.phone,
-                                size: 16,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
-                              ),
-                              SizedBox(width: 6.w),
-                              InkWell(
-                                onTap:
-                                    () => makePhoneCall(widget.leadPhone ?? ''),
-                                child: Text(
-                                  '${widget.leadPhone}',
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
+                              // Row 1: Phone and Email
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.phone,
+                                    size: 16,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
                                   ),
-                                ),
-                              ),
-                              SizedBox(width: 13.w),
-                              Icon(
-                                Icons.email,
-                                size: 16,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
-                              ),
-                              SizedBox(width: 3.w),
-                              Flexible(
-                                child: Text(
-                                  '${widget.leadEmail}',
-                                  style: TextStyle(
-                                    fontSize: 11.sp,
-                                    fontWeight: FontWeight.w400,
+                                  SizedBox(width: 6.w),
+                                  InkWell(
+                                    onTap:
+                                        () => makePhoneCall(
+                                          widget.leadPhone ?? '',
+                                        ),
+                                    child: Text(
+                                      '${widget.leadPhone}',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  SizedBox(width: 13.w),
+                                  Icon(
+                                    Icons.email,
+                                    size: 16,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                  SizedBox(width: 3.w),
+                                  Flexible(
+                                    child: Text(
+                                      '${widget.leadEmail}',
+                                      maxLines: 2,
+                                      style: TextStyle(
+                                        fontSize: 11.sp,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8.h),
+                              // Row 2: WhatsApp and Second Phone
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (widget.leadwhatsappnumber != null &&
+                                      widget.leadwhatsappnumber!.isNotEmpty)
+                                    InkWell(
+                                      onTap: () async {
+                                        final phone = widget.leadwhatsappnumber
+                                            ?.replaceAll(RegExp(r'\D'), '');
+                                        final url = "https://wa.me/$phone";
+                                        if (await canLaunchUrl(
+                                          Uri.parse(url),
+                                        )) {
+                                          await launchUrl(
+                                            Uri.parse(url),
+                                            mode:
+                                                LaunchMode.externalApplication,
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                "Could not open WhatsApp.",
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: Row(
+                                        children: [
+                                          FaIcon(
+                                            FontAwesomeIcons.whatsapp,
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.light
+                                                    ? Constants.maincolor
+                                                    : Constants
+                                                        .mainDarkmodecolor,
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 5.w),
+                                          Text(
+                                            "${widget.leadwhatsappnumber}",
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                  if (widget.secondphonenumber != null &&
+                                      widget.secondphonenumber!.isNotEmpty) ...[
+                                    SizedBox(width: 12.w),
+                                    Icon(
+                                      Icons.phone,
+                                      size: 16,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                    SizedBox(width: 3.w),
+                                    InkWell(
+                                      onTap:
+                                          () => makePhoneCall(
+                                            widget.secondphonenumber ?? '',
+                                          ),
+                                      child: Text(
+                                        " ${widget.secondphonenumber}",
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
-                          SizedBox(height: 8.h),
-                          InkWell(
-                            onTap: () async {
-                              final phone = widget.leadwhatsappnumber
-                                  ?.replaceAll(RegExp(r'\D'), '');
-                              final url = "https://wa.me/$phone";
-                              if (await canLaunchUrl(Uri.parse(url))) {
-                                await launchUrl(
-                                  Uri.parse(url),
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Could not open WhatsApp."),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                FaIcon(
-                                  FontAwesomeIcons.whatsapp,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                  size: 18,
-                                ),
-                                SizedBox(width: 3.w),
-                                Text(
-                                  widget.leadwhatsappnumber ??
-                                      'no whatsapp number',
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 12.h),
+                          SizedBox(height: 10.h),
                           Row(
                             children: [
                               BlocBuilder<GetLeadsCubit, GetLeadsState>(
@@ -418,7 +473,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 16.h),
+                    SizedBox(height: 12.h),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
@@ -438,6 +493,11 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                             ),
                           ),
                           SizedBox(height: 10.h),
+                          InfoRow(
+                            icon: Icons.work,
+                            label: 'job description',
+                            value: widget.jobdescription?.isNotEmpty == true ? widget.jobdescription! : 'no job description',
+                          ),
                           InfoRow(
                             icon: Icons.apartment,
                             label: 'Project',

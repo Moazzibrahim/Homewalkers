@@ -1384,6 +1384,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                       "no developer",
                                                   salesfcmtoken: salesfcmtoken!,
                                                   leadwhatsappnumber: lead.whatsappnumber ?? 'no whatsapp number',
+                                                  jobdescription: lead.jobdescription ?? 'no job description',
+                                                  secondphonenumber: lead.secondphonenumber ?? 'no second phone number',
                                                 ),
                                           ),
                                         );
