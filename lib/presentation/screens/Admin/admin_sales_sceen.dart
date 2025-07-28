@@ -22,13 +22,16 @@ class AdminSalesSceen extends StatelessWidget {
           create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
         ),
         BlocProvider(
-          create: (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchLeadCounts(),
+          create:
+              (_) =>
+                  GetAllUsersCubit(GetAllUsersApiService())..fetchLeadCounts(),
         ),
       ],
       child: Scaffold(
-        backgroundColor: Theme.of(context).brightness == Brightness.light
-            ? Constants.backgroundlightmode
-            : Constants.backgroundDarkmode,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Constants.backgroundlightmode
+                : Constants.backgroundDarkmode,
         appBar: CustomAppBar(
           title: "Sales",
           onBack: () {
@@ -41,7 +44,7 @@ class AdminSalesSceen extends StatelessWidget {
         body: BlocBuilder<SalesCubit, SalesState>(
           builder: (context, salesState) {
             if (salesState is SalesLoading) {
-              return _buildShimmerList();
+              return _buildShimmerList(context);
             }
 
             if (salesState is SalesError) {
@@ -53,18 +56,22 @@ class AdminSalesSceen extends StatelessWidget {
 
               return BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
                 builder: (context, usersState) {
-                  final leadCounts = (usersState is UsersLeadCountSuccess)
-                      ? usersState.leadCounts
-                      : <String, int>{};
+                  final leadCounts =
+                      (usersState is UsersLeadCountSuccess)
+                          ? usersState.leadCounts
+                          : <String, int>{};
 
-                  final salesList = allSales
-                      .where((s) => s.userlog != null)
-                      .map((s) => _SalesWithLeadCount(
-                            user: s.userlog!,
-                            leadCount: leadCounts[s.userlog!.id] ?? 0,
-                          ))
-                      .toList()
-                    ..sort((a, b) => b.leadCount.compareTo(a.leadCount));
+                  final salesList =
+                      allSales
+                          .where((s) => s.userlog != null)
+                          .map(
+                            (s) => _SalesWithLeadCount(
+                              user: s.userlog!,
+                              leadCount: leadCounts[s.userlog!.id] ?? 0,
+                            ),
+                          )
+                          .toList()
+                        ..sort((a, b) => b.leadCount.compareTo(a.leadCount));
 
                   return ListView.builder(
                     padding: const EdgeInsets.all(16),
@@ -74,21 +81,29 @@ class AdminSalesSceen extends StatelessWidget {
                       return Card(
                         elevation: 2,
                         margin: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         child: ListTile(
                           title: Text(
                             item.user.name ?? 'No Name',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          subtitle: Text("Role: ${item.user.role ?? 'Unknown'}"),
+                          subtitle: Text(
+                            "Role: ${item.user.role ?? 'Unknown'}",
+                          ),
                           trailing: Chip(
                             label: Text(
                               '${item.leadCount} Leads',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            backgroundColor: Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Constants.mainDarkmodecolor,
+                            backgroundColor:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Constants.maincolor
+                                    : Constants.mainDarkmodecolor,
                           ),
                         ),
                       );
@@ -106,26 +121,38 @@ class AdminSalesSceen extends StatelessWidget {
   }
 
   // 🔆 Shimmer loading list while waiting for data
-  Widget _buildShimmerList() {
+  Widget _buildShimmerList(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: 6,
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
-          baseColor: Colors.grey[300]!,
-          highlightColor: Colors.grey[100]!,
+          baseColor: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+          highlightColor: isDark ? Colors.grey[500]! : Colors.grey[100]!,
           child: Card(
+            color: isDark ? Colors.grey[800] : Colors.white,
             elevation: 2,
             margin: const EdgeInsets.symmetric(vertical: 8),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: ListTile(
-              title: Container(height: 16, color: Colors.white),
-              subtitle: Container(height: 12, margin: const EdgeInsets.only(top: 8), color: Colors.white),
+              title: Container(
+                height: 16,
+                color: isDark ? Colors.grey[700] : Colors.white,
+              ),
+              subtitle: Container(
+                height: 12,
+                margin: const EdgeInsets.only(top: 8),
+                color: isDark ? Colors.grey[600] : Colors.white,
+              ),
               trailing: Container(
                 width: 60,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? Colors.grey[700] : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),

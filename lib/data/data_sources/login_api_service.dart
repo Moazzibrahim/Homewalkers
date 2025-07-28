@@ -4,12 +4,14 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -52,6 +54,7 @@ class LoginApiService {
           log('❌ Missing token or user in response');
           throw Exception('Login failed: Missing required data');
         }
+        context.read<NotificationCubit>().initNotifications();
         // استخراج القيم من userData
         name = userData['name'];
         role = userData['role'];
@@ -82,8 +85,6 @@ class LoginApiService {
         await prefs.setString('createdAt', createdAt ?? '');
         await prefs.setString('updatedAt', updatedAt ?? '');
         await prefs.setBool('active', active);
-
-        
 
         // Navigate based on role
         if (role == "Sales") {
@@ -130,7 +131,6 @@ class LoginApiService {
         log('❌ Response body: ${response.body}');
         throw Exception('Login failed: ${response.body}');
       }
-      
     } catch (e) {
       log('❌ Exception during login: $e');
       rethrow;

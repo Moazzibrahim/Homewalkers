@@ -605,7 +605,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             child: ListTile(
                               title: Text(lead.name ?? "No Name"),
                               subtitle: Text(
-                                "Phone: ${lead.phone ?? 'N/A'}\nEmail: ${lead.email ?? 'N/A'}",
+                                "Phone: ${lead.phone ?? 'N/A'}\nEmail: ${lead.email ?? 'N/A'}\nStage: ${lead.stage?.name ?? 'N/A'}\nSales: ${lead.sales?.name ?? 'N/A'}",
                               ),
                               leading: Icon(
                                 Icons.delete_forever,

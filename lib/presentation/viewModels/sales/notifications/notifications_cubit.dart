@@ -17,17 +17,9 @@ class NotificationState {
   final String? error;
   final bool isLoading;
 
-  NotificationState({
-    this.token,
-    this.error,
-    this.isLoading = false,
-  });
+  NotificationState({this.token, this.error, this.isLoading = false});
 
-  NotificationState copyWith({
-    String? token,
-    String? error,
-    bool? isLoading,
-  }) {
+  NotificationState copyWith({String? token, String? error, bool? isLoading}) {
     return NotificationState(
       token: token ?? this.token,
       error: error,
@@ -41,12 +33,14 @@ class NotificationCubit extends Cubit<NotificationState> {
   NotificationCubit() : super(NotificationState());
 
   List<NotificationItem> notifications = [];
+  bool _isInitialized = false;
 
   /// 🔔 Initializes notification system and handles listeners
   Future<void> initNotifications() async {
     try {
       final messaging = FirebaseMessaging.instance;
-
+      if (_isInitialized) return;
+      _isInitialized = true;
       final settings = await messaging.requestPermission(
         alert: true,
         badge: true,
@@ -73,9 +67,6 @@ class NotificationCubit extends Cubit<NotificationState> {
       final role = prefs.getString('role');
       final userId = prefs.getString('salesId');
 
-      await prefs.setString('fcm_token', token ?? '');
-      emit(state.copyWith(token: token));
-
       log("🔑 FCM Token: $token");
       log("👤 User ID: $userId");
       log("🧑‍💼 Role: $role");
@@ -93,7 +84,8 @@ class NotificationCubit extends Cubit<NotificationState> {
         );
         await flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
+              AndroidFlutterLocalNotificationsPlugin
+            >()
             ?.createNotificationChannel(androidChannel);
       }
 
@@ -101,7 +93,8 @@ class NotificationCubit extends Cubit<NotificationState> {
       if (Platform.isIOS) {
         await flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
-                IOSFlutterLocalNotificationsPlugin>()
+              IOSFlutterLocalNotificationsPlugin
+            >()
             ?.requestPermissions(alert: true, badge: true, sound: true);
       }
 
@@ -128,40 +121,52 @@ class NotificationCubit extends Cubit<NotificationState> {
     }
   }
 
-  // دالة خاصة لحفظ التوكن في SharedPreferences وإرسالها للسيرفر
   Future<void> _saveAndSendToken(String? token) async {
     if (token == null || token.isEmpty) return;
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('fcm_token', token);
-    emit(state.copyWith(token: token));
+    final oldToken = prefs.getString('fcm_token');
+    log("📌 Current FCM Token: $token");
+    log("📌 Saved Old Token: $oldToken");
 
-    log("🔑 Saving and sending FCM Token: $token");
+    if (oldToken != token) {
+      await prefs.setString('fcm_token', token);
+      emit(state.copyWith(token: token));
+      log("🔁 Token changed. Old: $oldToken → New: $token");
 
-    // هنا ابعت التوكن للسيرفر (تغير الـ URL حسب سيرفرك)
-    try {
-      final role = prefs.getString('role');
-      final userId = prefs.getString('salesId');
+      try {
+        final userId = prefs.getString('salesId');
+        if (userId == null || userId.isEmpty) {
+          log("⚠️ No userId found. Skipping token send.");
+          return;
+        }
 
-      final url = Uri.parse('${Constants.baseUrl}/your-api-path-to-update-fcm-token');
+        final url = Uri.parse(
+          '${Constants.baseUrl}/Notification/updatefcmtoken',
+        );
+        final body = jsonEncode({'userId': userId, 'fcmToken': token});
 
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'userId': userId,
-          'role': role,
-          'fcmToken': token,
-        }),
-      );
+        log("📤 Sending token update: $body");
 
-      if (response.statusCode == 200) {
-        log('✅ FCM token updated successfully on server.');
-      } else {
-        log('❌ Failed to update FCM token on server: ${response.statusCode} ${response.body}');
+        final response = await http.put(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: body,
+        );
+        log(
+          "📨 Response from server: ${response.statusCode} - ${response.body}",
+        );
+
+        if (response.statusCode == 200) {
+          log('✅ New FCM token sent to server.');
+        } else {
+          log('❌ Failed to update FCM token: ${response.statusCode}');
+        }
+      } catch (e) {
+        log('❌ Error sending token to server: $e');
       }
-    } catch (e) {
-      log('❌ Error updating FCM token on server: $e');
+    } else {
+      log("♻️ FCM token unchanged. Skipping update.");
     }
   }
 
@@ -242,7 +247,9 @@ class NotificationCubit extends Cubit<NotificationState> {
         return;
       }
 
-      final url = Uri.parse('${Constants.baseUrl}/Notification?receiver=$receiverId');
+      final url = Uri.parse(
+        '${Constants.baseUrl}/Notification?receiver=$receiverId',
+      );
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -251,7 +258,12 @@ class NotificationCubit extends Cubit<NotificationState> {
         notifications = model.data ?? [];
         emit(state.copyWith(isLoading: false));
       } else {
-        emit(state.copyWith(isLoading: false, error: 'Failed to load notifications'));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: 'Failed to load notifications',
+          ),
+        );
       }
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
@@ -272,7 +284,12 @@ class NotificationCubit extends Cubit<NotificationState> {
         notifications = model.data ?? [];
         emit(state.copyWith(isLoading: false));
       } else {
-        emit(state.copyWith(isLoading: false, error: 'Failed to load notifications'));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: 'Failed to load notifications',
+          ),
+        );
       }
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));

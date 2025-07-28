@@ -34,6 +34,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   log("[Background] Message: ${message.messageId}");
 }
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -82,17 +83,8 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ThemeCubit(initialTheme)),
-        // BlocProvider(create: (_) => RegionCubit(RegionApiService())),
         BlocProvider(create: (_) => StagesCubit(StagesApiService())),
-        BlocProvider(
-          create: (_) {
-            final cubit = NotificationCubit();
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              cubit.initNotifications();
-            });
-            return cubit;
-          },
-        ),
+        BlocProvider(create: (_) => NotificationCubit()),
         BlocProvider(
           create: (_) => GetLeadsCubit(GetLeadsService())..fetchLeads(),
         ),
@@ -103,13 +95,29 @@ class MyApp extends StatelessWidget {
               ),
         ),
         BlocProvider(
-          create: (context) => GetManagerLeadsCubit(GetLeadsService())..getLeadsByManager(),
+          create:
+              (context) =>
+                  GetManagerLeadsCubit(GetLeadsService())..getLeadsByManager(),
         ),
         BlocProvider(
-          create: (_) => GetLeadsMarketerCubit(GetLeadsService())..getLeadsByMarketer(),
+          create:
+              (_) =>
+                  GetLeadsMarketerCubit(GetLeadsService())
+                    ..getLeadsByMarketer(),
         ),
-        BlocProvider(create: (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchAllUsers()..fetchLeadsInTrash()),
-        BlocProvider(create: (_) => GetalluserssignupCubit( GetAllUsersForSignupApiService())..fetchUsers()),
+        BlocProvider(
+          create:
+              (_) =>
+                  GetAllUsersCubit(GetAllUsersApiService())
+                    ..fetchAllUsers()
+                    ..fetchLeadsInTrash(),
+        ),
+        BlocProvider(
+          create:
+              (_) =>
+                  GetalluserssignupCubit(GetAllUsersForSignupApiService())
+                    ..fetchUsers(),
+        ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
@@ -122,7 +130,7 @@ class MyApp extends StatelessWidget {
             splitScreenMode: true,
             builder: (_, __) {
               return MaterialApp(
-                title: 'Login MVVM Example',
+                title: 'Homewalkers App',
                 navigatorKey: navigatorKey,
                 debugShowCheckedModeBanner: false,
                 theme: ThemeData.light().copyWith(

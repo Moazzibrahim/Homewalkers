@@ -30,7 +30,6 @@ class SalesLeadsScreen extends StatefulWidget {
 }
 
 class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
-
   @override
   Widget build(BuildContext context) {
     final nameController = TextEditingController();
@@ -49,86 +48,87 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
       }
     }
 
-     Widget getStatusIcon(String status) {
-    switch (status) {
-      case 'Follow Up':
-      case 'Follow After Meeting':
-      case 'Follow':
-        return Icon(
-          Icons.mark_email_unread_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Meeting':
-        return Icon(
-          Icons.chat_bubble_outline,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Done Deal':
-        return Icon(
-          Icons.check_box_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Interested':
-        return Icon(
-          FontAwesomeIcons.check,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Not Interested':
-        return Icon(
-          FontAwesomeIcons.timesCircle,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Fresh':
-        return Icon(
-          Icons.new_releases,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Transfer':
-        return Icon(
-          Icons.no_transfer,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
+    Widget getStatusIcon(String status) {
+      switch (status) {
+        case 'Follow Up':
+        case 'Follow After Meeting':
+        case 'Follow':
+          return Icon(
+            Icons.mark_email_unread_outlined,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Meeting':
+          return Icon(
+            Icons.chat_bubble_outline,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Done Deal':
+          return Icon(
+            Icons.check_box_outlined,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Interested':
+          return Icon(
+            FontAwesomeIcons.check,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Not Interested':
+          return Icon(
+            FontAwesomeIcons.timesCircle,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Fresh':
+          return Icon(
+            Icons.new_releases,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Transfer':
+          return Icon(
+            Icons.no_transfer,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
         case 'EOI':
-        return Icon(
-          Icons.event_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
+          return Icon(
+            Icons.event_outlined,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
         case 'Reservation':
-        return Icon(
-          Icons.task,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      default:
-        return const Icon(Icons.info_outline);
+          return Icon(
+            Icons.task,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        default:
+          return const Icon(Icons.info_outline);
+      }
     }
-  }
+
     void makePhoneCall(String phoneNumber) async {
       final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
 
@@ -482,7 +482,12 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
-                                                lead.whatsappnumber?.isNotEmpty == true ? lead.whatsappnumber! : 'no whatsapp number',
+                                                lead
+                                                            .whatsappnumber
+                                                            ?.isNotEmpty ==
+                                                        true
+                                                    ? lead.whatsappnumber!
+                                                    : 'no whatsapp number',
                                                 style: TextStyle(
                                                   fontSize: 11.sp,
                                                 ),
@@ -814,25 +819,15 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                                                         : Constants
                                                                             .mainDarkmodecolor,
                                                               ),
-                                                              onPressed: () {
-                                                                innerContext
-                                                                    .read<
-                                                                      EditLeadCubit
-                                                                    >()
-                                                                    .editLeadAssignvalue(
-                                                                      userId:
-                                                                          lead.id!,
-                                                                      assign:
-                                                                          true,
+                                                              onPressed: () async {
+                                                                await innerContext
+                                                                    .read<EditLeadCubit>()
+                                                                    .editLeadAssignvalue(userId:lead.id!,
+                                                                      assign: true,
                                                                     );
-                                                                Navigator.of(
-                                                                  innerContext,
-                                                                ).pop(); // Close dialog
-                                                                innerContext
-                                                                    .read<
-                                                                      GetLeadsCubit
-                                                                    >()
-                                                                    .fetchLeads(); // Refresh
+                                                                Navigator.of(innerContext,).pop(); // Close dialog
+                                                                // بعد ما تخلص العملية فعلياً
+                                                                innerContext.read<GetLeadsCubit>().fetchLeads(); // Refresh
                                                               },
                                                               child: Text(
                                                                 "OK",
@@ -953,9 +948,15 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                                                     .sales
                                                                     ?.teamleader
                                                                     ?.fcmtokenn,
-                                                                    leadwhatsappnumber: lead.whatsappnumber ?? 'no whatsapp number',
-                                                                    jobdescription: lead.jobdescription ?? 'no job description',
-                                                                    secondphonenumber: lead.secondphonenumber ?? 'no second phone number',
+                                                            leadwhatsappnumber:
+                                                                lead.whatsappnumber ??
+                                                                'no whatsapp number',
+                                                            jobdescription:
+                                                                lead.jobdescription ??
+                                                                'no job description',
+                                                            secondphonenumber:
+                                                                lead.secondphonenumber ??
+                                                                'no second phone number',
                                                           ),
                                                         ),
                                                   ),
@@ -1052,7 +1053,9 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
       },
     );
   }
-}class DotLoading extends StatefulWidget {
+}
+
+class DotLoading extends StatefulWidget {
   const DotLoading({super.key});
 
   @override
@@ -1079,7 +1082,11 @@ class _DotLoadingState extends State<DotLoading>
       return Tween<double>(begin: 0, end: 10).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: Interval(start, end > 1.0 ? 1.0 : end, curve: Curves.easeInOut),
+          curve: Interval(
+            start,
+            end > 1.0 ? 1.0 : end,
+            curve: Curves.easeInOut,
+          ),
         ),
       );
     });
@@ -1111,9 +1118,10 @@ class _DotLoadingState extends State<DotLoading>
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.maincolor
+                      : Constants.mainDarkmodecolor,
               shape: BoxShape.circle,
             ),
           ),
