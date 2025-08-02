@@ -318,7 +318,6 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                         (context) => AssignLeadMarkterDialog(
                                           leadIds: [widget.leedId],
                                           leadId: widget.leedId,
-                                          salesfcmtoken: widget.salesfcmToken!,
                                           mainColor:
                                               Theme.of(context).brightness ==
                                                       Brightness.light

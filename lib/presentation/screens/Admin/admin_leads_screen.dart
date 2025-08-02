@@ -1,5 +1,5 @@
 // leads_marketier_screen.dart
-// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable
+// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, unused_field
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,7 +15,9 @@ import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart'
 import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
+import 'package:homewalkers_app/data/models/all_sales_model.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
+import 'package:homewalkers_app/data/models/stages_models.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_lead_details.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
@@ -26,11 +28,13 @@ import 'package:homewalkers_app/presentation/viewModels/communication_ways/cubit
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/assign_lead_markter_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/edit_lead_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/filter_leads_dialog.dart'; // تأكد أن المسار صحيح
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,7 +44,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 class AdminLeadsScreen extends StatefulWidget {
   final String? stageName;
   final bool showDuplicatesOnly;
-  const AdminLeadsScreen({super.key, this.stageName, this.showDuplicatesOnly = false,});
+  const AdminLeadsScreen({
+    super.key,
+    this.stageName,
+    this.showDuplicatesOnly = false,
+  });
 
   @override
   State<AdminLeadsScreen> createState() => _ManagerLeadsScreenState();
@@ -71,7 +79,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   DateTime? _oldStageDateStartFilter;
   DateTime? _oldStageDateEndFilter;
   late bool _showDuplicatesOnly;
-
+  bool _isSelectAll = false;
+  Set<String> _selectedLeads = {};
+  final String selectedSalesId = ''; // انت عارف ده من مكان تاني
+  String? _selectedSalesFcmToken;
 
   @override
   void initState() {
@@ -80,12 +91,13 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     _selectedStageFilter = widget.stageName;
     _showDuplicatesOnly = widget.showDuplicatesOnly;
     context.read<GetAllUsersCubit>().fetchAllUsers().then((_) {
-  if (_showDuplicatesOnly) {
-    context.read<GetAllUsersCubit>().filterLeadsAdmin(duplicatesOnly: true);
-  } else if (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty) {
-    _applyCurrentFilters();
-  }
-});
+      if (_showDuplicatesOnly) {
+        context.read<GetAllUsersCubit>().filterLeadsAdmin(duplicatesOnly: true);
+      } else if (_selectedStageFilter != null &&
+          _selectedStageFilter!.isNotEmpty) {
+        _applyCurrentFilters();
+      }
+    });
   }
 
   @override
@@ -198,7 +210,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                   ? Constants.maincolor
                   : Constants.mainDarkmodecolor,
         );
-        case 'EOI':
+      case 'EOI':
         return Icon(
           Icons.event_outlined,
           color:
@@ -206,7 +218,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                   ? Constants.maincolor
                   : Constants.mainDarkmodecolor,
         );
-        case 'Reservation':
+      case 'Reservation':
         return Icon(
           Icons.task,
           color:
@@ -251,7 +263,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.light
+                color:
+                    Theme.of(context).brightness == Brightness.light
                         ? Colors.white
                         : Constants.backgroundDarkmode,
               ),
@@ -445,6 +458,235 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                 ],
               ),
             ),
+            if (selectedTab == 0)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _isSelectAll,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _isSelectAll = value ?? false;
+                              final state =
+                                  context.read<GetAllUsersCubit>().state;
+                              if (state is GetAllUsersSuccess) {
+                                if (_isSelectAll) {
+                                  _selectedLeads =
+                                      state.users.data!
+                                          .where((lead) => lead.id != null)
+                                          .map<String>((lead) => lead.id!)
+                                          .toSet();
+                                } else {
+                                  _selectedLeads.clear();
+                                }
+                              }
+                            });
+                          },
+                          activeColor: Constants.maincolor,
+                        ),
+                        Text(
+                          'Select All',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.black
+                                    : Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    PopupMenuButton<String>(
+                      enabled: _selectedLeads.isNotEmpty,
+                      onSelected: (String result) async {
+                        if (result == 'assign') {
+                          String selectedOption = 'same';
+                          String? selectedStageId;
+                          String? selectedstagename;
+                          final stagesCubit = context.read<StagesCubit>();
+                          if (stagesCubit.state is! StagesLoaded) {
+                            await stagesCubit.fetchStages();
+                          }
+                          final stageState = stagesCubit.state;
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return StatefulBuilder(
+                                builder: (context, setState) {
+                                  return AlertDialog(
+                                    title: const Text('Assign Leads'),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        RadioListTile<String>(
+                                          value: 'same',
+                                          groupValue: selectedOption,
+                                          title: const Text('Same Stage'),
+                                          onChanged: (value) {
+                                            setState(
+                                              () => selectedOption = value!,
+                                            );
+                                          },
+                                        ),
+                                        RadioListTile<String>(
+                                          value: 'change',
+                                          groupValue: selectedOption,
+                                          title: const Text('Change Stage'),
+                                          onChanged: (value) {
+                                            setState(
+                                              () => selectedOption = value!,
+                                            );
+                                          },
+                                        ),
+                                        if (selectedOption == 'change' &&
+                                            stageState is StagesLoaded)
+                                          DropdownButton<String>(
+                                            isExpanded: true,
+                                            value: selectedStageId,
+                                            hint: const Text('Select Stage'),
+                                            items: stageState.stages.map((stage) {
+                                                  return DropdownMenuItem<String>(
+                                                    value: stage.id.toString(),
+                                                    child: Text(
+                                                      stage.name ?? 'Unnamed',
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                            onChanged: (value) {
+                                              final selectedStage = stageState
+                                                  .stages
+                                                  .firstWhere(
+                                                    (stage) =>
+                                                        stage.id.toString() ==
+                                                        value,
+                                                    orElse: () => StageDatas(),
+                                                  );
+                                              setState(() {
+                                                selectedStageId = value;
+                                                selectedstagename =
+                                                    selectedStage.name;
+                                              });
+                                            },
+                                          ),
+                                      ],
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        style: TextButton.styleFrom(
+                                          backgroundColor:
+                                              Theme.of(context).brightness ==
+                                                      Brightness.light
+                                                  ? Constants.maincolor
+                                                  : Constants.mainDarkmodecolor,
+                                        ),
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text(
+                                          'Cancel',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              Theme.of(context).brightness ==
+                                                      Brightness.light
+                                                  ? Constants.maincolor
+                                                  : Constants.mainDarkmodecolor,
+                                        ),
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: ( context,) => AssignLeadMarkterDialog(
+                                                  leadIds:_selectedLeads.toList(),
+                                                  leadId: _selectedLeads.toList()[0],
+                                                  leadStage: selectedStageId,
+                                                  mainColor: Theme.of(context,).brightness == Brightness.light
+                                                          ? Constants.maincolor
+                                                          : Constants.mainDarkmodecolor,
+                                                ),
+                                                
+                                          );
+                                        },
+                                        child: const Text(
+                                          'Continue',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          ).then((result) async {
+                            if (result == null) return;
+                            final option = result['option'];
+                            final newStageId = result['stageId'];
+                            final salesCubit = context.read<SalesCubit>();
+                            final salesState = salesCubit.state;
+                            if (salesState is SalesLoaded) {
+                              final selectedSales =
+                                  salesState.salesData.data ?? [];
+                              final selectedSalesUser = selectedSales
+                                  .firstWhere(
+                                    (sales) => sales.id == selectedSalesId,
+                                    orElse: () => SalesData(),
+                                  );
+                              _selectedSalesFcmToken = selectedSalesUser.userlog?.fcmtoken;
+                              if (_selectedLeads.isNotEmpty) {
+                                if (option == 'same') {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (context) => AssignLeadMarkterDialog(
+                                          leadIds: _selectedLeads.toList(),
+                                          leadId: _selectedLeads.toList()[0],
+                                          mainColor:
+                                              Theme.of(context).brightness ==
+                                                      Brightness.light
+                                                  ? Constants.maincolor
+                                                  : Constants.mainDarkmodecolor,
+                                        ),
+                                  );
+                                } else if (option == 'change' && newStageId != null) {
+                                  // هنا logic تغيير الستيج
+                                  log(
+                                    'Change stage to $newStageId for leads: $_selectedLeads',
+                                  );
+                                }
+                              }
+                            }
+                          });
+                        }
+                      },
+                      itemBuilder:
+                          (BuildContext context) => <PopupMenuEntry<String>>[
+                            const PopupMenuItem<String>(
+                              value: 'assign',
+                              child: Text('Assign Leads'),
+                            ),
+                          ],
+                      icon: Icon(
+                        Icons.more_vert,
+                        color:
+                            _selectedLeads.isNotEmpty
+                                ? (Theme.of(context).brightness == Brightness.light
+                                    ? Constants.maincolor
+                                    : Constants.mainDarkmodecolor)
+                                : Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -759,8 +1001,21 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           ),
                                         ),
                                       ),
+                                      Checkbox(
+                                        value: _selectedLeads.contains(lead.id),
+                                        onChanged: (bool? value) {
+                                          setState(() {
+                                            if (value == true) {
+                                              _selectedLeads.add(lead.id!);
+                                            } else {
+                                              _selectedLeads.remove(lead.id);
+                                            }
+                                          });
+                                        },
+                                      ),
                                     ],
                                   ),
+
                                   SizedBox(height: 12.h),
                                   // ---------- Row 3: Stage and Total Submissions ----------
                                   Row(
@@ -817,10 +1072,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                     children: [
                                       InkWell(
                                         onTap: () async {
-                                          final phone = lead.whatsappnumber?.replaceAll(
-                                            RegExp(r'\D'),
-                                            '',
-                                          );
+                                          final phone = lead.whatsappnumber
+                                              ?.replaceAll(RegExp(r'\D'), '');
                                           final url = "https://wa.me/$phone";
                                           if (await canLaunchUrl(
                                             Uri.parse(url),
@@ -860,7 +1113,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              lead.whatsappnumber?.isNotEmpty == true ? lead.whatsappnumber! : 'no whatsapp number',
+                                              lead.whatsappnumber?.isNotEmpty ==
+                                                      true
+                                                  ? lead.whatsappnumber!
+                                                  : 'no whatsapp number',
                                               style: TextStyle(fontSize: 11.sp),
                                             ),
                                           ],
@@ -1491,9 +1747,15 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                           ?.name ??
                                                       "no developer",
                                                   salesfcmToken: salesfcmtoken,
-                                                  leadwhatsappnumber: lead.whatsappnumber ?? 'no whatsapp number',
-                                                  jobdescription: lead.jobdescription ?? 'no job description',
-                                                  secondphonenumber: lead.secondphonenumber ?? 'no second phone number',
+                                                  leadwhatsappnumber:
+                                                      lead.whatsappnumber ??
+                                                      'no whatsapp number',
+                                                  jobdescription:
+                                                      lead.jobdescription ??
+                                                      'no job description',
+                                                  secondphonenumber:
+                                                      lead.secondphonenumber ??
+                                                      'no second phone number',
                                                 ),
                                           ),
                                         );

@@ -348,8 +348,6 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                                                   .mainDarkmodecolor,
                                                       leadResponse:
                                                           state.leadsResponse,
-                                                      salesfcmtoken:
-                                                          widget.salesfcmtoken,
                                                     ),
                                               );
                                             }

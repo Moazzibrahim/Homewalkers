@@ -19,7 +19,7 @@ class AssignLeadMarkterDialog extends StatefulWidget {
   final LeadResponse? leadResponse;
   final List? leadIds;
   final String? leadId;
-  final String salesfcmtoken;
+  final String? leadStage;
 
   const AssignLeadMarkterDialog({
     super.key,
@@ -27,7 +27,7 @@ class AssignLeadMarkterDialog extends StatefulWidget {
     this.leadResponse,
     this.leadId,
     this.leadIds,
-    required this.salesfcmtoken,
+    this.leadStage,
   });
 
   @override
@@ -37,6 +37,7 @@ class AssignLeadMarkterDialog extends StatefulWidget {
 class _AssignDialogState extends State<AssignLeadMarkterDialog> {
   String? selectedSalesId;
   Map<String, bool> selectedSales = {};
+  String? selectedSalesFcmToken;
 
   // 1. إضافة متغير الحالة للـ Checkbox
   bool clearHistory = false;
@@ -119,8 +120,15 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                           selectedSales[userId!] = val ?? false;
                                           selectedSalesId =
                                               val == true ? userId : null;
+                                          selectedSalesFcmToken =
+                                              val == true
+                                                  ? sale.userlog?.fcmtoken
+                                                  : null;
                                           log(
                                             "selectedSalesId: $selectedSalesId",
+                                          );
+                                          log(
+                                            "selectedSalesFcmToken: $selectedSalesFcmToken",
                                           );
                                         });
                                       },
@@ -155,8 +163,13 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                     BlocListener<AssignleadCubit, AssignState>(
                       listener: (context, state) {
                         if (state is AssignSuccess) {
-                          Navigator.pop(dialogContext, true);
-                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          if (context.mounted) {
+                            // اغلق آخر Dialog
+                            Navigator.of(context).pop();
+                            // اغلق الـ Dialog اللي قبله
+                            Navigator.of(context).pop();
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text("Lead assigned successfully! ✅"),
                             ),
@@ -226,13 +239,18 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                       "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}",
                                   salesId: selectedSalesId!,
                                   isClearhistory: clearHistory,
+                                  stage:
+                                      widget
+                                          .leadStage, // إذا كان stage غير فارغ، أرسله
                                   // يمكنك إضافة clearHistory هنا إذا كانت الدالة تدعمها
                                 );
-                                context.read<NotificationCubit>().sendNotificationToToken(
+                                context
+                                    .read<NotificationCubit>()
+                                    .sendNotificationToToken(
                                       // 👈 هنعرف دي تحت
                                       title: "Lead",
-                                      body: "Lead assigned successfully ✅",
-                                      fcmtokennnn: widget.salesfcmtoken,
+                                      body: "New Lead assigned to you ✅",
+                                      fcmtokennnn: selectedSalesFcmToken!,
                                     );
                                 cubit.apiService.fetchLeadAssigned(
                                   widget.leadId!,

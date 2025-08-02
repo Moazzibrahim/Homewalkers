@@ -195,6 +195,7 @@ class AssignleadCubit extends Cubit<AssignState> {
     required String lastDateAssign,
     required String salesId,
     bool? isClearhistory,
+    String? stage,
   }) async {
     emit(AssignLoading());
 
@@ -210,10 +211,12 @@ class AssignleadCubit extends Cubit<AssignState> {
           "assign": "true",
           "lastdateassign": lastDateAssign,
           "sales": salesId,
+          if (stage != null) "stage": stage,  
         };
         final putResponse = await dio.put(putUrl, data: putBody);
         if (putResponse.statusCode != 200 && putResponse.statusCode != 201) {
           emit(AssignFailure('Failed to assign lead in PUT: $leadId'));
+          log('Failed to assign lead in PUT: $leadId');
           return;
         }
         // Then POST to /LeadAssigned
@@ -232,6 +235,7 @@ class AssignleadCubit extends Cubit<AssignState> {
         );
         if (postResponse.statusCode != 200 && postResponse.statusCode != 201) {
           emit(AssignFailure('Failed to assign lead in POST: $leadId'));
+          log( 'Failed to assign lead in POST: $leadId');
           return;
         }
       }
