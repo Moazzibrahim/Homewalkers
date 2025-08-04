@@ -91,7 +91,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
     try {
       final leadsInTrash = await apiService.getLeadsDataInTrash();
       _originalLeadsResponseee = leadsInTrash; // حفظ نسخة من البيانات
-      emit(GetLeadsInTrashSuccess(leadsInTrash));
+      emit(GetLeadsInTrashSuccess(leadsInTrash!));
     } catch (e) {
       emit(
         GetLeadsInTrashFailure(
