@@ -204,16 +204,22 @@ class _MarketerAdvancedSearchScreenState
                     child: OutlinedButton(
                       // ... (Cancel Button code remains the same)
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF2B6777)),
+                        side: const BorderSide(color: Constants.maincolor),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MarketierTabsScreen())),
+                      onPressed:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MarketierTabsScreen(),
+                            ),
+                          ),
                       child: const Text(
                         "Cancel",
-                        style: TextStyle(color: Color(0xFF2B6777)),
+                        style: TextStyle(color: Constants.maincolor),
                       ),
                     ),
                   ),
@@ -221,7 +227,7 @@ class _MarketerAdvancedSearchScreenState
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2B6777),
+                        backgroundColor: Constants.maincolor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -331,7 +337,9 @@ class _MarketerAdvancedSearchScreenState
                                         context,
                                         MaterialPageRoute(
                                           builder:
-                                              (context) => MarketerLeadDetailsScreen(
+                                              (
+                                                context,
+                                              ) => MarketerLeadDetailsScreen(
                                                 leedId: lead.id!,
                                                 leadName: lead.name,
                                                 leadEmail: lead.email,
@@ -339,11 +347,9 @@ class _MarketerAdvancedSearchScreenState
                                                 leadStageId:
                                                     lead.stage?.id ?? '',
                                                 leadStage:
-                                                    lead.stage?.name ??
-                                                    '',
+                                                    lead.stage?.name ?? '',
                                                 leadChannel:
-                                                    lead.chanel?.name ??
-                                                    '',
+                                                    lead.chanel?.name ?? '',
                                                 leadCreationDate:
                                                     lead.createdAt ?? "",
                                                 leadLastComment:
@@ -352,11 +358,9 @@ class _MarketerAdvancedSearchScreenState
                                                     lead.createdAt,
                                                 leadNotes: "",
                                                 leadProject:
-                                                    lead.project?.name ??
-                                                    '',
+                                                    lead.project?.name ?? '',
                                                 leadcampaign:
-                                                    lead.campaign?.name ??
-                                                    '',
+                                                    lead.campaign?.name ?? '',
                                                 leaddeveloper:
                                                     lead
                                                         .project
@@ -379,7 +383,8 @@ class _MarketerAdvancedSearchScreenState
                                             Theme.of(context).brightness ==
                                                     Brightness.light
                                                 ? Constants.maincolor
-                                                : Constants.mainDarkmodecolor,
+                                                : Colors.white,
+                                                decoration: TextDecoration.underline,
                                       ),
                                     ),
                                   ),

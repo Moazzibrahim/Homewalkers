@@ -193,7 +193,7 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF003D48)),
+                        side: const BorderSide(color: Constants.maincolor),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         backgroundColor:
                             Theme.of(context).brightness == Brightness.light

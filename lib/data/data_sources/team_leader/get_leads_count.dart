@@ -4,29 +4,41 @@ import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/team_leader/get_leads_count_model.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart'; // This should be your model file
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GetLeadsCountApiService {
   static const String baseUrl =
       '${Constants.baseUrl}/users/Get_Sales_Data_And_Thier_Leads_Data';
+
   Future<TeamLeaderResponse?> fetchSalesData() async {
     final prefs = await SharedPreferences.getInstance();
     String? savedEmail = prefs.getString('email');
+    String? token = prefs.getString('token'); // ✅ هنا جبنا التوكين
 
     if (savedEmail == null) {
       throw Exception("No saved email found.");
+    }
+    if (token == null) {
+      throw Exception("No token found. Please login again.");
     }
 
     final Uri url = Uri.parse('$baseUrl?email=$savedEmail');
 
     try {
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token', // ✅ ضفنا التوكين هنا
+        },
+      );
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         return TeamLeaderResponse.fromJson(jsonData);
       } else {
         print('Failed to load data. Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
         return null;
       }
     } catch (e) {

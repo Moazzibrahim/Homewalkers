@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:homewalkers_app/core/constants/constants.dart';
 
 class InfoRow extends StatelessWidget {
   final IconData icon;
@@ -18,7 +19,7 @@ class InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Color(0xff326677)),
+          Icon(icon, size: 18, color: Constants.maincolor),
           const SizedBox(width: 8),
           Text(
             '$label : ',

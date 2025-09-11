@@ -30,6 +30,12 @@ class SalesLeadsScreen extends StatefulWidget {
 }
 
 class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<GetLeadsCubit>().fetchLeads();
+  }
   @override
   Widget build(BuildContext context) {
     final nameController = TextEditingController();
@@ -1022,8 +1028,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                                             ).brightness ==
                                                             Brightness.light
                                                         ? Constants.maincolor
-                                                        : Constants
-                                                            .mainDarkmodecolor,
+                                                        : Colors.white,
                                                 decoration:
                                                     TextDecoration.underline,
                                               ),

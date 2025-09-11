@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/stage_types/cubit/get_stage_types_cubit.dart';
+
 class UpdateStageTypeDialog extends StatefulWidget {
   final void Function(String name, String comment)? onAdd;
   final String? title;
@@ -48,7 +49,8 @@ class _UpdateStageTypeDialogState extends State<UpdateStageTypeDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: SingleChildScrollView( // ✅ لمنع overflow
+      child: SingleChildScrollView(
+        // ✅ لمنع overflow
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -72,13 +74,22 @@ class _UpdateStageTypeDialogState extends State<UpdateStageTypeDialog> {
                       style: GoogleFonts.montserrat(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.black
+                                : Colors.white,
                       ),
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
-                    child:  Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
+                    child: Icon(
+                      Icons.close,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Colors.black
+                              : Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -89,8 +100,13 @@ class _UpdateStageTypeDialogState extends State<UpdateStageTypeDialog> {
                 decoration: InputDecoration(
                   hintText: "${widget.title} Name",
                   hintStyle: GoogleFonts.montserrat(color: Colors.grey),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -99,8 +115,13 @@ class _UpdateStageTypeDialogState extends State<UpdateStageTypeDialog> {
                 decoration: InputDecoration(
                   hintText: "comment",
                   hintStyle: GoogleFonts.montserrat(color: Colors.grey),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -111,14 +132,17 @@ class _UpdateStageTypeDialogState extends State<UpdateStageTypeDialog> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF003D48)),
+                        side: const BorderSide(color: Constants.maincolor),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         backgroundColor:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Constants.mainDarkmodecolor,
                       ),
-                      child: Text("Cancel", style: GoogleFonts.montserrat(color: Colors.white)),
+                      child: Text(
+                        "Cancel",
+                        style: GoogleFonts.montserrat(color: Colors.white),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -128,18 +152,23 @@ class _UpdateStageTypeDialogState extends State<UpdateStageTypeDialog> {
                         if (_controller.text.trim().isNotEmpty) {
                           widget.onAdd?.call(
                             _controller.text.trim(),
-                            _codeController.text.trim(), // ✅ comment not required
+                            _codeController.text
+                                .trim(), // ✅ comment not required
                           );
                           Navigator.of(context).pop();
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Constants.mainDarkmodecolor,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: Text("Update", style: GoogleFonts.montserrat(color: Colors.white)),
+                      child: Text(
+                        "Update",
+                        style: GoogleFonts.montserrat(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],

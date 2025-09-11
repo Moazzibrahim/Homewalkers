@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 // ignore_for_file: deprecated_member_use
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/leads_marketier_screen.dart';
@@ -6,6 +7,7 @@ import 'package:homewalkers_app/presentation/screens/marketier/marketer_advanced
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_menu_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 
 class MarketierTabsScreen extends StatefulWidget {
   final String? name;
@@ -18,6 +20,12 @@ class MarketierTabsScreen extends StatefulWidget {
 class _TabsScreenState extends State<MarketierTabsScreen> {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
+  @override
+  void initState() {
+    super.initState();
+    context.read<NotificationCubit>().initNotifications();
+    print("init notifications called");
+  }
 
   @override
   void dispose() {
@@ -67,7 +75,8 @@ class _TabsScreenState extends State<MarketierTabsScreen> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        color:  Theme.of(context).brightness == Brightness.light
+        color:
+            Theme.of(context).brightness == Brightness.light
                 ? Colors
                     .white // لون الخلفية
                 : Colors.black,
@@ -121,7 +130,10 @@ class _TabsScreenState extends State<MarketierTabsScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-              backgroundColor:Theme.of(context).brightness == Brightness.light ? Constants.maincolor :Constants.mainDarkmodecolor ,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Constants.maincolor
+                : Constants.mainDarkmodecolor,
         elevation: 6,
         shape: const CircleBorder(),
         onPressed: () {

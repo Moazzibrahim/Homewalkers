@@ -1085,8 +1085,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                           ).brightness ==
                                                           Brightness.light
                                                       ? Constants.maincolor
-                                                      : Constants
-                                                          .mainDarkmodecolor,
+                                                      : Colors.white,
                                               decoration:
                                                   TextDecoration.underline,
                                             ),

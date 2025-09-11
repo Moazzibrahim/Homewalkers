@@ -1779,7 +1779,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               Theme.of(context).brightness ==
                                                       Brightness.light
                                                   ? Constants.maincolor
-                                                  : Constants.mainDarkmodecolor,
+                                                  : Colors.white,
                                           decoration: TextDecoration.underline,
                                         ),
                                       ),

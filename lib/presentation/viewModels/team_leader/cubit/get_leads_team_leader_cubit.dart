@@ -42,8 +42,9 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
         final teamLeaderName = lead.sales?.teamleader?.name;
 
         if (salesName?.isNotEmpty == true) salesSet.add(salesName!);
-        if (teamLeaderName?.isNotEmpty == true)
+        if (teamLeaderName?.isNotEmpty == true) {
           teamLeaderSet.add(teamLeaderName!);
+        }
       }
 
       salesNames = salesSet.toList();

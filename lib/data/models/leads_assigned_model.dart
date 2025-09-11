@@ -191,13 +191,13 @@ class UserInfo extends BasicInfo {
   final String? role;
 
   UserInfo({
-    String? id,
-    String? name,
+    super.id,
+    super.name,
     this.email,
     this.phone,
     this.profileImg,
     this.role,
-  }) : super(id: id, name: name);
+  });
 
   factory UserInfo.fromJson(Map<String, dynamic>? json) => UserInfo(
         id: json?['_id'],

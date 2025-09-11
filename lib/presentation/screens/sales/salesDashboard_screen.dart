@@ -1,4 +1,4 @@
-// ignore_for_file: file_names, camel_case_types, deprecated_member_use
+// ignore_for_file: file_names, camel_case_types, deprecated_member_use, avoid_print
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +7,7 @@ import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // 1. تحويل الويدجت إلى StatefulWidget
@@ -24,6 +25,8 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
   void initState() {
     super.initState();
     _checkAuth();
+    context.read<NotificationCubit>().initNotifications();
+    print("init notifications called");
   }
 
   Future<void> _checkAuth() async {
@@ -40,7 +43,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-    create: (_) => GetLeadsCubit(GetLeadsService())..fetchLeads(),
+      create: (_) => GetLeadsCubit(GetLeadsService())..fetchLeads(),
       child: Scaffold(
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
@@ -48,9 +51,9 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
                 : Constants.backgroundDarkmode,
         appBar: AppBar(
           backgroundColor:
-          Theme.of(context).brightness == Brightness.light
-              ? Colors.white
-              : Constants.backgroundDarkmode,
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.white
+                  : Constants.backgroundDarkmode,
           elevation: 0,
           toolbarHeight: 100,
           automaticallyImplyLeading: false,
@@ -245,7 +248,9 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F1F2),
+        color: Theme.of(context).brightness == Brightness.light
+            ? Colors.white
+            : const Color(0xff1e1e1e),
         borderRadius: BorderRadius.circular(8),
       ),
       child: IconButton(
@@ -282,7 +287,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: const Color(0xff2D6A78), size: 30),
+            Icon(icon, color: Constants.maincolor, size: 30),
             const SizedBox(height: 8),
             Text(
               title,

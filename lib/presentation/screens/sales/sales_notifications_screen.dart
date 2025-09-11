@@ -211,7 +211,7 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 14, color: subTextColor),
+                      Icon(Icons.calendar_today, size: 14, color: Constants.maincolor),
                       const SizedBox(width: 4),
                       Text(
                         _formatDay(
@@ -221,7 +221,7 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
                         style: TextStyle(color: subTextColor, fontSize: 13),
                       ),
                       const SizedBox(width: 16),
-                      Icon(Icons.access_time, size: 14, color: subTextColor),
+                      Icon(Icons.access_time, size: 14, color: Constants.maincolor),
                       const SizedBox(width: 4),
                       Text(
                         DateFormat('h:mm a').format(

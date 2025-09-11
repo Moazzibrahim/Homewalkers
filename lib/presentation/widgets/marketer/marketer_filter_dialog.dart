@@ -512,7 +512,7 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                       child: const Text(
                         "Reset",
                         style: TextStyle(
-                          color: Color(0xff326677),
+                          color: Constants.maincolor,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),

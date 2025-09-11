@@ -93,7 +93,7 @@ class _AddProjectDialogState extends State<AddStageTypeDialog> {
                             Theme.of(context).brightness == Brightness.light
                                 ? Constants.maincolor
                                 : Constants.mainDarkmodecolor,
-                        side: const BorderSide(color: Color(0xFF003D48)),
+                        side: const BorderSide(color: Constants.maincolor),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(

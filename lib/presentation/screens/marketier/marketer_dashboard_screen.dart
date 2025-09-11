@@ -7,10 +7,91 @@ import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/leads_marketier_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class MarketerDashboardScreen extends StatelessWidget {
+class MarketerDashboardScreen extends StatefulWidget {
   const MarketerDashboardScreen({super.key});
+
+  @override
+  State<MarketerDashboardScreen> createState() =>
+      _MarketerDashboardScreenState();
+
+  static Widget _iconBox(IconData icon, void Function() onPressed) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Color(0xFFE8F1F2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: Constants.maincolor),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  static Widget _dashboardCard(
+    String title,
+    String number,
+    IconData icon,
+    BuildContext context, {
+    void Function()? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.white
+                  : Color(0xff1e1e1e),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Constants.maincolor, size: 30),
+            SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Color(0xff080719)
+                        : Colors.white,
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 4),
+            Text(
+              number,
+              style: TextStyle(
+                fontSize: 20,
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Color(0xff080719)
+                        : Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MarketerDashboardScreenState extends State<MarketerDashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    checkAuth();
+    context.read<NotificationCubit>().initNotifications();
+    print("init notifications called");
+  }
 
   Future<String> checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
@@ -33,8 +114,8 @@ class MarketerDashboardScreen extends StatelessWidget {
     final double interval = (maxValue / 5).ceilToDouble();
     final double roundedMaxY = (maxValue / interval).ceil() * interval;
 
-    final primaryColor = Color(0xFF2E8B8A);
-    final secondaryColor = Color.fromARGB(255, 65, 175, 174);
+    final primaryColor = Constants.maincolor;
+    final secondaryColor = Constants.maincolor;
 
     return BarChartData(
       extraLinesData: ExtraLinesData(
@@ -216,7 +297,7 @@ class MarketerDashboardScreen extends StatelessWidget {
                 },
               ),
               const Spacer(),
-              _iconBox(Icons.notifications_none, () {
+              MarketerDashboardScreen._iconBox(Icons.notifications_none, () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -275,7 +356,7 @@ class MarketerDashboardScreen extends StatelessWidget {
                           Row(
                             children: [
                               Expanded(
-                                child: _dashboardCard(
+                                child: MarketerDashboardScreen._dashboardCard(
                                   'Leads',
                                   '...',
                                   Icons.group,
@@ -323,7 +404,7 @@ class MarketerDashboardScreen extends StatelessWidget {
                           Row(
                             children: [
                               Expanded(
-                                child: _dashboardCard(
+                                child: MarketerDashboardScreen._dashboardCard(
                                   'Leads',
                                   '${allLeads.length}',
                                   Icons.group,
@@ -353,7 +434,7 @@ class MarketerDashboardScreen extends StatelessWidget {
                             physics: NeverScrollableScrollPhysics(),
                             children: [
                               if (duplicatesCount > 0)
-                                _dashboardCard(
+                                MarketerDashboardScreen._dashboardCard(
                                   'Duplicates',
                                   '$duplicatesCount',
                                   Icons.copy_all,
@@ -372,7 +453,7 @@ class MarketerDashboardScreen extends StatelessWidget {
                                   },
                                 ),
                               ...stageCounts.entries.map((entry) {
-                                return _dashboardCard(
+                                return MarketerDashboardScreen._dashboardCard(
                                   entry.key,
                                   entry.value.toString(),
                                   Icons.timeline,
@@ -389,7 +470,7 @@ class MarketerDashboardScreen extends StatelessWidget {
                                     );
                                   },
                                 );
-                              }).toList(),
+                              }),
                             ],
                           ),
 
@@ -433,7 +514,7 @@ class MarketerDashboardScreen extends StatelessWidget {
                       return Row(
                         children: [
                           Expanded(
-                            child: _dashboardCard(
+                            child: MarketerDashboardScreen._dashboardCard(
                               'Leads',
                               '0',
                               Icons.group,
@@ -457,72 +538,6 @@ class MarketerDashboardScreen extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  static Widget _iconBox(IconData icon, void Function() onPressed) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Color(0xFFE8F1F2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: IconButton(
-        icon: Icon(icon, color: Color(0xff2D6A78)),
-        onPressed: onPressed,
-      ),
-    );
-  }
-
-  static Widget _dashboardCard(
-    String title,
-    String number,
-    IconData icon,
-    BuildContext context, {
-    void Function()? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: 100,
-        decoration: BoxDecoration(
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.white
-                  : Color(0xff1e1e1e),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Color(0xff2D6A78), size: 30),
-            SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Color(0xff080719)
-                        : Colors.white,
-                fontWeight: FontWeight.w400,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 4),
-            Text(
-              number,
-              style: TextStyle(
-                fontSize: 20,
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Color(0xff080719)
-                        : Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
         ),
       ),
     );

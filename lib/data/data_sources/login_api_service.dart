@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, use_build_context_synchronously
+// ignore_for_file: avoid_print, use_build_context_synchronously, unused_local_variable
 
 import 'dart:convert';
 import 'dart:developer';
@@ -21,6 +21,7 @@ class LoginApiService {
   String? name;
   String? phone;
   String? salesId;
+  String? newFcmToken;
 
   final String baseUrl = Constants.baseUrl;
 
@@ -38,7 +39,7 @@ class LoginApiService {
         body: jsonEncode({
           'email': email,
           'password': password,
-          'fcmToken': fcmToken,
+          // 'fcmToken': fcmToken,
         }),
       );
 
@@ -54,12 +55,12 @@ class LoginApiService {
           log('❌ Missing token or user in response');
           throw Exception('Login failed: Missing required data');
         }
-        context.read<NotificationCubit>().initNotifications();
         // استخراج القيم من userData
         name = userData['name'];
         role = userData['role'];
         phone = userData['phone'];
         salesId = userData['_id'];
+        newFcmToken = userData['fcmToken'];
         String? createdAt = userData['createdAt'];
         String? updatedAt = userData['updatedAt'];
         bool active = userData['active'] ?? false;
@@ -73,6 +74,7 @@ class LoginApiService {
         log('🗓️ Created At: $createdAt');
         log('🕒 Updated At: $updatedAt');
         log('✔️ Active: $active');
+        log('📲 New FCM Token: $newFcmToken');
 
         // Save to SharedPreferences
         final prefs = await SharedPreferences.getInstance();
@@ -85,7 +87,8 @@ class LoginApiService {
         await prefs.setString('createdAt', createdAt ?? '');
         await prefs.setString('updatedAt', updatedAt ?? '');
         await prefs.setBool('active', active);
-
+        await prefs.setString('NewfcmToken', newFcmToken ?? '');
+        context.read<NotificationCubit>().initNotifications();
         // Navigate based on role
         if (role == "Sales") {
           Navigator.pushReplacement(

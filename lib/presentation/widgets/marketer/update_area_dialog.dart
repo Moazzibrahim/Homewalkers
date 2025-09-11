@@ -26,20 +26,18 @@ class UpdateAreaDialog extends StatefulWidget {
   State<UpdateAreaDialog> createState() => _AddProjectDialogState();
 }
 
-
 class _AddProjectDialogState extends State<UpdateAreaDialog> {
   final TextEditingController _nameController = TextEditingController();
   String? selectedRegionId;
   late final RegionCubit regionCubit;
 
   @override
-void initState() {
-  super.initState();
-  regionCubit = RegionCubit(RegionApiService())..fetchRegions();
-  _nameController.text = widget.oldName ?? '';
-  selectedRegionId = widget.oldRegionId;
-}
-
+  void initState() {
+    super.initState();
+    regionCubit = RegionCubit(RegionApiService())..fetchRegions();
+    _nameController.text = widget.oldName ?? '';
+    selectedRegionId = widget.oldRegionId;
+  }
 
   @override
   void dispose() {
@@ -79,13 +77,22 @@ void initState() {
                         style: GoogleFonts.montserrat(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Colors.black
+                                  : Colors.white,
                         ),
                       ),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
-                      child:  Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
+                      child: Icon(
+                        Icons.close,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.black
+                                : Colors.white,
+                      ),
                     ),
                   ],
                 ),
@@ -136,43 +143,46 @@ void initState() {
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF003D48)),
+                          side: const BorderSide(color: Constants.maincolor),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           backgroundColor:
-                          isDark
-                              ? Constants.mainDarkmodecolor
-                              : Constants.maincolor,
+                              isDark
+                                  ? Constants.mainDarkmodecolor
+                                  : Constants.maincolor,
                         ),
                         child: Text(
                           "Cancel",
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white,
-                          ),
+                          style: GoogleFonts.montserrat(color: Colors.white),
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                      onPressed: () {
-  final newName = _nameController.text.trim();
-  final newRegionId = selectedRegionId;
+                        onPressed: () {
+                          final newName = _nameController.text.trim();
+                          final newRegionId = selectedRegionId;
 
-  final isChanged = newName != (widget.oldName ?? '') ||
-      newRegionId != (widget.oldRegionId ?? '');
+                          final isChanged =
+                              newName != (widget.oldName ?? '') ||
+                              newRegionId != (widget.oldRegionId ?? '');
 
-  if (!isChanged) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please change at least one field.')),
-    );
-    return;
-  }
+                          if (!isChanged) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Please change at least one field.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
 
-  if (widget.onAdd != null && newRegionId != null) {
-    widget.onAdd!(newName, newRegionId);
-    Navigator.of(context).pop();
-  }
-},
+                          if (widget.onAdd != null && newRegionId != null) {
+                            widget.onAdd!(newName, newRegionId);
+                            Navigator.of(context).pop();
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).brightness == Brightness.light

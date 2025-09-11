@@ -34,13 +34,13 @@ class DeleteDialog extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             // Text Section
-             Text(
+            Text(
               "Are you sure to delete $title ...?",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
-             Text(
+            Text(
               "This item will be deleted from $title",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, color: Colors.grey),
@@ -53,7 +53,7 @@ class DeleteDialog extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: onCancel,
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF1B4B5A)),
+                      side: const BorderSide(color: Constants.maincolor),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -61,7 +61,7 @@ class DeleteDialog extends StatelessWidget {
                     child: const Text(
                       'No',
                       style: TextStyle(
-                        color: Color(0xFF1B4B5A),
+                        color: Constants.maincolor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -72,7 +72,8 @@ class DeleteDialog extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onConfirm,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:  Theme.of(context).brightness == Brightness.light
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.light
                               ? Constants.maincolor
                               : Constants.mainDarkmodecolor,
                       shape: RoundedRectangleBorder(

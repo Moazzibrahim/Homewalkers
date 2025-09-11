@@ -94,7 +94,7 @@ class _AddStageDialogState extends State<AddStageDialog> {
                     : Constants.mainDarkmodecolor,
           ),
           onPressed: () => Navigator.of(context).pop(),
-          child: Text("Cancel",style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white)),
+          child: Text("Cancel",style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.white)),
         ),
         ElevatedButton(
                 style: TextButton.styleFrom( backgroundColor:
@@ -112,7 +112,7 @@ class _AddStageDialogState extends State<AddStageDialog> {
               Navigator.of(context).pop();
             }
           },
-          child: Text("Add",style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white)),
+          child: Text("Add",style: TextStyle(color: Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.white)),
         ),
       ],
     );

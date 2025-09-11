@@ -23,7 +23,7 @@ class _NewCommunicationDialogState extends State<AddDialog> {
     final backgroundColor = isLight ? Colors.white : const Color(0xFF1E1E1E);
     final hintTextColor = isLight ? Colors.grey : Colors.grey[400];
     final borderColor = mainColor;
-    final cancelTextColor = isLight ? const Color(0xFF003D48) : Colors.grey[300];
+    final cancelTextColor = isLight ?  Constants.maincolor : Colors.grey[300];
 
     return Dialog(
       backgroundColor: backgroundColor,

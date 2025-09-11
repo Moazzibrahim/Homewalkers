@@ -1,4 +1,7 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 // ignore_for_file: deprecated_member_use
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_dashboard_screen.dart';
@@ -6,6 +9,7 @@ import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.da
 import 'package:homewalkers_app/presentation/screens/Admin/admin_menu_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_sales_sceen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 
 class AdminTabsScreen extends StatefulWidget {
   final String? name;
@@ -18,6 +22,12 @@ class AdminTabsScreen extends StatefulWidget {
 class _TabsScreenState extends State<AdminTabsScreen> {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
+  @override
+  void initState() {
+    super.initState();
+    context.read<NotificationCubit>().initNotifications();
+    print("init notifications called");
+  }
 
   @override
   void dispose() {
@@ -122,7 +132,10 @@ class _TabsScreenState extends State<AdminTabsScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-               backgroundColor:Theme.of(context).brightness == Brightness.light ? Constants.maincolor :Constants.mainDarkmodecolor ,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Constants.maincolor
+                : Constants.mainDarkmodecolor,
         elevation: 6,
         shape: const CircleBorder(),
         onPressed: () {

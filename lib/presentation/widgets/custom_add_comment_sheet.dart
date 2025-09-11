@@ -171,7 +171,7 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF285E67)),
+                      side: const BorderSide(color: Constants.maincolor),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -179,7 +179,7 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                     child: const Text(
                       'Cancel',
                       style: TextStyle(
-                        color: Color(0xff326677),
+                        color: Constants.maincolor,
                         fontSize: 17,
                         fontWeight: FontWeight.w500,
                       ),

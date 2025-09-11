@@ -426,7 +426,7 @@ class _FilterDialogState extends State<FilterDialog> {
                       child: const Text(
                         "Reset",
                         style: TextStyle(
-                          color: Color(0xff326677),
+                          color: Constants.maincolor,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),

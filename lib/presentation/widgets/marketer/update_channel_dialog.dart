@@ -44,9 +44,10 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: Theme.of(context).brightness == Brightness.light
-                      ? Constants.maincolor
-                      : Constants.mainDarkmodecolor,
+                  backgroundColor:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
                   child: Image.asset("assets/images/Vector.png"),
                 ),
                 const SizedBox(width: 10),
@@ -56,13 +57,22 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
                     style: GoogleFonts.montserrat(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Colors.black
+                              : Colors.white,
                     ),
                   ),
                 ),
                 GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
-                  child:  Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
+                  child: Icon(
+                    Icons.close,
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Colors.black
+                            : Colors.white,
+                  ),
                 ),
               ],
             ),
@@ -72,8 +82,13 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
               decoration: InputDecoration(
                 hintText: "${widget.title} Name",
                 hintStyle: GoogleFonts.montserrat(color: Colors.grey),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -82,8 +97,13 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
               decoration: InputDecoration(
                 hintText: "Code",
                 hintStyle: GoogleFonts.montserrat(color: Colors.grey),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -93,13 +113,17 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF003D48)),
+                      side: const BorderSide(color: Constants.maincolor),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Theme.of(context).brightness == Brightness.light
-                      ? Constants.maincolor
-                      : Constants.mainDarkmodecolor,
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
                     ),
-                    child: Text("Cancel", style: GoogleFonts.montserrat(color: Colors.white)),
+                    child: Text(
+                      "Cancel",
+                      style: GoogleFonts.montserrat(color: Colors.white),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -115,16 +139,20 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
                       Navigator.of(context).pop();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text("Update", style: GoogleFonts.montserrat(color: Colors.white)),
+                    child: Text(
+                      "Update",
+                      style: GoogleFonts.montserrat(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

@@ -271,8 +271,9 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
           listener: (context, state) {
             if (state is EditLeadSuccess) {
               Navigator.pop(context);
-              if (widget.onSuccess != null)
+              if (widget.onSuccess != null) {
                 widget.onSuccess!(); // 👈 Call callback
+              }
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Edited Successfully')),
               );

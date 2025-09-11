@@ -399,7 +399,7 @@ class _SalesLeadsDetailsScreenState
                               //             ? Color(0xffFFFFFF)
                               //             : Color(0xff080719),
                               //     side: const BorderSide(
-                              //       color: Color.fromRGBO(15, 118, 135, 0.5),
+                              //       color: Constants.maincolor,
                               //     ),
                               //     padding: EdgeInsets.symmetric(
                               //       horizontal: 16.w,
@@ -464,7 +464,10 @@ class _SalesLeadsDetailsScreenState
                           InfoRow(
                             icon: Icons.work,
                             label: 'job description',
-                            value: widget.jobdescription?.isNotEmpty == true ? widget.jobdescription! : 'no job description',
+                            value:
+                                widget.jobdescription?.isNotEmpty == true
+                                    ? widget.jobdescription!
+                                    : 'no job description',
                           ),
                           InfoRow(
                             icon: Icons.apartment,
@@ -638,14 +641,19 @@ class _SalesLeadsDetailsScreenState
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Color.fromRGBO(15, 118, 135, 0.5),
-                              ),
+                              border: Border.all(color: Constants.maincolor),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [Text('${widget.leadNotes}')],
+                              children: [
+                                Text(
+                                  (widget.leadNotes == null ||
+                                          widget.leadNotes!.isEmpty)
+                                      ? 'No notes found'
+                                      : widget.leadNotes!,
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -662,7 +670,9 @@ class _SalesLeadsDetailsScreenState
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               backgroundColor: Colors.white,
-                              side: const BorderSide(color: Color(0xff2C6975)),
+                              side: const BorderSide(
+                                color: Constants.maincolor,
+                              ),
                               padding: EdgeInsets.symmetric(
                                 horizontal: 20.w,
                                 vertical: 12.h,
@@ -700,7 +710,7 @@ class _SalesLeadsDetailsScreenState
                               style: TextStyle(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xff326677),
+                                color: Constants.maincolor,
                               ),
                             ),
                           ),
@@ -728,12 +738,20 @@ class _SalesLeadsDetailsScreenState
                                 isScrollControlled: true,
                                 backgroundColor: Colors.transparent,
                                 builder:
-                                    (_) => BlocProvider(
-                                      create: (_) => AddCommentCubit(),
-                                      child: AddCommentBottomSheet(
-                                        buttonName: "add comment",
-                                        optionalName: "add comment",
-                                        leadId: widget.leedId,
+                                    (_) => Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom:
+                                            MediaQuery.of(
+                                              context,
+                                            ).viewInsets.bottom,
+                                      ),
+                                      child: BlocProvider(
+                                        create: (_) => AddCommentCubit(),
+                                        child: AddCommentBottomSheet(
+                                          buttonName: "add comment",
+                                          optionalName: "add comment",
+                                          leadId: widget.leedId,
+                                        ),
                                       ),
                                     ),
                               );

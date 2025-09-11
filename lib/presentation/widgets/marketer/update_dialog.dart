@@ -25,12 +25,14 @@ class _NewCommunicationDialogState extends State<UpdateDialog> {
   @override
   Widget build(BuildContext context) {
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final mainColor = isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
     final textColor = isLight ? Colors.black : Colors.white;
     final backgroundColor = isLight ? Colors.white : const Color(0xFF1E1E1E);
     final hintTextColor = isLight ? Colors.grey : Colors.grey[400];
-    final borderColor = isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
-    final cancelTextColor = isLight ? const Color(0xFF003D48) : Colors.grey[300];
+    final borderColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+    final cancelTextColor = isLight ? Constants.maincolor : Colors.grey[300];
 
     return Dialog(
       backgroundColor: backgroundColor,
@@ -73,7 +75,10 @@ class _NewCommunicationDialogState extends State<UpdateDialog> {
               decoration: InputDecoration(
                 hintText: "${widget.title} Name",
                 hintStyle: GoogleFonts.montserrat(color: hintTextColor),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: borderColor),
@@ -118,11 +123,14 @@ class _NewCommunicationDialogState extends State<UpdateDialog> {
                       backgroundColor: mainColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text("Update", style: GoogleFonts.montserrat(color: Colors.white)),
+                    child: Text(
+                      "Update",
+                      style: GoogleFonts.montserrat(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

@@ -6,7 +6,7 @@ class AddCancelReasonDialog extends StatefulWidget {
   final void Function(String)? onAdd;
   final String? title;
 
-  const AddCancelReasonDialog({super.key, this.onAdd,this.title});
+  const AddCancelReasonDialog({super.key, this.onAdd, this.title});
 
   @override
   State<AddCancelReasonDialog> createState() => _NewCommunicationDialogState();
@@ -29,9 +29,10 @@ class _NewCommunicationDialogState extends State<AddCancelReasonDialog> {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor:  Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
+                  backgroundColor:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
                   child: Image.asset("assets/images/Vector.png"),
                 ),
                 const SizedBox(width: 10),
@@ -58,7 +59,10 @@ class _NewCommunicationDialogState extends State<AddCancelReasonDialog> {
               decoration: InputDecoration(
                 hintText: "Reason",
                 hintStyle: GoogleFonts.montserrat(color: Colors.grey),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -72,10 +76,13 @@ class _NewCommunicationDialogState extends State<AddCancelReasonDialog> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF003D48)),
+                      side: const BorderSide(color: Constants.maincolor),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text("Cancel", style: GoogleFonts.montserrat(color: Color(0xFF003D48))),
+                    child: Text(
+                      "Cancel",
+                      style: GoogleFonts.montserrat(color: Constants.maincolor),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -88,16 +95,20 @@ class _NewCommunicationDialogState extends State<AddCancelReasonDialog> {
                       Navigator.of(context).pop();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:  Theme.of(context).brightness == Brightness.light
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.light
                               ? Constants.maincolor
                               : Constants.mainDarkmodecolor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text("Add", style: GoogleFonts.montserrat(color: Colors.white)),
+                    child: Text(
+                      "Add",
+                      style: GoogleFonts.montserrat(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

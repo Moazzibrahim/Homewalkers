@@ -352,7 +352,7 @@ class CustomChangeStageDialog {
                                   child: Text(
                                     "Reset",
                                     style: TextStyle(
-                                      color: const Color(0xff326677),
+                                      color: Constants.maincolor,
                                       fontSize: 16.sp,
                                       fontWeight: FontWeight.w600,
                                     ),

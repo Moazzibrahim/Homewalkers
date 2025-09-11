@@ -721,7 +721,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                       color:
                           Theme.of(context).brightness == Brightness.light
                               ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
+                              : Colors.white,
                       decoration: TextDecoration.underline,
                     ),
                   ),

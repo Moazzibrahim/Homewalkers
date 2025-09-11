@@ -108,8 +108,8 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
             style: TextStyle(
               color:
                   Theme.of(context).brightness == Brightness.light
-                      ? Colors.black
-                      : Colors.white,
+                      ? Colors.white
+                      : Colors.black,
             ),
           ),
         ),
@@ -149,8 +149,8 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
             style: TextStyle(
               color:
                   Theme.of(context).brightness == Brightness.light
-                      ? Colors.black
-                      : Colors.white,
+                      ? Colors.white
+                      : Colors.black,
             ),
           ),
         ),
@@ -167,7 +167,9 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
         if (state is SalesLoaded) {
           final allUsers = state.salesData.data ?? [];
           // --- للمساعدة في اكتشاف الأخطاء: هذا السطر سيطبع كل الأدوار في الـ console ---
-          allUsers.forEach((user) => print('User Role: ${user.userlog?.role}'));
+          for (var user in allUsers) {
+            print('User Role: ${user.userlog?.role}');
+          }
           // --------------------------------------------------------------------------
           final Map<String, SalesData> uniqueUsers = {
             for (var user in allUsers.where((u) => u.id != null))

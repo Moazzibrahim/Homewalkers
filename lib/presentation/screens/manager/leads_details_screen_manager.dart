@@ -41,7 +41,7 @@ class LeadsDetailsScreenManager extends StatefulWidget {
   final String? leadwhatsappnumber;
   final String? jobdescription;
   final String? secondphonenumber;
-  
+
   LeadsDetailsScreenManager({
     super.key,
     required this.leedId,
@@ -111,25 +111,25 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
     debugPrint('Clear History: $iscleared');
   }
 
-String _formatDate(String? dateStr) {
-  if (dateStr == null) return 'N/A';
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'N/A';
 
-  try {
-    // أول محاولة: ISO format
-    final parsed = DateTime.parse(dateStr);
-    return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
-  } catch (_) {
     try {
-      // محاولة تانية: format مثل "04/07/2025 - 10:36"
-      final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+      // أول محاولة: ISO format
+      final parsed = DateTime.parse(dateStr);
       return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
-    } catch (e) {
-      return 'Invalid Date';
+    } catch (_) {
+      try {
+        // محاولة تانية: format مثل "04/07/2025 - 10:36"
+        final parsed = DateFormat('dd/MM/yyyy - HH:mm').parse(dateStr);
+        return DateFormat('yyyy/MM/dd - hh:mm a').format(parsed);
+      } catch (e) {
+        return 'Invalid Date';
+      }
     }
   }
-}
 
-void makePhoneCall(String phoneNumber) async {
+  void makePhoneCall(String phoneNumber) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
 
     if (await canLaunchUrl(phoneUri)) {
@@ -138,7 +138,6 @@ void makePhoneCall(String phoneNumber) async {
       print('Could not launch $phoneUri');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +202,8 @@ void makePhoneCall(String phoneNumber) async {
                               ),
                               SizedBox(width: 6.w),
                               InkWell(
-                                onTap: () => makePhoneCall(widget.leadPhone ?? ''),
+                                onTap:
+                                    () => makePhoneCall(widget.leadPhone ?? ''),
                                 child: Text(
                                   '${widget.leadPhone}',
                                   style: TextStyle(
@@ -237,89 +237,85 @@ void makePhoneCall(String phoneNumber) async {
                           ),
                           SizedBox(height: 8.h),
                           // Row 2: WhatsApp and Second Phone
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (widget.leadwhatsappnumber != null &&
-                                      widget.leadwhatsappnumber!.isNotEmpty)
-                                    InkWell(
-                                      onTap: () async {
-                                        final phone = widget.leadwhatsappnumber
-                                            ?.replaceAll(RegExp(r'\D'), '');
-                                        final url = "https://wa.me/$phone";
-                                        if (await canLaunchUrl(
-                                          Uri.parse(url),
-                                        )) {
-                                          await launchUrl(
-                                            Uri.parse(url),
-                                            mode:
-                                                LaunchMode.externalApplication,
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                "Could not open WhatsApp.",
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: Row(
-                                        children: [
-                                          FaIcon(
-                                            FontAwesomeIcons.whatsapp,
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Constants.maincolor
-                                                    : Constants
-                                                        .mainDarkmodecolor,
-                                            size: 18,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (widget.leadwhatsappnumber != null &&
+                                  widget.leadwhatsappnumber!.isNotEmpty)
+                                InkWell(
+                                  onTap: () async {
+                                    final phone = widget.leadwhatsappnumber
+                                        ?.replaceAll(RegExp(r'\D'), '');
+                                    final url = "https://wa.me/$phone";
+                                    if (await canLaunchUrl(Uri.parse(url))) {
+                                      await launchUrl(
+                                        Uri.parse(url),
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Could not open WhatsApp.",
                                           ),
-                                          SizedBox(width: 5.w),
-                                          Text(
-                                            "${widget.leadwhatsappnumber}",
-                                            style: TextStyle(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                        ],
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Row(
+                                    children: [
+                                      FaIcon(
+                                        FontAwesomeIcons.whatsapp,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Constants.maincolor
+                                                : Constants.mainDarkmodecolor,
+                                        size: 18,
                                       ),
-                                    ),
-
-                                  if (widget.secondphonenumber != null &&
-                                      widget.secondphonenumber!.isNotEmpty) ...[
-                                    SizedBox(width: 12.w),
-                                    Icon(
-                                      Icons.phone,
-                                      size: 16,
-                                      color:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Constants.maincolor
-                                              : Constants.mainDarkmodecolor,
-                                    ),
-                                    SizedBox(width: 3.w),
-                                    InkWell(
-                                      onTap:
-                                          () => makePhoneCall(
-                                            widget.secondphonenumber ?? '',
-                                          ),
-                                      child: Text(
-                                        " ${widget.secondphonenumber}",
+                                      SizedBox(width: 5.w),
+                                      Text(
+                                        "${widget.leadwhatsappnumber}",
                                         style: TextStyle(
                                           fontSize: 12.sp,
                                           fontWeight: FontWeight.w400,
                                         ),
                                       ),
+                                    ],
+                                  ),
+                                ),
+
+                              if (widget.secondphonenumber != null &&
+                                  widget.secondphonenumber!.isNotEmpty) ...[
+                                SizedBox(width: 12.w),
+                                Icon(
+                                  Icons.phone,
+                                  size: 16,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                ),
+                                SizedBox(width: 3.w),
+                                InkWell(
+                                  onTap:
+                                      () => makePhoneCall(
+                                        widget.secondphonenumber ?? '',
+                                      ),
+                                  child: Text(
+                                    " ${widget.secondphonenumber}",
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w400,
                                     ),
-                                  ],
-                                ],
-                              ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                           SizedBox(height: 12.h),
                           Row(
                             children: [
@@ -341,12 +337,7 @@ void makePhoneCall(String phoneNumber) async {
                                               ? Color(0xffFFFFFF)
                                               : Color(0xff080719),
                                       side: const BorderSide(
-                                        color: Color.fromRGBO(
-                                          15,
-                                          118,
-                                          135,
-                                          0.5,
-                                        ),
+                                        color: Constants.maincolor,
                                       ),
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 20.w,
@@ -408,7 +399,7 @@ void makePhoneCall(String phoneNumber) async {
                                           ? Color(0xffFFFFFF)
                                           : Color(0xff080719),
                                   side: const BorderSide(
-                                    color: Color.fromRGBO(15, 118, 135, 0.5),
+                                    color: Constants.maincolor,
                                   ),
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 16.w,
@@ -472,7 +463,10 @@ void makePhoneCall(String phoneNumber) async {
                           InfoRow(
                             icon: Icons.work,
                             label: 'job description',
-                            value: widget.jobdescription?.isNotEmpty == true ? widget.jobdescription! : 'no job description',
+                            value:
+                                widget.jobdescription?.isNotEmpty == true
+                                    ? widget.jobdescription!
+                                    : 'no job description',
                           ),
                           InfoRow(
                             icon: Icons.apartment,
@@ -492,7 +486,7 @@ void makePhoneCall(String phoneNumber) async {
                           InfoRow(
                             icon: Icons.calendar_today,
                             label: 'Creation Date',
-                              value: _formatDate(widget.leadCreationDate),
+                            value: _formatDate(widget.leadCreationDate),
                           ),
                           InfoRow(
                             icon: Icons.link,
@@ -538,15 +532,21 @@ void makePhoneCall(String phoneNumber) async {
                                           .toString() ??
                                       "",
                                 )?.toUtc();
-                                final isFirstValid = isClearHistoryy != true ||
-    (firstcommentdate != null &&
-     clearHistoryTimee != null &&
-     firstcommentdate.isAfter(clearHistoryTimee!));
+                            final isFirstValid =
+                                isClearHistoryy != true ||
+                                (firstcommentdate != null &&
+                                    clearHistoryTimee != null &&
+                                    firstcommentdate.isAfter(
+                                      clearHistoryTimee!,
+                                    ));
 
-final isSecondValid = isClearHistoryy != true ||
-    (secondcommentdate != null &&
-     clearHistoryTimee != null &&
-     secondcommentdate.isAfter(clearHistoryTimee!));
+                            final isSecondValid =
+                                isClearHistoryy != true ||
+                                (secondcommentdate != null &&
+                                    clearHistoryTimee != null &&
+                                    secondcommentdate.isAfter(
+                                      clearHistoryTimee!,
+                                    ));
                             if ((isFirstValid &&
                                 firstComment?.firstcomment?.text != null)) {
                               return Column(
@@ -627,14 +627,19 @@ final isSecondValid = isClearHistoryy != true ||
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Color.fromRGBO(15, 118, 135, 0.5),
-                              ),
+                              border: Border.all(color: Constants.maincolor),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [Text('${widget.leadNotes}')],
+                              children: [
+                                Text(
+                                  (widget.leadNotes == null ||
+                                          widget.leadNotes!.isEmpty)
+                                      ? 'No notes found'
+                                      : widget.leadNotes!,
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -651,7 +656,9 @@ final isSecondValid = isClearHistoryy != true ||
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               backgroundColor: Colors.white,
-                              side: const BorderSide(color: Color(0xff2C6975)),
+                              side: const BorderSide(
+                                color: Constants.maincolor,
+                              ),
                               padding: EdgeInsets.symmetric(
                                 horizontal: 20.w,
                                 vertical: 12.h,
@@ -659,28 +666,36 @@ final isSecondValid = isClearHistoryy != true ||
                             ),
                             onPressed: () {
                               Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => BlocProvider(
-      create: (_) => LeadCommentsCubit(GetAllLeadCommentsApiService())
-        ..fetchLeadComments(widget.leedId)
-        ..fetchLeadAssignedData(widget.leedId),
-      child: SalesCommentsScreen(
-        leedId: widget.leedId,
-        fcmtoken: widget.fcmtokenn,
-        leadName: widget.leadName,
-      ),
-    ),
-  ),
-);
-
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => BlocProvider(
+                                        create:
+                                            (_) =>
+                                                LeadCommentsCubit(
+                                                    GetAllLeadCommentsApiService(),
+                                                  )
+                                                  ..fetchLeadComments(
+                                                    widget.leedId,
+                                                  )
+                                                  ..fetchLeadAssignedData(
+                                                    widget.leedId,
+                                                  ),
+                                        child: SalesCommentsScreen(
+                                          leedId: widget.leedId,
+                                          fcmtoken: widget.fcmtokenn,
+                                          leadName: widget.leadName,
+                                        ),
+                                      ),
+                                ),
+                              );
                             },
                             child: Text(
                               'All Comments',
                               style: TextStyle(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xff326677),
+                                color: Constants.maincolor,
                               ),
                             ),
                           ),
@@ -708,31 +723,35 @@ final isSecondValid = isClearHistoryy != true ||
                                 isScrollControlled: true,
                                 backgroundColor: Colors.transparent,
                                 builder:
-                                    (_) => BlocProvider(
-                                      create: (_) => AddCommentCubit(),
-                                      child: AddCommentBottomSheet(
-                                        buttonName: "add comment",
-                                        optionalName: "add comment",
-                                        leadId: widget.leedId,
+                                    (_) => Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom:
+                                            MediaQuery.of(
+                                              context,
+                                            ).viewInsets.bottom,
+                                      ),
+                                      child: BlocProvider(
+                                        create: (_) => AddCommentCubit(),
+                                        child: AddCommentBottomSheet(
+                                          buttonName: "add comment",
+                                          optionalName: "add comment",
+                                          leadId: widget.leedId,
+                                        ),
                                       ),
                                     ),
                               );
+
                               if (result == true) {
-                                // THIS WILL NOW WORK!
-                                // The context has access to the LeadCommentsCubit from MultiBlocProvider.
                                 context
                                     .read<LeadCommentsCubit>()
                                     .fetchLeadComments(widget.leedId);
-                                // ✅ إرسال إشعار بعد الإضافة
                                 context
                                     .read<NotificationCubit>()
                                     .sendNotificationToToken(
                                       title: "Lead Comment",
                                       body:
                                           " ${widget.leadName} تم إضافة تعليق جديد ✅",
-                                      fcmtokennnn:
-                                          widget
-                                              .fcmtokenn, // تأكد إن الاسم متطابق مع `NotificationCubit`
+                                      fcmtokennnn: widget.fcmtokenn,
                                     );
                               }
                             },

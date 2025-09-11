@@ -1,4 +1,5 @@
-package com.example.homewalkers_app
+package com.realatixcrm.app
+
 
 import io.flutter.embedding.android.FlutterActivity
 

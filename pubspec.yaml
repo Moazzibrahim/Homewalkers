@@ -2,7 +2,7 @@ name: homewalkers_app
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.7.0
@@ -23,6 +23,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   flutter_local_notifications: ^17.1.0
   flutter_screenutil: ^5.9.3
+  flutter_svg: 2.1.0
   font_awesome_flutter: ^10.8.0
   google_fonts: ^6.2.1
   http: ^1.4.0
@@ -38,11 +39,16 @@ dependencies:
   url_launcher: ^6.3.1
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.14.4
   flutter_lints: ^5.0.0
-  # hive_generator: ^2.0.1
-  # build_runner: ^2.3.3
   flutter_test:
     sdk: flutter
+
+# 👇 هنا البلوك الخاص بالـ launcher icons
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logoo.png"
 
 flutter:
   generate: true

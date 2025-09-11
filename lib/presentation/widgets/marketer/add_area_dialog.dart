@@ -123,13 +123,13 @@ class _AddProjectDialogState extends State<AddAreaDialog> {
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF003D48)),
+                          side: const BorderSide(color: Constants.maincolor),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: Text(
                           "Cancel",
                           style: GoogleFonts.montserrat(
-                            color: const Color(0xFF003D48),
+                            color: Constants.maincolor,
                           ),
                         ),
                       ),

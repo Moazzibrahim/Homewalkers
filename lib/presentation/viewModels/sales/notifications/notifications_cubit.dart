@@ -38,9 +38,21 @@ class NotificationCubit extends Cubit<NotificationState> {
   /// 🔔 Initializes notification system and handles listeners
   Future<void> initNotifications() async {
     try {
-      final messaging = FirebaseMessaging.instance;
       if (_isInitialized) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('salesId');
+
+      // ✅ تأكد أن userId موجود قبل بدء التهيئة
+      if (userId == null || userId.isEmpty) {
+        log("⏳ Skipping notification init: No salesId found.");
+        return;
+      }
+
       _isInitialized = true;
+
+      final messaging = FirebaseMessaging.instance;
+
       final settings = await messaging.requestPermission(
         alert: true,
         badge: true,
@@ -55,26 +67,23 @@ class NotificationCubit extends Cubit<NotificationState> {
       }
 
       final token = await messaging.getToken();
-      // حفظ التوكن في SharedPreferences وإرسال للسيرفر
+
+      // 📝 حفظ التوكن وإرساله للسيرفر
       await _saveAndSendToken(token);
 
-      // الاستماع لتحديث التوكن
+      // 🔁 تحديث التوكن
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
         log("🔁 FCM Token updated: $newToken");
         await _saveAndSendToken(newToken);
       });
-      final prefs = await SharedPreferences.getInstance();
-      final role = prefs.getString('role');
-      final userId = prefs.getString('salesId');
 
+      final role = prefs.getString('role');
       log("🔑 FCM Token: $token");
       log("👤 User ID: $userId");
       log("🧑‍💼 Role: $role");
 
-      // Subscribe to common topic
       await messaging.subscribeToTopic('all_users');
 
-      // Android notification channel
       if (Platform.isAndroid) {
         const androidChannel = AndroidNotificationChannel(
           'high_importance_channel',
@@ -89,7 +98,6 @@ class NotificationCubit extends Cubit<NotificationState> {
             ?.createNotificationChannel(androidChannel);
       }
 
-      // iOS permissions
       if (Platform.isIOS) {
         await flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
@@ -98,18 +106,15 @@ class NotificationCubit extends Cubit<NotificationState> {
             ?.requestPermissions(alert: true, badge: true, sound: true);
       }
 
-      // Foreground message
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         _showLocalNotification(message);
       });
 
-      // Background click handler
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         log("📲 Notification clicked: ${message.data}");
         _handleNotificationNavigation(message.data);
       });
 
-      // App launched from terminated state
       RemoteMessage? initialMessage = await messaging.getInitialMessage();
       if (initialMessage != null) {
         log("📦 Opened from terminated: ${initialMessage.data}");
@@ -125,7 +130,7 @@ class NotificationCubit extends Cubit<NotificationState> {
     if (token == null || token.isEmpty) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final oldToken = prefs.getString('fcm_token');
+    final oldToken = prefs.getString('NewfcmToken');
     log("📌 Current FCM Token: $token");
     log("📌 Saved Old Token: $oldToken");
 

@@ -1664,7 +1664,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                               Theme.of(context).brightness ==
                                                       Brightness.light
                                                   ? Constants.maincolor
-                                                  : Constants.mainDarkmodecolor,
+                                                  : Colors.white,
                                           decoration: TextDecoration.underline,
                                         ),
                                       ),

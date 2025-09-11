@@ -1,5 +1,6 @@
 
-package com.example.homewalkers_app;
+package com.realatixcrm.app
+;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

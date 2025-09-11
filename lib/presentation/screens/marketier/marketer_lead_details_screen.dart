@@ -209,89 +209,85 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                           ),
                           SizedBox(height: 8.h),
                           // Row 2: WhatsApp and Second Phone
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (widget.leadwhatsappnumber != null &&
-                                      widget.leadwhatsappnumber!.isNotEmpty)
-                                    InkWell(
-                                      onTap: () async {
-                                        final phone = widget.leadwhatsappnumber
-                                            ?.replaceAll(RegExp(r'\D'), '');
-                                        final url = "https://wa.me/$phone";
-                                        if (await canLaunchUrl(
-                                          Uri.parse(url),
-                                        )) {
-                                          await launchUrl(
-                                            Uri.parse(url),
-                                            mode:
-                                                LaunchMode.externalApplication,
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                "Could not open WhatsApp.",
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: Row(
-                                        children: [
-                                          FaIcon(
-                                            FontAwesomeIcons.whatsapp,
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Constants.maincolor
-                                                    : Constants
-                                                        .mainDarkmodecolor,
-                                            size: 18,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (widget.leadwhatsappnumber != null &&
+                                  widget.leadwhatsappnumber!.isNotEmpty)
+                                InkWell(
+                                  onTap: () async {
+                                    final phone = widget.leadwhatsappnumber
+                                        ?.replaceAll(RegExp(r'\D'), '');
+                                    final url = "https://wa.me/$phone";
+                                    if (await canLaunchUrl(Uri.parse(url))) {
+                                      await launchUrl(
+                                        Uri.parse(url),
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Could not open WhatsApp.",
                                           ),
-                                          SizedBox(width: 5.w),
-                                          Text(
-                                            "${widget.leadwhatsappnumber}",
-                                            style: TextStyle(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                        ],
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Row(
+                                    children: [
+                                      FaIcon(
+                                        FontAwesomeIcons.whatsapp,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Constants.maincolor
+                                                : Constants.mainDarkmodecolor,
+                                        size: 18,
                                       ),
-                                    ),
-
-                                  if (widget.secondphonenumber != null &&
-                                      widget.secondphonenumber!.isNotEmpty) ...[
-                                    SizedBox(width: 12.w),
-                                    Icon(
-                                      Icons.phone,
-                                      size: 16,
-                                      color:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Constants.maincolor
-                                              : Constants.mainDarkmodecolor,
-                                    ),
-                                    SizedBox(width: 3.w),
-                                    InkWell(
-                                      onTap:
-                                          () => makePhoneCall(
-                                            widget.secondphonenumber ?? '',
-                                          ),
-                                      child: Text(
-                                        " ${widget.secondphonenumber}",
+                                      SizedBox(width: 5.w),
+                                      Text(
+                                        "${widget.leadwhatsappnumber}",
                                         style: TextStyle(
                                           fontSize: 12.sp,
                                           fontWeight: FontWeight.w400,
                                         ),
                                       ),
+                                    ],
+                                  ),
+                                ),
+
+                              if (widget.secondphonenumber != null &&
+                                  widget.secondphonenumber!.isNotEmpty) ...[
+                                SizedBox(width: 12.w),
+                                Icon(
+                                  Icons.phone,
+                                  size: 16,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                ),
+                                SizedBox(width: 3.w),
+                                InkWell(
+                                  onTap:
+                                      () => makePhoneCall(
+                                        widget.secondphonenumber ?? '',
+                                      ),
+                                  child: Text(
+                                    " ${widget.secondphonenumber}",
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w400,
                                     ),
-                                  ],
-                                ],
-                              ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                           SizedBox(height: 12.h),
                           Row(
                             children: [
@@ -313,12 +309,7 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                               ? Color(0xffFFFFFF)
                                               : Color(0xff080719),
                                       side: const BorderSide(
-                                        color: Color.fromRGBO(
-                                          15,
-                                          118,
-                                          135,
-                                          0.5,
-                                        ),
+                                        color: Constants.maincolor,
                                       ),
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 20.w,
@@ -379,7 +370,7 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                           ? Color(0xffFFFFFF)
                                           : Color(0xff080719),
                                   side: const BorderSide(
-                                    color: Color.fromRGBO(15, 118, 135, 0.5),
+                                    color: Constants.maincolor,
                                   ),
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 16.w,
@@ -443,7 +434,10 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                           InfoRow(
                             icon: Icons.work,
                             label: 'job description',
-                            value: widget.jobdescription?.isNotEmpty == true ? widget.jobdescription! : 'no job description',
+                            value:
+                                widget.jobdescription?.isNotEmpty == true
+                                    ? widget.jobdescription!
+                                    : 'no job description',
                           ),
                           InfoRow(
                             icon: Icons.apartment,
@@ -591,14 +585,19 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Color.fromRGBO(15, 118, 135, 0.5),
-                              ),
+                              border: Border.all(color: Constants.maincolor),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [Text('${widget.leadNotes}')],
+                              children: [
+                                Text(
+                                  (widget.leadNotes == null ||
+                                          widget.leadNotes!.isEmpty)
+                                      ? 'No notes found'
+                                      : widget.leadNotes!,
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -615,7 +614,9 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               backgroundColor: Colors.white,
-                              side: const BorderSide(color: Color(0xff2C6975)),
+                              side: const BorderSide(
+                                color: Constants.maincolor,
+                              ),
                               padding: EdgeInsets.symmetric(
                                 horizontal: 20.w,
                                 vertical: 12.h,
@@ -645,7 +646,7 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                               style: TextStyle(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xff326677),
+                                color: Constants.maincolor,
                               ),
                             ),
                           ),
@@ -673,32 +674,40 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                                 isScrollControlled: true,
                                 backgroundColor: Colors.transparent,
                                 builder:
-                                    (_) => BlocProvider(
-                                      create: (_) => AddCommentCubit(),
-                                      child: AddCommentBottomSheet(
-                                        buttonName: "add comment",
-                                        optionalName: "add comment",
-                                        leadId: widget.leedId,
+                                    (_) => Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom:
+                                            MediaQuery.of(
+                                              context,
+                                            ).viewInsets.bottom,
+                                      ),
+                                      child: BlocProvider(
+                                        create: (_) => AddCommentCubit(),
+                                        child: AddCommentBottomSheet(
+                                          buttonName: "add comment",
+                                          optionalName: "add comment",
+                                          leadId: widget.leedId,
+                                        ),
                                       ),
                                     ),
                               );
+
                               if (result == true) {
-                                // THIS WILL NOW WORK!
-                                // The context has access to the LeadCommentsCubit from MultiBlocProvider.
+                                // تحديث التعليقات بعد الإضافة
                                 context
                                     .read<LeadCommentsCubit>()
                                     .fetchLeadComments(widget.leedId);
-                                // ✅ إرسال إشعار بعد الإضافة
+
+                                // إرسال إشعار بعد الإضافة
                                 context
                                     .read<NotificationCubit>()
                                     .sendNotificationToToken(
                                       title: "Lead Comment",
                                       body:
                                           " ${widget.leadName} تم إضافة تعليق جديد ✅",
-                                      fcmtokennnn:
-                                          widget
-                                              .salesfcmtoken, // تأكد إن الاسم متطابق مع `NotificationCubit`
+                                      fcmtokennnn: widget.salesfcmtoken,
                                     );
+
                                 debugPrint("fcmtoken: ${widget.salesfcmtoken}");
                               }
                             },

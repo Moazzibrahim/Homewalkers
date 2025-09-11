@@ -3,11 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class AddChannelDialog extends StatefulWidget {
-  final void Function(
-    String name,
-    String code,
-  )?
-  onAdd;
+  final void Function(String name, String code)? onAdd;
   final String? title;
   const AddChannelDialog({super.key, this.onAdd, this.title});
 
@@ -71,19 +67,21 @@ class _AddProjectDialogState extends State<AddChannelDialog> {
                 ],
               ),
               const SizedBox(height: 20),
-    
+
               /// Project Name
               TextField(
                 controller: _nameController,
                 decoration: _inputDecoration("channel Name"),
               ),
               const SizedBox(height: 14),
+
               /// code
               TextField(
                 controller: _codeController,
                 decoration: _inputDecoration("code"),
               ),
               const SizedBox(height: 24),
+
               /// Buttons
               Row(
                 children: [
@@ -91,13 +89,13 @@ class _AddProjectDialogState extends State<AddChannelDialog> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF003D48)),
+                        side: const BorderSide(color: Constants.maincolor),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
                         "Cancel",
                         style: GoogleFonts.montserrat(
-                          color: const Color(0xFF003D48),
+                          color: Constants.maincolor,
                         ),
                       ),
                     ),
@@ -107,7 +105,7 @@ class _AddProjectDialogState extends State<AddChannelDialog> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (widget.onAdd != null) {
-                          if (_nameController.text.trim().isNotEmpty &&   
+                          if (_nameController.text.trim().isNotEmpty &&
                               _codeController.text.trim().isNotEmpty) {
                             widget.onAdd!(
                               _nameController.text.trim(),

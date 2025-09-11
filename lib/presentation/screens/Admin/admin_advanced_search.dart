@@ -199,7 +199,7 @@ class _MarketerAdvancedSearchScreenState extends State<AdminAdvancedSearch> {
                     child: OutlinedButton(
                       // ... (Cancel Button code remains the same)
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF2B6777)),
+                        side: const BorderSide(color: Constants.maincolor),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -208,7 +208,7 @@ class _MarketerAdvancedSearchScreenState extends State<AdminAdvancedSearch> {
                       onPressed: () => Navigator.of(context).pop(),
                       child: const Text(
                         "Cancel",
-                        style: TextStyle(color: Color(0xFF2B6777)),
+                        style: TextStyle(color: Constants.maincolor),
                       ),
                     ),
                   ),
@@ -216,19 +216,41 @@ class _MarketerAdvancedSearchScreenState extends State<AdminAdvancedSearch> {
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2B6777),
+                        backgroundColor: Constants.maincolor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       onPressed: () {
+                        // ✅ تحقق إن مفيش أي فلتر متحدد
+                        if (selectedFilterType == null &&
+                            (selectedSalesId == null ||
+                                selectedSalesId!.isEmpty) &&
+                            (selectedCountry == null ||
+                                selectedCountry!.isEmpty) &&
+                            (selectedUser == null || selectedUser!.isEmpty) &&
+                            _dateController.text.isEmpty &&
+                            _fromDateController.text.isEmpty &&
+                            _toDateController.text.isEmpty &&
+                            _commentDateController.text.isEmpty) {
+                          // ❌ مفيش ولا فلتر متحدد → أظهر رسالة Validation
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                "Please select at least one filter before searching",
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return; // وقف العملية هنا
+                        }
+                        // ✅ لو فيه فلتر متحدد → نفذ البحث
                         setState(() => _hasSearched = true);
-                        // ✅ الخطوة 5: تمرير الـ ID بدلاً من الاسم
                         context
                             .read<GetAllUsersCubit>()
                             .filterLeadsAdminForAdvancedSearch(
-                              salesId: selectedSalesId, // <-- تمرير الـ ID
+                              salesId: selectedSalesId,
                               country: selectedCountry,
                               user: selectedUser,
                               creationDate:
@@ -243,9 +265,7 @@ class _MarketerAdvancedSearchScreenState extends State<AdminAdvancedSearch> {
                                       : null,
                               toDate:
                                   _toDateController.text.isNotEmpty
-                                      ? _formatEndDate(
-                                        _toDateController.text,
-                                      ) // ✅  دقيق جدًا
+                                      ? _formatEndDate(_toDateController.text)
                                       : null,
                               commentDate:
                                   _commentDateController.text.isNotEmpty
@@ -255,6 +275,7 @@ class _MarketerAdvancedSearchScreenState extends State<AdminAdvancedSearch> {
                                       : null,
                             );
                       },
+
                       child: const Text(
                         "Search",
                         style: TextStyle(color: Colors.white),
@@ -368,7 +389,8 @@ class _MarketerAdvancedSearchScreenState extends State<AdminAdvancedSearch> {
                                             Theme.of(context).brightness ==
                                                     Brightness.light
                                                 ? Constants.maincolor
-                                                : Constants.mainDarkmodecolor,
+                                                : Colors.white,
+                                        decoration: TextDecoration.underline,
                                       ),
                                     ),
                                   ),
@@ -402,7 +424,17 @@ class _MarketerAdvancedSearchScreenState extends State<AdminAdvancedSearch> {
                                               : Constants.mainDarkmodecolor,
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(lead.email!),
+                                    Expanded(
+                                      child: Text(
+                                        lead.email!,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 8),

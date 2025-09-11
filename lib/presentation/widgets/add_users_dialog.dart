@@ -81,7 +81,7 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
                         ? Constants.maincolor
                         : Constants.mainDarkmodecolor,),
           onPressed: () => Navigator.of(context).pop(),
-          child:  Text("Cancel",style: TextStyle( color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),),
+          child:  Text("Cancel",style: TextStyle( color: Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.black),),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -104,7 +104,7 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
               Navigator.of(context).pop();
             }
           },
-          child:  Text("Add",style: TextStyle(color:  Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),),
+          child:  Text("Add",style: TextStyle(color:  Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.black),),
         ),
       ],
     );
@@ -178,8 +178,8 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
                         : Constants.mainDarkmodecolor,
               ),
               onPressed: () => _pickImage(ImageSource.gallery),
-              icon:   Icon(Icons.photo,color:  Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
-              label:  Text("Gallery", style: TextStyle(fontSize: 10 ,color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white)),
+              icon:   Icon(Icons.photo,color:  Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.white),
+              label:  Text("Gallery", style: TextStyle(fontSize: 10 ,color: Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.white)),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
@@ -190,8 +190,8 @@ class _AddUsersDialogState extends State<AddUsersDialog> {
                         : Constants.mainDarkmodecolor,
               ),
               onPressed: () => _pickImage(ImageSource.camera),
-              icon:  Icon(Icons.camera_alt,color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
-              label: Text("Camera", style: TextStyle(fontSize: 10,color:  Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white)),
+              icon:  Icon(Icons.camera_alt,color: Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.white),
+              label: Text("Camera", style: TextStyle(fontSize: 10,color:  Theme.of(context).brightness == Brightness.light ? Colors.white : Colors.white)),
             ),
           ],
         ),

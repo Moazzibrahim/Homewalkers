@@ -314,7 +314,7 @@ class AdminTrashMenuScreen extends StatelessWidget {
                           ),
                           child: Icon(
                             item.icon,
-                            color: const Color(0xFF1E4D57),
+                            color: Constants.maincolor,
                           ),
                         ),
                         title: Text(

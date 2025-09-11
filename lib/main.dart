@@ -36,7 +36,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   log("[Background] Message: ${message.messageId}");
 }
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -86,7 +85,13 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => ThemeCubit(initialTheme)),
         BlocProvider(create: (_) => StagesCubit(StagesApiService())),
-        BlocProvider(create: (_) => NotificationCubit()),
+        BlocProvider(
+          create: (_) {
+            final cubit = NotificationCubit();
+            cubit.initNotifications(); // يبدأ من أول ما الاب يشتغل
+            return cubit;
+          },
+        ),
         BlocProvider(
           create: (_) => GetLeadsCubit(GetLeadsService())..fetchLeads(),
         ),
@@ -120,8 +125,9 @@ class MyApp extends StatelessWidget {
                   GetalluserssignupCubit(GetAllUsersForSignupApiService())
                     ..fetchUsers(),
         ),
-          BlocProvider<SalesCubit>(
-          create: (context) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+        BlocProvider<SalesCubit>(
+          create:
+              (context) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
         ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
@@ -135,7 +141,7 @@ class MyApp extends StatelessWidget {
             splitScreenMode: true,
             builder: (_, __) {
               return MaterialApp(
-                title: 'Homewalkers App',
+                title: 'Realatix crm',
                 navigatorKey: navigatorKey,
                 debugShowCheckedModeBanner: false,
                 theme: ThemeData.light().copyWith(

@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     child: Image.asset(
-                      'assets/images/background.png',
+                      'assets/images/Log In.png',
                       width: double.infinity,
                       fit: BoxFit.fill,
                     ),
@@ -133,14 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Center(
-                                child: Text(
-                                  "LOGO",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 30,
-                                    color: Constants.maincolor,
-                                  ),
-                                ),
+                                child: Image.asset("assets/images/logoo.png",height: 100,width: 100,),
                               ),
                               const SizedBox(height: 16),
                               const Center(

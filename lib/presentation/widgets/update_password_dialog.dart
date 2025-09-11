@@ -4,7 +4,13 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 
 class UpdateUserPasswordDialog extends StatefulWidget {
   final String userId;
-  final Future<void> Function(String id, String currentPassword, String newPassword, String confirmPassword) onUpdatePassword;
+  final Future<void> Function(
+    String id,
+    String currentPassword,
+    String newPassword,
+    String confirmPassword,
+  )
+  onUpdatePassword;
 
   const UpdateUserPasswordDialog({
     super.key,
@@ -13,15 +19,18 @@ class UpdateUserPasswordDialog extends StatefulWidget {
   });
 
   @override
-  State<UpdateUserPasswordDialog> createState() => _UpdateUserPasswordDialogState();
+  State<UpdateUserPasswordDialog> createState() =>
+      _UpdateUserPasswordDialogState();
 }
 
 class _UpdateUserPasswordDialogState extends State<UpdateUserPasswordDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -48,9 +57,10 @@ class _UpdateUserPasswordDialogState extends State<UpdateUserPasswordDialog> {
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundColor: Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
                       child: const Icon(Icons.lock, color: Colors.white),
                     ),
                     const SizedBox(width: 10),
@@ -60,23 +70,38 @@ class _UpdateUserPasswordDialogState extends State<UpdateUserPasswordDialog> {
                         style: GoogleFonts.montserrat(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Colors.black
+                                  : Colors.white,
                         ),
                       ),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
-                      child:  Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white),
+                      child: Icon(
+                        Icons.close,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.black
+                                : Colors.white,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
 
-                _buildPasswordField(_currentPasswordController, "Current Password"),
+                _buildPasswordField(
+                  _currentPasswordController,
+                  "Current Password",
+                ),
                 const SizedBox(height: 12),
                 _buildPasswordField(_newPasswordController, "New Password"),
                 const SizedBox(height: 12),
-                _buildPasswordField(_confirmPasswordController, "Confirm Password"),
+                _buildPasswordField(
+                  _confirmPasswordController,
+                  "Confirm Password",
+                ),
                 const SizedBox(height: 24),
 
                 Row(
@@ -85,13 +110,17 @@ class _UpdateUserPasswordDialogState extends State<UpdateUserPasswordDialog> {
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF003D48)),
+                          side: const BorderSide(color: Constants.maincolor),
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          backgroundColor: Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
+                          backgroundColor:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Constants.maincolor
+                                  : Constants.mainDarkmodecolor,
                         ),
-                        child: Text("Cancel", style: GoogleFonts.montserrat(color: Colors.white)),
+                        child: Text(
+                          "Cancel",
+                          style: GoogleFonts.montserrat(color: Colors.white),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -109,12 +138,16 @@ class _UpdateUserPasswordDialogState extends State<UpdateUserPasswordDialog> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
+                          backgroundColor:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Constants.maincolor
+                                  : Constants.mainDarkmodecolor,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        child: Text("Update", style: GoogleFonts.montserrat(color: Colors.white)),
+                        child: Text(
+                          "Update",
+                          style: GoogleFonts.montserrat(color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
@@ -134,12 +167,16 @@ class _UpdateUserPasswordDialogState extends State<UpdateUserPasswordDialog> {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: GoogleFonts.montserrat(color: Colors.grey),
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 12,
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) return '$hint is required';
-        if (hint == "Confirm Password" && value != _newPasswordController.text) {
+        if (hint == "Confirm Password" &&
+            value != _newPasswordController.text) {
           return 'Passwords do not match';
         }
         return null;
