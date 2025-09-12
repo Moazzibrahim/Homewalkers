@@ -1002,6 +1002,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                         ),
                                       ),
                                       Checkbox(
+                                        activeColor: Constants.maincolor,
                                         value: _selectedLeads.contains(lead.id),
                                         onChanged: (bool? value) {
                                           setState(() {

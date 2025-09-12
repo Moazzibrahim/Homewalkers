@@ -42,13 +42,13 @@ class _NewCommunicationDialogState extends State<AddCancelReasonDialog> {
                     style: GoogleFonts.montserrat(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Colors.black,
+                      color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
                     ),
                   ),
                 ),
                 GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
-                  child: const Icon(Icons.close, color: Colors.black),
+                  child: Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,),
                 ),
               ],
             ),

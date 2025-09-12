@@ -527,8 +527,11 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                             isExpanded: true,
                                             value: selectedStageId,
                                             hint: const Text('Select Stage'),
-                                            items: stageState.stages.map((stage) {
-                                                  return DropdownMenuItem<String>(
+                                            items:
+                                                stageState.stages.map((stage) {
+                                                  return DropdownMenuItem<
+                                                    String
+                                                  >(
                                                     value: stage.id.toString(),
                                                     child: Text(
                                                       stage.name ?? 'Unnamed',
@@ -580,15 +583,25 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                         onPressed: () {
                                           showDialog(
                                             context: context,
-                                            builder: ( context,) => AssignLeadMarkterDialog(
-                                                  leadIds:_selectedLeads.toList(),
-                                                  leadId: _selectedLeads.toList()[0],
+                                            builder:
+                                                (
+                                                  context,
+                                                ) => AssignLeadMarkterDialog(
+                                                  leadIds:
+                                                      _selectedLeads.toList(),
+                                                  leadId:
+                                                      _selectedLeads
+                                                          .toList()[0],
                                                   leadStage: selectedStageId,
-                                                  mainColor: Theme.of(context,).brightness == Brightness.light
+                                                  mainColor:
+                                                      Theme.of(
+                                                                context,
+                                                              ).brightness ==
+                                                              Brightness.light
                                                           ? Constants.maincolor
-                                                          : Constants.mainDarkmodecolor,
+                                                          : Constants
+                                                              .mainDarkmodecolor,
                                                 ),
-                                                
                                           );
                                         },
                                         child: const Text(
@@ -615,7 +628,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                     (sales) => sales.id == selectedSalesId,
                                     orElse: () => SalesData(),
                                   );
-                              _selectedSalesFcmToken = selectedSalesUser.userlog?.fcmtoken;
+                              _selectedSalesFcmToken =
+                                  selectedSalesUser.userlog?.fcmtoken;
                               if (_selectedLeads.isNotEmpty) {
                                 if (option == 'same') {
                                   showDialog(
@@ -631,7 +645,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                   : Constants.mainDarkmodecolor,
                                         ),
                                   );
-                                } else if (option == 'change' && newStageId != null) {
+                                } else if (option == 'change' &&
+                                    newStageId != null) {
                                   // هنا logic تغيير الستيج
                                   log(
                                     'Change stage to $newStageId for leads: $_selectedLeads',
@@ -653,7 +668,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                         Icons.more_vert,
                         color:
                             _selectedLeads.isNotEmpty
-                                ? (Theme.of(context).brightness == Brightness.light
+                                ? (Theme.of(context).brightness ==
+                                        Brightness.light
                                     ? Constants.maincolor
                                     : Constants.mainDarkmodecolor)
                                 : Colors.grey,
@@ -955,6 +971,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                         ),
                                       ),
                                       Checkbox(
+                                        activeColor: Constants.maincolor,
                                         value: _selectedLeads.contains(lead.id),
                                         onChanged: (bool? value) {
                                           setState(() {

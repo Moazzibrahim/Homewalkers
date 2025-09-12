@@ -287,6 +287,7 @@ class _AddSalesDialogState extends State<AddSalesDialog> {
                     return const SizedBox.shrink(); // تجاهل المدينة إذا كانت بياناتها غير مكتملة
                   }
                   return CheckboxListTile(
+                    activeColor: Constants.maincolor,
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                     // التحقق من وجود ID المدينة في القائمة المحددة
