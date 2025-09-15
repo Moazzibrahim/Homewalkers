@@ -12,7 +12,6 @@ import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_campaign_dialog.dart';
 
-
 class CampaignTrash extends StatelessWidget {
   const CampaignTrash({super.key});
 
@@ -39,9 +38,9 @@ class CampaignTrash extends StatelessWidget {
         },
         child: Scaffold(
           backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "campaign",
             onBack: () {
@@ -161,11 +160,28 @@ class CampaignTrash extends StatelessWidget {
     final name = campaignData.campainName;
     final dateTime = DateTime.parse(campaignData.createdAt!);
     final formattedDate = Formatters.formatDate(dateTime);
-    final costtt=campaignData.cost;
+    final costtt = campaignData.cost;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الكارت في light mode
+                : const Color(0xFF1E1E1E),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.5),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -247,10 +263,13 @@ class CampaignTrash extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-                 InkWell(
+              InkWell(
                 child: Icon(
                   Icons.restore_from_trash,
-                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
                   size: 30.0,
                 ),
                 onTap: () {

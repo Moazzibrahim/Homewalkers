@@ -19,7 +19,8 @@ class RegionTrash extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create:
-          (context) => GetCitiesCubit(GetCitiesApiService())..fetchRegionsInTrash(),
+          (context) =>
+              GetCitiesCubit(GetCitiesApiService())..fetchRegionsInTrash(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -37,9 +38,9 @@ class RegionTrash extends StatelessWidget {
         },
         child: Scaffold(
           backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Regions",
             onBack: () {
@@ -61,10 +62,15 @@ class RegionTrash extends StatelessWidget {
                           builder:
                               (_) => BlocProvider.value(
                                 value:
-                                    context.read<AddInMenuCubit>(), // استخدم نفس الـ cubit
+                                    context
+                                        .read<
+                                          AddInMenuCubit
+                                        >(), // استخدم نفس الـ cubit
                                 child: AddDialog(
                                   onAdd: (value) {
-                                    context.read<AddInMenuCubit>().addRegion(value);
+                                    context.read<AddInMenuCubit>().addRegion(
+                                      value,
+                                    );
                                   },
                                   title: "region",
                                 ),
@@ -102,9 +108,7 @@ class RegionTrash extends StatelessWidget {
                       } else if (state is GetCitiesSuccess) {
                         final regions = state.regions;
                         if (regions!.isEmpty) {
-                          return const Center(
-                            child: Text('No regions Found.'),
-                          );
+                          return const Center(child: Text('No regions Found.'));
                         }
                         return ListView.separated(
                           itemCount: regions.length,
@@ -112,7 +116,10 @@ class RegionTrash extends StatelessWidget {
                               (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final region = regions[index];
-                            return _buildCommunicationCard(region,Constants.maincolor,context,
+                            return _buildCommunicationCard(
+                              region,
+                              Constants.maincolor,
+                              context,
                             );
                           },
                         );
@@ -137,12 +144,29 @@ class RegionTrash extends StatelessWidget {
     BuildContext context,
   ) {
     final name = developerData.name;
-    final dateTime =developerData.createdAt;
+    final dateTime = developerData.createdAt;
     final formattedDate = Formatters.formatDate(dateTime);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الكارت في light mode
+                : const Color(0xFF1E1E1E),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.5),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -203,14 +227,17 @@ class RegionTrash extends StatelessWidget {
               InkWell(
                 child: Icon(
                   Icons.restore_from_trash,
-                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
                   size: 30.0,
                 ),
                 onTap: () {
                   context.read<AddInMenuCubit>().updateRegionStatus(
                     developerData.id.toString(),
                     true,
-                    name
+                    name,
                   );
                 },
               ),

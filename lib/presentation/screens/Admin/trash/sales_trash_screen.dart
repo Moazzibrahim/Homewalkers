@@ -19,7 +19,9 @@ class SalesTrashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => SalesCubit(GetAllSalesApiService())..fetchAllSalesInTrash(),
+      create:
+          (context) =>
+              SalesCubit(GetAllSalesApiService())..fetchAllSalesInTrash(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -36,10 +38,10 @@ class SalesTrashScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
-        backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "sales",
             onBack: () {
@@ -62,10 +64,24 @@ class SalesTrashScreen extends StatelessWidget {
                               (_) => MultiBlocProvider(
                                 providers: [
                                   BlocProvider.value(
-                                    value:context.read<AddInMenuCubit>(), // استخدم نفس الـ cubit
+                                    value:
+                                        context
+                                            .read<
+                                              AddInMenuCubit
+                                            >(), // استخدم نفس الـ cubit
                                   ),
-                                  BlocProvider<GetCitiesCubit>( create: (_) => GetCitiesCubit(GetCitiesApiService()),),
-                                  BlocProvider<SalesCubit>(create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSalesInTrash(),),
+                                  BlocProvider<GetCitiesCubit>(
+                                    create:
+                                        (_) => GetCitiesCubit(
+                                          GetCitiesApiService(),
+                                        ),
+                                  ),
+                                  BlocProvider<SalesCubit>(
+                                    create:
+                                        (_) =>
+                                            SalesCubit(GetAllSalesApiService())
+                                              ..fetchAllSalesInTrash(),
+                                  ),
                                 ],
                                 child: AddSalesDialog(
                                   onAdd: ({
@@ -163,7 +179,24 @@ class SalesTrashScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الكارت في light mode
+                : const Color(0xFF1E1E1E),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.5),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -221,10 +254,13 @@ class SalesTrashScreen extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-                InkWell(
+              InkWell(
                 child: Icon(
                   Icons.restore_from_trash,
-                  color:Theme.of(context).brightness == Brightness.light ? Constants.maincolor : Constants.mainDarkmodecolor,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
                   size: 30.0,
                 ),
                 onTap: () {
