@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
@@ -39,7 +40,7 @@ class _NewCommunicationDialogState extends State<AddDialog> {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: mainColor,
-                  child: Image.asset("assets/images/Vector.png"),
+                  child: SvgPicture.asset("assets/images/add.svg"),
                 ),
                 const SizedBox(width: 10),
                 Expanded(

@@ -352,59 +352,87 @@ class AdminMenuScreen extends StatelessWidget {
       ),
     ];
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.light ? Constants.backgroundlightmode : Constants.backgroundDarkmode,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.backgroundlightmode
+              : Constants.backgroundDarkmode,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(16.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FutureBuilder(
-                        future: checkAuthName(), // ✅ جلب الاسم
-                        builder: (
-                          BuildContext context,
-                          AsyncSnapshot snapshot,
-                        ) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Text(" hello ....");
-                          } else if (snapshot.hasError) {
-                            return const Text('Hello');
-                          } else {
-                            return Text(
-                              '${snapshot.data}',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? const Color(0xff080719)
-                                        : Colors.white,
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      Text(
-                        'Admin',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 14.sp,
-                          color: Colors.grey,
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 16.w,
+                  vertical: 12.h,
+                ), // مساحة داخلية
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Colors.white // لون خلفية للـ light mode
+                          : Constants.backgroundDarkmode, // لون خلفية للـ dark mode
+                  borderRadius: BorderRadius.circular(12), // لو تحب يكون مدور
+                ),
+                child: Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FutureBuilder(
+                          future: checkAuthName(), // ✅ جلب الاسم
+                          builder: (
+                            BuildContext context,
+                            AsyncSnapshot snapshot,
+                          ) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Text(" hello ....");
+                            } else if (snapshot.hasError) {
+                              return const Text('Hello');
+                            } else {
+                              return Text(
+                                '${snapshot.data}',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? const Color(0xff080719)
+                                          : Colors.white,
+                                ),
+                              );
+                            }
+                          },
                         ),
+                        Text(
+                          'Admin',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 14.sp,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      child: const Icon(
+                        Icons.notifications_none_rounded,
+                        size: 28,
                       ),
-                    ],
-                  ),
-                  const Spacer(),
-                  InkWell(child: const Icon(Icons.notifications_none_rounded, size: 28), onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SalesNotificationsScreen()));
-                  },),
-                ],
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => const SalesNotificationsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: 20.h),
               Expanded(
@@ -424,10 +452,7 @@ class AdminMenuScreen extends StatelessWidget {
                             color: const Color(0xFFE2F0F1),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
-                          child: Icon(
-                            item.icon,
-                            color: Constants.maincolor,
-                          ),
+                          child: Icon(item.icon, color: Constants.maincolor),
                         ),
                         title: Text(
                           item.label,

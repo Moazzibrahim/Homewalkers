@@ -263,10 +263,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Colors.white
-                        : Constants.backgroundDarkmode,
+                // color:
+                //     Theme.of(context).brightness == Brightness.light
+                //         ? Colors.white
+                //         : Constants.backgroundDarkmode,
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
@@ -552,8 +552,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             isExpanded: true,
                                             value: selectedStageId,
                                             hint: const Text('Select Stage'),
-                                            items: stageState.stages.map((stage) {
-                                                  return DropdownMenuItem<String>(
+                                            items:
+                                                stageState.stages.map((stage) {
+                                                  return DropdownMenuItem<
+                                                    String
+                                                  >(
                                                     value: stage.id.toString(),
                                                     child: Text(
                                                       stage.name ?? 'Unnamed',
@@ -605,15 +608,25 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                         onPressed: () {
                                           showDialog(
                                             context: context,
-                                            builder: ( context,) => AssignLeadMarkterDialog(
-                                                  leadIds:_selectedLeads.toList(),
-                                                  leadId: _selectedLeads.toList()[0],
+                                            builder:
+                                                (
+                                                  context,
+                                                ) => AssignLeadMarkterDialog(
+                                                  leadIds:
+                                                      _selectedLeads.toList(),
+                                                  leadId:
+                                                      _selectedLeads
+                                                          .toList()[0],
                                                   leadStage: selectedStageId,
-                                                  mainColor: Theme.of(context,).brightness == Brightness.light
+                                                  mainColor:
+                                                      Theme.of(
+                                                                context,
+                                                              ).brightness ==
+                                                              Brightness.light
                                                           ? Constants.maincolor
-                                                          : Constants.mainDarkmodecolor,
+                                                          : Constants
+                                                              .mainDarkmodecolor,
                                                 ),
-                                                
                                           );
                                         },
                                         child: const Text(
@@ -640,7 +653,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                     (sales) => sales.id == selectedSalesId,
                                     orElse: () => SalesData(),
                                   );
-                              _selectedSalesFcmToken = selectedSalesUser.userlog?.fcmtoken;
+                              _selectedSalesFcmToken =
+                                  selectedSalesUser.userlog?.fcmtoken;
                               if (_selectedLeads.isNotEmpty) {
                                 if (option == 'same') {
                                   showDialog(
@@ -656,7 +670,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   : Constants.mainDarkmodecolor,
                                         ),
                                   );
-                                } else if (option == 'change' && newStageId != null) {
+                                } else if (option == 'change' &&
+                                    newStageId != null) {
                                   // هنا logic تغيير الستيج
                                   log(
                                     'Change stage to $newStageId for leads: $_selectedLeads',
@@ -678,7 +693,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                         Icons.more_vert,
                         color:
                             _selectedLeads.isNotEmpty
-                                ? (Theme.of(context).brightness == Brightness.light
+                                ? (Theme.of(context).brightness ==
+                                        Brightness.light
                                     ? Constants.maincolor
                                     : Constants.mainDarkmodecolor)
                                 : Colors.grey,
@@ -1020,23 +1036,32 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                   SizedBox(height: 12.h),
                                   // ---------- Row 3: Stage and Total Submissions ----------
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Row(
-                                        children: [
-                                          getStatusIcon(lead.stage?.name ?? ""),
-                                          const SizedBox(width: 5),
-                                          Text(
-                                            lead.stage?.name ?? "none",
-                                            style: GoogleFonts.montserrat(
-                                              fontSize: 10.sp,
-                                              fontWeight: FontWeight.w600,
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            getStatusIcon(
+                                              lead.stage?.name ?? "",
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(width: 5),
+                                            Expanded(
+                                              child: Text(
+                                                lead.stage?.name ?? "none",
+                                                style: GoogleFonts.montserrat(
+                                                  fontSize: 10.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
+                                      const SizedBox(
+                                        width: 20,
+                                      ), // مسافة من النص الأول
                                       Row(
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
                                             "Σ",
@@ -1053,7 +1078,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                          const SizedBox(width: 3),
+                                          const SizedBox(width: 5),
                                           Text(
                                             "Total Submission: ${lead.totalSubmissions}",
                                             style: TextStyle(
@@ -1071,85 +1096,101 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      InkWell(
-                                        onTap: () async {
-                                          final phone = lead.whatsappnumber
-                                              ?.replaceAll(RegExp(r'\D'), '');
-                                          final url = "https://wa.me/$phone";
-                                          if (await canLaunchUrl(
-                                            Uri.parse(url),
-                                          )) {
-                                            await launchUrl(
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap: () async {
+                                            final phone = lead.whatsappnumber
+                                                ?.replaceAll(RegExp(r'\D'), '');
+                                            final url = "https://wa.me/$phone";
+                                            if (await canLaunchUrl(
                                               Uri.parse(url),
-                                              mode:
-                                                  LaunchMode
-                                                      .externalApplication,
-                                            );
-                                          } else {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  "Could not open WhatsApp.",
+                                            )) {
+                                              await launchUrl(
+                                                Uri.parse(url),
+                                                mode:
+                                                    LaunchMode
+                                                        .externalApplication,
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    "Could not open WhatsApp.",
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          child: Row(
+                                            children: [
+                                              FaIcon(
+                                                FontAwesomeIcons.whatsapp,
+                                                color:
+                                                    Theme.of(
+                                                              context,
+                                                            ).brightness ==
+                                                            Brightness.light
+                                                        ? Constants.maincolor
+                                                        : Constants
+                                                            .mainDarkmodecolor,
+                                                size: 18,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  lead
+                                                              .whatsappnumber
+                                                              ?.isNotEmpty ==
+                                                          true
+                                                      ? lead.whatsappnumber!
+                                                      : 'no whatsapp number',
+                                                  style: TextStyle(
+                                                    fontSize: 11.sp,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
-                                            );
-                                          }
-                                        },
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            FaIcon(
-                                              FontAwesomeIcons.whatsapp,
-                                              color:
-                                                  Theme.of(
-                                                            context,
-                                                          ).brightness ==
-                                                          Brightness.light
-                                                      ? Constants.maincolor
-                                                      : Constants
-                                                          .mainDarkmodecolor,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              lead.whatsappnumber?.isNotEmpty ==
-                                                      true
-                                                  ? lead.whatsappnumber!
-                                                  : 'no whatsapp number',
-                                              style: TextStyle(fontSize: 11.sp),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                      InkWell(
-                                        onTap:
-                                            () =>
-                                                makePhoneCall(lead.phone ?? ''),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.phone,
-                                              color:
-                                                  Theme.of(
-                                                            context,
-                                                          ).brightness ==
-                                                          Brightness.light
-                                                      ? Constants.maincolor
-                                                      : Constants
-                                                          .mainDarkmodecolor,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              lead.phone ?? '',
-                                              style: const TextStyle(
-                                                fontSize: 12,
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap:
+                                              () => makePhoneCall(
+                                                lead.phone ?? '',
                                               ),
-                                            ),
-                                          ],
+                                          child: Row(
+                                            children: [
+                                              const SizedBox(width: 20),
+                                              Icon(
+                                                Icons.phone,
+                                                color:
+                                                    Theme.of(
+                                                              context,
+                                                            ).brightness ==
+                                                            Brightness.light
+                                                        ? Constants.maincolor
+                                                        : Constants
+                                                            .mainDarkmodecolor,
+                                                size: 18,
+                                              ),
+                                              const SizedBox(width: 5),
+                                              Expanded(
+                                                child: Text(
+                                                  lead.phone ?? '',
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ],

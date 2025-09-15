@@ -40,9 +40,9 @@ class CampaignScreen extends StatelessWidget {
         },
         child: Scaffold(
           backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "campaign",
             onBack: () {
@@ -162,11 +162,28 @@ class CampaignScreen extends StatelessWidget {
     final name = campaignData.campainName;
     final dateTime = DateTime.parse(campaignData.createdAt!);
     final formattedDate = Formatters.formatDate(dateTime);
-    final costtt=campaignData.cost;
+    final costtt = campaignData.cost;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الكارت في light mode
+                : const Color(0xFF1E1E1E),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.5),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -268,9 +285,21 @@ class CampaignScreen extends StatelessWidget {
                             initialIsActive: campaignData.isActivate,
                             initialName: campaignData.campainName,
                             title: "campaign",
-                            onAdd: (value,date,isactive,cost,addby,updatedby) {
+                            onAdd: (
+                              value,
+                              date,
+                              isactive,
+                              cost,
+                              addby,
+                              updatedby,
+                            ) {
                               context.read<AddInMenuCubit>().updateCampaign(
-                                  value, date,cost,isactive,addby,updatedby,
+                                value,
+                                date,
+                                cost,
+                                isactive,
+                                addby,
+                                updatedby,
                                 campaignData.id.toString(),
                               );
                             },
@@ -284,13 +313,19 @@ class CampaignScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
                           child: DeleteDialog(
                             onCancel: () => Navigator.of(context).pop(),
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().updateCampaignStatus(campaignData.id.toString(),false);
+                              context
+                                  .read<AddInMenuCubit>()
+                                  .updateCampaignStatus(
+                                    campaignData.id.toString(),
+                                    false,
+                                  );
                             },
                             title: "Campaign",
                           ),

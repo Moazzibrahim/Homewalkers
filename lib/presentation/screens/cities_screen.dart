@@ -18,10 +18,7 @@ class CitiesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create:
-          (context) =>
-              GetCitiesCubit(GetCitiesApiService())
-                ..fetchCities(),
+      create: (context) => GetCitiesCubit(GetCitiesApiService())..fetchCities(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
         listener: (context, state) {
           print("BlocListener Triggered: $state");
@@ -39,9 +36,9 @@ class CitiesScreen extends StatelessWidget {
         },
         child: Scaffold(
           backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Cities",
             onBack: () {
@@ -69,9 +66,9 @@ class CitiesScreen extends StatelessWidget {
                                         >(), // استخدم نفس الـ cubit
                                 child: AddDialog(
                                   onAdd: (value) {
-                                    context
-                                        .read<AddInMenuCubit>()
-                                        .addCity(value);
+                                    context.read<AddInMenuCubit>().addCity(
+                                      value,
+                                    );
                                   },
                                   title: "City",
                                 ),
@@ -102,19 +99,14 @@ class CitiesScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: BlocBuilder<
-                    GetCitiesCubit,
-                    GetCitiesState
-                  >(
+                  child: BlocBuilder<GetCitiesCubit, GetCitiesState>(
                     builder: (context, state) {
                       if (state is GetCitiesLoading) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (state is GetCitiesSuccess) {
                         final ways = state.cities;
                         if (ways!.isEmpty) {
-                          return const Center(
-                            child: Text('No Cities Found.'),
-                          );
+                          return const Center(child: Text('No Cities Found.'));
                         }
                         return ListView.separated(
                           itemCount: ways.length,
@@ -155,7 +147,24 @@ class CitiesScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الكارت في light mode
+                : const Color(0xFF1E1E1E),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.5),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -231,9 +240,10 @@ class CitiesScreen extends StatelessWidget {
                             title: "City",
                             initialValue: communicationWay.name,
                             onAdd: (value) {
-                              context.read<AddInMenuCubit>().updateCity(value,
-                                    communicationWay.id.toString(),
-                                  );
+                              context.read<AddInMenuCubit>().updateCity(
+                                value,
+                                communicationWay.id.toString(),
+                              );
                             },
                           ),
                         ),
@@ -245,13 +255,17 @@ class CitiesScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
                           child: DeleteDialog(
                             onCancel: () => Navigator.of(context).pop(),
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().updateCityStatus(communicationWay.id.toString(),false);
+                              context.read<AddInMenuCubit>().updateCityStatus(
+                                communicationWay.id.toString(),
+                                false,
+                              );
                             },
                             title: "City",
                           ),

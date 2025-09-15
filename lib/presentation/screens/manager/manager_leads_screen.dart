@@ -210,10 +210,10 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
               // Search & filter
               Container(
                 decoration: BoxDecoration(
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Colors.white
-                          : Constants.backgroundDarkmode,
+                  // color:
+                  //     Theme.of(context).brightness == Brightness.light
+                  //         ? Colors.white
+                  //         : Constants.backgroundDarkmode,
                 ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,

@@ -39,9 +39,9 @@ class RegionScreen extends StatelessWidget {
         },
         child: Scaffold(
           backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Regions",
             onBack: () {
@@ -63,10 +63,15 @@ class RegionScreen extends StatelessWidget {
                           builder:
                               (_) => BlocProvider.value(
                                 value:
-                                    context.read<AddInMenuCubit>(), // استخدم نفس الـ cubit
+                                    context
+                                        .read<
+                                          AddInMenuCubit
+                                        >(), // استخدم نفس الـ cubit
                                 child: AddDialog(
                                   onAdd: (value) {
-                                    context.read<AddInMenuCubit>().addRegion(value);
+                                    context.read<AddInMenuCubit>().addRegion(
+                                      value,
+                                    );
                                   },
                                   title: "region",
                                 ),
@@ -104,9 +109,7 @@ class RegionScreen extends StatelessWidget {
                       } else if (state is GetCitiesSuccess) {
                         final regions = state.regions;
                         if (regions!.isEmpty) {
-                          return const Center(
-                            child: Text('No regions Found.'),
-                          );
+                          return const Center(child: Text('No regions Found.'));
                         }
                         return ListView.separated(
                           itemCount: regions.length,
@@ -114,7 +117,10 @@ class RegionScreen extends StatelessWidget {
                               (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final region = regions[index];
-                            return _buildCommunicationCard(region,Constants.maincolor,context,
+                            return _buildCommunicationCard(
+                              region,
+                              Constants.maincolor,
+                              context,
                             );
                           },
                         );
@@ -139,12 +145,29 @@ class RegionScreen extends StatelessWidget {
     BuildContext context,
   ) {
     final name = developerData.name;
-    final dateTime =developerData.createdAt;
+    final dateTime = developerData.createdAt;
     final formattedDate = Formatters.formatDate(dateTime);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الكارت في light mode
+                : const Color(0xFF1E1E1E),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.5),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -210,7 +233,7 @@ class RegionScreen extends StatelessWidget {
                           ? Constants.maincolor
                           : Constants.mainDarkmodecolor,
                 ),
-              onPressed: () {
+                onPressed: () {
                   showDialog(
                     context: context,
                     builder:
@@ -219,7 +242,9 @@ class RegionScreen extends StatelessWidget {
                           child: UpdateDialog(
                             initialValue: developerData.name,
                             title: "region",
-                            onAdd: (value) {context.read<AddInMenuCubit>().updateRegion(value,
+                            onAdd: (value) {
+                              context.read<AddInMenuCubit>().updateRegion(
+                                value,
                                 developerData.id.toString(),
                               );
                             },
@@ -229,16 +254,22 @@ class RegionScreen extends StatelessWidget {
                 },
               ),
               InkWell(
-              onTap: () {
+                onTap: () {
                   showDialog(
                     context: context,
-                    builder:(_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
+                    builder:
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
                           child: DeleteDialog(
                             onCancel: () => Navigator.of(context).pop(),
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().updateRegionStatus(developerData.id.toString(),false,name);
+                              context.read<AddInMenuCubit>().updateRegionStatus(
+                                developerData.id.toString(),
+                                false,
+                                name,
+                              );
                             },
                             title: "region",
                           ),

@@ -1,6 +1,7 @@
 // ignore_for_file: unused_field, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -78,7 +79,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
                         isDark
                             ? Constants.mainDarkmodecolor
                             : Constants.maincolor,
-                    child: Image.asset("assets/images/Vector.png"),
+                    child: SvgPicture.asset("assets/images/campaign.svg"),
                   ),
                   const SizedBox(width: 10),
                   Expanded(

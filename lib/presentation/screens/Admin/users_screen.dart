@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print, deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_for_signup_api_service.dart';
@@ -46,10 +47,10 @@ class _UsersScreenState extends State<UsersScreen> {
           }
         },
         child: Scaffold(
-        backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "users",
             onBack: () {
@@ -86,27 +87,27 @@ class _UsersScreenState extends State<UsersScreen> {
                                   ),
                                 ],
                                 child: AddUsersDialog(
-  onAdd: ({
-    required String name,
-    String? imagePath, // ✅ تعديل هنا: بدل image --> imagePath
-    required String email,
-    required String phone,
-    required String password,
-    required String passwordConfirm,
-    required String role,
-  }) {
-    context.read<AddInMenuCubit>().addUsers(
-      name,
-      email,
-      phone,
-      password,
-      passwordConfirm,
-      role,
-      imagePath!, // ✅ تمرير المسار هنا
-    );
-  },
-),
-
+                                  onAdd: ({
+                                    required String name,
+                                    String?
+                                    imagePath, // ✅ تعديل هنا: بدل image --> imagePath
+                                    required String email,
+                                    required String phone,
+                                    required String password,
+                                    required String passwordConfirm,
+                                    required String role,
+                                  }) {
+                                    context.read<AddInMenuCubit>().addUsers(
+                                      name,
+                                      email,
+                                      phone,
+                                      password,
+                                      passwordConfirm,
+                                      role,
+                                      imagePath!, // ✅ تمرير المسار هنا
+                                    );
+                                  },
+                                ),
                               ),
                         );
                       },
@@ -194,7 +195,24 @@ class _UsersScreenState extends State<UsersScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الكارت في light mode
+                : const Color(0xFF1E1E1E),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.5),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ), // لون الكارت في dark mode),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -210,15 +228,14 @@ class _UsersScreenState extends State<UsersScreen> {
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundColor: const Color(
-                  0xFFE5F4F5,
-                ), 
+                backgroundColor: const Color(0xFFE5F4F5),
                 child: Icon(
                   Icons.sync,
                   size: 22,
-                  color: Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
                 ),
               ),
               const SizedBox(width: 10),
@@ -236,7 +253,10 @@ class _UsersScreenState extends State<UsersScreen> {
                     ),
                     // Specific style for the "Active" / "Inactive" part
                     TextSpan(
-                      text: (switchStates[user.id] ?? user.active ?? false)? "Active"  : "Inactive",
+                      text:
+                          (switchStates[user.id] ?? user.active ?? false)
+                              ? "Active"
+                              : "Inactive",
                       style: GoogleFonts.montserrat(fontSize: 13),
                     ),
                   ],
@@ -252,11 +272,15 @@ class _UsersScreenState extends State<UsersScreen> {
                     switchStates[user.id!] = value;
                   });
                   // OPTIONAL: لو عايز تبعت التغيير لـ API أو Cubit
-                  context.read<AddInMenuCubit>().updateUserStatus(user.id!, value);
+                  context.read<AddInMenuCubit>().updateUserStatus(
+                    user.id!,
+                    value,
+                  );
                 },
-                activeColor: Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
+                activeColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.maincolor
+                        : Constants.mainDarkmodecolor,
               ),
             ],
           ),
@@ -303,8 +327,8 @@ class _UsersScreenState extends State<UsersScreen> {
                         ),
                   );
                 },
-                child: Image.asset(
-                  "assets/images/edit_new.png",
+                child: SvgPicture.asset(
+                  "assets/images/pen.svg",
                   color:
                       Theme.of(context).brightness == Brightness.light
                           ? Constants.maincolor
@@ -341,10 +365,10 @@ class _UsersScreenState extends State<UsersScreen> {
                         ),
                   );
                 },
-                child: Image.asset("assets/images/change_pass.png"),
+                child: SvgPicture.asset("assets/images/update.svg"),
               ),
               const SizedBox(width: 8),
-             InkWell(
+              InkWell(
                 onTap: () {
                   showDialog(
                     context: context,
@@ -356,12 +380,10 @@ class _UsersScreenState extends State<UsersScreen> {
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context
-                                  .read<AddInMenuCubit>()
-                                  .updateUserStatus(
-                                    user.id.toString(),
-                                    false,
-                                  );
+                              context.read<AddInMenuCubit>().updateUserStatus(
+                                user.id.toString(),
+                                false,
+                              );
                             },
                             title: "user",
                           ),

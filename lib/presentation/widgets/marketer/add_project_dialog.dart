@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
@@ -76,7 +77,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                           isDark
                               ? Constants.mainDarkmodecolor
                               : Constants.maincolor,
-                      child: Image.asset("assets/images/Vector.png"),
+                      child: SvgPicture.asset("assets/images/add.svg"),
                     ),
                     const SizedBox(width: 10),
                     Expanded(

@@ -37,10 +37,10 @@ class ProjectScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
-        backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "projects",
             onBack: () {
@@ -154,7 +154,24 @@ class ProjectScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الكارت في light mode
+                : const Color(0xFF1E1E1E),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.5),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -229,7 +246,9 @@ class ProjectScreen extends StatelessWidget {
                           child: UpdateDialog(
                             initialValue: projectData.name,
                             title: "project",
-                            onAdd: (value) {context.read<AddInMenuCubit>().updateProject(value,
+                            onAdd: (value) {
+                              context.read<AddInMenuCubit>().updateProject(
+                                value,
                                 projectData.developer!.id.toString(),
                                 projectData.city!.id.toString(),
                                 projectData.area ?? '',
@@ -242,17 +261,23 @@ class ProjectScreen extends StatelessWidget {
                 },
               ),
               InkWell(
-              onTap: () {
+                onTap: () {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
                           child: DeleteDialog(
                             onCancel: () => Navigator.of(context).pop(),
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().updateDProjectStatus(projectData.id.toString(),false);
+                              context
+                                  .read<AddInMenuCubit>()
+                                  .updateDProjectStatus(
+                                    projectData.id.toString(),
+                                    false,
+                                  );
                             },
                             title: "project",
                           ),

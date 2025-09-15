@@ -38,7 +38,10 @@ class CommunicationWayScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
-          backgroundColor: Theme.of(context).brightness == Brightness.light ? Constants.backgroundlightmode : Constants.backgroundDarkmode,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Communication Way",
             onBack: () {
@@ -152,7 +155,24 @@ class CommunicationWayScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors
+                    .white // لون الكارت في light mode
+                : const Color(0xFF1E1E1E),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.black.withOpacity(0.5),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -228,7 +248,10 @@ class CommunicationWayScreen extends StatelessWidget {
                             initialValue: communicationWay.name,
                             title: "Communication Way",
                             onAdd: (value) {
-                              context.read<AddInMenuCubit>().updateCommunicationWay(value,
+                              context
+                                  .read<AddInMenuCubit>()
+                                  .updateCommunicationWay(
+                                    value,
                                     communicationWay.id.toString(),
                                   );
                             },
@@ -242,13 +265,19 @@ class CommunicationWayScreen extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
                           child: DeleteDialog(
                             onCancel: () => Navigator.of(context).pop(),
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().updateCommunicationWayStatus(communicationWay.id.toString(),false);
+                              context
+                                  .read<AddInMenuCubit>()
+                                  .updateCommunicationWayStatus(
+                                    communicationWay.id.toString(),
+                                    false,
+                                  );
                             },
                             title: "Communication Way",
                           ),

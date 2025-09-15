@@ -249,10 +249,10 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Colors.white
-                        : Constants.backgroundDarkmode,
+                // color:
+                //     Theme.of(context).brightness == Brightness.light
+                //         ? Colors.white
+                //         : Constants.backgroundDarkmode,
               ),
               child: Row(
                 children: [
@@ -988,24 +988,34 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                   SizedBox(height: 12.h),
 
                                   // ---------- Row 3: Stage and Total Submissions ----------
+                                // ---------- Row 3: Stage and Total Submissions ----------
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Row(
-                                        children: [
-                                          getStatusIcon(lead.stage?.name ?? ""),
-                                          const SizedBox(width: 3),
-                                          Text(
-                                            lead.stage?.name ?? "none",
-                                            style: GoogleFonts.montserrat(
-                                              fontSize: 10.sp,
-                                              fontWeight: FontWeight.w500,
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            getStatusIcon(
+                                              lead.stage?.name ?? "",
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(width: 5),
+                                            Expanded(
+                                              child: Text(
+                                                lead.stage?.name ?? "none",
+                                                style: GoogleFonts.montserrat(
+                                                  fontSize: 10.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
+                                      const SizedBox(
+                                        width: 20,
+                                      ), // مسافة من النص الأول
                                       Row(
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
                                             "Σ",
@@ -1022,12 +1032,11 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                          const SizedBox(width: 3),
+                                          const SizedBox(width: 5),
                                           Text(
-                                            // Logic from your new code
                                             "Total Submission: ${lead.totalSubmissions}",
                                             style: TextStyle(
-                                              fontSize: 12.sp,
+                                              fontSize: 11.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1036,91 +1045,106 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                     ],
                                   ),
                                   SizedBox(height: 12.h),
-
                                   // ---------- Row 4: WhatsApp and Phone Call ----------
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      InkWell(
-                                        onTap: () async {
-                                          final phone = lead.whatsappnumber
-                                              ?.replaceAll(RegExp(r'\D'), '');
-                                          final url = "https://wa.me/$phone";
-                                          if (await canLaunchUrl(
-                                            Uri.parse(url),
-                                          )) {
-                                            await launchUrl(
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap: () async {
+                                            final phone = lead.whatsappnumber
+                                                ?.replaceAll(RegExp(r'\D'), '');
+                                            final url = "https://wa.me/$phone";
+                                            if (await canLaunchUrl(
                                               Uri.parse(url),
-                                              mode:
-                                                  LaunchMode
-                                                      .externalApplication,
-                                            );
-                                          } else {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  "Could not open WhatsApp.",
+                                            )) {
+                                              await launchUrl(
+                                                Uri.parse(url),
+                                                mode:
+                                                    LaunchMode
+                                                        .externalApplication,
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    "Could not open WhatsApp.",
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          child: Row(
+                                            children: [
+                                              FaIcon(
+                                                FontAwesomeIcons.whatsapp,
+                                                color:
+                                                    Theme.of(
+                                                              context,
+                                                            ).brightness ==
+                                                            Brightness.light
+                                                        ? Constants.maincolor
+                                                        : Constants
+                                                            .mainDarkmodecolor,
+                                                size: 18,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  lead
+                                                              .whatsappnumber
+                                                              ?.isNotEmpty ==
+                                                          true
+                                                      ? lead.whatsappnumber!
+                                                      : 'no whatsapp number',
+                                                  style: TextStyle(
+                                                    fontSize: 11.sp,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
-                                            );
-                                          }
-                                        },
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            FaIcon(
-                                              FontAwesomeIcons.whatsapp,
-                                              color:
-                                                  Theme.of(
-                                                            context,
-                                                          ).brightness ==
-                                                          Brightness.light
-                                                      ? Constants.maincolor
-                                                      : Constants
-                                                          .mainDarkmodecolor,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              lead.whatsappnumber?.isNotEmpty ==
-                                                      true
-                                                  ? lead.whatsappnumber!
-                                                  : 'no whatsapp number',
-                                              style: TextStyle(fontSize: 12.sp),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                      InkWell(
-                                        onTap:
-                                            () =>
-                                                makePhoneCall(lead.phone ?? ''),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.phone,
-                                              color:
-                                                  Theme.of(
-                                                            context,
-                                                          ).brightness ==
-                                                          Brightness.light
-                                                      ? Constants.maincolor
-                                                      : Constants
-                                                          .mainDarkmodecolor,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              lead.phone ?? '',
-                                              style: const TextStyle(
-                                                fontSize: 12,
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap:
+                                              () => makePhoneCall(
+                                                lead.phone ?? '',
                                               ),
-                                            ),
-                                          ],
+                                          child: Row(
+                                            children: [
+                                              const SizedBox(width: 20),
+                                              Icon(
+                                                Icons.phone,
+                                                color:
+                                                    Theme.of(
+                                                              context,
+                                                            ).brightness ==
+                                                            Brightness.light
+                                                        ? Constants.maincolor
+                                                        : Constants
+                                                            .mainDarkmodecolor,
+                                                size: 18,
+                                              ),
+                                              const SizedBox(width: 5),
+                                              Expanded(
+                                                child: Text(
+                                                  lead.phone ?? '',
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ],

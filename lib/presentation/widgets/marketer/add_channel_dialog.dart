@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
@@ -47,7 +48,7 @@ class _AddProjectDialogState extends State<AddChannelDialog> {
                         isDark
                             ? Constants.mainDarkmodecolor
                             : Constants.maincolor,
-                    child: Image.asset("assets/images/Vector.png"),
+                    child: SvgPicture.asset("assets/images/add.svg"),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
