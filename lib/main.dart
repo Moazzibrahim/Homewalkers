@@ -13,6 +13,7 @@ import 'package:homewalkers_app/presentation/screens/decider_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:homewalkers_app/presentation/screens/splash_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
@@ -71,6 +72,17 @@ void main() async {
       ?.createNotificationChannel(channel);
 
   runApp(MyApp(initialTheme: initialTheme));
+}
+
+Future<bool> _checkFirstLaunch() async {
+  final prefs = await SharedPreferences.getInstance();
+  final isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
+
+  if (isFirstLaunch) {
+    await prefs.setBool('isFirstLaunch', false);
+  }
+
+  return isFirstLaunch;
 }
 
 class MyApp extends StatelessWidget {
@@ -163,7 +175,22 @@ class MyApp extends StatelessWidget {
                 //   GlobalWidgetsLocalizations.delegate,
                 //   GlobalCupertinoLocalizations.delegate,
                 // ],
-                home: DeciderScreen(),
+                home: FutureBuilder<bool>(
+                  future: _checkFirstLaunch(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    final isFirstLaunch = snapshot.data ?? true;
+                    if (isFirstLaunch) {
+                      return const SplashScreen(); // أول مرة يفتح الاب
+                    } else {
+                      return const DeciderScreen(); // بعد كده على طول
+                    }
+                  },
+                ),
               );
             },
           );

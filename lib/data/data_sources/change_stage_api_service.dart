@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChangeStageApiService {
   static Future<http.Response> changeStage({
@@ -23,21 +24,31 @@ class ChangeStageApiService {
       "last_stage_date_updated": datebydayonly,
       "stage": stage,
       "stagedateupdated": dateupdated,
-      "unit_price":unitPrice,
+      "unit_price": unitPrice,
       "unitnumber": unitnumber,
-      "review":false,
-      "commissionration":commissionratio,
-      "commissionmoney":commissionmoney,
-      "cashbackratio":cashbackratio,
-      "cashbackmoney":cashbackmoney,
-      "Reservation":reservation,
-      "Eoi":eoi,
+      "review": false,
+      "commissionration": commissionratio,
+      "commissionmoney": commissionmoney,
+      "cashbackratio": cashbackratio,
+      "cashbackmoney": cashbackmoney,
+      "Reservation": reservation,
+      "Eoi": eoi,
     };
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null || token.isEmpty) {
+        throw Exception('No token found in SharedPreferences');
+      }
+
       final response = await http.put(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode(body),
       );
 
@@ -47,8 +58,6 @@ class ChangeStageApiService {
     }
   }
 
-  
-  // الدالة الجديدة لإرسال البيانات عبر POST
   static Future<http.Response> postLeadStage({
     required String leadId,
     required String date,
