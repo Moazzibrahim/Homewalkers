@@ -1,56 +1,25 @@
 import 'dart:developer';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:homewalkers_app/core/constants/apiExceptions.dart';
 import 'package:homewalkers_app/data/data_sources/change_stage_api_service.dart';
+import 'package:homewalkers_app/data/models/leadStagesModel.dart';
 import 'change_stage_state.dart';
-import 'dart:convert';
 
 class ChangeStageCubit extends Cubit<ChangeStageState> {
   ChangeStageCubit() : super(ChangeStageInitial());
 
-  Future<void> changeStage({
-    required String leadId,
-    required String laststagedateupdated,
-    required String stagedateupdated,
-    required String stage,
-    String? unitPrice,
-    String? commissionratio,
-    String? commissionmoney,
-    String? cashbackratio,
-    String? cashbackmoney,
-    String? unitnumber,
-    num? eoi,
-    num? reservation,
-  }) async {
+  Future<void> changeStage({required String leadId, required LeadStageRequest request}) async {
     emit(ChangeStageLoading());
     try {
-      final response = await ChangeStageApiService.changeStage(
+      final data = await ChangeStageApiService.changeStage(
         leadId: leadId,
-        datebydayonly: laststagedateupdated,
-        stage: stage,
-        dateupdated: stagedateupdated,
-        unitPrice: unitPrice,
-        commissionratio: commissionratio,
-        commissionmoney: commissionmoney,
-        cashbackratio: cashbackratio,
-        cashbackmoney: cashbackmoney,
-        unitnumber: unitnumber,
-        eoi: eoi,
-        reservation: reservation,
+        request: request,
       );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        log('Stage changed successfully');
-        log("cashbackmoney: $cashbackmoney");
-        log("commissionmoney: $commissionmoney");
-        emit(
-          ChangeStageSuccess(data['message'] ?? 'Stage updated successfully'),
-        );
-      } else {
-        final error = jsonDecode(response.body);
-        log('Error changing stage');
-        emit(ChangeStageError(error['message'] ?? 'Failed to update stage'));
-      }
+      log('Stage changed successfully');
+      emit(ChangeStageSuccess(data['message'] ?? 'Stage updated successfully'));
+    } on ApiException catch (e) {
+      log('Error changing stage: ${e.message}');
+      emit(ChangeStageError(e.message));
     } catch (e) {
       emit(ChangeStageError(e.toString()));
     }
@@ -64,28 +33,17 @@ class ChangeStageCubit extends Cubit<ChangeStageState> {
   }) async {
     emit(ChangeStageLoading());
     try {
-      final response = await ChangeStageApiService.postLeadStage(
+      final data = await ChangeStageApiService.postLeadStage(
         leadId: leadId,
         date: date,
         stage: stage,
         sales: sales,
       );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        log('Lead stage posted successfully');
-        log("sales id: $sales");
-        log("stage: $stage");
-        emit(
-          ChangeStageSuccess(
-            data['message'] ?? 'Lead stage changed successfully',
-          ),
-        );
-      } else {
-        final error = jsonDecode(response.body);
-        log('Error posting lead stage');
-        emit(ChangeStageError(error['message'] ?? 'Failed to post lead stage'));
-      }
+      log('Lead stage posted successfully');
+      emit(ChangeStageSuccess(data['message'] ?? 'Lead stage changed successfully'));
+    } on ApiException catch (e) {
+      log('Error posting lead stage: ${e.message}');
+      emit(ChangeStageError(e.message));
     } catch (e) {
       emit(ChangeStageError(e.toString()));
     }

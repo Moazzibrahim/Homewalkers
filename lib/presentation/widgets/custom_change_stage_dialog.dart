@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/models/leadStagesModel.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/change_stage/change_stage_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/change_stage/change_stage_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
@@ -43,7 +44,7 @@ class CustomChangeStageDialog {
         context: context,
         initialDate: DateTime.now(),
         firstDate: DateTime.now(),
-        lastDate: DateTime(2100),
+        lastDate: DateTime(2050),
       );
       if (date != null) {
         final time = await showTimePicker(
@@ -296,8 +297,8 @@ class CustomChangeStageDialog {
                                 ),
                               ],
                             ),
-                            if (selectedStageName == "EOI" || 
-                                selectedStageName == "Reservation")
+                          if (selectedStageName == "EOI" ||
+                              selectedStageName == "Reservation")
                             Column(
                               children: [
                                 SizedBox(height: 12.h),
@@ -378,40 +379,43 @@ class CustomChangeStageDialog {
                                       );
                                       return;
                                     }
-                                    final changeStageCubit =
-                                        context.read<ChangeStageCubit>();
-                                    // Await the first call
-                                    await changeStageCubit.changeStage(
-                                      leadId: leedId,
-                                      laststagedateupdated:
+                                    final leadStageRequest = LeadStageRequest(
+                                      lastStageDateUpdated:
                                           DateTime.now().toIso8601String(),
-                                      unitPrice: unitPriceController.text,
-                                      commissionratio:
-                                          commissionRatioController.text,
-                                      commissionmoney: commissionMoney,
-                                      cashbackratio:
-                                          cashbackRatioController.text,
-                                      cashbackmoney: cashbackMoney,
-                                      unitnumber: unitnumberController.text,
-                                      stagedateupdated:
+                                      stage: selectedStageId!,
+                                      stageDateUpdated:
                                           selectedDateTime
                                               ?.toUtc()
                                               .toIso8601String() ??
                                           DateTime.now()
                                               .toUtc()
                                               .toIso8601String(),
-                                      stage: selectedStageId!,
-                                      eoi: eoiController.text.isNotEmpty
-                                          ? num.tryParse(
-                                              eoiController.text,
-                                            )
-                                          : null,
-                                          reservation: eoiController.text.isNotEmpty
-                                          ? num.tryParse(
-                                              eoiController.text,
-                                            )
-                                          : null
+                                      unitPrice: unitPriceController.text,
+                                      unitNumber: unitnumberController.text,
+                                      commissionRatio:
+                                          commissionRatioController.text,
+                                      commissionMoney: commissionMoney,
+                                      cashbackRatio:
+                                          cashbackRatioController.text,
+                                      cashbackMoney: cashbackMoney,
+                                      eoi:
+                                          eoiController.text.isNotEmpty
+                                              ? num.tryParse(eoiController.text)
+                                              : null,
+                                      reservation:
+                                          eoiController.text.isNotEmpty
+                                              ? num.tryParse(eoiController.text)
+                                              : null,
                                     );
+
+                                    final changeStageCubit =
+                                        context.read<ChangeStageCubit>();
+                                    // Await the first call
+                                    await changeStageCubit.changeStage(
+                                      leadId: leedId,
+                                      request: leadStageRequest,
+                                    );
+
                                     // Check the state after the first call
                                     final stateAfterChange =
                                         changeStageCubit.state;
