@@ -86,7 +86,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       role = prefs.getString('role');
-      id = prefs.getString('salesId');
+      id = prefs.getString('savedid');
       log("Role: $role");
       log("ID: $id");
     });
@@ -116,7 +116,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               (_) => GetCampaignsCubit(CampaignApiService())..fetchCampaigns(),
         ),
         BlocProvider(
-          create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+          create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales()..fetchSalesOfSpecificUser(),
         ),
         BlocProvider(create: (_) => CreateLeadCubit(CreateLeadApiService())),
       ],
