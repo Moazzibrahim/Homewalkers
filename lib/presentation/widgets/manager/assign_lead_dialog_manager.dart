@@ -101,7 +101,8 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                           for (var sale in state.salesData.data!) {
                             final salesManagerId = sale.manager?.id?.toString();
                             final user = sale.userlog;
-                            if (user != null && salesManagerId == managerId &&
+                            if (user != null &&
+                                salesManagerId == managerId &&
                                 (user.role == "Sales" ||
                                     user.role == "Team Leader")) {
                               uniqueSalesMap[sale.id!] = sale;
@@ -172,12 +173,23 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                     BlocListener<AssignleadCubit, AssignState>(
                       listener: (context, state) {
                         if (state is AssignSuccess) {
-                          Navigator.pop(dialogContext, true);
+                          if (Navigator.canPop(dialogContext)) {
+                            Navigator.pop(dialogContext, true);
+                          }
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
                             const SnackBar(
                               content: Text("Lead assigned successfully! ✅"),
                             ),
                           );
+
+                          // 👇 الإشعار في حالة النجاح بس
+                          context
+                              .read<NotificationCubit>()
+                              .sendNotificationToToken(
+                                title: "Lead",
+                                body: "New Lead assigned successfully ✅",
+                                fcmtokennnn: widget.fcmtoken,
+                              );
                         } else if (state is AssignFailure) {
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
                             SnackBar(
@@ -193,7 +205,9 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                         children: [
                           ElevatedButton(
                             onPressed: () {
-                              Navigator.pop(dialogContext);
+                              if (Navigator.canPop(dialogContext)) {
+                                Navigator.pop(dialogContext);
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
@@ -218,24 +232,29 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                     widget.leadIds != null
                                         ? List<String>.from(widget.leadIds!)
                                         : [widget.leadId!];
-                                // 3. يمكنك الآن استخدام قيمة clearHistory
+
                                 log("Clear History value: $clearHistory");
                                 log("lead id: ${widget.leadId}");
+
                                 if (clearHistory) {
-                                  await saveClearHistoryTime(); // حفظ الوقت في حالة تفعيل clearHistory
+                                  await saveClearHistoryTime();
                                 }
+
                                 final lastDateAssign =
                                     DateTime.now().toUtc().toIso8601String();
+
                                 final assignCubit =
                                     BlocProvider.of<AssignleadCubit>(
                                       dialogContext,
                                       listen: false,
                                     );
+
                                 final cubit =
                                     BlocProvider.of<LeadCommentsCubit>(
                                       dialogContext,
                                       listen: false,
                                     );
+
                                 assignCubit.assignLeadFromManager(
                                   leadIds: leadIds,
                                   lastDateAssign: lastDateAssign,
@@ -243,14 +262,8 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                       "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}",
                                   salesId: selectedSalesId!,
                                   isClearhistory: clearHistory,
-                                  // يمكنك إضافة clearHistory هنا إذا كانت الدالة تدعمها
                                 );
-                                  context.read<NotificationCubit>().sendNotificationToToken(
-                                      // 👈 هنعرف دي تحت
-                                      title: "Lead",
-                                      body: "new Lead assigned successfully ✅",
-                                      fcmtokennnn: widget.fcmtoken,
-                                    );
+
                                 cubit.apiService.fetchLeadAssigned(
                                   widget.leadId!,
                                 );

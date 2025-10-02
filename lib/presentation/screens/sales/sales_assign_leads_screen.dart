@@ -28,9 +28,9 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.backgroundlightmode
+              : Constants.backgroundDarkmode,
       appBar: CustomAppBar(
         title: "Assign",
         onBack: () {
@@ -170,7 +170,8 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
     log(
       "Selected Leads: ${selectedLeads.map((e) => 'ID: ${e.id}, Name: ${e.name}').join(', ')}",
     );
-
+    log("fcmtoken is :${leadResponse?.data?.first.sales?.teamleader?.fcmtokenn} ");
+    log("teamleader name is :${leadResponse?.data?.first.sales?.teamleader?.name} ");
     await showDialog(
       context: context,
       builder:
@@ -196,7 +197,9 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
                       Theme.of(context).brightness == Brightness.light
                           ? Constants.maincolor
                           : Constants.mainDarkmodecolor,
-                        fcmtoken: leadResponse?.data?.first.sales?.teamleader?.fcmtokenn ?? '',
+                  fcmtoken:
+                      leadResponse?.data?.first.sales?.teamleader?.fcmtokenn ??
+                      '',
                 ),
               );
             },

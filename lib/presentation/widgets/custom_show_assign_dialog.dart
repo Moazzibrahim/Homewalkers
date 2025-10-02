@@ -123,17 +123,37 @@ class _AssignDialogState extends State<AssignDialog> {
                     // Listen to cubit states for side effects (navigation, snackbars)
                     BlocListener<AssignleadCubit, AssignState>(
                       listener: (context, state) {
-                        // context here is dialogContext
                         if (state is AssignSuccess) {
-                          Navigator.pop(
-                            dialogContext,
-                            true,
-                          ); // Pop dialog and indicate success
+                          Navigator.pop(dialogContext, true);
+
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
                             const SnackBar(
                               content: Text("Lead assigned successfully! ✅"),
                             ),
                           );
+
+                          // 👇 ابعت الإشعارات هنا بعد النجاح فقط
+                          if (widget.fcmtoken != null &&
+                              widget.fcmtoken!.isNotEmpty) {
+                            context
+                                .read<NotificationCubit>()
+                                .sendNotificationToToken(
+                                  title: "Lead",
+                                  body: "Lead assigned successfully ✅",
+                                  fcmtokennnn: widget.fcmtoken!,
+                                );
+                          }
+
+                          if (widget.managerfcmtoken != null &&
+                              widget.managerfcmtoken!.isNotEmpty) {
+                            context
+                                .read<NotificationCubit>()
+                                .sendNotificationToToken(
+                                  title: "Lead",
+                                  body: "Lead assigned successfully ✅",
+                                  fcmtokennnn: widget.managerfcmtoken!,
+                                );
+                          }
                         } else if (state is AssignFailure) {
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
                             SnackBar(
@@ -150,9 +170,7 @@ class _AssignDialogState extends State<AssignDialog> {
                           ElevatedButton(
                             onPressed: () {
                               Navigator.pop(dialogContext);
-                              log(
-                                "Team Leader ID: $teamLeaderId",
-                              ); // Use dialogContext
+                              log("Team Leader ID: $teamLeaderId");
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
@@ -173,16 +191,31 @@ class _AssignDialogState extends State<AssignDialog> {
                           ElevatedButton(
                             onPressed: () {
                               if (isTeamLeaderChecked && _LeadData != null) {
-                                // ✅ اطبع كل الـ lead IDs
                                 final leadIds =
                                     widget.leadIds != null
                                         ? List<String>.from(widget.leadIds!)
                                         : [widget.leadId!];
+
                                 log("Selected Lead IDs: $leadIds");
                                 log("Team Leader ID: $teamLeaderId");
+
                                 final String lastDateAssign =
                                     DateTime.now().toUtc().toIso8601String();
-                                // Call the cubit method using the context from BlocProvider
+
+                                if (teamLeaderId == null ||
+                                    teamLeaderId!.isEmpty) {
+                                  ScaffoldMessenger.of(
+                                    dialogContext,
+                                  ).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "⚠️ No Team Leader ID found. Please check preferences.",
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
                                 BlocProvider.of<AssignleadCubit>(
                                   dialogContext,
                                 ).assignUserAndLead(
@@ -192,27 +225,10 @@ class _AssignDialogState extends State<AssignDialog> {
                                       "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}",
                                   teamleadersId: teamLeaderId!,
                                 );
-                                context
-                                    .read<NotificationCubit>()
-                                    .sendNotificationToToken(
-                                      // 👈 هنعرف دي تحت
-                                      title: "Lead",
-                                      body: "Lead assigned successfully ✅",
-                                      fcmtokennnn: widget.fcmtoken!,
-                                    );
-                                    context
-                                    .read<NotificationCubit>()
-                                    .sendNotificationToToken(
-                                      // 👈 هنعرف دي تحت
-                                      title: "Lead",
-                                      body: "Lead assigned successfully ✅",
-                                      fcmtokennnn: widget.managerfcmtoken!,
-                                    );
                               } else {
                                 ScaffoldMessenger.of(
                                   dialogContext,
                                 ).showSnackBar(
-                                  // Use dialogContext
                                   const SnackBar(
                                     content: Text(
                                       "Please select the Team Leader to assign. ⚠️",
@@ -227,10 +243,8 @@ class _AssignDialogState extends State<AssignDialog> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            // Show loading indicator on the button while assigning
                             child: BlocBuilder<AssignleadCubit, AssignState>(
                               builder: (context, state) {
-                                // context here is dialogContext
                                 if (state is AssignLoading) {
                                   return const SizedBox(
                                     height: 20,

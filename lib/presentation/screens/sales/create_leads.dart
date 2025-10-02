@@ -87,6 +87,8 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
     setState(() {
       role = prefs.getString('role');
       id = prefs.getString('salesId');
+      log("Role: $role");
+      log("ID: $id");
     });
   }
 
@@ -124,19 +126,18 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
             listener: (context, state) {
               if (state is CreateLeadSuccess) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Lead Created Successfully!'),
+                  SnackBar(
+                    content: Text(state.message),
                     backgroundColor: Colors.green,
                   ),
                 );
-                // Go back to the previous screen after a short delay
                 Future.delayed(const Duration(milliseconds: 1500), () {
                   Navigator.pop(context);
                 });
               } else if (state is CreateLeadFailure) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Failed to create lead'),
+                    content: Text(state.error),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -378,7 +379,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       ),
                       const SizedBox(height: 12),
                       BlocBuilder<
-                        GetCommunicationWaysCubit,GetCommunicationWaysState>(
+                        GetCommunicationWaysCubit,
+                        GetCommunicationWaysState
+                      >(
                         builder: (context, state) {
                           if (state is GetCommunicationWaysLoaded) {
                             return _buildDropdown<String>(
@@ -433,7 +436,8 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                               const SizedBox(width: 8),
                               Switch(
                                 activeColor:
-                                    Theme.of(context).brightness == Brightness.light
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
                                         ? Constants.maincolor
                                         : Constants.mainDarkmodecolor,
                                 value: isCold,
@@ -478,79 +482,138 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                // ✅ تحقق من المدخلات قبل الإرسال
-                                if (_nameController.text.isEmpty ||
-                                    _phoneController.text.isEmpty ||
-                                    selectedProjectId == null ||
-                                    selectedStageId == null ||
-                                    _selectedChannelId == null ||
-                                    _selectedCommunicationWayId == null ||
-                                    _selectedCampaignId == null) {
+                            child: BlocConsumer<
+                              CreateLeadCubit,CreateLeadState>(
+                              listener: (context, state) {
+                                if (state is CreateLeadSuccess) {
+                                  // ✅ بعد النجاح ممكن تعرض Dialog أو SnackBar
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Please fill all required fields',
-                                      ),
+                                    SnackBar(
+                                      content: Text(state.message),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                } else if (state is CreateLeadFailure) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(state.error),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
-                                  return;
-                                }
-                                final formattedPhone =
-                                    _fullPhoneNumber?.replaceAll('+', '') ?? '';
-                                final isSuccess = await context
-                                    .read<CreateLeadCubit>()
-                                    .createLead(
-                                      name: _nameController.text,
-                                      email: _emailController.text,
-                                      phone: formattedPhone,
-                                      project: selectedProjectId ?? '',
-                                      sales:
-                                          role == 'Sales'
-                                              ? id!
-                                              : _selectedSalesId!,
-                                      notes: _notesController.text,
-                                      leedtype: isCold ? "Cold" : "Fresh",
-                                      stage: selectedStageId ?? '',
-                                      chanel: _selectedChannelId ?? '',
-                                      communicationway:
-                                          _selectedCommunicationWayId ?? '',
-                                      dayonly: _dateController.text,
-                                      lastStageDateUpdated:
-                                          _dateController.text,
-                                      campaign: _selectedCampaignId ?? '',
-                                      budget: _budgetController.text,
-                                    );
-                                if (isSuccess) {
-                                  context
-                                      .read<NotificationCubit>()
-                                      .sendNotificationToToken(
-                                        title: "Lead",
-                                        body:
-                                            " lead has been created ✅ to you ",
-                                        fcmtokennnn: _selectedSalesFcmToken!,
-                                      );
                                 }
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text(
-                                "Add Lead",
-                                style: TextStyle(color: Colors.white),
-                              ),
+                              builder: (context, state) {
+                                final isLoading = state is CreateLeadLoading;
+                                return ElevatedButton(
+                                  onPressed:
+                                      isLoading
+                                          ? null
+                                          : () async {
+                                            // ✅ تحقق من المدخلات قبل الإرسال
+                                            if (_nameController.text.isEmpty ||
+                                                _phoneController.text.isEmpty ||
+                                                selectedProjectId == null ||
+                                                selectedStageId == null ||
+                                                _selectedChannelId == null ||
+                                                _selectedCommunicationWayId ==
+                                                    null ||
+                                                _budgetController.text.isEmpty ||
+                                                _selectedCampaignId == null) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Please fill all required fields',
+                                                  ),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                              return;
+                                            }
+                                            final formattedPhone =
+                                                _fullPhoneNumber?.replaceAll(
+                                                  '+',
+                                                  '',
+                                                ) ??
+                                                '';
+                                            await context
+                                                .read<CreateLeadCubit>()
+                                                .createLead(
+                                                  name: _nameController.text,
+                                                  email: _emailController.text,
+                                                  phone: formattedPhone,
+                                                  project:
+                                                      selectedProjectId ?? '',
+                                                  sales:
+                                                      role == 'Sales'
+                                                          ? id!
+                                                          : _selectedSalesId!,
+                                                  notes: _notesController.text,
+                                                  leedtype:
+                                                      isCold ? "Cold" : "Fresh",
+                                                  stage: selectedStageId ?? '',
+                                                  chanel:
+                                                      _selectedChannelId ?? '',
+                                                  communicationway:
+                                                      _selectedCommunicationWayId ??
+                                                      '',
+                                                  dayonly: _dateController.text,
+                                                  lastStageDateUpdated:
+                                                      _dateController.text,
+                                                  campaign:
+                                                      _selectedCampaignId ?? '',
+                                                  budget:
+                                                      _budgetController.text,
+                                                );
+
+                                            // ✅ الإشعارات بعد النجاح
+                                            if (state is CreateLeadSuccess) {
+                                              context
+                                                  .read<NotificationCubit>()
+                                                  .sendNotificationToToken(
+                                                    title: "Lead",
+                                                    body:
+                                                        "Lead has been created ✅ to you ",
+                                                    fcmtokennnn:
+                                                        _selectedSalesFcmToken!,
+                                                  );
+                                            }
+                                          },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child:
+                                      isLoading
+                                          ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Colors.white,
+                                                  ),
+                                            ),
+                                          )
+                                          : const Text(
+                                            "Add Lead",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                );
+                              },
                             ),
                           ),
                         ],

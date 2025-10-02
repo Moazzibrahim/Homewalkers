@@ -62,6 +62,7 @@ class EditLeadApiService {
         url,
         headers: {
           'Content-Type': 'application/json',
+          "Authorization": "Bearer ${prefs.getString('token')}",
         },
         body: jsonEncode(body),
       );
@@ -84,6 +85,7 @@ class EditLeadApiService {
     final url = Uri.parse('$baseUrl/$userId');
     // بناء البودي فقط من القيم غير null وغير الفارغة
     Map<String, dynamic> body = {};
+    final prefs = await SharedPreferences.getInstance();
 
     if (assign != null ) body['assign'] = assign;
 
@@ -92,6 +94,7 @@ class EditLeadApiService {
         url,
         headers: {
           'Content-Type': 'application/json',
+          "Authorization": "Bearer ${prefs.getString('token')}",
         },
         body: jsonEncode(body),
       );

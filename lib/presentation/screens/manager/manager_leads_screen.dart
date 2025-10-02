@@ -91,85 +91,85 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
     }
 
     Widget getStatusIcon(String status) {
-    switch (status) {
-      case 'Follow Up':
-      case 'Follow After Meeting':
-      case 'Follow':
-        return Icon(
-          Icons.mark_email_unread_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Meeting':
-        return Icon(
-          Icons.chat_bubble_outline,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Done Deal':
-        return Icon(
-          Icons.check_box_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Interested':
-        return Icon(
-          FontAwesomeIcons.check,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Not Interested':
-        return Icon(
-          FontAwesomeIcons.timesCircle,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Fresh':
-        return Icon(
-          Icons.new_releases,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Transfer':
-        return Icon(
-          Icons.no_transfer,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
+      switch (status) {
+        case 'Follow Up':
+        case 'Follow After Meeting':
+        case 'Follow':
+          return Icon(
+            Icons.mark_email_unread_outlined,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Meeting':
+          return Icon(
+            Icons.chat_bubble_outline,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Done Deal':
+          return Icon(
+            Icons.check_box_outlined,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Interested':
+          return Icon(
+            FontAwesomeIcons.check,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Not Interested':
+          return Icon(
+            FontAwesomeIcons.timesCircle,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Fresh':
+          return Icon(
+            Icons.new_releases,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        case 'Transfer':
+          return Icon(
+            Icons.no_transfer,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
         case 'EOI':
-        return Icon(
-          Icons.event_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
+          return Icon(
+            Icons.event_outlined,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
         case 'Reservation':
-        return Icon(
-          Icons.task,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
-                  : Constants.mainDarkmodecolor,
-        );
-      default:
-        return const Icon(Icons.info_outline);
+          return Icon(
+            Icons.task,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.maincolor
+                    : Constants.mainDarkmodecolor,
+          );
+        default:
+          return const Icon(Icons.info_outline);
+      }
     }
-  }
 
     void makePhoneCall(String phoneNumber) async {
       final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
@@ -527,7 +527,12 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
-                                                lead.whatsappnumber?.isNotEmpty == true ? lead.whatsappnumber! : 'no whatsapp number',
+                                                lead
+                                                            .whatsappnumber
+                                                            ?.isNotEmpty ==
+                                                        true
+                                                    ? lead.whatsappnumber!
+                                                    : 'no whatsapp number',
                                                 style: TextStyle(
                                                   fontSize: 12.sp,
                                                 ),
@@ -736,9 +741,9 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                                               FontWeight.w600,
                                                                         ),
                                                                       ),
-                                                                      const SizedBox(
+                                                                      SizedBox(
                                                                         height:
-                                                                            10,
+                                                                            10.h,
                                                                       ),
                                                                       const Text(
                                                                         "Comment",
@@ -749,17 +754,17 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                                               FontWeight.w600,
                                                                         ),
                                                                       ),
-                                                                      const SizedBox(
+                                                                      SizedBox(
                                                                         height:
-                                                                            5,
+                                                                            5.h,
                                                                       ),
                                                                       Text(
                                                                         firstComment?.firstcomment?.text ??
                                                                             'No comment available.',
                                                                       ),
-                                                                      const SizedBox(
+                                                                      SizedBox(
                                                                         height:
-                                                                            10,
+                                                                            10.h,
                                                                       ),
                                                                       const Text(
                                                                         "Action (Plan)",
@@ -825,7 +830,10 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
-                                          if (lead.assign == false) ...[const DotLoading(), const Spacer()],
+                                        if (lead.assign == false) ...[
+                                          const DotLoading(),
+                                          const Spacer(),
+                                        ],
                                         if (lead.assign == false &&
                                             userlognamee == managername) ...[
                                           DotLoading(),
@@ -958,7 +966,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             );
                                             log("manager name: $managername");
                                             log("leadassign: ${lead.assign}");
-                                            if (lead.assign == true ) {
+                                            if (lead.assign == true) {
                                               await Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
@@ -1020,10 +1028,15 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                                   ?.developer
                                                                   ?.name ??
                                                               "no developer",
-                                                          fcmtokenn: salesfcmtoken!,
-                                                          leadwhatsappnumber: lead.whatsappnumber,
-                                                              jobdescription: lead.jobdescription ?? 'no job description',
-                                                          secondphonenumber: lead.secondphonenumber,
+                                                          fcmtokenn:
+                                                              salesfcmtoken!,
+                                                          leadwhatsappnumber:
+                                                              lead.whatsappnumber,
+                                                          jobdescription:
+                                                              lead.jobdescription ??
+                                                              'no job description',
+                                                          secondphonenumber:
+                                                              lead.secondphonenumber,
                                                         ),
                                                       ),
                                                 ),

@@ -55,10 +55,9 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
       providers: [
         BlocProvider(create: (context) => AssignleadCubit()),
         BlocProvider(
-          create:
-              (_) =>
-                  LeadCommentsCubit(GetAllLeadCommentsApiService())
-                    ..fetchLeadComments(widget.leadId!),
+          create: (_) =>
+              LeadCommentsCubit(GetAllLeadCommentsApiService())
+                ..fetchLeadComments(widget.leadId!),
         ),
         BlocProvider(
           create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
@@ -99,42 +98,37 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                             );
                           }
                           return Column(
-                            children:
-                                salesOnly.map((sale) {
-                                  final userId = sale.id;
-                                  return ListTile(
-                                    title: Text(sale.name!),
-                                    subtitle: Text(
-                                      sale.userlog!.role!,
-                                      style: TextStyle(color: widget.mainColor),
-                                    ),
-                                    trailing: Checkbox(
-                                      activeColor: widget.mainColor,
-                                      value: selectedSales[userId] ?? false,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      onChanged: (val) {
-                                        setState(() {
-                                          selectedSales.clear();
-                                          selectedSales[userId!] = val ?? false;
-                                          selectedSalesId =
-                                              val == true ? userId : null;
-                                          selectedSalesFcmToken =
-                                              val == true
-                                                  ? sale.userlog?.fcmtoken
-                                                  : null;
-                                          log(
-                                            "selectedSalesId: $selectedSalesId",
-                                          );
-                                          log(
-                                            "selectedSalesFcmToken: $selectedSalesFcmToken",
-                                          );
-                                        });
-                                      },
-                                    ),
-                                  );
-                                }).toList(),
+                            children: salesOnly.map((sale) {
+                              final userId = sale.id;
+                              return ListTile(
+                                title: Text(sale.name!),
+                                subtitle: Text(
+                                  sale.userlog!.role!,
+                                  style: TextStyle(color: widget.mainColor),
+                                ),
+                                trailing: Checkbox(
+                                  activeColor: widget.mainColor,
+                                  value: selectedSales[userId] ?? false,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  onChanged: (val) {
+                                    setState(() {
+                                      selectedSales.clear();
+                                      selectedSales[userId!] = val ?? false;
+                                      selectedSalesId =
+                                          val == true ? userId : null;
+                                      selectedSalesFcmToken =
+                                          val == true
+                                              ? sale.userlog?.fcmtoken
+                                              : null;
+                                      log("selectedSalesId: $selectedSalesId");
+                                      log("selectedSalesFcmToken: $selectedSalesFcmToken");
+                                    });
+                                  },
+                                ),
+                              );
+                            }).toList(),
                           );
                         } else if (state is SalesError) {
                           return Text(state.message);
@@ -145,7 +139,6 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                         }
                       },
                     ),
-
                     // 2. إضافة واجهة المستخدم للـ Checkbox هنا
                     CheckboxListTile(
                       title: const Text("Clear History"),
@@ -161,15 +154,20 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                     ),
                     const SizedBox(height: 16),
                     BlocListener<AssignleadCubit, AssignState>(
-                      listener: (context, state) {
+                      listener: (dialogContext, state) async {
                         if (state is AssignSuccess) {
-                          if (context.mounted) {
-                            // اغلق آخر Dialog
-                            Navigator.of(context).pop();
-                            // اغلق الـ Dialog اللي قبله
-                            Navigator.of(context).pop();
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop(); // Dialog الحالي
+                            Navigator.of(dialogContext).pop(); // Dialog السابق إذا موجود
                           }
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          if (selectedSalesFcmToken != null) {
+                            dialogContext.read<NotificationCubit>().sendNotificationToToken(
+                                  title: "Lead",
+                                  body: "New Lead assigned to you ✅",
+                                  fcmtokennnn: selectedSalesFcmToken!,
+                                );
+                          }
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
                             const SnackBar(
                               content: Text("Lead assigned successfully! ✅"),
                             ),
@@ -177,9 +175,7 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                         } else if (state is AssignFailure) {
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                "Failed to assign lead: ${state.error} ❌",
-                              ),
+                              content: Text("Failed to assign lead: ${state.error} ❌"),
                             ),
                           );
                         }
@@ -208,65 +204,30 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                             ),
                           ),
                           ElevatedButton(
-                            onPressed: () async {
-                              if (selectedSalesId != null) {
-                                final leadIds =
-                                    widget.leadIds != null
+                            onPressed: selectedSalesId == null
+                                ? null
+                                : () async {
+                                    final leadIds = widget.leadIds != null
                                         ? List<String>.from(widget.leadIds!)
                                         : [widget.leadId!];
-                                // 3. يمكنك الآن استخدام قيمة clearHistory
-                                log("Clear History value: $clearHistory");
-                                log("lead id: ${widget.leadId}");
-                                if (clearHistory) {
-                                  await saveClearHistoryTime(); // حفظ الوقت في حالة تفعيل clearHistory
-                                }
-                                final lastDateAssign =
-                                    DateTime.now().toUtc().toIso8601String();
-                                final assignCubit =
-                                    BlocProvider.of<AssignleadCubit>(
-                                      dialogContext,
-                                      listen: false,
+                                    if (clearHistory) {
+                                      await saveClearHistoryTime();
+                                    }
+                                    final lastDateAssign = DateTime.now().toUtc().toIso8601String();
+                                    final assignCubit = dialogContext.read<AssignleadCubit>();
+                                    final leadCommentsCubit = dialogContext.read<LeadCommentsCubit>();
+
+                                    assignCubit.assignLeadFromMarkter(
+                                      leadIds: leadIds,
+                                      lastDateAssign: lastDateAssign,
+                                      dateAssigned:
+                                          "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2,'0')}-${DateTime.now().day.toString().padLeft(2,'0')}",
+                                      salesId: selectedSalesId!,
+                                      isClearhistory: clearHistory,
+                                      stage: widget.leadStage,
                                     );
-                                final cubit =
-                                    BlocProvider.of<LeadCommentsCubit>(
-                                      dialogContext,
-                                      listen: false,
-                                    );
-                                assignCubit.assignLeadFromMarkter(
-                                  leadIds: leadIds,
-                                  lastDateAssign: lastDateAssign,
-                                  dateAssigned:
-                                      "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}",
-                                  salesId: selectedSalesId!,
-                                  isClearhistory: clearHistory,
-                                  stage:
-                                      widget
-                                          .leadStage, // إذا كان stage غير فارغ، أرسله
-                                  // يمكنك إضافة clearHistory هنا إذا كانت الدالة تدعمها
-                                );
-                                context
-                                    .read<NotificationCubit>()
-                                    .sendNotificationToToken(
-                                      // 👈 هنعرف دي تحت
-                                      title: "Lead",
-                                      body: "New Lead assigned to you ✅",
-                                      fcmtokennnn: selectedSalesFcmToken!,
-                                    );
-                                cubit.apiService.fetchLeadAssigned(
-                                  widget.leadId!,
-                                );
-                              } else {
-                                ScaffoldMessenger.of(
-                                  dialogContext,
-                                ).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Please select the Team Leader or Sales to assign. ⚠️",
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
+                                    leadCommentsCubit.apiService.fetchLeadAssigned(widget.leadId!);
+                                  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: widget.mainColor,
                               shape: RoundedRectangleBorder(
@@ -274,7 +235,7 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                               ),
                             ),
                             child: BlocBuilder<AssignleadCubit, AssignState>(
-                              builder: (context, state) {
+                              builder: (dialogContext, state) {
                                 if (state is AssignLoading) {
                                   return const SizedBox(
                                     height: 20,
@@ -298,7 +259,7 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                           ),
                         ],
                       ),
-                    ),
+                    )
                   ],
                 ),
               ),

@@ -184,12 +184,31 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                     BlocListener<AssignleadCubit, AssignState>(
                       listener: (context, state) {
                         if (state is AssignSuccess) {
-                          Navigator.pop(dialogContext, true);
+                          if (Navigator.canPop(dialogContext)) {
+                            Navigator.pop(dialogContext, true);
+                          }
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
                             const SnackBar(
                               content: Text("Lead assigned successfully! ✅"),
                             ),
                           );
+
+                          // 👇 هنا بس نبعث الإشعارات بعد النجاح
+                          context
+                              .read<NotificationCubit>()
+                              .sendNotificationToToken(
+                                title: "Lead",
+                                body: "Lead assigned successfully ✅",
+                                fcmtokennnn: widget.fcmyoken,
+                              );
+
+                          context
+                              .read<NotificationCubit>()
+                              .sendNotificationToToken(
+                                title: "Lead",
+                                body: "Lead assigned successfully ✅",
+                                fcmtokennnn: widget.managerfcm!,
+                              );
                         } else if (state is AssignFailure) {
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
                             SnackBar(
@@ -205,7 +224,9 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                         children: [
                           ElevatedButton(
                             onPressed: () {
-                              Navigator.pop(dialogContext);
+                              if (Navigator.canPop(dialogContext)) {
+                                Navigator.pop(dialogContext);
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
@@ -230,24 +251,29 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                                     widget.leadIds != null
                                         ? List<String>.from(widget.leadIds!)
                                         : [widget.leadId!];
+
                                 log("Selected Lead IDs: $leadIds");
-                                // 3. يمكنك الآن استخدام قيمة clearHistory عند الإرسال
                                 log("Clear History value: $clearHistory");
+
                                 if (clearHistory) {
-                                  await saveClearHistoryTime(); // حفظ الوقت في حالة تفعيل clearHistory
+                                  await saveClearHistoryTime();
                                 }
+
                                 final String lastDateAssign =
                                     DateTime.now().toUtc().toIso8601String();
+
                                 final assignCubit =
                                     BlocProvider.of<AssignleadCubit>(
                                       dialogContext,
                                       listen: false,
                                     );
+
                                 final cubit =
                                     BlocProvider.of<LeadCommentsCubit>(
                                       dialogContext,
                                       listen: false,
                                     );
+
                                 assignCubit.assignUserAndLeadTeamLeader(
                                   leadIds: leadIds,
                                   lastDateAssign: lastDateAssign,
@@ -256,20 +282,8 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                                   teamleadersId: savedIdassignedfrom!,
                                   salesId: selectedSalesId!,
                                   clearhistory: clearHistory,
-                                  // يمكنك إضافة clearHistory هنا إذا كانت الدالة تدعمها
                                 );
-                                context.read<NotificationCubit>().sendNotificationToToken(
-                                      // 👈 هنعرف دي تحت
-                                      title: "Lead",
-                                      body: "Lead assigned successfully ✅",
-                                      fcmtokennnn: widget.fcmyoken,
-                                    );
-                                    context.read<NotificationCubit>().sendNotificationToToken(
-                                      // 👈 هنعرف دي تحت
-                                      title: "Lead",
-                                      body: "Lead assigned successfully ✅",
-                                      fcmtokennnn: widget.managerfcm!,
-                                    );
+
                                 cubit.apiService.fetchLeadAssigned(
                                   widget.leadId!,
                                 );

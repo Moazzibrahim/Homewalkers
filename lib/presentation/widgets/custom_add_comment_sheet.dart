@@ -233,46 +233,56 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                       }
                     },
                     builder: (context, state) {
+                      final isLoading = state is AddCommentLoading;
+
                       return ElevatedButton(
-                        onPressed: () async {
-                          final text1 = _firstCommentController.text.trim();
-                          final text2 = _secondCommentController.text.trim();
-                          final date = _dateController.text.trim();
+                        onPressed:
+                            isLoading
+                                ? null // ⛔️ لو لسه بيحمل يبقى الزرار مش شغال
+                                : () async {
+                                  final text1 =
+                                      _firstCommentController.text.trim();
+                                  final text2 =
+                                      _secondCommentController.text.trim();
+                                  final date = _dateController.text.trim();
 
-                          if (salesId != null &&
-                              text1.isNotEmpty &&
-                              text2.isNotEmpty &&
-                              date.isNotEmpty &&
-                              userlogId != null) {
-                            // ✅ نفذ الإضافة واستنى النجاح
-                            await context.read<AddCommentCubit>().addComment(
-                              sales: salesId!,
-                              text1: text1,
-                              text2: text2,
-                              date: date,
-                              leed: widget.leadId!,
-                              userlog: userlogId!,
-                              usernamelog: userlogId!,
-                            );
-                            // ✅ بعد ما يتم إضافة التعليق بنجاح، عدل الـ lastcommentdate
-                            await context
-                                .read<AddCommentCubit>()
-                                .editLastDateComment(widget.leadId!);
+                                  if (salesId != null &&
+                                      text1.isNotEmpty &&
+                                      text2.isNotEmpty &&
+                                      date.isNotEmpty &&
+                                      userlogId != null) {
+                                    await context
+                                        .read<AddCommentCubit>()
+                                        .addComment(
+                                          sales: salesId!,
+                                          text1: text1,
+                                          text2: text2,
+                                          date: date,
+                                          leed: widget.leadId!,
+                                          userlog: userlogId!,
+                                          usernamelog: userlogId!,
+                                        );
 
-                            log("text 1: $text1, text 2: $text2, date: $date");
-                          } else {
-                            showDialog(
-                              context: context,
-                              builder:
-                                  (context) => const AlertDialog(
-                                    title: Text("Warning"),
-                                    content: Text(
-                                      "Please fill in all the required fields.",
-                                    ),
-                                  ),
-                            );
-                          }
-                        },
+                                    await context
+                                        .read<AddCommentCubit>()
+                                        .editLastDateComment(widget.leadId!);
+
+                                    log(
+                                      "text 1: $text1, text 2: $text2, date: $date",
+                                    );
+                                  } else {
+                                    showDialog(
+                                      context: context,
+                                      builder:
+                                          (context) => const AlertDialog(
+                                            title: Text("Warning"),
+                                            content: Text(
+                                              "Please fill in all the required fields.",
+                                            ),
+                                          ),
+                                    );
+                                  }
+                                },
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).brightness == Brightness.light
@@ -282,14 +292,26 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: Text(
-                          '${widget.optionalName}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child:
+                            isLoading
+                                ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                                : Text(
+                                  '${widget.optionalName}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                       );
                     },
                   ),

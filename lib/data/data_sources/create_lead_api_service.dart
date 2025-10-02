@@ -1,12 +1,13 @@
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
+import 'package:homewalkers_app/core/constants/apiExceptions.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateLeadApiService {
-  Future<void> createLead ({
+  Future<void> createLead({
     required String name,
     required String email,
     required String phone,
@@ -21,12 +22,16 @@ class CreateLeadApiService {
     required String dayonly, // لازم يكون بصيغة yyyy-MM-dd
     required String lastStageDateUpdated,
     required String campaign,
-    required String budget
+    required String budget,
   }) async {
     final url = Uri.parse('${Constants.baseUrl}/users');
     final now = DateTime.now().toUtc(); // بتوقيت UTC زي المطلوب
     final String currentDateTime = now.toIso8601String();
     final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null || token.isEmpty) {
+      throw ApiException('No token found in SharedPreferences');
+    }
     final salesid = prefs.getString('salesId');
     final body = {
       "name": name,
@@ -49,20 +54,22 @@ class CreateLeadApiService {
       "lastcommentdate": "_",
       "lastdateassign": currentDateTime,
       "stagedateupdated": currentDateTime,
-      "budget": budget
+      "budget": budget,
     };
     final response = await http.post(
       url,
       headers: {
         'Content-Type': 'application/json',
-        // 'Authorization': 'Bearer YOUR_TOKEN', // شيل التعليق لو فيه توكن
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode(body),
     );
 
     if (response.statusCode == 201 || response.statusCode == 200) {
+      print("➡️ Sending Lead Body: ${jsonEncode(body)}");
       print('✅ Lead created successfully: ${response.body}');
     } else {
+      print("➡️ Sending Lead Body: ${jsonEncode(body)}");
       print('❌ Failed to create lead. Status: ${response.statusCode}');
       print(response.body);
     }
