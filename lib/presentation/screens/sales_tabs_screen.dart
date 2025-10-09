@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // ignore_for_file: deprecated_member_use
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales/salesDashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_profile_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_assign_leads_screen.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 
 class SalesTabsScreen extends StatefulWidget {
@@ -70,7 +72,10 @@ class _TabsScreenState extends State<SalesTabsScreen> {
                   SalesdashboardScreen(),
                   SalesLeadsScreen(),
                   SalesAssignLeadsScreen(),
-                  SalesProfileScreen(),
+                  BlocProvider(
+                    create: (_) => AuthCubit(LoginApiService()),
+                    child: SalesProfileScreen(),
+                  ),
                 ],
               ),
             ),

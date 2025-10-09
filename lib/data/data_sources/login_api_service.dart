@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/screens/login_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
@@ -22,6 +23,7 @@ class LoginApiService {
   String? phone;
   String? salesId;
   String? newFcmToken;
+  String? deviceId;
 
   final String baseUrl = Constants.baseUrl;
 
@@ -50,9 +52,10 @@ class LoginApiService {
 
         final userData = responseData['data'];
         token = responseData['token'];
+        deviceId = responseData['deviceId'] ?? '';
 
-        if (userData == null || token == null) {
-          log('❌ Missing token or user in response');
+        if (userData == null || token == null || deviceId == null) {
+          log('❌ Missing token or or deviceId or user in response ');
           throw Exception('Login failed: Missing required data');
         }
         // استخراج القيم من userData
@@ -75,10 +78,12 @@ class LoginApiService {
         log('🕒 Updated At: $updatedAt');
         log('✔️ Active: $active');
         log('📲 New FCM Token: $newFcmToken');
+        log('� deviceId: $deviceId');
 
         // Save to SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token ?? '');
+        await prefs.setString('deviceId', deviceId ?? '');
         await prefs.setString('role', role ?? '');
         await prefs.setString('email', email);
         await prefs.setString('name', name ?? '');
@@ -128,6 +133,8 @@ class LoginApiService {
           'createdAt': createdAt,
           'updatedAt': updatedAt,
           'active': active,
+          'newFcmToken': newFcmToken,
+          'deviceId': deviceId,
         };
       } else {
         log('❌ Login failed: ${response.statusCode}');
@@ -136,6 +143,55 @@ class LoginApiService {
       }
     } catch (e) {
       log('❌ Exception during login: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> logout(BuildContext context) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedSalesId = prefs.getString('salesId') ?? '';
+      final savedDeviceId = prefs.getString('deviceId') ?? '';
+      final savedToken = prefs.getString('token') ?? '';
+
+      if (savedSalesId.isEmpty || savedDeviceId.isEmpty) {
+        log('❌ لا يوجد SalesId أو DeviceId في التخزين');
+        throw Exception("SalesId or DeviceId not found in storage");
+      }
+
+      final url = Uri.parse(
+        "${Constants.baseUrl}/userdevices/$savedSalesId/devices/$savedDeviceId/logout",
+      );
+
+      log("📤 Sending logout request to: $url");
+
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $savedToken', // لو محتاج توكن في الهيدر
+        },
+      );
+
+      if (response.statusCode == 200) {
+        log("✅ Logout successful: ${response.body}");
+
+        // 🗑️ امسح كل البيانات من SharedPreferences
+        await prefs.clear();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+          (route) => false, // 🔄 Remove all previous routes
+        );
+      } else {
+        log("❌ Logout failed: ${response.statusCode}");
+        log("❌ Response body: ${response.body}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("logout failed try again")),
+        );
+      }
+    } catch (e) {
+      log("❌ Exception during logout: $e");
       rethrow;
     }
   }

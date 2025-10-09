@@ -133,9 +133,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Center(
-                                child: Image.asset("assets/images/logoo.png",height: 100,width: 100,),
+                                child: Image.asset(
+                                  "assets/images/logoo.png",
+                                  height: 180,
+                                  width: 170,
+                                ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 5),
                               const Center(
                                 child: Text(
                                   "Let’s Login to Your\nAccount First!",

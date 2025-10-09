@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable
+// ignore_for_file: unused_local_variable, avoid_print
 
 import 'dart:convert';
 import 'dart:developer';
@@ -6,6 +6,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 class GetLeadsService {
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -26,13 +27,48 @@ class GetLeadsService {
         '${Constants.baseUrl}/users/filter-by-email?email=$savedEmail&leadisactive=true',
       );
 
-      final response = await http.get(url, headers: {
-        'Authorization': 'Bearer $token',
-      });
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
+
+        // ✅ ترتيب الداتا من الحديث للقديم حسب createdAt أو updatedAt
+        leadsResponse.data?.sort((a, b) {
+          final now = DateTime.now();
+
+          final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
+          final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
+
+          final lastStageA =
+              DateTime.tryParse(a.lastStageDateUpdated ?? '') ?? DateTime(0);
+          final lastStageB =
+              DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
+
+          // الأولوية للأحدث في date
+          final dateComparison = dateB.compareTo(dateA);
+          if (dateComparison != 0) {
+            return dateComparison;
+          }
+
+          // لو متساويين في date → نرتب last_stage_date_updated بحيث المستقبل يجي بعد الحاضر أو الماضي
+          final isAFuture = lastStageA.isAfter(now);
+          final isBFuture = lastStageB.isAfter(now);
+
+          if (isAFuture && !isBFuture) return 1; // A بعد النهارده → يروح تحت
+          if (!isAFuture && isBFuture) return -1; // B بعد النهارده → يروح تحت
+          return lastStageB.compareTo(lastStageA); // الباقي بالأحدث أولاً
+        });
+        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
+        leadsResponse.data?.take(5).forEach((lead) {
+          print(
+            '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.lastStageDateUpdated}',
+          );
+        });
+
         log("✅ Get leads successfully");
         await prefs.setInt('lastLeadCount', leadsResponse.count ?? 0);
         await prefs.setString(
@@ -41,7 +77,9 @@ class GetLeadsService {
         );
         return leadsResponse;
       } else {
-        throw Exception('❌ Failed to load assigned data: ${response.statusCode}');
+        throw Exception(
+          '❌ Failed to load assigned data: ${response.statusCode}',
+        );
       }
     } catch (e) {
       log('❌ Error in getAssignedData: $e');
@@ -63,18 +101,68 @@ class GetLeadsService {
         '${Constants.baseUrl}/users/teamleader-leads?email=$savedEmail&leadisactive=true',
       );
 
-      final response = await http.get(url, headers: {
-        'Authorization': 'Bearer $token',
-      });
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
-        await prefs.setString('userlog', leadsResponse.data!.first.sales!.userlog!.id.toString());
-        await prefs.setString('teamLeaderIddspecific', leadsResponse.data?.first.sales?.teamleader?.id ?? '');
+
+        // ✅ ترتيب الداتا من الأحدث للأقدم حسب createdAt
+        // ✅ ترتيب الداتا بالأحدث أولاً حسب date ثم last_stage_date_updated
+        // ✅ ترتيب الداتا بالأحدث أولاً حسب date
+        // ثم حسب last_stage_date_updated بحيث الأقدم أو الأقرب للنهارده يظهر قبل اللي لسه هييجي بعدين
+        leadsResponse.data?.sort((a, b) {
+          final now = DateTime.now();
+
+          final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
+          final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
+
+          final lastStageA =
+              DateTime.tryParse(a.lastStageDateUpdated ?? '') ?? DateTime(0);
+          final lastStageB =
+              DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
+
+          // الأولوية للأحدث في date
+          final dateComparison = dateB.compareTo(dateA);
+          if (dateComparison != 0) {
+            return dateComparison;
+          }
+
+          // لو متساويين في date → نرتب last_stage_date_updated بحيث المستقبل يجي بعد الحاضر أو الماضي
+          final isAFuture = lastStageA.isAfter(now);
+          final isBFuture = lastStageB.isAfter(now);
+
+          if (isAFuture && !isBFuture) return 1; // A بعد النهارده → يروح تحت
+          if (!isAFuture && isBFuture) return -1; // B بعد النهارده → يروح تحت
+          return lastStageB.compareTo(lastStageA); // الباقي بالأحدث أولاً
+        });
+        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
+        leadsResponse.data?.take(5).forEach((lead) {
+          print(
+            '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.lastStageDateUpdated}',
+          );
+        });
+
+        // 🧠 حفظ بيانات إضافية
+        if (leadsResponse.data != null && leadsResponse.data!.isNotEmpty) {
+          await prefs.setString(
+            'userlog',
+            leadsResponse.data!.first.sales?.userlog?.id ?? '',
+          );
+          await prefs.setString(
+            'teamLeaderIddspecific',
+            leadsResponse.data!.first.sales?.teamleader?.id ?? '',
+          );
+        }
+
         return leadsResponse;
       } else {
-        throw Exception('❌ Failed to load assigned data: ${response.statusCode}');
+        throw Exception(
+          '❌ Failed to load assigned data: ${response.statusCode}',
+        );
       }
     } catch (e) {
       log('❌ Error in getLeadsDataByTeamLeader: $e');
@@ -132,19 +220,67 @@ class GetLeadsService {
         '${Constants.baseUrl}/users/managers-leads?email=$savedEmail&leadisactive=true',
       );
 
-      final response = await http.get(url, headers: {
-        'Authorization': 'Bearer $token',
-      });
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
-        await prefs.setString('userlog', leadsResponse.data!.first.sales!.userlog!.id.toString());
-        await prefs.setString('managerIdspecific', leadsResponse.data?.first.sales?.manager?.id ?? '');
-        await prefs.setString('managerName', leadsResponse.data?.first.sales?.manager?.name ?? '');
+
+        // ✅ ترتيب الداتا من الحديث للقديم حسب updatedAt أو createdAt
+        leadsResponse.data?.sort((a, b) {
+          final now = DateTime.now();
+
+          final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
+          final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
+
+          final lastStageA =
+              DateTime.tryParse(a.lastStageDateUpdated ?? '') ?? DateTime(0);
+          final lastStageB =
+              DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
+
+          // الأولوية للأحدث في date
+          final dateComparison = dateB.compareTo(dateA);
+          if (dateComparison != 0) {
+            return dateComparison;
+          }
+
+          // لو متساويين في date → نرتب last_stage_date_updated بحيث المستقبل يجي بعد الحاضر أو الماضي
+          final isAFuture = lastStageA.isAfter(now);
+          final isBFuture = lastStageB.isAfter(now);
+
+          if (isAFuture && !isBFuture) return 1; // A بعد النهارده → يروح تحت
+          if (!isAFuture && isBFuture) return -1; // B بعد النهارده → يروح تحت
+          return lastStageB.compareTo(lastStageA); // الباقي بالأحدث أولاً
+        });
+        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
+        leadsResponse.data?.take(5).forEach((lead) {
+          print(
+            '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.lastStageDateUpdated}',
+          );
+        });
+
+        // 🧠 حفظ بيانات إضافية
+        await prefs.setString(
+          'userlog',
+          leadsResponse.data!.first.sales!.userlog!.id.toString(),
+        );
+        await prefs.setString(
+          'managerIdspecific',
+          leadsResponse.data?.first.sales?.manager?.id ?? '',
+        );
+        await prefs.setString(
+          'managerName',
+          leadsResponse.data?.first.sales?.manager?.name ?? '',
+        );
+
         return leadsResponse;
       } else {
-        throw Exception('❌ Failed to load manager data: ${response.statusCode}');
+        throw Exception(
+          '❌ Failed to load manager data: ${response.statusCode}',
+        );
       }
     } catch (e) {
       log('❌ Error in getLeadsDataByManager: $e');
@@ -184,19 +320,67 @@ class GetLeadsService {
         '${Constants.baseUrl}/users/GetAllLeadsAddedByUser?email=$savedEmail&leadisactive=true',
       );
 
-      final response = await http.get(url, headers: {
-        'Authorization': 'Bearer $token',
-      });
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
-        await prefs.setString('userlog', leadsResponse.data!.first.sales!.userlog!.id.toString());
-        await prefs.setString('markteridSpecific', leadsResponse.data?.first.sales?.manager?.id ?? '');
-        await prefs.setString('markterName', leadsResponse.data?.first.sales?.manager?.name ?? '');
+
+        // ✅ ترتيب الداتا من الحديث للقديم حسب updatedAt أو createdAt
+        leadsResponse.data?.sort((a, b) {
+          final now = DateTime.now();
+
+          final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
+          final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
+
+          final lastStageA =
+              DateTime.tryParse(a.lastStageDateUpdated ?? '') ?? DateTime(0);
+          final lastStageB =
+              DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
+
+          // الأولوية للأحدث في date
+          final dateComparison = dateB.compareTo(dateA);
+          if (dateComparison != 0) {
+            return dateComparison;
+          }
+
+          // لو متساويين في date → نرتب last_stage_date_updated بحيث المستقبل يجي بعد الحاضر أو الماضي
+          final isAFuture = lastStageA.isAfter(now);
+          final isBFuture = lastStageB.isAfter(now);
+
+          if (isAFuture && !isBFuture) return 1; // A بعد النهارده → يروح تحت
+          if (!isAFuture && isBFuture) return -1; // B بعد النهارده → يروح تحت
+          return lastStageB.compareTo(lastStageA); // الباقي بالأحدث أولاً
+        });
+        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
+        leadsResponse.data?.take(5).forEach((lead) {
+          print(
+            '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.lastStageDateUpdated}',
+          );
+        });
+
+        // 🧠 حفظ بيانات إضافية
+        await prefs.setString(
+          'userlog',
+          leadsResponse.data!.first.sales!.userlog!.id.toString(),
+        );
+        await prefs.setString(
+          'markteridSpecific',
+          leadsResponse.data?.first.sales?.manager?.id ?? '',
+        );
+        await prefs.setString(
+          'markterName',
+          leadsResponse.data?.first.sales?.manager?.name ?? '',
+        );
+
         return leadsResponse;
       } else {
-        throw Exception('❌ Failed to load marketer data: ${response.statusCode}');
+        throw Exception(
+          '❌ Failed to load marketer data: ${response.statusCode}',
+        );
       }
     } catch (e) {
       log('❌ Error in getLeadsDataByMarketer: $e');
@@ -214,9 +398,10 @@ class GetLeadsService {
 
       final url = Uri.parse('${Constants.baseUrl}/users?leadisactive=false');
 
-      final response = await http.get(url, headers: {
-        'Authorization': 'Bearer $token',
-      });
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
@@ -224,7 +409,9 @@ class GetLeadsService {
         log("✅ Get leads successfully by marketer (Trash)");
         return leadsResponse;
       } else {
-        throw Exception('❌ Failed to load leads in trash: ${response.statusCode}');
+        throw Exception(
+          '❌ Failed to load leads in trash: ${response.statusCode}',
+        );
       }
     } catch (e) {
       log('❌ Error in getLeadsDataByMarketerInTrash: $e');

@@ -116,7 +116,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               (_) => GetCampaignsCubit(CampaignApiService())..fetchCampaigns(),
         ),
         BlocProvider(
-          create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales()..fetchSalesOfSpecificUser(),
+          create:
+              (_) =>
+                  SalesCubit(GetAllSalesApiService())
+                    ..fetchAllSales()
+                    ..fetchSalesOfSpecificUser(),
         ),
         BlocProvider(create: (_) => CreateLeadCubit(CreateLeadApiService())),
       ],
@@ -232,7 +236,12 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                   state.projectsModel.data!.map((project) {
                                     return DropdownMenuItem<String>(
                                       value: project.id,
-                                      child: Text(project.name!),
+                                      child: Text(
+                                        project.name!,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
                                     );
                                   }).toList(),
                               onChanged:
@@ -483,7 +492,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: BlocConsumer<
-                              CreateLeadCubit,CreateLeadState>(
+                              CreateLeadCubit,
+                              CreateLeadState
+                            >(
                               listener: (context, state) {
                                 if (state is CreateLeadSuccess) {
                                   // ✅ بعد النجاح ممكن تعرض Dialog أو SnackBar
@@ -517,7 +528,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                                 _selectedChannelId == null ||
                                                 _selectedCommunicationWayId ==
                                                     null ||
-                                                _budgetController.text.isEmpty ||
+                                                _budgetController
+                                                    .text
+                                                    .isEmpty ||
                                                 _selectedCampaignId == null) {
                                               ScaffoldMessenger.of(
                                                 context,

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // ignore_for_file: deprecated_member_use
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/leads_marketier_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_advanced_search_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_menu_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 
 class MarketierTabsScreen extends StatefulWidget {
@@ -67,7 +69,10 @@ class _TabsScreenState extends State<MarketierTabsScreen> {
                   MarketerDashboardScreen(),
                   LeadsMarketierScreen(),
                   MarketerAdvancedSearchScreen(),
-                  MarketierMenuScreen(),
+                  BlocProvider(
+                    create: (context) => AuthCubit(LoginApiService()),
+                    child: MarketierMenuScreen(),
+                  ),
                 ],
               ),
             ),

@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, avoid_print, unused_local_variable, deprecated_member_use
+// ignore_for_file: library_private_types_in_public_api, avoid_print, unused_local_variable, deprecated_member_use, use_build_context_synchronously
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -51,11 +51,19 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
       teamleadname = prefs.getString('name');
       teamleadid = prefs.getString('salesId');
     });
+    // context.read<GetLeadsTeamLeaderCubit>().getLeadsByTeamLeader();
   }
 
+  late GetLeadsTeamLeaderCubit _cubit;
   @override
   void initState() {
     super.initState();
+    _cubit = GetLeadsTeamLeaderCubit(GetLeadsService());
+    _cubit.getLeadsByTeamLeader().then((_) {
+      if (widget.stageName != null && widget.stageName!.isNotEmpty) {
+        _cubit.filterLeadsByStage(widget.stageName!);
+      }
+    });
     init();
   }
 
@@ -75,16 +83,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) {
-        final cubit = GetLeadsTeamLeaderCubit(GetLeadsService());
-        cubit.getLeadsByTeamLeader().then((_) {
-          if (widget.stageName != null && widget.stageName!.isNotEmpty) {
-            cubit.filterLeadsByStage(widget.stageName!);
-          }
-        });
-        return cubit;
-      },
+    return BlocProvider.value(
+      value: _cubit,
       child: Builder(
         builder: (context) {
           return Scaffold(
@@ -135,28 +135,31 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
-                                      color: Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
                                     ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
-                                      color: Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
                                     ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
-                                      color: Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
                                     ),
                                   ),
                                 ),
@@ -169,20 +172,22 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFE8F1F2),
                                 border: Border.all(
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Constants.maincolor
-                                      : Constants.mainDarkmodecolor,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
                                 ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: IconButton(
                                 icon: Icon(
                                   Icons.filter_list,
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Constants.maincolor
-                                      : Constants.mainDarkmodecolor,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
                                 ),
                                 onPressed: () {
                                   showFilterDialogTeamLeader(
@@ -194,27 +199,30 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             ),
                             const SizedBox(width: 10),
                             GestureDetector(
-                              onTapDown: (details) => _showAssignMenu(
-                                context,
-                                details.globalPosition,
-                              ),
+                              onTapDown:
+                                  (details) => _showAssignMenu(
+                                    context,
+                                    details.globalPosition,
+                                  ),
                               child: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
                                   Icons.more_vert,
-                                  color: Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Constants.maincolor
-                                      : Constants.mainDarkmodecolor,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
                                 ),
                               ),
                             ),
@@ -225,8 +233,10 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   },
                 ),
                 Expanded(
-                  child: BlocBuilder<GetLeadsTeamLeaderCubit,
-                      GetLeadsTeamLeaderState>(
+                  child: BlocBuilder<
+                    GetLeadsTeamLeaderCubit,
+                    GetLeadsTeamLeaderState
+                  >(
                     builder: (context, state) {
                       if (state is GetLeadsTeamLeaderLoading) {
                         return const Center(child: CircularProgressIndicator());
@@ -293,31 +303,49 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 phone: lead.phone ?? 'No Phone',
                                 email: lead.email ?? 'No Email',
                                 stage: lead.stage?.name ?? 'No Stage',
-                                stageid: lead.stage?.id.toString() ?? 'No Stage ID',
+                                stageid:
+                                    lead.stage?.id.toString() ?? 'No Stage ID',
                                 channel: lead.chanel?.name ?? 'No Channel',
-                                creationdate: lead.createdAt != null
-                                    ? formatDateTime(lead.createdAt!)
-                                    : '',
+                                creationdate:
+                                    lead.createdAt != null
+                                        ? formatDateTime(lead.createdAt!)
+                                        : '',
                                 project: lead.project?.name ?? 'No Project',
-                                lastcomment: lead.lastcommentdate ?? 'No Last Comment',
-                                leadcampaign: lead.campaign?.campaoignType ?? 'No Campaign',
+                                lastcomment:
+                                    lead.lastcommentdate ?? 'No Last Comment',
+                                leadcampaign:
+                                    lead.campaign?.campaoignType ??
+                                    'No Campaign',
                                 leadNotes: lead.notes ?? 'No Notes',
-                                leaddeveloper: lead.project?.developer?.name ?? 'No Developer',
-                                userlogname: lead.sales?.userlog?.name ?? 'No User',
-                                teamleadername: lead.sales?.teamleader?.name ?? 'No Team Leader',
+                                leaddeveloper:
+                                    lead.project?.developer?.name ??
+                                    'No Developer',
+                                userlogname:
+                                    lead.sales?.userlog?.name ?? 'No User',
+                                teamleadername:
+                                    lead.sales?.teamleader?.name ??
+                                    'No Team Leader',
                                 salesName: lead.sales?.name ?? 'No Sales',
                                 lead: lead,
                                 stageUpdatedDate: stageUpdatedDate,
                                 leadStagetype: leadStagetype,
                                 isOutdated: isOutdatedLocal,
-                                fcmtoken: salesfcmtoken ?? '', // استخدام قيمة آمنة
-                                managerFcmtoken: lead.sales?.manager?.fcmtokenn ?? '',
+                                fcmtoken:
+                                    salesfcmtoken ?? '', // استخدام قيمة آمنة
+                                managerFcmtoken:
+                                    lead.sales?.manager?.fcmtokenn ?? '',
                                 //  <--- التعديل الرئيسي: تمرير القيمة مباشرة من المصدر
                                 assign: lead.assign ?? false,
-                                userlogteamleadername: lead.sales?.userlog?.name ?? 'No Userlog Team Leader',
-                                leadwhatsappnumber: lead.whatsappnumber ?? 'no whatsapp number',
-                                jobdescription: lead.jobdescription ?? 'no job description',
-                                secondphonenumber: lead.secondphonenumber ?? 'no second phone number',
+                                userlogteamleadername:
+                                    lead.sales?.userlog?.name ??
+                                    'No Userlog Team Leader',
+                                leadwhatsappnumber:
+                                    lead.whatsappnumber ?? 'no whatsapp number',
+                                jobdescription:
+                                    lead.jobdescription ?? 'no job description',
+                                secondphonenumber:
+                                    lead.secondphonenumber ??
+                                    'no second phone number',
                               );
                             },
                           ),
@@ -339,12 +367,13 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   }
 
   void _showAssignDialog() async {
-    final selectedIndices = selected
-        .asMap()
-        .entries
-        .where((entry) => entry.value)
-        .map((entry) => entry.key)
-        .toList();
+    final selectedIndices =
+        selected
+            .asMap()
+            .entries
+            .where((entry) => entry.value)
+            .map((entry) => entry.key)
+            .toList();
 
     if (selectedIndices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -436,300 +465,437 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     required bool isOutdated,
     required String fcmtoken,
     required String managerFcmtoken,
-    required bool assign, //  <--- الآن هذا المتغير يستقبل القيمة الصحيحة لكل عنصر
+    required bool
+    assign, //  <--- الآن هذا المتغير يستقبل القيمة الصحيحة لكل عنصر
     required String userlogteamleadername,
     required String leadwhatsappnumber,
     required String jobdescription,
-  required String secondphonenumber,
+    required String secondphonenumber,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color:
-            Theme.of(context).brightness == Brightness.light
-                ? Colors.white
-                : Colors.grey[900],
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.5),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  name,
-                  style: GoogleFonts.montserrat(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).brightness == Brightness.light
-                        ? Colors.black87
-                        : Colors.white,
+    return InkWell(
+      onTap: () async {
+        log("userlogteamleadername: $userlogteamleadername");
+        log("teamleadname: $teamleadname");
+        // <--- استخدام المتغير الصحيح 'assign' بدلاً من 'leadassign'
+        log("leadassign: $assign");
+        if (assign == false) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider(
+                    create:
+                        (_) =>
+                            LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                    child: LeadsDetailsTeamLeaderScreen(
+                      leedId: id,
+                      leadName: name,
+                      leadPhone: phone,
+                      leadEmail: email,
+                      leadStage: stage,
+                      leadStageId: stageid,
+                      leadChannel: channel,
+                      leadCreationDate: creationdate,
+                      leadProject: project,
+                      leadLastComment: lastcomment,
+                      leadcampaign: leadcampaign,
+                      leadNotes: leadNotes,
+                      leaddeveloper: leaddeveloper,
+                      userlogname: userlogname,
+                      teamleadername: teamleadername,
+                      fcmtoken: fcmtoken,
+                      managerfcmtoken: managerFcmtoken,
+                      leadwhatsappnumber: leadwhatsappnumber,
+                      jobdescription: jobdescription,
+                      secondphonenumber: secondphonenumber,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
+            ),
+          );
+        } else if (assign == false && userlogteamleadername == teamleadname) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Attention"),
+                content: const Text("You must receive this lead first."),
+                actions: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      "OK",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        } else if (assign == false) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Attention"),
+                content: const Text("Sales must receive this lead first."),
+                actions: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(
+                      "OK",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.white
+                  : Colors.grey[900],
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Colors.grey.withOpacity(0.2)
+                      : Colors.black.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    name,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Colors.black87
+                              : Colors.white,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-              (stageUpdatedDate != null &&
-                      (leadStagetype == "Done Deal" ||
-                          leadStagetype == "Transfer" ||
-                          leadStagetype == "Fresh" ||
-                          leadStagetype == "Not Interested"))
-                  ? const SizedBox()
-                  : Icon(
+                if (assign == true && userlogteamleadername == teamleadname)
+                  InkWell(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) {
+                          return MultiBlocProvider(
+                            providers: [
+                              // ✅ استخدم value علشان يورّث الكابت الأساسي مش يعمل واحد جديد
+                              BlocProvider.value(
+                                value: context.read<GetLeadsTeamLeaderCubit>(),
+                              ),
+                              BlocProvider(
+                                create:
+                                    (_) => EditLeadCubit(EditLeadApiService()),
+                              ),
+                            ],
+                            child: Builder(
+                              builder: (innerContext) {
+                                return AlertDialog(
+                                  title: const Text("Confirmation"),
+                                  content: const Text(
+                                    "Are you sure to receive this lead?",
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      style: TextButton.styleFrom(
+                                        backgroundColor:
+                                            Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Constants.maincolor
+                                                : Constants.mainDarkmodecolor,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.of(
+                                          innerContext,
+                                        ).pop(); // Close dialog
+                                      },
+                                      child: const Text(
+                                        "Cancel",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      style: TextButton.styleFrom(
+                                        backgroundColor:
+                                            Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Constants.maincolor
+                                                : Constants.mainDarkmodecolor,
+                                      ),
+                                      onPressed: () async {
+                                        await innerContext
+                                            .read<EditLeadCubit>()
+                                            .editLeadAssignvalue(
+                                              userId: lead.id!,
+                                              assign: false,
+                                            );
+                                        Navigator.of(
+                                          innerContext,
+                                        ).pop(); // اقفل الـ dialog
+                                        // ✅ استدعِ الكابت من الـ innerContext اللي فيه نفس instance
+                                        await innerContext
+                                            .read<GetLeadsTeamLeaderCubit>()
+                                            .getLeadsByTeamLeader();
+                                      },
+                                      child: const Text(
+                                        "OK",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Colors.grey
+                              : Constants.mainDarkmodecolor,
+                      child: const Icon(
+                        Icons.download,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                const SizedBox(width: 12),
+                (stageUpdatedDate != null &&
+                        (leadStagetype == "Done Deal" ||
+                            leadStagetype == "Transfer" ||
+                            leadStagetype == "Fresh" ||
+                            leadStagetype == "Not Interested"))
+                    ? const SizedBox()
+                    : Icon(
                       isOutdated ? Icons.close : Icons.check_circle,
                       color: isOutdated ? Colors.red : Colors.green,
                       size: 24,
                     ),
-              Checkbox(
-                value: selected[index],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                activeColor:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
-                        : Constants.mainDarkmodecolor,
-                onChanged: (val) {
-                  setState(() {
-                    selected[index] = val!;
-                  });
-                },
-              ),
-            ],
-          ),
-          const Divider(height: 16, thickness: 1),
-          _buildInfoRow(context, Icons.person_pin_outlined, '', salesName),
-          SizedBox(height: 10.h),
-          _buildContactRow(context,phone,lead.whatsappnumber?.isNotEmpty == true ? lead.whatsappnumber! : 'no whatsapp number',),
-          SizedBox(height: 10.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStageAndSubmissionRow(
-                context,
-                lead.stage?.name ?? "",
-                lead.totalSubmissions ?? 0,
-              ),
-              _buildLastCommentButton(context, lead),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // <--- استخدام المتغير الصحيح 'assign' بدلاً من 'leadassign'
-              if (assign == false) ...[const DotLoading(), const Spacer()],
-              if (assign == false &&
-                  userlogteamleadername == teamleadname) ...[
-                const DotLoading(),
-                const Spacer(),
-                const SizedBox(width: 10),
-                InkWell(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return MultiBlocProvider(
-                          providers: [
-                            BlocProvider(
-                              create:
-                                  (_) => EditLeadCubit(EditLeadApiService()),
-                            ),
-                          ],
-                          child: Builder(
-                            builder: (innerContext) {
-                              return AlertDialog(
-                                title: const Text("Confirmation"),
-                                content: const Text(
-                                  "Are you sure to receive this lead?",
-                                ),
-                                actions: [
-                                  TextButton(
-                                    style: TextButton.styleFrom(
-                                      backgroundColor: Theme.of(context).brightness == Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                    ),
-                                    onPressed: () {
-                                      Navigator.of(
-                                        context,
-                                      ).pop(); // Close dialog
-                                    },
-                                    child: const Text(
-                                      "Cancel",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                  TextButton(
-                                    style: TextButton.styleFrom(
-                                      backgroundColor: Theme.of(context).brightness == Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                    ),
-                                    onPressed: () {
-                                      innerContext
-                                          .read<EditLeadCubit>()
-                                          .editLeadAssignvalue(
-                                            userId: lead.id!,
-                                            assign: true,
-                                          );
-                                      Navigator.of(
-                                        innerContext,
-                                      ).pop(); // Close dialog
-                                      innerContext
-                                          .read<GetLeadsTeamLeaderCubit>()
-                                          .getLeadsByTeamLeader(); // Refresh
-                                    },
-                                    child: const Text(
-                                      "OK",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    );
+                Checkbox(
+                  value: selected[index],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  activeColor:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
+                  onChanged: (val) {
+                    setState(() {
+                      selected[index] = val!;
+                    });
                   },
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                    child: const Icon(Icons.download, color: Colors.white, size: 20),
+                ),
+              ],
+            ),
+            const Divider(height: 16, thickness: 1),
+            _buildInfoRow(context, Icons.person_pin_outlined, '', salesName),
+            SizedBox(height: 10.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Icon(Icons.date_range, color: Colors.grey, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  lead.lastStageDateUpdated != null
+                      ? formatDateTime(lead.lastStageDateUpdated!)
+                      : "N/A",
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
-              const SizedBox(width: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: InkWell(
-                  onTap: () async {
-                    log("userlogteamleadername: $userlogteamleadername");
-                    log("teamleadname: $teamleadname");
-                    // <--- استخدام المتغير الصحيح 'assign' بدلاً من 'leadassign'
-                    log("leadassign: $assign");
-                    if (assign == true) {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (_) => BlocProvider(
-                            create:
-                                (_) => LeadCommentsCubit(
-                              GetAllLeadCommentsApiService(),
-                            ),
-                            child: LeadsDetailsTeamLeaderScreen(
-                              leedId: id,
-                              leadName: name,
-                              leadPhone: phone,
-                              leadEmail: email,
-                              leadStage: stage,
-                              leadStageId: stageid,
-                              leadChannel: channel,
-                              leadCreationDate: creationdate,
-                              leadProject: project,
-                              leadLastComment: lastcomment,
-                              leadcampaign: leadcampaign,
-                              leadNotes: leadNotes,
-                              leaddeveloper: leaddeveloper,
-                              userlogname: userlogname,
-                              teamleadername: teamleadername,
-                              fcmtoken: fcmtoken,
-                              managerfcmtoken: managerFcmtoken,
-                              leadwhatsappnumber: leadwhatsappnumber,
-                              jobdescription: jobdescription,
-                              secondphonenumber: secondphonenumber,
-                            ),
+            ),
+            SizedBox(height: 12.h),
+            _buildContactRow(
+              context,
+              phone,
+              lead.whatsappnumber?.isNotEmpty == true
+                  ? lead.whatsappnumber!
+                  : 'no whatsapp number',
+            ),
+            SizedBox(height: 10.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStageAndSubmissionRow(
+                  context,
+                  lead.stage?.name ?? "",
+                  lead.totalSubmissions ?? 0,
+                ),
+                _buildLastCommentButton(context, lead),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // <--- استخدام المتغير الصحيح 'assign' بدلاً من 'leadassign'
+                if (assign == true &&
+                    userlogteamleadername == teamleadname) ...[
+                  const DotLoading(),
+                  const Spacer(),
+                ],
+                const SizedBox(width: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    onTap: () async {
+                      log("userlogteamleadername: $userlogteamleadername");
+                      log("teamleadname: $teamleadname");
+                      // <--- استخدام المتغير الصحيح 'assign' بدلاً من 'leadassign'
+                      log("leadassign: $assign");
+                      if (assign == false) {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => BlocProvider(
+                                  create:
+                                      (_) => LeadCommentsCubit(
+                                        GetAllLeadCommentsApiService(),
+                                      ),
+                                  child: LeadsDetailsTeamLeaderScreen(
+                                    leedId: id,
+                                    leadName: name,
+                                    leadPhone: phone,
+                                    leadEmail: email,
+                                    leadStage: stage,
+                                    leadStageId: stageid,
+                                    leadChannel: channel,
+                                    leadCreationDate: creationdate,
+                                    leadProject: project,
+                                    leadLastComment: lastcomment,
+                                    leadcampaign: leadcampaign,
+                                    leadNotes: leadNotes,
+                                    leaddeveloper: leaddeveloper,
+                                    userlogname: userlogname,
+                                    teamleadername: teamleadername,
+                                    fcmtoken: fcmtoken,
+                                    managerfcmtoken: managerFcmtoken,
+                                    leadwhatsappnumber: leadwhatsappnumber,
+                                    jobdescription: jobdescription,
+                                    secondphonenumber: secondphonenumber,
+                                  ),
+                                ),
                           ),
-                        ),
-                      );
-                    } else if (assign == false &&
-                        userlogteamleadername == teamleadname) {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text("Attention"),
-                            content: const Text("You must receive this lead first."),
-                            actions: [
-                              TextButton(
-                                style: TextButton.styleFrom(
-                                  backgroundColor: Theme.of(context).brightness == Brightness.light
-                                      ? Constants.maincolor
-                                      : Constants.mainDarkmodecolor,
-                                ),
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: const Text(
-                                  "OK",
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                        );
+                      } else if (assign == true &&
+                          userlogteamleadername == teamleadname) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text("Attention"),
+                              content: const Text(
+                                "You must receive this lead first.",
                               ),
-                            ],
-                          );
-                        },
-                      );
-                    } else if (assign == false) {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text("Attention"),
-                            content: const Text(
-                              "Sales must receive this lead first.",
-                            ),
-                            actions: [
-                              TextButton(
-                                style: TextButton.styleFrom(
-                                  backgroundColor: Theme.of(context).brightness == Brightness.light
-                                      ? Constants.maincolor
-                                      : Constants.mainDarkmodecolor,
+                              actions: [
+                                TextButton(
+                                  style: TextButton.styleFrom(
+                                    backgroundColor:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text(
+                                    "OK",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
-                                onPressed: () => Navigator.of(context).pop(),
-                                child: const Text(
-                                  "OK",
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                              ],
+                            );
+                          },
+                        );
+                      } else if (assign == true) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text("Attention"),
+                              content: const Text(
+                                "Sales must receive this lead first.",
                               ),
-                            ],
-                          );
-                        },
-                      );
-                    }
-                  },
-                  child: Text(
-                    'View More',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Colors.white,
-                      decoration: TextDecoration.underline,
+                              actions: [
+                                TextButton(
+                                  style: TextButton.styleFrom(
+                                    backgroundColor:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text(
+                                    "OK",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      }
+                    },
+                    child: Text(
+                      'View More',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.grey
+                                : Colors.white,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -752,7 +918,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
             size: 18,
             color:
                 Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
+                    ? Colors.grey
                     : Constants.mainDarkmodecolor,
           ),
           const SizedBox(width: 8),
@@ -814,7 +980,11 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     );
   }
 
-  Widget _buildContactRow(BuildContext context, String? phone, String? whatsapp) {
+  Widget _buildContactRow(
+    BuildContext context,
+    String? phone,
+    String? whatsapp,
+  ) {
     final cleanPhone = phone?.replaceAll(RegExp(r'\D'), '') ?? '';
     final cleanWhatsapp = whatsapp?.replaceAll(RegExp(r'\D'), '') ?? '';
     return Row(
@@ -840,7 +1010,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                 FontAwesomeIcons.whatsapp,
                 color:
                     Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
+                        ? Colors.grey
                         : Constants.mainDarkmodecolor,
                 size: 18,
               ),
@@ -857,7 +1027,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                 Icons.phone,
                 color:
                     Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
+                        ? Colors.grey
                         : Constants.mainDarkmodecolor,
                 size: 18,
               ),
@@ -890,86 +1060,86 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
               context: context,
               builder:
                   (_) => Dialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: BlocProvider(
-                  create:
-                      (_) =>
-                          LeadCommentsCubit(GetAllLeadCommentsApiService())
-                            ..fetchLeadComments(lead.id!),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child:
-                        BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
-                      builder: (context, state) {
-                        if (state is LeadCommentsLoading) {
-                          return const SizedBox(
-                            height: 100,
-                            child: Center(
-                              child: CircularProgressIndicator(),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: BlocProvider(
+                      create:
+                          (_) =>
+                              LeadCommentsCubit(GetAllLeadCommentsApiService())
+                                ..fetchLeadComments(lead.id!),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child:
+                            BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
+                              builder: (context, state) {
+                                if (state is LeadCommentsLoading) {
+                                  return const SizedBox(
+                                    height: 100,
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                } else if (state is LeadCommentsError) {
+                                  return const SizedBox(
+                                    height: 100,
+                                    child: Center(
+                                      child: Text("No comments available."),
+                                    ),
+                                  );
+                                } else if (state is LeadCommentsLoaded) {
+                                  final data = state.leadComments.data;
+                                  if (data == null || data.isEmpty) {
+                                    return const Text('No comments available.');
+                                  }
+                                  final comment = data.first.comments?.first;
+                                  return Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "Last Comment",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      const Text(
+                                        "Comment",
+                                        style: TextStyle(
+                                          color: Constants.maincolor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        comment?.firstcomment?.text ??
+                                            'No comment available.',
+                                      ),
+                                      const SizedBox(height: 10),
+                                      const Text(
+                                        "Action (Plan)",
+                                        style: TextStyle(
+                                          color: Constants.maincolor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        comment?.secondcomment?.text ??
+                                            'No action available.',
+                                      ),
+                                    ],
+                                  );
+                                } else {
+                                  return const Text("no comments");
+                                }
+                              },
                             ),
-                          );
-                        } else if (state is LeadCommentsError) {
-                          return const SizedBox(
-                            height: 100,
-                            child: Center(
-                              child: Text("No comments available."),
-                            ),
-                          );
-                        } else if (state is LeadCommentsLoaded) {
-                          final data = state.leadComments.data;
-                          if (data == null || data.isEmpty) {
-                            return const Text('No comments available.');
-                          }
-                          final comment = data.first.comments?.first;
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "Last Comment",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              const Text(
-                                "Comment",
-                                style: TextStyle(
-                                  color: Constants.maincolor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                comment?.firstcomment?.text ??
-                                    'No comment available.',
-                              ),
-                              const SizedBox(height: 10),
-                              const Text(
-                                "Action (Plan)",
-                                style: TextStyle(
-                                  color: Constants.maincolor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                comment?.secondcomment?.text ??
-                                    'No action available.',
-                              ),
-                            ],
-                          );
-                        } else {
-                          return const Text("no comments");
-                        }
-                      },
+                      ),
                     ),
                   ),
-                ),
-              ),
             );
           },
           icon: const Icon(
@@ -996,7 +1166,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           Icons.mark_email_unread_outlined,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
+                  ? Colors.grey
                   : Constants.mainDarkmodecolor,
         );
       case 'Meeting':
@@ -1004,7 +1174,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           Icons.chat_bubble_outline,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
+                  ? Colors.grey
                   : Constants.mainDarkmodecolor,
         );
       case 'Done Deal':
@@ -1012,7 +1182,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           Icons.check_box_outlined,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
+                  ? Colors.grey
                   : Constants.mainDarkmodecolor,
         );
       case 'Interested':
@@ -1020,7 +1190,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           FontAwesomeIcons.check,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
+                  ? Colors.grey
                   : Constants.mainDarkmodecolor,
         );
       case 'Not Interested':
@@ -1028,7 +1198,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           FontAwesomeIcons.timesCircle,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
+                  ? Colors.grey
                   : Constants.mainDarkmodecolor,
         );
       case 'Fresh':
@@ -1036,7 +1206,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           Icons.new_releases,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
+                  ? Colors.grey
                   : Constants.mainDarkmodecolor,
         );
       case 'Transfer':
@@ -1044,27 +1214,27 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           Icons.no_transfer,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
+                  ? Colors.grey
                   : Constants.mainDarkmodecolor,
         );
-        case 'EOI':
+      case 'EOI':
         return Icon(
           Icons.event_outlined,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
+                  ? Colors.grey
                   : Constants.mainDarkmodecolor,
         );
-        case 'Reservation':
+      case 'Reservation':
         return Icon(
           Icons.task,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
+                  ? Colors.grey
                   : Constants.mainDarkmodecolor,
         );
       default:
-        return const Icon(Icons.info_outline);
+        return const Icon(Icons.info_outline, color: Colors.grey);
     }
   }
 
@@ -1098,7 +1268,7 @@ class _DotLoadingState extends State<DotLoading>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
-    )..repeat(); 
+    )..repeat();
 
     _animations = List.generate(3, (index) {
       final start = index * 0.2;
@@ -1144,7 +1314,7 @@ class _DotLoadingState extends State<DotLoading>
             decoration: BoxDecoration(
               color:
                   Theme.of(context).brightness == Brightness.light
-                      ? Constants.maincolor
+                      ? Colors.grey
                       : Constants.mainDarkmodecolor,
               shape: BoxShape.circle,
             ),

@@ -49,14 +49,17 @@ class User {
 class LoginResponse {
   final String token;
   final User user;
+  final String deviceId;
 
   LoginResponse({
     required this.token,
     required this.user,
+    required this.deviceId,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) => LoginResponse(
         token: json['token'],
         user: User.fromJson(json['data']),
+        deviceId: json['deviceId'],
       );
 }

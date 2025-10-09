@@ -236,7 +236,10 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                   SizedBox(width: 3.w),
                                   Flexible(
                                     child: Text(
-                                      '${widget.leadEmail}',
+                                      (widget.leadEmail == null ||
+                                              widget.leadEmail!.isEmpty)
+                                          ? 'no email'
+                                          : widget.leadEmail!,
                                       maxLines: 2,
                                       style: TextStyle(
                                         fontSize: 11.sp,
@@ -719,7 +722,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                             child: Text(
                               'All Comments',
                               style: TextStyle(
-                                fontSize: 16.sp,
+                                fontSize: 14.sp,
                                 fontWeight: FontWeight.w500,
                                 color: Constants.maincolor,
                               ),
@@ -798,7 +801,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                               'Add Comment',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 15.sp,
+                                fontSize: 13.sp,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

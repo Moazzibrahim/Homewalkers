@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/add_menu_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/delete_menu_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/update_menu_api_service.dart';
@@ -15,7 +16,6 @@ import 'package:homewalkers_app/presentation/screens/Admin/sales_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/stages_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/users_screen.dart';
 import 'package:homewalkers_app/presentation/screens/cities_screen.dart';
-import 'package:homewalkers_app/presentation/screens/login_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/area_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/campaign_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/cancel_reason_screen.dart';
@@ -26,6 +26,7 @@ import 'package:homewalkers_app/presentation/screens/marketier/project_screen.da
 import 'package:homewalkers_app/presentation/screens/marketier/region_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminMenuScreen extends StatelessWidget {
@@ -46,10 +47,17 @@ class AdminMenuScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AdminProfileScreen()),
+            MaterialPageRoute(
+              builder:
+                  (context) => BlocProvider(
+                    create: (_) => AuthCubit(LoginApiService()),
+                    child: const AdminProfileScreen(),
+                  ),
+            ),
           );
         },
       ),
+
       _MenuItem(
         icon: Icons.search,
         label: 'Advanced Search',
@@ -339,15 +347,7 @@ class AdminMenuScreen extends StatelessWidget {
         icon: Icons.logout,
         label: 'Sign Out',
         onTap: () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.remove('token'); // امسح الـ token
-          await prefs.remove('role');
-          // رجع المستخدم لصفحة تسجيل الدخول
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-            (route) => false, // يمنع الرجوع لورا
-          );
+          context.read<AuthCubit>().logout(context);
         },
       ),
     ];
@@ -370,8 +370,10 @@ class AdminMenuScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color:
                       Theme.of(context).brightness == Brightness.light
-                          ? Colors.white // لون خلفية للـ light mode
-                          : Constants.backgroundDarkmode, // لون خلفية للـ dark mode
+                          ? Colors
+                              .white // لون خلفية للـ light mode
+                          : Constants
+                              .backgroundDarkmode, // لون خلفية للـ dark mode
                   borderRadius: BorderRadius.circular(12), // لو تحب يكون مدور
                 ),
                 child: Row(

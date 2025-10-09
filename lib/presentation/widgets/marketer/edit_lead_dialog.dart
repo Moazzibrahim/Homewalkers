@@ -108,21 +108,29 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
             BlocBuilder<ProjectsCubit, ProjectsState>(
               builder: (context, state) {
                 if (state is ProjectsSuccess) {
-                  return DropdownButtonFormField<String>(
-                    value: selectedProjectId,
-                    decoration: const InputDecoration(labelText: 'Project'),
-                    items:
-                        state.projectsModel.data!.map((project) {
-                          return DropdownMenuItem<String>(
-                            value: project.id.toString(),
-                            child: Text(project.name!),
-                          );
-                        }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedProjectId = value;
-                      });
-                    },
+                  return SizedBox(
+                    width: double.infinity,
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      value: selectedProjectId,
+                      decoration: const InputDecoration(labelText: 'Project'),
+                      items:
+                          state.projectsModel.data!.map((project) {
+                            return DropdownMenuItem<String>(
+                              value: project.id.toString(),
+                              child: Text(
+                                project.name!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedProjectId = value;
+                        });
+                      },
+                    ),
                   );
                 } else if (state is ProjectsLoading) {
                   return const CircularProgressIndicator();

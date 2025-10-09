@@ -2,7 +2,7 @@
 class LeadResponse {
   final bool? success;
   final int? count;
-  final List<LeadData>? data;
+  late final List<LeadData>? data;
 
   LeadResponse({this.success, this.count, this.data});
 

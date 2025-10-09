@@ -20,44 +20,36 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
     : super(GetLeadsTeamLeaderInitial());
 
   /// جلب البيانات مع حساب عدد الـ leads حسب كل مرحلة
-  Future<void> getLeadsByTeamLeader() async {
-    emit(GetLeadsTeamLeaderLoading());
+  Future<void> getLeadsByTeamLeader({bool showLoading = true}) async {
+  if (showLoading) emit(GetLeadsTeamLeaderLoading());
 
-    try {
-      final leadsResponse = await _getLeadsService.getLeadsDataByTeamLeader();
-      leadsResponse.data?.sort((a, b) {
-        final aDate = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
-        final bDate = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
-        return bDate.compareTo(aDate); // الأحدث أولاً
-      });
-      _originalLeadsResponse = leadsResponse;
+  try {
+    final leadsResponse = await _getLeadsService.getLeadsDataByTeamLeader();
 
-      _salesLeadCount = await _getLeadsService.getLeadCountPerStage();
+    _originalLeadsResponse = leadsResponse;
+    _salesLeadCount = await _getLeadsService.getLeadCountPerStage();
 
-      final salesSet = <String>{};
-      final teamLeaderSet = <String>{};
+    final salesSet = <String>{};
+    final teamLeaderSet = <String>{};
 
-      for (var lead in leadsResponse.data ?? []) {
-        final salesName = lead.sales?.userlog?.name;
-        final teamLeaderName = lead.sales?.teamleader?.name;
+    for (var lead in leadsResponse.data ?? []) {
+      final salesName = lead.sales?.userlog?.name;
+      final teamLeaderName = lead.sales?.teamleader?.name;
 
-        if (salesName?.isNotEmpty == true) salesSet.add(salesName!);
-        if (teamLeaderName?.isNotEmpty == true) {
-          teamLeaderSet.add(teamLeaderName!);
-        }
-      }
-
-      salesNames = salesSet.toList();
-      teamLeaderNames = teamLeaderSet.toList();
-
-      log("✅ تم جلب البيانات بنجاح.");
-      emit(GetLeadsTeamLeaderSuccess(leadsResponse));
-    } catch (e) {
-      log('❌ خطأ في getLeadsByTeamLeader: $e');
-      emit(const GetLeadsTeamLeaderError("حدث خطأ أثناء تحميل البيانات."));
+      if (salesName?.isNotEmpty == true) salesSet.add(salesName!);
+      if (teamLeaderName?.isNotEmpty == true) teamLeaderSet.add(teamLeaderName!);
     }
-  }
 
+    salesNames = salesSet.toList();
+    teamLeaderNames = teamLeaderSet.toList();
+
+    // ✅ نفس طريقة fetchLeads — إصدار الحالة لتحديث الواجهة
+    emit(GetLeadsTeamLeaderSuccess(leadsResponse));
+  } catch (e) {
+    log('❌ خطأ في getLeadsByTeamLeader: $e');
+    emit(const GetLeadsTeamLeaderError("حدث خطأ أثناء تحميل البيانات."));
+  }
+}
   /// فلترة الـ leads حسب الاسم
   void filterLeadsByName(String query) {
     if (_originalLeadsResponse == null) return;

@@ -26,6 +26,7 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final nameController = TextEditingController();
     return Scaffold(
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
@@ -48,6 +49,12 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
               children: [
                 Expanded(
                   child: TextField(
+                    controller: nameController,
+                    onChanged: (value) {
+                      context.read<GetLeadsCubit>().filterLeads(
+                        query: value.trim(),
+                      );
+                    },
                     decoration: InputDecoration(
                       hintText: 'Search',
                       contentPadding: EdgeInsets.symmetric(
@@ -170,8 +177,12 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
     log(
       "Selected Leads: ${selectedLeads.map((e) => 'ID: ${e.id}, Name: ${e.name}').join(', ')}",
     );
-    log("fcmtoken is :${leadResponse?.data?.first.sales?.teamleader?.fcmtokenn} ");
-    log("teamleader name is :${leadResponse?.data?.first.sales?.teamleader?.name} ");
+    log(
+      "fcmtoken is :${leadResponse?.data?.first.sales?.teamleader?.fcmtokenn} ",
+    );
+    log(
+      "teamleader name is :${leadResponse?.data?.first.sales?.teamleader?.name} ",
+    );
     await showDialog(
       context: context,
       builder:

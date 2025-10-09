@@ -10,13 +10,25 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit(this.apiService) : super(AuthInitial());
 
-  void login(String email, String password,BuildContext context) async {
+  // 🔐 تسجيل الدخول
+  void login(String email, String password, BuildContext context) async {
     emit(AuthLoading());
     try {
-      final response = await apiService.login(email, password,context);
+      final response = await apiService.login(email, password, context);
       emit(AuthSuccess(response as LoginResponse));
     } catch (e) {
       emit(AuthFailure("Incorrect email or password"));
+    }
+  }
+
+  // 🚪 تسجيل الخروج
+  void logout(BuildContext context) async {
+    emit(AuthLoading());
+    try {
+      await apiService.logout(context);
+      emit(AuthLogoutSuccess()); // هنعرف استيت جديدة للنجاح
+    } catch (e) {
+      emit(AuthFailure("Logout failed"));
     }
   }
 }

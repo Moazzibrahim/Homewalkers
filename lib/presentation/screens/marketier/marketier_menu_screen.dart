@@ -3,11 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/add_menu_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/delete_menu_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/update_menu_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/cities_screen.dart';
-import 'package:homewalkers_app/presentation/screens/login_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/area_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/campaign_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/cancel_reason_screen.dart';
@@ -19,6 +19,7 @@ import 'package:homewalkers_app/presentation/screens/marketier/project_screen.da
 import 'package:homewalkers_app/presentation/screens/marketier/region_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MarketierMenuScreen extends StatelessWidget {
@@ -40,7 +41,11 @@ class MarketierMenuScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const MarketerProfileScreen(),
+              builder:
+                  (context) => BlocProvider(
+                    create: (context) => AuthCubit(LoginApiService()),
+                    child: const MarketerProfileScreen(),
+                  ),
             ),
           );
         },
@@ -54,7 +59,12 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: CommunicationWayScreen(),
                   ),
             ),
@@ -70,7 +80,12 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: DeveloperScreen(),
                   ),
             ),
@@ -81,12 +96,17 @@ class MarketierMenuScreen extends StatelessWidget {
         icon: Icons.business_outlined,
         label: 'Project',
         onTap: () {
-        Navigator.push(
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: ProjectScreen(),
                   ),
             ),
@@ -102,7 +122,12 @@ class MarketierMenuScreen extends StatelessWidget {
             MaterialPageRoute(
               builder:
                   (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: ChannelScreen(),
                   ),
             ),
@@ -113,11 +138,17 @@ class MarketierMenuScreen extends StatelessWidget {
         icon: Icons.cancel_outlined,
         label: 'Cancel Reason',
         onTap: () {
-        Navigator.push(
+          Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => BlocProvider<AddInMenuCubit>(
-                    create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: CancelReasonScreen(),
                   ),
             ),
@@ -130,9 +161,18 @@ class MarketierMenuScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute( builder:  (_) => BlocProvider<AddInMenuCubit>(
-                  create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
-                  child: CampaignScreen(),),),
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
+                    child: CampaignScreen(),
+                  ),
+            ),
           );
         },
       ),
@@ -161,8 +201,17 @@ class MarketierMenuScreen extends StatelessWidget {
         icon: Icons.map_outlined,
         label: 'Region',
         onTap: () {
-          Navigator.push(context,MaterialPageRoute(
-              builder:(_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: RegionScreen(),
                   ),
             ),
@@ -177,7 +226,13 @@ class MarketierMenuScreen extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder:
-                  (_) => BlocProvider<AddInMenuCubit>(create: (_) => AddInMenuCubit(AddMenuApiService(),UpdateMenuApiService(),DeleteMenuApiService()),
+                  (_) => BlocProvider<AddInMenuCubit>(
+                    create:
+                        (_) => AddInMenuCubit(
+                          AddMenuApiService(),
+                          UpdateMenuApiService(),
+                          DeleteMenuApiService(),
+                        ),
                     child: AreaScreen(),
                   ),
             ),
@@ -188,18 +243,15 @@ class MarketierMenuScreen extends StatelessWidget {
         icon: Icons.logout,
         label: 'Sign Out',
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-          );
+          context.read<AuthCubit>().logout(context);
         },
       ),
     ];
     return Scaffold(
       backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.backgroundlightmode
+              : Constants.backgroundDarkmode,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(16.w),
@@ -248,9 +300,21 @@ class MarketierMenuScreen extends StatelessWidget {
                     ],
                   ),
                   const Spacer(),
-                  InkWell(child: const Icon(Icons.notifications_none_rounded, size: 28),onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SalesNotificationsScreen()));
-                  },),
+                  InkWell(
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      size: 28,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => const SalesNotificationsScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
               SizedBox(height: 20.h),
@@ -271,10 +335,7 @@ class MarketierMenuScreen extends StatelessWidget {
                             color: const Color(0xFFE2F0F1),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
-                          child: Icon(
-                            item.icon,
-                            color: Constants.maincolor,
-                          ),
+                          child: Icon(item.icon, color: Constants.maincolor),
                         ),
                         title: Text(
                           item.label,
