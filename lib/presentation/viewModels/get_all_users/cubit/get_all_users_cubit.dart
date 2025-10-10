@@ -51,8 +51,8 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       final response = await apiService.getUsers();
       // ترتيب من الأحدث إلى الأقدم
       response?.data?.sort((a, b) {
-        final aDate = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
-        final bDate = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
+        final aDate = DateTime.tryParse(a.date ?? '') ?? DateTime.now();
+        final bDate = DateTime.tryParse(b.date ?? '') ?? DateTime.now();
         return bDate.compareTo(aDate); // الحديث قبل القديم
       });
 
@@ -154,8 +154,10 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
     if (duplicatesOnly) {
       filteredLeads =
           filteredLeads
-              .where((lead) => (lead.allVersions?.length ?? 0) > 1).toList();
+              .where((lead) => (lead.allVersions?.length ?? 0) > 1)
+              .toList();
     }
+
     // General query filter
     if (query != null && query.isNotEmpty) {
       final q = query.toLowerCase();
@@ -164,14 +166,17 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
             final matchName = lead.name?.toLowerCase().contains(q) ?? false;
             final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
             final matchPhone = lead.phone?.contains(q) ?? false;
-            final matchInVersions = (lead.allVersions?.length ?? 0) > 1
-        ? lead.allVersions!.any((v) {
-            final nameMatch = v.name?.toLowerCase().contains(q) ?? false;
-            final emailMatch = v.email?.toLowerCase().contains(q) ?? false;
-            final phoneMatch = v.phone?.contains(q) ?? false;
-            return nameMatch || emailMatch || phoneMatch;
-          })
-        : false;
+            final matchInVersions =
+                (lead.allVersions?.length ?? 0) > 1
+                    ? lead.allVersions!.any((v) {
+                      final nameMatch =
+                          v.name?.toLowerCase().contains(q) ?? false;
+                      final emailMatch =
+                          v.email?.toLowerCase().contains(q) ?? false;
+                      final phoneMatch = v.phone?.contains(q) ?? false;
+                      return nameMatch || emailMatch || phoneMatch;
+                    })
+                    : false;
             return matchName || matchEmail || matchPhone || matchInVersions;
           }).toList();
     }
@@ -247,10 +252,8 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
                         parseNullableDate(s.createdAt) ??
                         parseNullableDate(s.dateselectedforstage);
 
-                    // If no date is available for this stage history, it cannot match.
                     if (createdAtDate == null) return false;
 
-                    // Normalize dates to compare days only.
                     final createdAtOnly = getDateOnly(createdAtDate);
                     final oldStageStartOnly =
                         oldStageDateStart != null
@@ -261,14 +264,12 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
                             ? getDateOnly(oldStageDateEnd)
                             : null;
 
-                    // Correctly check if the date is within the specified range (inclusive).
                     final matchRange =
                         (oldStageStartOnly == null ||
                             !createdAtOnly.isBefore(oldStageStartOnly)) &&
                         (oldStageEndOnly == null ||
                             !createdAtOnly.isAfter(oldStageEndOnly));
 
-                    // A match requires both the stage name (if provided) and the date range to be valid.
                     return oldStageNameMatch && matchRange;
                   }) ??
                   false);
@@ -350,18 +351,51 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
               matchOldStageDate;
         }).toList();
 
-    final bool hasActiveFilters =
-        query?.isNotEmpty == true ||
-        country != null ||
-        developer != null ||
-        project != null ||
-        stage != null ||
-        channel != null ||
-        sales != null ||
-        communicationWay != null ||
-        campaign != null;
+    // ✅ إضافة الترتيب حسب stage أو date
+    if (filteredLeads.isNotEmpty) {
+      if (stage != null && stage.isNotEmpty) {
+        filteredLeads.sort((a, b) {
+          DateTime? dateA =
+              a.stagedateupdated != null
+                  ? DateTime.parse(
+                    a.stagedateupdated!,
+                  ).toUtc().add(const Duration(hours: 4))
+                  : null;
+          DateTime? dateB =
+              b.stagedateupdated != null
+                  ? DateTime.parse(
+                    b.stagedateupdated!,
+                  ).toUtc().add(const Duration(hours: 4))
+                  : null;
 
-    if (filteredLeads.isEmpty) {
+          if (dateA == null && dateB == null) return 0;
+          if (dateA == null) return 1;
+          if (dateB == null) return -1;
+
+          // الترتيب من الأقدم للأحدث
+          return dateA.compareTo(dateB);
+        });
+      } else {
+        filteredLeads.sort((a, b) {
+          final aDate = parseNullableDate(a.date) ?? DateTime.now();
+          final bDate = parseNullableDate(b.date) ?? DateTime.now();
+          return bDate.compareTo(aDate);
+        });
+      }
+
+      emit(GetAllUsersSuccess(AllUsersModel(data: filteredLeads)));
+    } else {
+      final bool hasActiveFilters =
+          query?.isNotEmpty == true ||
+          country != null ||
+          developer != null ||
+          project != null ||
+          stage != null ||
+          channel != null ||
+          sales != null ||
+          communicationWay != null ||
+          campaign != null;
+
       if (hasActiveFilters) {
         emit(
           const GetAllUsersFailure("No leads found matching your criteria."),
@@ -369,10 +403,9 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       } else {
         emit(const GetAllUsersFailure("No leads found."));
       }
-    } else {
-      emit(GetAllUsersSuccess(AllUsersModel(data: filteredLeads)));
     }
   }
+
   // ✅ الخطوة 7: تحديث دالة الفلترة
   // ✅ الكود الكامل والصحيح للدالة
   void filterLeadsAdminForAdvancedSearch({

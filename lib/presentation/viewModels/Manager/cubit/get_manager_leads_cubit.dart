@@ -72,10 +72,12 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
 
   void filterLeadsByStageInManager(String query) {
     if (_originalLeadsResponse?.data == null) return;
+
     if (query.isEmpty) {
       emit(GetManagerLeadsSuccess(_originalLeadsResponse!));
       return;
     }
+
     final filtered =
         _originalLeadsResponse!.data!
             .where(
@@ -84,6 +86,29 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
                   lead.stage!.name!.toLowerCase().contains(query.toLowerCase()),
             )
             .toList();
+
+    filtered.sort((a, b) {
+      DateTime? dateA =
+          a.stagedateupdated != null
+              ? DateTime.parse(
+                a.stagedateupdated!,
+              ).toUtc().add(const Duration(hours: 4))
+              : null;
+      DateTime? dateB =
+          b.stagedateupdated != null
+              ? DateTime.parse(
+                b.stagedateupdated!,
+              ).toUtc().add(const Duration(hours: 4))
+              : null;
+
+      if (dateA == null && dateB == null) return 0;
+      if (dateA == null) return 1;
+      if (dateB == null) return -1;
+
+      // ترتيب مباشر من الأقدم للأحدث
+      return dateA.compareTo(dateB);
+    });
+
     emit(GetManagerLeadsSuccess(LeadResponse(data: filtered)));
   }
 
@@ -124,6 +149,7 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
       }
       return parsedDate;
     }
+
     final filtered =
         _originalLeadsResponse!.data!.where((lead) {
           final q = query?.toLowerCase() ?? '';
@@ -203,12 +229,14 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
     if (_originalLeadsResponse?.data == null) return {};
     for (final lead in _originalLeadsResponse!.data!) {
       final sales = lead.sales;
-      final teamleader= lead.sales?.teamleader;
+      final teamleader = lead.sales?.teamleader;
       final teamLeaderName = sales?.teamleader?.name;
       log(
         "👀 Lead: ${lead.name}, Sales: ${sales?.name}, TeamLeader: $teamLeaderName",
       );
-      if (teamLeaderName != null && sales?.name != null && teamleader?.role?.toLowerCase() == "team leader") {
+      if (teamLeaderName != null &&
+          sales?.name != null &&
+          teamleader?.role?.toLowerCase() == "team leader") {
         grouped.putIfAbsent(teamLeaderName, () => []);
         grouped[teamLeaderName]!.add(lead);
       }

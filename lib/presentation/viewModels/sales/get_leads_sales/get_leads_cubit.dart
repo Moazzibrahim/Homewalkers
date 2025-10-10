@@ -225,6 +225,28 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
             )
             .toList();
 
+    filtered.sort((a, b) {
+      DateTime? dateA =
+          a.stagedateupdated != null
+              ? DateTime.parse(
+                a.stagedateupdated!,
+              ).toUtc().add(const Duration(hours: 4))
+              : null;
+      DateTime? dateB =
+          b.stagedateupdated != null
+              ? DateTime.parse(
+                b.stagedateupdated!,
+              ).toUtc().add(const Duration(hours: 4))
+              : null;
+
+      if (dateA == null && dateB == null) return 0;
+      if (dateA == null) return 1;
+      if (dateB == null) return -1;
+
+      // مقارنة مباشرة من القديم إلى الجديد
+      return dateA.compareTo(dateB); // الأقدم أولاً، الأحدث بعده
+    });
+
     emit(GetLeadsSuccess(LeadResponse(data: filtered)));
   }
 }

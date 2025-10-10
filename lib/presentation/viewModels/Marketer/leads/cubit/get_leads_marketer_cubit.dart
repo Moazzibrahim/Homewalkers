@@ -19,7 +19,10 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
   GetLeadsMarketerCubit(this._getLeadsService)
     : super(GetLeadsMarketerInitial());
 
-  Future<void> getLeadsByMarketer({String? stageFilter, bool duplicatesOnly = false, }) async {
+  Future<void> getLeadsByMarketer({
+    String? stageFilter,
+    bool duplicatesOnly = false,
+  }) async {
     emit(GetLeadsMarketerLoading());
     try {
       final leadsResponse = await _getLeadsService.getLeadsDataByMarketer();
@@ -60,12 +63,41 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
                 )
                 .toList();
       }
+
       if (duplicatesOnly) {
-        filteredData = filteredData
-            ?.where((lead) => (lead.allVersions?.length ?? 0) > 1)
-            .toList();
+        filteredData =
+            filteredData
+                ?.where((lead) => (lead.allVersions?.length ?? 0) > 1)
+                .toList();
       }
-      log("✅ البيانات الأولية تم جلبها وفلترتها بنجاح. عدد النتائج: ${filteredData?.length ?? 0}");
+
+      // ✅ إضافة منطق الترتيب حسب أقرب stagedateupdated لتوقيت دبي
+      if (filteredData != null && filteredData.isNotEmpty) {
+        filteredData.sort((a, b) {
+          DateTime? dateA =
+              a.stagedateupdated != null
+                  ? DateTime.parse(
+                    a.stagedateupdated!,
+                  ).toUtc().add(const Duration(hours: 4))
+                  : null;
+          DateTime? dateB =
+              b.stagedateupdated != null
+                  ? DateTime.parse(
+                    b.stagedateupdated!,
+                  ).toUtc().add(const Duration(hours: 4))
+                  : null;
+
+          if (dateA == null && dateB == null) return 0;
+          if (dateA == null) return 1;
+          if (dateB == null) return -1;
+
+          return dateA.compareTo(dateB); // القديم أولاً، الجديد بعده
+        });
+      }
+
+      log(
+        "✅ البيانات الأولية تم جلبها وفلترتها بنجاح. عدد النتائج: ${filteredData?.length ?? 0}",
+      );
       log("✅ تم جلب البيانات بنجاح.");
       emit(GetLeadsMarketerSuccess(LeadResponse(data: filteredData)));
     } catch (e) {

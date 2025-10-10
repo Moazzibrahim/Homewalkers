@@ -150,6 +150,32 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     }
   }
 
+  String formatDateTimeToDubai(String dateStr) {
+    try {
+      // Parse and ensure UTC base
+      final utcTime = DateTime.parse(dateStr).toUtc();
+
+      // Convert to Dubai timezone (UTC+4)
+      final dubaiTime = utcTime.add(const Duration(hours: 4));
+
+      // Format the output
+      final day = dubaiTime.day.toString().padLeft(2, '0');
+      final month = dubaiTime.month.toString().padLeft(2, '0');
+      final year = dubaiTime.year;
+
+      // Convert to 12-hour format with AM/PM
+      int hour = dubaiTime.hour;
+      final minute = dubaiTime.minute.toString().padLeft(2, '0');
+      final ampm = hour >= 12 ? 'PM' : 'AM';
+      if (hour > 12) hour -= 12;
+      if (hour == 0) hour = 12;
+
+      return '$day/$month/$year - ${hour.toString().padLeft(2, '0')}:$minute $ampm';
+    } catch (e) {
+      return dateStr; // fallback في حال كان التاريخ مش صحيح
+    }
+  }
+
   Widget getStatusIcon(String status) {
     switch (status) {
       case 'Follow Up':
@@ -1160,8 +1186,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          lead.createdAt != null
-                                              ? formatDateTime(lead.createdAt!)
+                                          lead.date != null
+                                              ? formatDateTimeToDubai(
+                                                lead.date!,
+                                              )
                                               : "N/A",
                                           style: TextStyle(
                                             fontSize: 12.sp,
@@ -1857,9 +1885,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
-                                            lead.lastStageDateUpdated != null
-                                                ? formatDateTime(
-                                                  lead.lastStageDateUpdated!,
+                                            lead.stagedateupdated != null
+                                                ? formatDateTimeToDubai(
+                                                  lead.stagedateupdated!,
                                                 )
                                                 : "N/A",
                                             style: TextStyle(

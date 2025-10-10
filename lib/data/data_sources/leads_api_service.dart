@@ -36,30 +36,22 @@ class GetLeadsService {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
 
-        // ✅ ترتيب الداتا من الحديث للقديم حسب createdAt أو updatedAt
+        // ✅ ترتيب البيانات حسب التاريخ (من الأحدث إلى الأقدم)
         leadsResponse.data?.sort((a, b) {
-          final now = DateTime.now();
-
           final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
           final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
+          return dateB.compareTo(dateA); // الأحدث أولاً
+        });
 
-          final lastStageA =
-              DateTime.tryParse(a.lastStageDateUpdated ?? '') ?? DateTime(0);
-          final lastStageB =
-              DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
-
-          // ✅ الأولوية للأحدث في last_stage_date_updated
-          final lastStageComparison = lastStageB.compareTo(lastStageA);
-          if (lastStageComparison != 0) return lastStageComparison;
-
-          // لو متساويين في last_stage_date_updated → نرتب حسب date
-          return dateB.compareTo(dateA);
+        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
+        leadsResponse.data?.take(5).forEach((lead) {
+          print('${lead.name} - date: ${lead.date}');
         });
 
         // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
         leadsResponse.data?.take(5).forEach((lead) {
           print(
-            '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.lastStageDateUpdated}',
+            '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.stagedateupdated}',
           );
         });
 
@@ -104,27 +96,15 @@ class GetLeadsService {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
 
-        // ✅ ترتيب الداتا من الأحدث للأقدم حسب createdAt
-        // ✅ ترتيب الداتا بالأحدث أولاً حسب date ثم last_stage_date_updated
-        // ✅ ترتيب الداتا بالأحدث أولاً حسب date
-        // ثم حسب last_stage_date_updated بحيث الأقدم أو الأقرب للنهارده يظهر قبل اللي لسه هييجي بعدين
         leadsResponse.data?.sort((a, b) {
-          final now = DateTime.now();
-
           final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
           final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
+          return dateB.compareTo(dateA); // الأحدث أولاً
+        });
 
-          final lastStageA =
-              DateTime.tryParse(a.lastStageDateUpdated ?? '') ?? DateTime(0);
-          final lastStageB =
-              DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
-
-          // ✅ الأولوية للأحدث في last_stage_date_updated
-          final lastStageComparison = lastStageB.compareTo(lastStageA);
-          if (lastStageComparison != 0) return lastStageComparison;
-
-          // لو متساويين في last_stage_date_updated → نرتب حسب date
-          return dateB.compareTo(dateA);
+        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
+        leadsResponse.data?.take(5).forEach((lead) {
+          print('${lead.name} - date: ${lead.date}');
         });
         // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
         leadsResponse.data?.take(5).forEach((lead) {
@@ -216,24 +196,16 @@ class GetLeadsService {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
 
-        // ✅ ترتيب الداتا من الحديث للقديم حسب updatedAt أو createdAt
+        // ✅ ترتيب البيانات حسب التاريخ (من الأحدث إلى الأقدم)
         leadsResponse.data?.sort((a, b) {
-          final now = DateTime.now();
-
           final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
           final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
+          return dateB.compareTo(dateA); // الأحدث أولاً
+        });
 
-          final lastStageA =
-              DateTime.tryParse(a.lastStageDateUpdated ?? '') ?? DateTime(0);
-          final lastStageB =
-              DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
-
-          // ✅ الأولوية للأحدث في last_stage_date_updated
-          final lastStageComparison = lastStageB.compareTo(lastStageA);
-          if (lastStageComparison != 0) return lastStageComparison;
-
-          // لو متساويين في last_stage_date_updated → نرتب حسب date
-          return dateB.compareTo(dateA);
+        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
+        leadsResponse.data?.take(5).forEach((lead) {
+          print('${lead.name} - date: ${lead.date}');
         });
         // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
         leadsResponse.data?.take(5).forEach((lead) {
@@ -309,24 +281,16 @@ class GetLeadsService {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
 
-        // ✅ ترتيب الداتا من الحديث للقديم حسب updatedAt أو createdAt
+        // ✅ ترتيب البيانات حسب التاريخ (من الأحدث إلى الأقدم)
         leadsResponse.data?.sort((a, b) {
-          final now = DateTime.now();
-
           final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
           final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
+          return dateB.compareTo(dateA); // الأحدث أولاً
+        });
 
-          final lastStageA =
-              DateTime.tryParse(a.lastStageDateUpdated ?? '') ?? DateTime(0);
-          final lastStageB =
-              DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
-
-          // ✅ الأولوية للأحدث في last_stage_date_updated
-          final lastStageComparison = lastStageB.compareTo(lastStageA);
-          if (lastStageComparison != 0) return lastStageComparison;
-
-          // لو متساويين في last_stage_date_updated → نرتب حسب date
-          return dateB.compareTo(dateA);
+        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
+        leadsResponse.data?.take(5).forEach((lead) {
+          print('${lead.name} - date: ${lead.date}');
         });
         // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
         leadsResponse.data?.take(5).forEach((lead) {
