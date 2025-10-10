@@ -36,13 +36,6 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     try {
       final data = await apiService.getAssignedData();
 
-      // ترتيب الـ leads من الأحدث إلى الأقدم
-      data.data?.sort((a, b) {
-        final aDate = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
-        final bDate = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
-        return bDate.compareTo(aDate); // الحديث قبل القديم
-      });
-
       _cachedLeads = data;
       final prefs = await SharedPreferences.getInstance();
       final String? teamleaderId = data.data?.first.sales?.teamleader?.id;

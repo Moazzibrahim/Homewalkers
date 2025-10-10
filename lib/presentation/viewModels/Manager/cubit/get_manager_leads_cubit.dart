@@ -23,13 +23,6 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
 
     try {
       final leadsResponse = await _getLeadsService.getLeadsDataByManager();
-      // ترتيب من الأحدث إلى الأقدم
-      leadsResponse.data?.sort((a, b) {
-        final aDate = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
-        final bDate = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
-        return bDate.compareTo(aDate);
-      });
-
       _originalLeadsResponse = leadsResponse; // 🟡 حفظ البيانات الأصلية
       // تحميل عدد الـ leads لكل مرحلة
       _salesLeadCount = await _getLeadsService.getLeadCountPerStageInManager();

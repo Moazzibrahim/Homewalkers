@@ -65,13 +65,6 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
             ?.where((lead) => (lead.allVersions?.length ?? 0) > 1)
             .toList();
       }
-
-      // ترتيب مرة واحدة فقط
-      filteredData?.sort((a, b) {
-        final aDate = DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
-        final bDate = DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
-        return bDate.compareTo(aDate);
-      });
       log("✅ البيانات الأولية تم جلبها وفلترتها بنجاح. عدد النتائج: ${filteredData?.length ?? 0}");
       log("✅ تم جلب البيانات بنجاح.");
       emit(GetLeadsMarketerSuccess(LeadResponse(data: filteredData)));

@@ -624,59 +624,105 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             ],
                             child: Builder(
                               builder: (innerContext) {
-                                return AlertDialog(
-                                  title: const Text("Confirmation"),
-                                  content: const Text(
-                                    "Are you sure to receive this lead?",
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      style: TextButton.styleFrom(
-                                        backgroundColor:
-                                            Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? Constants.maincolor
-                                                : Constants.mainDarkmodecolor,
+                                bool isLoading = false;
+
+                                return StatefulBuilder(
+                                  builder: (context, setState) {
+                                    return AlertDialog(
+                                      title: const Text("Confirmation"),
+                                      content: const Text(
+                                        "Are you sure to receive this lead?",
                                       ),
-                                      onPressed: () {
-                                        Navigator.of(
-                                          innerContext,
-                                        ).pop(); // Close dialog
-                                      },
-                                      child: const Text(
-                                        "Cancel",
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      style: TextButton.styleFrom(
-                                        backgroundColor:
-                                            Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? Constants.maincolor
-                                                : Constants.mainDarkmodecolor,
-                                      ),
-                                      onPressed: () async {
-                                        await innerContext
-                                            .read<EditLeadCubit>()
-                                            .editLeadAssignvalue(
-                                              userId: lead.id!,
-                                              assign: false,
-                                            );
-                                        Navigator.of(
-                                          innerContext,
-                                        ).pop(); // اقفل الـ dialog
-                                        // ✅ استدعِ الكابت من الـ innerContext اللي فيه نفس instance
-                                        await innerContext
-                                            .read<GetLeadsTeamLeaderCubit>()
-                                            .getLeadsByTeamLeader();
-                                      },
-                                      child: const Text(
-                                        "OK",
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                  ],
+                                      actions: [
+                                        // ❌ Cancel button
+                                        TextButton(
+                                          style: TextButton.styleFrom(
+                                            backgroundColor:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.light
+                                                    ? Constants.maincolor
+                                                    : Constants
+                                                        .mainDarkmodecolor,
+                                          ),
+                                          onPressed: () {
+                                            Navigator.of(
+                                              innerContext,
+                                            ).pop(); // Close dialog
+                                          },
+                                          child: const Text(
+                                            "Cancel",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+
+                                        // ✅ OK button with loading state
+                                        TextButton(
+                                          style: TextButton.styleFrom(
+                                            backgroundColor:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.light
+                                                    ? Constants.maincolor
+                                                    : Constants
+                                                        .mainDarkmodecolor,
+                                          ),
+                                          onPressed:
+                                              isLoading
+                                                  ? null
+                                                  : () async {
+                                                    setState(() {
+                                                      isLoading = true;
+                                                    });
+
+                                                    try {
+                                                      await innerContext
+                                                          .read<EditLeadCubit>()
+                                                          .editLeadAssignvalue(
+                                                            userId: lead.id!,
+                                                            assign: false,
+                                                          );
+
+                                                      if (context.mounted) {
+                                                        Navigator.of(
+                                                          innerContext,
+                                                        ).pop(); // Close dialog
+
+                                                        await innerContext
+                                                            .read<
+                                                              GetLeadsTeamLeaderCubit
+                                                            >()
+                                                            .getLeadsByTeamLeader(); // Refresh
+                                                      }
+                                                    } finally {
+                                                      if (context.mounted) {
+                                                        setState(() {
+                                                          isLoading = false;
+                                                        });
+                                                      }
+                                                    }
+                                                  },
+                                          child:
+                                              isLoading
+                                                  ? const SizedBox(
+                                                    height: 20,
+                                                    width: 20,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white,
+                                                        ),
+                                                  )
+                                                  : const Text(
+                                                    "OK",
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 );
                               },
                             ),
@@ -735,8 +781,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                 Icon(Icons.date_range, color: Colors.grey, size: 18),
                 const SizedBox(width: 8),
                 Text(
-                  lead.lastStageDateUpdated != null
-                      ? formatDateTime(lead.lastStageDateUpdated!)
+                  lead.createdAt != null
+                      ? formatDateTime(lead.createdAt!)
                       : "N/A",
                   style: TextStyle(
                     fontSize: 12.sp,
@@ -763,6 +809,22 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   lead.totalSubmissions ?? 0,
                 ),
                 _buildLastCommentButton(context, lead),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(Icons.date_range_outlined, color: Colors.grey, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  lead.lastStageDateUpdated != null
+                      ? formatDateTime(lead.lastStageDateUpdated!)
+                      : "N/A",
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 10),

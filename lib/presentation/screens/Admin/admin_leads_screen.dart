@@ -227,7 +227,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                   : Constants.mainDarkmodecolor,
         );
       default:
-        return const Icon(Icons.info_outline,color: Colors.grey,);
+        return const Icon(Icons.info_outline, color: Colors.grey);
     }
   }
 
@@ -1160,10 +1160,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          lead.lastStageDateUpdated != null
-                                              ? formatDateTime(
-                                                lead.lastStageDateUpdated!,
-                                              )
+                                          lead.createdAt != null
+                                              ? formatDateTime(lead.createdAt!)
                                               : "N/A",
                                           style: TextStyle(
                                             fontSize: 12.sp,
@@ -1183,7 +1181,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           Expanded(
                                             child: InkWell(
                                               onTap: () async {
-                                                final phone = lead.whatsappnumber
+                                                final phone = lead
+                                                    .whatsappnumber
                                                     ?.replaceAll(
                                                       RegExp(r'\D'),
                                                       '',
@@ -1843,6 +1842,33 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           ],
                                         ),
                                       ],
+                                    ),
+                                    SizedBox(height: 10.h),
+                                    Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          Icon(
+                                            Icons.date_range_outlined,
+                                            color: Colors.grey,
+                                            size: 18,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            lead.lastStageDateUpdated != null
+                                                ? formatDateTime(
+                                                  lead.lastStageDateUpdated!,
+                                                )
+                                                : "N/A",
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                     // ---------- Row 6: View More Link ----------
                                     SizedBox(height: 8.h),

@@ -33,6 +33,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
   DateTime? clearHistoryTimee;
   String? managername;
   String? managerid;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -552,82 +553,123 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                         builder: (
                                                           innerContext,
                                                         ) {
-                                                          return AlertDialog(
-                                                            title: const Text(
-                                                              "Confirmation",
-                                                            ),
-                                                            content: const Text(
-                                                              "Are you sure to receive this lead?",
-                                                            ),
-                                                            actions: [
-                                                              TextButton(
-                                                                style: TextButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      Theme.of(
-                                                                                context,
-                                                                              ).brightness ==
-                                                                              Brightness.light
-                                                                          ? Constants
-                                                                              .maincolor
-                                                                          : Constants
-                                                                              .mainDarkmodecolor,
+                                                          bool isLoading =
+                                                              false;
+
+                                                          return StatefulBuilder(
+                                                            builder: (
+                                                              context,
+                                                              setState,
+                                                            ) {
+                                                              return AlertDialog(
+                                                                title: const Text(
+                                                                  "Confirmation",
                                                                 ),
-                                                                onPressed:
-                                                                    () =>
-                                                                        Navigator.of(
-                                                                          context,
-                                                                        ).pop(),
-                                                                child: const Text(
-                                                                  "Cancel",
-                                                                  style: TextStyle(
-                                                                    color:
-                                                                        Colors
-                                                                            .white,
+                                                                content: const Text(
+                                                                  "Are you sure to receive this lead?",
+                                                                ),
+                                                                actions: [
+                                                                  // Cancel button
+                                                                  TextButton(
+                                                                    style: TextButton.styleFrom(
+                                                                      backgroundColor:
+                                                                          Theme.of(context).brightness ==
+                                                                                  Brightness.light
+                                                                              ? Constants.maincolor
+                                                                              : Constants.mainDarkmodecolor,
+                                                                    ),
+                                                                    onPressed:
+                                                                        () =>
+                                                                            Navigator.of(
+                                                                              context,
+                                                                            ).pop(),
+                                                                    child: const Text(
+                                                                      "Cancel",
+                                                                      style: TextStyle(
+                                                                        color:
+                                                                            Colors.white,
+                                                                      ),
+                                                                    ),
                                                                   ),
-                                                                ),
-                                                              ),
-                                                              TextButton(
-                                                                style: TextButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      Theme.of(
-                                                                                context,
-                                                                              ).brightness ==
-                                                                              Brightness.light
-                                                                          ? Constants
-                                                                              .maincolor
-                                                                          : Constants
-                                                                              .mainDarkmodecolor,
-                                                                ),
-                                                                onPressed: () {
-                                                                  innerContext
-                                                                      .read<
-                                                                        EditLeadCubit
-                                                                      >()
-                                                                      .editLeadAssignvalue(
-                                                                        userId:
-                                                                            lead.id!,
-                                                                        assign:
-                                                                            false,
-                                                                      );
-                                                                  Navigator.of(
-                                                                    innerContext,
-                                                                  ).pop();
-                                                                  innerContext
-                                                                      .read<
-                                                                        GetManagerLeadsCubit
-                                                                      >()
-                                                                      .getLeadsByManager();
-                                                                },
-                                                                child: const Text(
-                                                                  "OK",
-                                                                  style: TextStyle(
-                                                                    color:
-                                                                        Colors
-                                                                            .white,
+
+                                                                  // OK button
+                                                                  TextButton(
+                                                                    style: TextButton.styleFrom(
+                                                                      backgroundColor:
+                                                                          Theme.of(context).brightness ==
+                                                                                  Brightness.light
+                                                                              ? Constants.maincolor
+                                                                              : Constants.mainDarkmodecolor,
+                                                                    ),
+                                                                    onPressed:
+                                                                        isLoading
+                                                                            ? null
+                                                                            : () async {
+                                                                              setState(
+                                                                                () {
+                                                                                  isLoading =
+                                                                                      true;
+                                                                                },
+                                                                              );
+
+                                                                              try {
+                                                                                await innerContext
+                                                                                    .read<
+                                                                                      EditLeadCubit
+                                                                                    >()
+                                                                                    .editLeadAssignvalue(
+                                                                                      userId:
+                                                                                          lead.id!,
+                                                                                      assign:
+                                                                                          false,
+                                                                                    );
+
+                                                                                if (context.mounted) {
+                                                                                  Navigator.of(
+                                                                                    innerContext,
+                                                                                  ).pop(); // Close dialog
+                                                                                  innerContext
+                                                                                      .read<
+                                                                                        GetManagerLeadsCubit
+                                                                                      >()
+                                                                                      .getLeadsByManager(); // Refresh data
+                                                                                }
+                                                                              } finally {
+                                                                                if (context.mounted) {
+                                                                                  setState(
+                                                                                    () {
+                                                                                      isLoading =
+                                                                                          false;
+                                                                                    },
+                                                                                  );
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                    child:
+                                                                        isLoading
+                                                                            ? const SizedBox(
+                                                                              height:
+                                                                                  20,
+                                                                              width:
+                                                                                  20,
+                                                                              child: CircularProgressIndicator(
+                                                                                strokeWidth:
+                                                                                    2,
+                                                                                color:
+                                                                                    Colors.white,
+                                                                              ),
+                                                                            )
+                                                                            : const Text(
+                                                                              "OK",
+                                                                              style: TextStyle(
+                                                                                color:
+                                                                                    Colors.white,
+                                                                              ),
+                                                                            ),
                                                                   ),
-                                                                ),
-                                                              ),
-                                                            ],
+                                                                ],
+                                                              );
+                                                            },
                                                           );
                                                         },
                                                       ),
@@ -713,9 +755,9 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
-                                            lead.lastStageDateUpdated != null
+                                            lead.createdAt != null
                                                 ? formatDateTime(
-                                                  lead.lastStageDateUpdated!,
+                                                  lead.createdAt!,
                                                 )
                                                 : "N/A",
                                             style: TextStyle(
@@ -1075,6 +1117,33 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             ],
                                           ),
                                         ],
+                                      ),
+                                      SizedBox(height: 10.h),
+                                      Padding(
+                                        padding: const EdgeInsets.all(4.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            Icon(
+                                              Icons.date_range_outlined,
+                                              color: Colors.grey,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              lead.lastStageDateUpdated != null
+                                                  ? formatDateTime(
+                                                    lead.lastStageDateUpdated!,
+                                                  )
+                                                  : "N/A",
+                                              style: TextStyle(
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                       // ---------- Row 6: View More Link ----------
                                       SizedBox(height: 8.h),

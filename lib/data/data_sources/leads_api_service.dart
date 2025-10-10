@@ -48,20 +48,14 @@ class GetLeadsService {
           final lastStageB =
               DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
 
-          // الأولوية للأحدث في date
-          final dateComparison = dateB.compareTo(dateA);
-          if (dateComparison != 0) {
-            return dateComparison;
-          }
+          // ✅ الأولوية للأحدث في last_stage_date_updated
+          final lastStageComparison = lastStageB.compareTo(lastStageA);
+          if (lastStageComparison != 0) return lastStageComparison;
 
-          // لو متساويين في date → نرتب last_stage_date_updated بحيث المستقبل يجي بعد الحاضر أو الماضي
-          final isAFuture = lastStageA.isAfter(now);
-          final isBFuture = lastStageB.isAfter(now);
-
-          if (isAFuture && !isBFuture) return 1; // A بعد النهارده → يروح تحت
-          if (!isAFuture && isBFuture) return -1; // B بعد النهارده → يروح تحت
-          return lastStageB.compareTo(lastStageA); // الباقي بالأحدث أولاً
+          // لو متساويين في last_stage_date_updated → نرتب حسب date
+          return dateB.compareTo(dateA);
         });
+
         // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
         leadsResponse.data?.take(5).forEach((lead) {
           print(
@@ -125,19 +119,12 @@ class GetLeadsService {
           final lastStageB =
               DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
 
-          // الأولوية للأحدث في date
-          final dateComparison = dateB.compareTo(dateA);
-          if (dateComparison != 0) {
-            return dateComparison;
-          }
+          // ✅ الأولوية للأحدث في last_stage_date_updated
+          final lastStageComparison = lastStageB.compareTo(lastStageA);
+          if (lastStageComparison != 0) return lastStageComparison;
 
-          // لو متساويين في date → نرتب last_stage_date_updated بحيث المستقبل يجي بعد الحاضر أو الماضي
-          final isAFuture = lastStageA.isAfter(now);
-          final isBFuture = lastStageB.isAfter(now);
-
-          if (isAFuture && !isBFuture) return 1; // A بعد النهارده → يروح تحت
-          if (!isAFuture && isBFuture) return -1; // B بعد النهارده → يروح تحت
-          return lastStageB.compareTo(lastStageA); // الباقي بالأحدث أولاً
+          // لو متساويين في last_stage_date_updated → نرتب حسب date
+          return dateB.compareTo(dateA);
         });
         // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
         leadsResponse.data?.take(5).forEach((lead) {
@@ -241,19 +228,12 @@ class GetLeadsService {
           final lastStageB =
               DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
 
-          // الأولوية للأحدث في date
-          final dateComparison = dateB.compareTo(dateA);
-          if (dateComparison != 0) {
-            return dateComparison;
-          }
+          // ✅ الأولوية للأحدث في last_stage_date_updated
+          final lastStageComparison = lastStageB.compareTo(lastStageA);
+          if (lastStageComparison != 0) return lastStageComparison;
 
-          // لو متساويين في date → نرتب last_stage_date_updated بحيث المستقبل يجي بعد الحاضر أو الماضي
-          final isAFuture = lastStageA.isAfter(now);
-          final isBFuture = lastStageB.isAfter(now);
-
-          if (isAFuture && !isBFuture) return 1; // A بعد النهارده → يروح تحت
-          if (!isAFuture && isBFuture) return -1; // B بعد النهارده → يروح تحت
-          return lastStageB.compareTo(lastStageA); // الباقي بالأحدث أولاً
+          // لو متساويين في last_stage_date_updated → نرتب حسب date
+          return dateB.compareTo(dateA);
         });
         // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
         leadsResponse.data?.take(5).forEach((lead) {
@@ -341,19 +321,12 @@ class GetLeadsService {
           final lastStageB =
               DateTime.tryParse(b.lastStageDateUpdated ?? '') ?? DateTime(0);
 
-          // الأولوية للأحدث في date
-          final dateComparison = dateB.compareTo(dateA);
-          if (dateComparison != 0) {
-            return dateComparison;
-          }
+          // ✅ الأولوية للأحدث في last_stage_date_updated
+          final lastStageComparison = lastStageB.compareTo(lastStageA);
+          if (lastStageComparison != 0) return lastStageComparison;
 
-          // لو متساويين في date → نرتب last_stage_date_updated بحيث المستقبل يجي بعد الحاضر أو الماضي
-          final isAFuture = lastStageA.isAfter(now);
-          final isBFuture = lastStageB.isAfter(now);
-
-          if (isAFuture && !isBFuture) return 1; // A بعد النهارده → يروح تحت
-          if (!isAFuture && isBFuture) return -1; // B بعد النهارده → يروح تحت
-          return lastStageB.compareTo(lastStageA); // الباقي بالأحدث أولاً
+          // لو متساويين في last_stage_date_updated → نرتب حسب date
+          return dateB.compareTo(dateA);
         });
         // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
         leadsResponse.data?.take(5).forEach((lead) {
