@@ -18,22 +18,53 @@ class SalesdashboardScreen extends StatefulWidget {
   State<SalesdashboardScreen> createState() => _SalesdashboardScreenState();
 }
 
-class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
-  String _userName = 'User'; // متغير لتخزين اسم المستخدم
+class _SalesdashboardScreenState extends State<SalesdashboardScreen>
+    with WidgetsBindingObserver {
+  String _userName = 'User';
+  late GetLeadsCubit _leadsCubit;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _checkAuth();
+
+    _leadsCubit = GetLeadsCubit(GetLeadsService());
+
+    // ⚠️ استخدم addPostFrameCallback للتأكد من بناء الشاشة أولاً
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _forceLoadDashboardData();
+    });
+
     context.read<NotificationCubit>().initNotifications();
-    print("init notifications called");
   }
+
+  Future<void> _forceLoadDashboardData() async {
+    try {
+      // ⚠️ جلب بيانات dashboard بقوة
+      await _leadsCubit.fetchDashboardLeads(showLoading: true);
+    } catch (e) {
+      print("Error loading dashboard data: $e");
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      print("App resumed — force refreshing dashboard data...");
+      // ⚠️ إضافة تأخير للتأكد من استقرار التطبيق
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _forceLoadDashboardData();
+      });
+    }
+  }
+
+  // ... باقي الكود
 
   Future<void> _checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('name');
     if (mounted) {
-      // التحقق من أن الويدجت لا يزال في الشجرة
       setState(() {
         _userName = name ?? 'User';
       });
@@ -41,9 +72,17 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _leadsCubit.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => GetLeadsCubit(GetLeadsService())..fetchLeads(),
+    return BlocProvider.value(
+      // 👈 نستخدم .value عشان نمرر نفس الـ cubit اللي أنشأناه في initState
+      value: _leadsCubit,
       child: Scaffold(
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
@@ -63,7 +102,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _userName, // استخدام اسم المستخدم من متغير الحالة
+                    _userName,
                     style: TextStyle(
                       color:
                           Theme.of(context).brightness == Brightness.light
@@ -95,146 +134,153 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
             ],
           ),
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        body: RefreshIndicator(
+          onRefresh: () async {
+            await _leadsCubit.fetchDashboardLeads(showLoading: true);
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Hello $_userName', // استخدام اسم المستخدم هنا أيضاً
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? const Color(0xff080719)
-                                : Colors.white,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Hello $_userName', // استخدام اسم المستخدم هنا أيضاً
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? const Color(0xff080719)
+                                    : Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('👋', style: TextStyle(fontSize: 20)),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    const Text('👋', style: TextStyle(fontSize: 20)),
+                    const SizedBox(height: 20),
+                    BlocBuilder<GetLeadsCubit, GetLeadsState>(
+                      builder: (context, state) {
+                        if (state is GetLeadsLoading) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _dashboardCard(
+                                      'Leads',
+                                      '...',
+                                      Icons.group,
+                                      context,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              const Center(child: CircularProgressIndicator()),
+                            ],
+                          );
+                        } else if (state is GetLeadsSuccess) {
+                          final allLeads = state.assignedModel.data ?? [];
+                          final Map<String, int> stageCounts = {};
+                          for (var lead in allLeads) {
+                            final rawStageName = lead.stage?.name ?? 'Unknown';
+                            final stageName =
+                                rawStageName == 'No Stage'
+                                    ? 'Fresh'
+                                    : rawStageName;
+                            stageCounts[stageName] =
+                                (stageCounts[stageName] ?? 0) + 1;
+                          }
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _dashboardCard(
+                                      'Leads',
+                                      '${allLeads.length}',
+                                      Icons.group,
+                                      context,
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) =>
+                                                    const SalesLeadsScreen(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  // يمكنك إضافة كرت "Deals" هنا إذا أردت
+                                ],
+                              ),
+                              const SizedBox(height: 18),
+                              GridView.count(
+                                crossAxisCount: 2,
+                                shrinkWrap: true,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                                childAspectRatio: 1.5,
+                                physics: const NeverScrollableScrollPhysics(),
+                                children:
+                                    stageCounts.entries.map((entry) {
+                                      return _dashboardCard(
+                                        entry.key,
+                                        entry.value.toString(),
+                                        Icons.timeline,
+                                        context,
+                                        onTap: () {
+                                          final stageNameToSend =
+                                              entry.key == 'Fresh'
+                                                  ? 'No Stage'
+                                                  : entry.key;
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) => SalesLeadsScreen(
+                                                    stageName: stageNameToSend,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    }).toList(),
+                              ),
+                            ],
+                          );
+                        } else {
+                          //
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: _dashboardCard(
+                                  'Leads',
+                                  '0',
+                                  Icons.group,
+                                  context,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 25),
                   ],
                 ),
-                const SizedBox(height: 20),
-                BlocBuilder<GetLeadsCubit, GetLeadsState>(
-                  builder: (context, state) {
-                    if (state is GetLeadsLoading) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _dashboardCard(
-                                  'Leads',
-                                  '...',
-                                  Icons.group,
-                                  context,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          const Center(child: CircularProgressIndicator()),
-                        ],
-                      );
-                    } else if (state is GetLeadsSuccess) {
-                      final allLeads = state.assignedModel.data ?? [];
-                      final Map<String, int> stageCounts = {};
-                      for (var lead in allLeads) {
-                        final stageName = lead.stage?.name ?? 'Unknown';
-                        stageCounts[stageName] =
-                            (stageCounts[stageName] ?? 0) + 1;
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _dashboardCard(
-                                  'Leads',
-                                  '${allLeads.length}',
-                                  Icons.group,
-                                  context,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) =>
-                                                const SalesLeadsScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              // يمكنك إضافة كرت "Deals" هنا إذا أردت
-                            ],
-                          ),
-                          const SizedBox(height: 18),
-                          GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 1.5,
-                            physics: const NeverScrollableScrollPhysics(),
-                            children:
-                                stageCounts.entries.map((entry) {
-                                  return _dashboardCard(
-                                    entry.key,
-                                    entry.value.toString(),
-                                    Icons.timeline,
-                                    context,
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (context) => SalesLeadsScreen(
-                                                stageName: entry.key,
-                                              ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                }).toList(),
-                          ),
-                        ],
-                      );
-                    } else {
-                      //
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: _dashboardCard(
-                              'Leads',
-                              '0',
-                              Icons.group,
-                              context,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _dashboardCard(
-                              'Deals',
-                              '0',
-                              Icons.work_outline,
-                              context,
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 25),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -248,9 +294,10 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen> {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.light
-            ? Colors.white
-            : const Color(0xff1e1e1e),
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors.white
+                : const Color(0xff1e1e1e),
         borderRadius: BorderRadius.circular(8),
       ),
       child: IconButton(

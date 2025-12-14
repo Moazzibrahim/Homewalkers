@@ -1,5 +1,5 @@
 // leads_marketier_screen.dart
-// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, unused_field
+// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, unused_field, use_super_parameters
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,9 +15,8 @@ import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart'
 import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
-import 'package:homewalkers_app/data/models/all_sales_model.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
-import 'package:homewalkers_app/data/models/stages_models.dart';
+import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_lead_details.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
@@ -26,9 +25,9 @@ import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/communication_ways/cubit/get_communication_ways_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
@@ -43,11 +42,16 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AdminLeadsScreen extends StatefulWidget {
   final String? stageName;
-  final bool showDuplicatesOnly;
+  final bool? showDuplicatesOnly;
+  final bool shouldRefreshOnOpen;
+  final String? stageId;
+
   const AdminLeadsScreen({
     super.key,
     this.stageName,
-    this.showDuplicatesOnly = false,
+    this.showDuplicatesOnly,
+    this.shouldRefreshOnOpen = true,
+    this.stageId,
   });
 
   @override
@@ -79,44 +83,138 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   DateTime? _oldStageDateStartFilter;
   DateTime? _oldStageDateEndFilter;
   late bool _showDuplicatesOnly;
-  bool _isSelectAll = false;
-  Set<String> _selectedLeads = {};
+  final bool _isSelectAll = false;
+  final Set<String> _selectedLeads = {};
+  final Set<String> _selectedSalesIds = {};
+  final Set<String> _selectedLeadStagesIds = {};
   final String selectedSalesId = ''; // انت عارف ده من مكان تاني
   String? _selectedSalesFcmToken;
+  bool _showCheckboxes = false; // عشان نتحكم في ظهور الـ Checkbox
+  final ScrollController _scrollController = ScrollController();
+  bool _isFetchingMore = false; // 👈 متغير داخلي يمنع التكرار
+  bool _hasMoreData = true; // ✅ نعرف إذا كان فيه بيانات زيادة
 
   @override
   void initState() {
     super.initState();
+
     _nameSearchController = TextEditingController();
-    _selectedStageFilter = widget.stageName;
-    _showDuplicatesOnly = widget.showDuplicatesOnly;
-    context.read<GetAllUsersCubit>().fetchAllUsers().then((_) {
-      if (_showDuplicatesOnly) {
-        context.read<GetAllUsersCubit>().filterLeadsAdmin(duplicatesOnly: true);
-      } else if (_selectedStageFilter != null &&
-          _selectedStageFilter!.isNotEmpty) {
-        _applyCurrentFilters();
+    _selectedStageFilter = widget.stageId;
+    _showDuplicatesOnly = widget.showDuplicatesOnly ?? false;
+    log("stage id: $_selectedStageFilter");
+    log("stage name: ${widget.stageName}");
+    log("show duplicates only: $_showDuplicatesOnly");
+
+    // ✅ إعداد الـ Scroll Listener
+    _setupScrollListener();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final cubit = context.read<GetAllUsersCubit>();
+
+      log("⏳ البيانات مش موجودة، هنعمل fetch دلوقتي");
+      cubit.fetchAllUsers(
+        reset: true,
+        stageFilter:
+            (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty)
+                ? _selectedStageFilter
+                : null,
+        duplicatesOnly: _showDuplicatesOnly,
+      );
+    });
+  }
+
+  // ✅ دالة إعداد الـ Scroll Listener
+  void _setupScrollListener() {
+    _scrollController.addListener(() {
+      // ✅ تحقق إذا وصلنا لنهاية السكرول
+      if (_scrollController.position.pixels ==
+          _scrollController.position.maxScrollExtent) {
+        // ❌ لو فيه فلترة → امنع تحميل المزيد
+        if (_searchQuery.isNotEmpty ||
+            _selectedCountryFilter != null ||
+            _selectedDeveloperFilter != null ||
+            _selectedProjectFilter != null ||
+            _selectedChannelFilter != null ||
+            _selectedSalesFilter != null ||
+            _selectedCommunicationWayFilter != null ||
+            _selectedCampaignFilter != null ||
+            _addedByFilter != null ||
+            _assignedFromFilter != null ||
+            _assignedToFilter != null ||
+            _startDateFilter != null ||
+            _endDateFilter != null ||
+            _lastStageUpdateStartFilter != null ||
+            _lastStageUpdateEndFilter != null ||
+            _oldStageNameFilter != null) {
+          return;
+        }
+
+        _loadMoreData();
       }
     });
+  }
+
+  // ✅ دالة تحميل المزيد من البيانات
+  Future<void> _loadMoreData() async {
+    // ✅ منع التحميل المزدوج
+    if (_isFetchingMore || !_hasMoreData) return;
+
+    final cubit = context.read<GetAllUsersCubit>();
+
+    // ✅ تحقق إذا كان الكيوبت يدعم الـ pagination
+    if (cubit.hasMoreUsers) {
+      setState(() {
+        _isFetchingMore = true;
+      });
+
+      try {
+        await cubit.fetchAllUsers(
+          stageFilter: _selectedStageFilter,
+          loadMore: true, // ✅ إشارة أن هذا تحميل للمزيد
+          duplicatesOnly: _showDuplicatesOnly,
+        );
+
+        // ✅ تحديث حالة الـ hasMoreData من الكيوبت
+        _hasMoreData = cubit.hasMoreUsers;
+      } catch (e) {
+        log("Error loading more data: $e");
+      } finally {
+        setState(() {
+          _isFetchingMore = false;
+        });
+      }
+    } else {
+      // ✅ لا يوجد بيانات أكثر للتحميل
+      _hasMoreData = false;
+    }
   }
 
   @override
   void dispose() {
     _nameSearchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   void _applyCurrentFilters() {
-    // لا نطبق الفلاتر إذا كنا في تبويب سلة المهملات
-    if (selectedTab == 1) {
+    final cubit = context.read<GetAllUsersCubit>();
+
+    // ✅ لو لسه بيحمل أو الداتا فاضية — متعملش فلترة
+    if (cubit.state is GetAllUsersLoading ||
+        cubit.originalLeadsResponse?.data == null ||
+        cubit.originalLeadsResponse!.data!.isEmpty) {
+      log("⏳ لسه البيانات مجتش، مش هنعمل فلترة دلوقتي");
       return;
     }
+
+    if (selectedTab == 1) return;
+
     context.read<GetAllUsersCubit>().filterLeadsAdmin(
       query: _searchQuery,
       country: _selectedCountryFilter,
       developer: _selectedDeveloperFilter,
       project: _selectedProjectFilter,
-      stage: _selectedStageFilter,
+      stage: widget.stageName,
       channel: _selectedChannelFilter,
       sales: _selectedSalesFilter,
       communicationWay: _selectedCommunicationWayFilter,
@@ -134,6 +232,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       oldStageDateStart: _oldStageDateStartFilter,
       oldStageDateEnd: _oldStageDateEndFilter,
     );
+    setState(() {
+      _hasMoreData = false; // وقف اللود مور
+      _isFetchingMore = false;
+    });
   }
 
   String formatDateTime(String dateStr) {
@@ -173,87 +275,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       return '$day/$month/$year - ${hour.toString().padLeft(2, '0')}:$minute $ampm';
     } catch (e) {
       return dateStr; // fallback في حال كان التاريخ مش صحيح
-    }
-  }
-
-  Widget getStatusIcon(String status) {
-    switch (status) {
-      case 'Follow Up':
-      case 'Follow After Meeting':
-      case 'Follow':
-        return Icon(
-          Icons.mark_email_unread_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Meeting':
-        return Icon(
-          Icons.chat_bubble_outline,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Done Deal':
-        return Icon(
-          Icons.check_box_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Interested':
-        return Icon(
-          FontAwesomeIcons.check,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Not Interested':
-        return Icon(
-          FontAwesomeIcons.timesCircle,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Fresh':
-        return Icon(
-          Icons.new_releases,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Transfer':
-        return Icon(
-          Icons.no_transfer,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'EOI':
-        return Icon(
-          Icons.event_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Reservation':
-        return Icon(
-          Icons.task,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      default:
-        return const Icon(Icons.info_outline, color: Colors.grey);
     }
   }
 
@@ -433,7 +454,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 initialCountry: _selectedCountryFilter,
                                 initialDeveloper: _selectedDeveloperFilter,
                                 initialProject: _selectedProjectFilter,
-                                initialStage: _selectedStageFilter,
+                                initialStage: widget.stageName,
                                 initialChannel: _selectedChannelFilter,
                                 initialSales: _selectedSalesFilter,
                                 initialCommunicationWay:
@@ -484,7 +505,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                 ],
               ),
             ),
-            if (selectedTab == 0)
+            if (selectedTab == 0 && _selectedLeads.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -493,239 +514,212 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _isSelectAll,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _isSelectAll = value ?? false;
-                              final state =
-                                  context.read<GetAllUsersCubit>().state;
-                              if (state is GetAllUsersSuccess) {
-                                if (_isSelectAll) {
-                                  _selectedLeads =
-                                      state.users.data!
-                                          .where((lead) => lead.id != null)
-                                          .map<String>((lead) => lead.id!)
-                                          .toSet();
-                                } else {
-                                  _selectedLeads.clear();
-                                }
-                              }
-                            });
-                          },
-                          activeColor: Constants.maincolor,
-                        ),
-                        Text(
-                          'Select All',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w500,
+                    // ✅ شيلنا الـ Checkbox بالكامل
+                    const SizedBox(), // مكان فاضي عشان المسافات تبقى مظبوطة
+
+                    if (_selectedLeads.isNotEmpty)
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.light
-                                    ? Colors.black
-                                    : Colors.white,
+                                    ? Constants.maincolor
+                                    : Constants.mainDarkmodecolor,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ),
-                      ],
-                    ),
-                    PopupMenuButton<String>(
-                      enabled: _selectedLeads.isNotEmpty,
-                      onSelected: (String result) async {
-                        if (result == 'assign') {
-                          String selectedOption = 'same';
-                          String? selectedStageId;
-                          String? selectedstagename;
-                          final stagesCubit = context.read<StagesCubit>();
-                          if (stagesCubit.state is! StagesLoaded) {
-                            await stagesCubit.fetchStages();
-                          }
-                          final stageState = stagesCubit.state;
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              return StatefulBuilder(
-                                builder: (context, setState) {
-                                  return AlertDialog(
-                                    title: const Text('Assign Leads'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        RadioListTile<String>(
-                                          value: 'same',
-                                          groupValue: selectedOption,
-                                          title: const Text('Same Stage'),
-                                          onChanged: (value) {
-                                            setState(
-                                              () => selectedOption = value!,
-                                            );
-                                          },
-                                        ),
-                                        RadioListTile<String>(
-                                          value: 'change',
-                                          groupValue: selectedOption,
-                                          title: const Text('Change Stage'),
-                                          onChanged: (value) {
-                                            setState(
-                                              () => selectedOption = value!,
-                                            );
-                                          },
-                                        ),
-                                        if (selectedOption == 'change' &&
-                                            stageState is StagesLoaded)
-                                          DropdownButton<String>(
-                                            isExpanded: true,
-                                            value: selectedStageId,
-                                            hint: const Text('Select Stage'),
-                                            items:
-                                                stageState.stages.map((stage) {
-                                                  return DropdownMenuItem<
-                                                    String
-                                                  >(
-                                                    value: stage.id.toString(),
-                                                    child: Text(
-                                                      stage.name ?? 'Unnamed',
-                                                    ),
-                                                  );
-                                                }).toList(),
-                                            onChanged: (value) {
-                                              final selectedStage = stageState
-                                                  .stages
-                                                  .firstWhere(
-                                                    (stage) =>
-                                                        stage.id.toString() ==
-                                                        value,
-                                                    orElse: () => StageDatas(),
-                                                  );
-                                              setState(() {
-                                                selectedStageId = value;
-                                                selectedstagename =
-                                                    selectedStage.name;
-                                              });
-                                            },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              // 🧩 Assign Icon
+                              InkWell(
+                                onTap: () async {
+                                  if (_showCheckboxes &&
+                                      _selectedLeads.isNotEmpty) {
+                                    final result = await showDialog(
+                                      context: context,
+                                      builder: (dialogContext) {
+                                        return MultiBlocProvider(
+                                          providers: [
+                                            BlocProvider(
+                                              create: (_) => AssignleadCubit(),
+                                            ),
+                                            BlocProvider(
+                                              create:
+                                                  (_) => LeadCommentsCubit(
+                                                    GetAllLeadCommentsApiService(),
+                                                  )..fetchLeadComments(
+                                                    _selectedLeads.toList()[0],
+                                                  ),
+                                            ),
+                                            BlocProvider(
+                                              create:
+                                                  (_) => SalesCubit(
+                                                    GetAllSalesApiService(),
+                                                  )..fetchAllSales(),
+                                            ),
+                                            BlocProvider(
+                                              create:
+                                                  (_) => StagesCubit(
+                                                    StagesApiService(),
+                                                  )..fetchStages(),
+                                            ),
+                                          ],
+                                          child: AssignLeadMarkterDialog(
+                                            mainColor:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.light
+                                                    ? Constants.maincolor
+                                                    : Constants
+                                                        .mainDarkmodecolor,
+                                            leadIds: _selectedLeads.toList(),
+                                            leadId: _selectedLeads.toList()[0],
+                                            leadStages:
+                                                _selectedLeadStagesIds.toList(),
+                                            leadSalesId:
+                                                _selectedSalesIds.toList(),
                                           ),
-                                      ],
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        style: TextButton.styleFrom(
-                                          backgroundColor:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.light
-                                                  ? Constants.maincolor
-                                                  : Constants.mainDarkmodecolor,
-                                        ),
-                                        onPressed: () => Navigator.pop(context),
-                                        child: const Text(
-                                          'Cancel',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.light
-                                                  ? Constants.maincolor
-                                                  : Constants.mainDarkmodecolor,
-                                        ),
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder:
-                                                (
-                                                  context,
-                                                ) => AssignLeadMarkterDialog(
-                                                  leadIds:
-                                                      _selectedLeads.toList(),
-                                                  leadId:
-                                                      _selectedLeads
-                                                          .toList()[0],
-                                                  leadStage: selectedStageId,
-                                                  mainColor:
-                                                      Theme.of(
-                                                                context,
-                                                              ).brightness ==
-                                                              Brightness.light
-                                                          ? Constants.maincolor
-                                                          : Constants
-                                                              .mainDarkmodecolor,
-                                                ),
-                                          );
-                                        },
-                                        child: const Text(
-                                          'Continue',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                    ],
-                                  );
+                                        );
+                                      },
+                                    );
+
+                                    if (result == true) {
+                                      setState(() {
+                                        _showCheckboxes = false;
+                                        _selectedLeads.clear();
+                                        _selectedSalesIds.clear();
+                                        _selectedLeadStagesIds.clear();
+                                      });
+                                    }
+                                    log('Assign lead result: $result');
+                                  }
                                 },
-                              );
-                            },
-                          ).then((result) async {
-                            if (result == null) return;
-                            final option = result['option'];
-                            final newStageId = result['stageId'];
-                            final salesCubit = context.read<SalesCubit>();
-                            final salesState = salesCubit.state;
-                            if (salesState is SalesLoaded) {
-                              final selectedSales =
-                                  salesState.salesData.data ?? [];
-                              final selectedSalesUser = selectedSales
-                                  .firstWhere(
-                                    (sales) => sales.id == selectedSalesId,
-                                    orElse: () => SalesData(),
+                                child: _ActionIcon(
+                                  icon: Image.asset(
+                                    "assets/images/right.png",
+                                    width: 20,
+                                    height: 20,
+                                    fit: BoxFit.cover,
+                                    color: Constants.maincolor,
+                                  ),
+                                ),
+                              ),
+                              // ✏️ Edit Icon
+                              InkWell(
+                                onTap: () async {
+                                  final leadsList =
+                                      context.read<GetAllUsersCubit>().leads;
+
+                                  // نجيب ال lead المختار
+                                  final selectedLead = leadsList.firstWhere(
+                                    (lead) =>
+                                        lead.id.toString() ==
+                                        _selectedLeads.first,
+                                    orElse:
+                                        () =>
+                                            Lead(), // اسم الموديل عندك Lead مش LeadData
                                   );
-                              _selectedSalesFcmToken =
-                                  selectedSalesUser.userlog?.fcmtoken;
-                              if (_selectedLeads.isNotEmpty) {
-                                if (option == 'same') {
-                                  showDialog(
+                                  final result = await showDialog(
                                     context: context,
                                     builder:
-                                        (context) => AssignLeadMarkterDialog(
-                                          leadIds: _selectedLeads.toList(),
-                                          leadId: _selectedLeads.toList()[0],
-                                          mainColor:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.light
-                                                  ? Constants.maincolor
-                                                  : Constants.mainDarkmodecolor,
+                                        (_) => MultiBlocProvider(
+                                          providers: [
+                                            BlocProvider(
+                                              create:
+                                                  (_) => EditLeadCubit(
+                                                    EditLeadApiService(),
+                                                  ),
+                                            ),
+                                            BlocProvider(
+                                              create:
+                                                  (_) => ProjectsCubit(
+                                                    ProjectsApiService(),
+                                                  )..fetchProjects(),
+                                            ),
+                                            BlocProvider(
+                                              create:
+                                                  (_) => StagesCubit(
+                                                    StagesApiService(),
+                                                  )..fetchStages(),
+                                            ),
+                                            BlocProvider(
+                                              create:
+                                                  (
+                                                    _,
+                                                  ) => GetCommunicationWaysCubit(
+                                                    CommunicationWayApiService(),
+                                                  )..fetchCommunicationWays(),
+                                            ),
+                                            BlocProvider(
+                                              create:
+                                                  (_) => ChannelCubit(
+                                                    GetChannelsApiService(),
+                                                  )..fetchChannels(),
+                                            ),
+                                            BlocProvider(
+                                              create:
+                                                  (_) => GetCampaignsCubit(
+                                                    CampaignApiService(),
+                                                  )..fetchCampaigns(),
+                                            ),
+                                            BlocProvider(
+                                              create:
+                                                  (_) => SalesCubit(
+                                                    GetAllSalesApiService(),
+                                                  )..fetchAllSales(),
+                                            ),
+                                          ],
+                                          child: EditLeadDialog(
+                                            userId: selectedLead.id ?? '',
+                                            initialName:
+                                                selectedLead.name ?? '',
+                                            initialEmail:
+                                                selectedLead.email ?? '',
+                                            initialPhone:
+                                                selectedLead.phone ?? '',
+                                            initialNotes:
+                                                selectedLead.notes ?? '',
+                                            initialProjectId:
+                                                selectedLead.project?.id,
+                                            initialStageId:
+                                                selectedLead.stage?.id,
+                                            initialChannelId:
+                                                selectedLead.chanel?.id,
+                                            initialCampaignId:
+                                                selectedLead.campaign?.id,
+                                            initialCommunicationWayId:
+                                                selectedLead
+                                                    .communicationway
+                                                    ?.id,
+                                            isCold:
+                                                selectedLead.leedtype == "Cold",
+                                            onSuccess: () {
+                                              final leadsCubit =
+                                                  context
+                                                      .read<GetAllUsersCubit>();
+                                              leadsCubit.resetPagination();
+                                              leadsCubit.fetchAllUsers();
+                                            },
+                                          ),
                                         ),
                                   );
-                                } else if (option == 'change' &&
-                                    newStageId != null) {
-                                  // هنا logic تغيير الستيج
-                                  log(
-                                    'Change stage to $newStageId for leads: $_selectedLeads',
-                                  );
-                                }
-                              }
-                            }
-                          });
-                        }
-                      },
-                      itemBuilder:
-                          (BuildContext context) => <PopupMenuEntry<String>>[
-                            const PopupMenuItem<String>(
-                              value: 'assign',
-                              child: Text('Assign Leads'),
-                            ),
-                          ],
-                      icon: Icon(
-                        Icons.more_vert,
-                        color:
-                            _selectedLeads.isNotEmpty
-                                ? (Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? Constants.maincolor
-                                    : Constants.mainDarkmodecolor)
-                                : Colors.grey,
+                                  if (result == true) {
+                                    context
+                                        .read<GetAllUsersCubit>()
+                                        .fetchAllUsers();
+                                  }
+                                },
+                                child: const _ActionIcon(
+                                  icon: Icon(Icons.edit),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -914,28 +908,55 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                     }
                     return RefreshIndicator(
                       onRefresh: () async {
+                        final cubit = context.read<GetAllUsersCubit>();
+
                         setState(() {
                           _searchQuery = '';
                           _nameSearchController.clear();
                           _selectedCountryFilter = null;
                           _selectedDeveloperFilter = null;
                           _selectedProjectFilter = null;
-                          _selectedStageFilter = null;
                           _selectedChannelFilter = null;
                           _selectedSalesFilter = null;
                           _selectedCommunicationWayFilter = null;
                           _selectedCampaignFilter = null;
+
+                          // ✅ خليك دايمًا ماسك الـ stage اللي دخل بيها المستخدم
+                          _selectedStageFilter = widget.stageName;
                         });
+
                         if (selectedTab == 0) {
-                          context.read<GetAllUsersCubit>().fetchAllUsers();
+                          cubit.resetPagination();
+
+                          log("⏳ Refreshing with stage: $_selectedStageFilter");
+
+                          await cubit
+                              .fetchAllUsers(
+                                reset: true,
+                                stageFilter:
+                                    (_selectedStageFilter != null &&
+                                            _selectedStageFilter!.isNotEmpty)
+                                        ? _selectedStageFilter
+                                        : null,
+                              )
+                              .then((_) {
+                                log("✅ Leads fetched successfully");
+                                // ✅ بعد ما الداتا ترجع، فعّل الفلاتر (stage وغيره)
+                                if (_showDuplicatesOnly) {
+                                  cubit.filterLeadsAdmin(duplicatesOnly: true);
+                                } else {}
+                              });
                         } else {
                           context.read<GetAllUsersCubit>().fetchLeadsInTrash();
                         }
                       },
+
                       child: ListView.builder(
+                        controller: _scrollController,
                         itemCount: leads.length,
                         itemBuilder: (context, index) {
                           final lead = leads[index];
+                          final leadassign = lead.assign;
                           final salesfcmtoken = lead.sales?.userlog?.fcmtoken;
                           final prefs = SharedPreferences.getInstance();
                           final fcmToken = prefs.then(
@@ -967,174 +988,376 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             isOutdated = difference > 1;
                             log("isOutdated: $isOutdated");
                           }
-                          return InkWell(
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => AdminLeadDetails(
-                                        leedId: lead.id!,
-                                        leadName: lead.name ?? '',
-                                        leadPhone: lead.phone ?? '',
-                                        leadEmail: lead.email ?? '',
-                                        leadStage: lead.stage?.name ?? '',
-                                        leadStageId: lead.stage?.id ?? '',
-                                        leadChannel: lead.chanel?.name ?? '',
-                                        leadCreationDate:
-                                            lead.createdAt != null
-                                                ? formatDateTime(
-                                                  lead.createdAt!,
-                                                )
-                                                : '',
-                                        leadProject: lead.project?.name ?? '',
-                                        leadLastComment:
-                                            lead.lastcommentdate ?? '',
-                                        leadcampaign:
-                                            lead.campaign?.campainName ??
-                                            "campaign",
-                                        leadNotes: "no notes",
-                                        leaddeveloper:
-                                            lead.project?.developer?.name ??
-                                            "no developer",
-                                        salesfcmToken: salesfcmtoken,
-                                        leadwhatsappnumber:
-                                            lead.whatsappnumber ??
-                                            'no whatsapp number',
-                                        jobdescription:
-                                            lead.jobdescription ??
-                                            'no job description',
-                                        secondphonenumber:
-                                            lead.secondphonenumber ??
-                                            'no second phone number',
-                                      ),
-                                ),
-                              );
-                              // The original refresh logic is restored here, to run after returning from details page
-                              if (selectedTab == 0) {
-                                context
-                                    .read<GetAllUsersCubit>()
-                                    .fetchAllUsers();
+                          return GestureDetector(
+                            onLongPress: () {
+                              setState(() {
+                                _showCheckboxes = true;
+                                _selectedLeads.add(
+                                  lead.id!,
+                                ); // أول كارت تعمل عليه Long Press بيتعلّم
+                                _selectedLeadStagesIds.add(
+                                  lead.stage?.id ?? '',
+                                );
+                              });
+                            },
+                            onTap: () {
+                              if (_showCheckboxes) {
+                                setState(() {
+                                  if (_selectedLeads.contains(lead.id)) {
+                                    _selectedLeads.remove(lead.id);
+                                  } else {
+                                    _selectedLeads.add(lead.id!);
+                                  }
+                                });
                               } else {
-                                context
-                                    .read<GetAllUsersCubit>()
-                                    .fetchLeadsInTrash();
+                                final firstVersion =
+                                    (lead.allVersions != null &&
+                                            lead.allVersions!.isNotEmpty)
+                                        ? lead.allVersions!.first
+                                        : null;
+                                final currentScrollOffset =
+                                    _scrollController.offset;
+
+                                // لو مش في وضع التحديد، نفذ الإجراء العادي
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => AdminLeadDetails(
+                                          leedId: lead.id!,
+                                          leadName: lead.name ?? '',
+                                          leadPhone: lead.phone ?? '',
+                                          leadEmail: lead.email ?? '',
+                                          leadStage: lead.stage?.name ?? '',
+                                          leadStageId: lead.stage?.id ?? '',
+                                          leadSalesName: lead.sales?.name ?? '',
+                                          leadChannel: lead.chanel?.name ?? '',
+                                          leadCreationDate:
+                                              lead.createdAt != null
+                                                  ? formatDateTimeToDubai(
+                                                    lead.createdAt!,
+                                                  )
+                                                  : '',
+                                          leadProject: lead.project?.name ?? '',
+                                          leadLastComment:
+                                              lead.lastcommentdate ?? '',
+                                          leadcampaign:
+                                              lead.campaign?.campainName ??
+                                              "campaign",
+                                          leadNotes: "no notes",
+                                          leaddeveloper:
+                                              lead.project?.developer?.name ??
+                                              "no developer",
+                                          salesfcmToken: salesfcmtoken,
+                                          leadwhatsappnumber:
+                                              lead.whatsappnumber ??
+                                              'no whatsapp number',
+                                          jobdescription:
+                                              lead.jobdescription ??
+                                              'no job description',
+                                          secondphonenumber:
+                                              lead.secondphonenumber ??
+                                              'no second phone number',
+                                          laststageupdated:
+                                              lead.stagedateupdated,
+                                          stageId: lead.stage?.id,
+                                          totalsubmissions:
+                                              lead.totalSubmissions.toString(),
+                                          leadversions: lead.allVersions,
+                                          leadversionscampaign:
+                                              firstVersion
+                                                  ?.campaign
+                                                  ?.campainName ??
+                                              "No campaign",
+                                          leadversionsproject:
+                                              firstVersion?.project?.name ??
+                                              "No project",
+                                          leadversionsdeveloper:
+                                              firstVersion
+                                                  ?.project
+                                                  ?.developer
+                                                  ?.name ??
+                                              "No developer",
+                                          leadversionschannel:
+                                              firstVersion?.chanel?.name ??
+                                              "No channel",
+                                          leadversionscreationdate:
+                                              firstVersion?.recordedAt ??
+                                              "No date",
+                                          leadversionscommunicationway:
+                                              firstVersion
+                                                  ?.communicationway
+                                                  ?.name ??
+                                              "No communication way",
+                                          leadStages: [lead.stage?.id],
+                                        ),
+                                  ),
+                                ).then((_) {
+                                  _scrollController.animateTo(
+                                    currentScrollOffset,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                });
+                                // The original refresh logic is restored here, to run after returning from details page
+                                // if (selectedTab == 0) {
+                                //   context
+                                //       .read<GetAllUsersCubit>()
+                                //       .fetchAllUsers();
+                                // } else {
+                                //   context
+                                //       .read<GetAllUsersCubit>()
+                                //       .fetchLeadsInTrash();
+                                // }
                               }
                             },
-                            child: Card(
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Colors.white
-                                      : Colors.grey[900],
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // ---------- Row 1: Name and Status Icon ----------
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                            child: Column(
+                              children: [
+                                Card(
+                                  color:
+                                      _selectedLeads.contains(lead.id)
+                                          ? (Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Colors
+                                                  .grey[300] // أغمق شوية لو Light Mode
+                                              : Colors
+                                                  .grey[800]) // أغمق شوية لو Dark Mode
+                                          : (Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Colors.white
+                                              : Colors.grey[900]),
+                                  margin: const EdgeInsets.symmetric(
+                                    // horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Expanded(
-                                          child: Text(
-                                            lead.name ?? "No Name",
-                                            style: GoogleFonts.montserrat(
-                                              fontSize: 16.sp,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                        // ---------- Row 1: Name and Status Icon ----------
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 8,
+                                            right: 8,
                                           ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        (stageUpdatedDate != null &&
-                                                (leadStagetype == "Done Deal" ||
-                                                    leadStagetype ==
-                                                        "Transfer" ||
-                                                    leadStagetype == "Fresh" ||
-                                                    leadStagetype ==
-                                                        "Not Interested"))
-                                            ? const SizedBox()
-                                            : Icon(
-                                              isOutdated
-                                                  ? Icons.cancel
-                                                  : Icons.check_circle,
-                                              color:
-                                                  isOutdated
-                                                      ? Colors.red
-                                                      : Colors.green,
-                                              size: 24,
-                                            ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    // ---------- Row 2: Sales Person ----------
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.person_pin_outlined,
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.light
-                                                  ? Colors.grey
-                                                  : Constants.mainDarkmodecolor,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            lead.sales?.name ?? "No Sales",
-                                            style: TextStyle(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                        ),
-                                        Checkbox(
-                                          activeColor: Constants.maincolor,
-                                          value: _selectedLeads.contains(
-                                            lead.id,
-                                          ),
-                                          onChanged: (bool? value) {
-                                            setState(() {
-                                              if (value == true) {
-                                                _selectedLeads.add(lead.id!);
-                                              } else {
-                                                _selectedLeads.remove(lead.id);
-                                              }
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    ),
-
-                                    SizedBox(height: 12.h),
-                                    // ---------- Row 3: Stage and Total Submissions ----------
-                                    Row(
-                                      children: [
-                                        Expanded(
                                           child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              getStatusIcon(
-                                                lead.stage?.name ?? "",
+                                              // ✅ الجزء الشمال (Checkbox + Stage + SD Date)
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      if (_showCheckboxes &&
+                                                          _selectedLeads
+                                                              .isNotEmpty)
+                                                        Checkbox(
+                                                          activeColor:
+                                                              Constants
+                                                                  .maincolor,
+                                                          value: _selectedLeads
+                                                              .contains(
+                                                                lead.id,
+                                                              ),
+                                                          onChanged: (
+                                                            bool? value,
+                                                          ) {
+                                                            setState(() {
+                                                              if (value ==
+                                                                  true) {
+                                                                _selectedLeads
+                                                                    .add(
+                                                                      lead.id!,
+                                                                    );
+                                                                _selectedSalesIds.add(
+                                                                  lead
+                                                                          .sales
+                                                                          ?.id ??
+                                                                      '',
+                                                                );
+                                                                _selectedLeadStagesIds.add(
+                                                                  lead
+                                                                          .stage
+                                                                          ?.id ??
+                                                                      '',
+                                                                );
+                                                              } else {
+                                                                _selectedLeads
+                                                                    .remove(
+                                                                      lead.id,
+                                                                    );
+                                                                _selectedSalesIds
+                                                                    .remove(
+                                                                      lead.sales?.id ??
+                                                                          '',
+                                                                    );
+                                                                _selectedLeadStagesIds
+                                                                    .remove(
+                                                                      lead.stage?.id ??
+                                                                          '',
+                                                                    );
+                                                              }
+                                                            });
+                                                          },
+                                                        ),
+                                                      // 👇 نتحقق من الشرط الخاص باللون
+                                                      Builder(
+                                                        builder: (_) {
+                                                          final bool
+                                                          isFinalStage =
+                                                              stageUpdatedDate !=
+                                                                  null &&
+                                                              (leadStagetype ==
+                                                                      "Done Deal" ||
+                                                                  leadStagetype ==
+                                                                      "Transfer" ||
+                                                                  leadStagetype ==
+                                                                      "Fresh" ||
+                                                                  leadStagetype ==
+                                                                      "Not Interested");
+                                                          late final Color
+                                                          stageColor;
+                                                          if (leadStagetype ==
+                                                              "Not Interested") {
+                                                            stageColor =
+                                                                Colors
+                                                                    .black; // ✅ اللون الأسود
+                                                          } else {
+                                                            stageColor =
+                                                                isFinalStage
+                                                                    ? Constants
+                                                                        .maincolor
+                                                                    : isOutdated
+                                                                    ? Colors.red
+                                                                    : Colors
+                                                                        .green;
+                                                          }
+                                                          return Container(
+                                                            padding:
+                                                                EdgeInsets.symmetric(
+                                                                  horizontal:
+                                                                      8.w,
+                                                                  vertical: 4.h,
+                                                                ),
+                                                            decoration: BoxDecoration(
+                                                              color: stageColor
+                                                                  .withOpacity(
+                                                                    0.1,
+                                                                  ),
+                                                              border: Border.all(
+                                                                color:
+                                                                    stageColor,
+                                                              ),
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    20.r,
+                                                                  ),
+                                                            ),
+                                                            child: Row(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              children: [
+                                                                Icon(
+                                                                  Icons.circle,
+                                                                  color:
+                                                                      stageColor,
+                                                                  size: 10,
+                                                                ),
+                                                                SizedBox(
+                                                                  width: 6.w,
+                                                                ),
+                                                                Text(
+                                                                  lead
+                                                                          .stage
+                                                                          ?.name ??
+                                                                      "No Stage",
+                                                                  style: GoogleFonts.montserrat(
+                                                                    fontSize:
+                                                                        13.sp,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color:
+                                                                        stageColor,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 8.h),
+                                                  Text(
+                                                    "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!) : "N/A"}",
+                                                    style: TextStyle(
+                                                      fontSize: 12.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color:
+                                                          Theme.of(
+                                                                    context,
+                                                                  ).brightness ==
+                                                                  Brightness
+                                                                      .light
+                                                              ? Colors.black87
+                                                              : Colors.white70,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              const SizedBox(width: 5),
+                                              // ✅ الجزء اليمين (KSA | EVENT | Skyrise أو اسم المشروع)
                                               Expanded(
                                                 child: Text(
-                                                  lead.stage?.name ?? "none",
+                                                  lead.project?.name ?? '',
                                                   style: GoogleFonts.montserrat(
-                                                    fontSize: 10.sp,
-                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
                                                   ),
+                                                  textAlign: TextAlign.right,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 2,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(height: 8.h),
+                                        const Divider(
+                                          height: 3,
+                                          thickness: 1.5,
+                                        ),
+                                        SizedBox(height: 20.h),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 8,
+                                            right: 8,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  lead.name ?? "No Name",
+                                                  style: GoogleFonts.montserrat(
+                                                    fontSize: 19.sp,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  maxLines: 1,
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                 ),
@@ -1142,147 +1365,70 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             ],
                                           ),
                                         ),
-                                        const SizedBox(
-                                          width: 20,
-                                        ), // مسافة من النص الأول
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
+                                        SizedBox(height: 12.h),
+                                        // ---------- Row 2: phone | Person ----------
+                                        InkWell(
+                                          onTap: () {
+                                            final phone = lead.phone ?? '';
+                                            final formattedPhone =
+                                                phone.startsWith('0')
+                                                    ? phone
+                                                    : '+$phone';
+                                            makePhoneCall(formattedPhone);
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 8,
+                                              right: 8,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.phone,
+                                                  color:
+                                                      Theme.of(
+                                                                context,
+                                                              ).brightness ==
+                                                              Brightness.light
+                                                          ? Colors.grey
+                                                          : Constants
+                                                              .mainDarkmodecolor,
+                                                  size: 20,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    lead.phone ?? 'N/A',
+                                                    style: TextStyle(
+                                                      fontSize: 13.sp,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+
+                                        SizedBox(height: 35.h),
+                                        // ---------- Row 3: Sales Name, CD Date, and Action Icons ----------
+                                        Column(
                                           children: [
-                                            Text(
-                                              "Σ",
-                                              style: TextStyle(
-                                                color:
-                                                    Theme.of(
-                                                              context,
-                                                            ).brightness ==
-                                                            Brightness.light
-                                                        ? Colors.grey
-                                                        : Constants
-                                                            .mainDarkmodecolor,
-                                                fontSize: 18.sp,
-                                                fontWeight: FontWeight.bold,
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                left: 8,
+                                                right: 8,
                                               ),
-                                            ),
-                                            const SizedBox(width: 5),
-                                            Text(
-                                              "Total Submission: ${lead.totalSubmissions}",
-                                              style: TextStyle(
-                                                fontSize: 11.sp,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        Icon(
-                                          Icons.date_range,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          lead.date != null
-                                              ? formatDateTimeToDubai(
-                                                lead.date!,
-                                              )
-                                              : "N/A",
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    // ---------- Row 4: WhatsApp and Phone Call ----------
-                                    Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: InkWell(
-                                              onTap: () async {
-                                                final phone = lead
-                                                    .whatsappnumber
-                                                    ?.replaceAll(
-                                                      RegExp(r'\D'),
-                                                      '',
-                                                    );
-                                                final url =
-                                                    "https://wa.me/$phone";
-                                                if (await canLaunchUrl(
-                                                  Uri.parse(url),
-                                                )) {
-                                                  await launchUrl(
-                                                    Uri.parse(url),
-                                                    mode:
-                                                        LaunchMode
-                                                            .externalApplication,
-                                                  );
-                                                } else {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                        "Could not open WhatsApp.",
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                              },
                                               child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
-                                                  FaIcon(
-                                                    FontAwesomeIcons.whatsapp,
-                                                    color:
-                                                        Theme.of(
-                                                                  context,
-                                                                ).brightness ==
-                                                                Brightness.light
-                                                            ? Colors.grey
-                                                            : Constants
-                                                                .mainDarkmodecolor,
-                                                    size: 18,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Text(
-                                                      lead
-                                                                  .whatsappnumber
-                                                                  ?.isNotEmpty ==
-                                                              true
-                                                          ? lead.whatsappnumber!
-                                                          : 'no whatsapp number',
-                                                      style: TextStyle(
-                                                        fontSize: 11.sp,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: InkWell(
-                                              onTap:
-                                                  () => makePhoneCall(
-                                                    lead.phone ?? '',
-                                                  ),
-                                              child: Row(
-                                                children: [
-                                                  const SizedBox(width: 20),
                                                   Icon(
-                                                    Icons.phone,
+                                                    Icons.person_pin_outlined,
                                                     color:
                                                         Theme.of(
                                                                   context,
@@ -1291,702 +1437,462 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                             ? Colors.grey
                                                             : Constants
                                                                 .mainDarkmodecolor,
-                                                    size: 18,
+                                                    size: 20,
                                                   ),
-                                                  const SizedBox(width: 5),
+                                                  SizedBox(width: 8.w),
+                                                  // 👈 الجزء الشمال (Sales name)
                                                   Expanded(
                                                     child: Text(
-                                                      lead.phone ?? '',
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
-                                                      ),
+                                                      lead.sales?.name ??
+                                                          "none",
+                                                      style:
+                                                          GoogleFonts.montserrat(
+                                                            fontSize: 16.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),
                                                   ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(height: 16.h),
 
-                                    // ---------- Row 5: Last Comment Button and Action Icons ----------
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Constants.maincolor
-                                                    : Constants
-                                                        .mainDarkmodecolor,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (_) {
-                                                return Dialog(
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                  child: BlocProvider(
-                                                    create:
-                                                        (
-                                                          _,
-                                                        ) => LeadCommentsCubit(
-                                                          GetAllLeadCommentsApiService(),
-                                                        )..fetchLeadComments(
-                                                          lead.id!,
-                                                        ),
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                            16.0,
+                                                  // 👉 الجزء اليمين (الـ 3 أيقونات داخل خلفية)
+                                                  Row(
+                                                    children: [
+                                                      // 📞 Phone Call
+                                                      InkWell(
+                                                        onTap: () {
+                                                          final phone =
+                                                              lead.phone ?? '';
+                                                          final formattedPhone =
+                                                              phone.startsWith(
+                                                                    '0',
+                                                                  )
+                                                                  ? phone
+                                                                  : '+$phone';
+                                                          makePhoneCall(
+                                                            formattedPhone,
+                                                          );
+                                                        },
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              30,
+                                                            ),
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                8,
+                                                              ),
+                                                          margin:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 4,
+                                                              ),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                                color:
+                                                                    Constants
+                                                                        .maincolor,
+                                                                shape:
+                                                                    BoxShape
+                                                                        .circle,
+                                                              ),
+                                                          child: const Icon(
+                                                            Icons.phone,
+                                                            color: Colors.white,
+                                                            size: 18,
                                                           ),
-                                                      child: BlocBuilder<
-                                                        LeadCommentsCubit,
-                                                        LeadCommentsState
-                                                      >(
-                                                        builder: (
-                                                          context,
-                                                          commentState,
-                                                        ) {
-                                                          if (commentState
-                                                              is LeadCommentsLoading) {
-                                                            return const SizedBox(
-                                                              height: 100,
-                                                              child: Center(
-                                                                child:
-                                                                    CircularProgressIndicator(),
-                                                              ),
+                                                        ),
+                                                      ),
+
+                                                      // 💬 WhatsApp
+                                                      InkWell(
+                                                        onTap: () async {
+                                                          final rawPhone =
+                                                              (lead.phone?.isNotEmpty ==
+                                                                          true
+                                                                      ? lead
+                                                                          .phone
+                                                                      : lead
+                                                                          .whatsappnumber)
+                                                                  ?.replaceAll(
+                                                                    RegExp(
+                                                                      r'\D',
+                                                                    ),
+                                                                    '',
+                                                                  ) ??
+                                                              '';
+                                                          final formattedPhone =
+                                                              rawPhone.startsWith(
+                                                                    '0',
+                                                                  )
+                                                                  ? rawPhone
+                                                                  : '+$rawPhone';
+
+                                                          final url =
+                                                              "https://wa.me/$formattedPhone";
+                                                          try {
+                                                            await launchUrl(
+                                                              Uri.parse(url),
+                                                              mode:
+                                                                  LaunchMode
+                                                                      .externalApplication,
                                                             );
-                                                          } else if (commentState
-                                                              is LeadCommentsError) {
-                                                            return SizedBox(
-                                                              height: 100,
-                                                              child: Center(
-                                                                child: Text(
-                                                                  "No comments available: ${commentState.message}",
+                                                          } catch (e) {
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              const SnackBar(
+                                                                content: Text(
+                                                                  "Could not open WhatsApp.",
                                                                 ),
-                                                              ),
-                                                            );
-                                                          } else if (commentState
-                                                              is LeadCommentsLoaded) {
-                                                            final commentsData =
-                                                                commentState
-                                                                    .leadComments
-                                                                    .data;
-                                                            if (commentsData ==
-                                                                    null ||
-                                                                commentsData
-                                                                    .isEmpty) {
-                                                              return const Text(
-                                                                'No comments available.',
-                                                              );
-                                                            }
-
-                                                            final commentsList =
-                                                                commentsData
-                                                                    .first
-                                                                    .comments ??
-                                                                [];
-
-                                                            // ✅ نفلتر الكومنتات اللي فيها نص فعلي
-                                                            final validComments =
-                                                                commentsList
-                                                                    .where(
-                                                                      (c) =>
-                                                                          (c.firstcomment?.text?.isNotEmpty ??
-                                                                              false) ||
-                                                                          (c.secondcomment?.text?.isNotEmpty ??
-                                                                              false),
-                                                                    )
-                                                                    .toList();
-
-                                                            final Comment?
-                                                            firstCommentEntry =
-                                                                validComments
-                                                                        .isNotEmpty
-                                                                    ? validComments
-                                                                        .first
-                                                                    : null;
-
-                                                            final String
-                                                            firstCommentText =
-                                                                firstCommentEntry
-                                                                    ?.firstcomment
-                                                                    ?.text ??
-                                                                'No comments available.';
-                                                            final String
-                                                            secondCommentText =
-                                                                firstCommentEntry
-                                                                    ?.secondcomment
-                                                                    ?.text ??
-                                                                'No action available.';
-
-                                                            return Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              children: [
-                                                                const Text(
-                                                                  "Last Comment",
-                                                                  style: TextStyle(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                  ),
-                                                                ),
-                                                                const SizedBox(
-                                                                  height: 5,
-                                                                ),
-                                                                Text(
-                                                                  firstCommentText,
-                                                                  maxLines: 2,
-                                                                  overflow:
-                                                                      TextOverflow
-                                                                          .ellipsis,
-                                                                ),
-                                                                const SizedBox(
-                                                                  height: 10,
-                                                                ),
-                                                                const Text(
-                                                                  "Action (Plan)",
-                                                                  style: TextStyle(
-                                                                    color:
-                                                                        Constants
-                                                                            .maincolor,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                  ),
-                                                                ),
-                                                                const SizedBox(
-                                                                  height: 5,
-                                                                ),
-                                                                Text(
-                                                                  secondCommentText,
-                                                                  maxLines: 2,
-                                                                  overflow:
-                                                                      TextOverflow
-                                                                          .ellipsis,
-                                                                ),
-                                                              ],
-                                                            );
-                                                          } else {
-                                                            return const SizedBox(
-                                                              height: 100,
-                                                              child: Text(
-                                                                "No comments",
                                                               ),
                                                             );
                                                           }
                                                         },
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            );
-                                          },
-                                          icon: const Icon(
-                                            Icons.chat_bubble_outline,
-                                            color: Colors.white,
-                                            size: 16,
-                                          ),
-                                          label: const Text(
-                                            "Last Comment",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-
-                                        Row(
-                                          children: [
-                                            // THIS IS NOW THE EDIT BUTTON
-                                            InkWell(
-                                              onTap: () {
-                                                showDialog(
-                                                  context: context,
-                                                  builder:
-                                                      (
-                                                        context,
-                                                      ) => MultiBlocProvider(
-                                                        providers: [
-                                                          BlocProvider(
-                                                            create:
-                                                                (
-                                                                  _,
-                                                                ) => EditLeadCubit(
-                                                                  EditLeadApiService(),
-                                                                ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              30,
+                                                            ),
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                8,
+                                                              ),
+                                                          margin:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 4,
+                                                              ),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                                color:
+                                                                    Constants
+                                                                        .maincolor,
+                                                                shape:
+                                                                    BoxShape
+                                                                        .circle,
+                                                              ),
+                                                          child: const FaIcon(
+                                                            FontAwesomeIcons
+                                                                .whatsapp,
+                                                            color: Colors.white,
+                                                            size: 18,
                                                           ),
-                                                          BlocProvider(
-                                                            create:
-                                                                (
-                                                                  _,
-                                                                ) => ProjectsCubit(
-                                                                  ProjectsApiService(),
-                                                                )..fetchProjects(),
-                                                          ),
-                                                          BlocProvider(
-                                                            create:
-                                                                (
-                                                                  _,
-                                                                ) => StagesCubit(
-                                                                  StagesApiService(),
-                                                                )..fetchStages(),
-                                                          ),
-                                                          BlocProvider(
-                                                            create:
-                                                                (
-                                                                  _,
-                                                                ) => GetCommunicationWaysCubit(
-                                                                  CommunicationWayApiService(),
-                                                                )..fetchCommunicationWays(),
-                                                          ),
-                                                          BlocProvider(
-                                                            create:
-                                                                (
-                                                                  _,
-                                                                ) => ChannelCubit(
-                                                                  GetChannelsApiService(),
-                                                                )..fetchChannels(),
-                                                          ),
-                                                          BlocProvider(
-                                                            create:
-                                                                (
-                                                                  _,
-                                                                ) => GetCampaignsCubit(
-                                                                  CampaignApiService(),
-                                                                )..fetchCampaigns(),
-                                                          ),
-                                                          BlocProvider(
-                                                            create:
-                                                                (
-                                                                  _,
-                                                                ) => SalesCubit(
-                                                                  GetAllSalesApiService(),
-                                                                )..fetchAllSales(),
-                                                          ),
-                                                        ],
-                                                        child: EditLeadDialog(
-                                                          userId: lead.id!,
-                                                          initialName:
-                                                              lead.name,
-                                                          initialEmail:
-                                                              lead.email,
-                                                          initialPhone:
-                                                              lead.phone,
-                                                          initialCampaignId:
-                                                              lead.campaign?.id,
-                                                          initialChannelId:
-                                                              lead.chanel?.id,
-                                                          initialCommunicationWayId:
-                                                              lead
-                                                                  .communicationway
-                                                                  ?.id,
-                                                          initialProjectId:
-                                                              lead.project?.id,
-                                                          initialStageId:
-                                                              lead.stage?.id,
-                                                          isCold:
-                                                              lead.leedtype ==
-                                                                      "Fresh"
-                                                                  ? false
-                                                                  : true,
-                                                          onSuccess: () {
-                                                            context
-                                                                .read<
-                                                                  GetAllUsersCubit
-                                                                >()
-                                                                .fetchAllUsers(); // 👈 refresh lead list
-                                                          },
                                                         ),
                                                       ),
-                                                );
-                                              },
-                                              child: CircleAvatar(
-                                                radius: 18,
-                                                backgroundColor:
-                                                    Theme.of(
-                                                              context,
-                                                            ).brightness ==
-                                                            Brightness.light
-                                                        ? Constants.maincolor
-                                                        : Constants
-                                                            .mainDarkmodecolor,
-                                                child: Icon(
-                                                  Icons.edit,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ), // As per image
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            // THIS IS THE COPY BUTTON
-                                            InkWell(
-                                              onTap: () {
-                                                if (lead.totalSubmissions! >
-                                                    1) {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder:
-                                                        (context) => Dialog(
-                                                          shape: RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  16,
+
+                                                      // 🗨️ Last Comment
+                                                      InkWell(
+                                                        onTap: () {
+                                                          showDialog(
+                                                            context: context,
+                                                            builder: (_) {
+                                                              return Dialog(
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        12,
+                                                                      ),
                                                                 ),
-                                                          ),
-                                                          child: Padding(
-                                                            padding:
-                                                                const EdgeInsets.all(
-                                                                  16.0,
-                                                                ),
-                                                            child: SingleChildScrollView(
-                                                              child: Column(
-                                                                mainAxisSize:
-                                                                    MainAxisSize
-                                                                        .min,
-                                                                children: [
-                                                                  Row(
-                                                                    children: [
-                                                                      CircleAvatar(
-                                                                        backgroundColor:
-                                                                            Theme.of(
-                                                                                      context,
-                                                                                    ).brightness ==
-                                                                                    Brightness.light
-                                                                                ? Constants.maincolor
-                                                                                : Constants.mainDarkmodecolor,
-                                                                        child: Icon(
-                                                                          Icons
-                                                                              .copy,
-                                                                          color:
-                                                                              Colors.white,
-                                                                        ),
+                                                                child: BlocProvider(
+                                                                  create:
+                                                                      (
+                                                                        _,
+                                                                      ) => LeadCommentsCubit(
+                                                                        GetAllLeadCommentsApiService(),
+                                                                      )..fetchLeadComments(
+                                                                        lead.id!,
                                                                       ),
-                                                                      const SizedBox(
-                                                                        width:
-                                                                            12,
-                                                                      ),
-                                                                      Text(
-                                                                        "Show Duplicate",
-                                                                        style: TextStyle(
-                                                                          fontSize:
-                                                                              18,
-                                                                          fontWeight:
-                                                                              FontWeight.bold,
+                                                                  child: Padding(
+                                                                    padding:
+                                                                        const EdgeInsets.all(
+                                                                          16.0,
                                                                         ),
-                                                                      ),
-                                                                      Spacer(),
-                                                                      IconButton(
-                                                                        icon: Icon(
-                                                                          Icons
-                                                                              .close,
-                                                                        ),
-                                                                        onPressed:
-                                                                            () => Navigator.pop(
-                                                                              context,
+                                                                    child: BlocBuilder<
+                                                                      LeadCommentsCubit,
+                                                                      LeadCommentsState
+                                                                    >(
+                                                                      builder: (
+                                                                        context,
+                                                                        commentState,
+                                                                      ) {
+                                                                        if (commentState
+                                                                            is LeadCommentsLoading) {
+                                                                          return const SizedBox(
+                                                                            height:
+                                                                                100,
+                                                                            child: Center(
+                                                                              child:
+                                                                                  CircularProgressIndicator(),
                                                                             ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 16,
-                                                                  ),
-                                                                  Row(
-                                                                    children: [
-                                                                      Text(
-                                                                        lead.name ??
-                                                                            "",
-                                                                        style: TextStyle(
-                                                                          fontWeight:
-                                                                              FontWeight.bold,
-                                                                          fontSize:
-                                                                              16,
-                                                                        ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    height: 20,
-                                                                  ),
-                                                                  Align(
-                                                                    alignment:
-                                                                        Alignment
-                                                                            .centerLeft,
-                                                                    child: Text(
-                                                                      "Lead Information :",
-                                                                      style: TextStyle(
-                                                                        fontWeight:
-                                                                            FontWeight.w600,
-                                                                        color:
-                                                                            Colors.grey[700],
-                                                                      ),
+                                                                          );
+                                                                        } else if (commentState
+                                                                            is LeadCommentsError) {
+                                                                          return SizedBox(
+                                                                            height:
+                                                                                100,
+                                                                            child: Center(
+                                                                              child: Text(
+                                                                                "No comments available: ${commentState.message}",
+                                                                              ),
+                                                                            ),
+                                                                          );
+                                                                        } else if (commentState
+                                                                            is LeadCommentsLoaded) {
+                                                                          final commentsData =
+                                                                              commentState.leadComments.data;
+                                                                          if (commentsData ==
+                                                                                  null ||
+                                                                              commentsData.isEmpty) {
+                                                                            return const Text(
+                                                                              'No comments available.',
+                                                                            );
+                                                                          }
+
+                                                                          final commentsList =
+                                                                              commentsData.first.comments ??
+                                                                              [];
+                                                                          final validComments =
+                                                                              commentsList
+                                                                                  .where(
+                                                                                    (
+                                                                                      c,
+                                                                                    ) =>
+                                                                                        (c.firstcomment?.text?.isNotEmpty ??
+                                                                                            false) ||
+                                                                                        (c.secondcomment?.text?.isNotEmpty ??
+                                                                                            false),
+                                                                                  )
+                                                                                  .toList();
+
+                                                                          final Comment?
+                                                                          firstCommentEntry =
+                                                                              validComments.isNotEmpty
+                                                                                  ? validComments.first
+                                                                                  : null;
+
+                                                                          final String
+                                                                          firstCommentText =
+                                                                              firstCommentEntry?.firstcomment?.text ??
+                                                                              'No comments available.';
+                                                                          final String
+                                                                          secondCommentText =
+                                                                              firstCommentEntry?.secondcomment?.text ??
+                                                                              'No action available.';
+
+                                                                          return Column(
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            crossAxisAlignment:
+                                                                                CrossAxisAlignment.start,
+                                                                            children: [
+                                                                              const Text(
+                                                                                "Last Comment",
+                                                                                style: TextStyle(
+                                                                                  fontWeight:
+                                                                                      FontWeight.w600,
+                                                                                ),
+                                                                              ),
+                                                                              const SizedBox(
+                                                                                height:
+                                                                                    5,
+                                                                              ),
+                                                                              Text(
+                                                                                firstCommentText,
+                                                                                maxLines:
+                                                                                    2,
+                                                                                overflow:
+                                                                                    TextOverflow.ellipsis,
+                                                                              ),
+                                                                              const SizedBox(
+                                                                                height:
+                                                                                    10,
+                                                                              ),
+                                                                              const Text(
+                                                                                "Action (Plan)",
+                                                                                style: TextStyle(
+                                                                                  color:
+                                                                                      Constants.maincolor,
+                                                                                  fontWeight:
+                                                                                      FontWeight.w600,
+                                                                                ),
+                                                                              ),
+                                                                              const SizedBox(
+                                                                                height:
+                                                                                    5,
+                                                                              ),
+                                                                              Text(
+                                                                                secondCommentText,
+                                                                                maxLines:
+                                                                                    2,
+                                                                                overflow:
+                                                                                    TextOverflow.ellipsis,
+                                                                              ),
+                                                                            ],
+                                                                          );
+                                                                        } else {
+                                                                          return const SizedBox(
+                                                                            height:
+                                                                                100,
+                                                                            child: Text(
+                                                                              "No comments",
+                                                                            ),
+                                                                          );
+                                                                        }
+                                                                      },
                                                                     ),
                                                                   ),
-                                                                  const SizedBox(
-                                                                    height: 10,
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons
-                                                                        .location_city,
-                                                                    "Project",
-                                                                    lead
-                                                                        .allVersions!
-                                                                        .first
-                                                                        .project!
-                                                                        .name!,
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons
-                                                                        .settings,
-                                                                    "Developer",
-                                                                    lead
-                                                                        .allVersions!
-                                                                        .first
-                                                                        .project!
-                                                                        .developer!
-                                                                        .name!,
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons.chat,
-                                                                    "Communication Way",
-                                                                    lead
-                                                                        .allVersions!
-                                                                        .first
-                                                                        .communicationway!
-                                                                        .name!,
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons
-                                                                        .date_range,
-                                                                    "Creation Date",
-                                                                    DateTime.parse(
-                                                                      lead
-                                                                          .allVersions!
-                                                                          .first
-                                                                          .recordedAt!,
-                                                                    ).toLocal().toString(),
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons
-                                                                        .device_hub,
-                                                                    "Channel",
-                                                                    lead
-                                                                        .allVersions!
-                                                                        .first
-                                                                        .chanel!
-                                                                        .name!,
-                                                                  ),
-                                                                  buildInfoRow(
-                                                                    Icons
-                                                                        .campaign,
-                                                                    "Campaign",
-                                                                    lead
-                                                                        .allVersions!
-                                                                        .first
-                                                                        .campaign!
-                                                                        .campainName!,
-                                                                  ),
-                                                                ],
-                                                              ),
+                                                                ),
+                                                              );
+                                                            },
+                                                          );
+                                                        },
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              30,
                                                             ),
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                8,
+                                                              ),
+                                                          margin:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 4,
+                                                              ),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                                color:
+                                                                    Constants
+                                                                        .maincolor,
+                                                                shape:
+                                                                    BoxShape
+                                                                        .circle,
+                                                              ),
+                                                          child: const Icon(
+                                                            Icons
+                                                                .chat_bubble_outline,
+                                                            color: Colors.white,
+                                                            size: 18,
                                                           ),
                                                         ),
-                                                  );
-                                                } else {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder:
-                                                        (
-                                                          context,
-                                                        ) => AlertDialog(
-                                                          title: const Text(
-                                                            "No Duplicates",
-                                                          ),
-                                                          content: const Text(
-                                                            "This lead has no duplicates.",
-                                                          ),
-                                                          actions: [
-                                                            TextButton(
-                                                              onPressed:
-                                                                  () =>
-                                                                      Navigator.pop(
-                                                                        context,
-                                                                      ),
-                                                              child: const Text(
-                                                                "OK",
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                  );
-                                                }
-                                              },
-                                              child: CircleAvatar(
-                                                radius: 18,
-                                                backgroundColor:
-                                                    Theme.of(
-                                                              context,
-                                                            ).brightness ==
-                                                            Brightness.light
-                                                        ? Constants.maincolor
-                                                        : Constants
-                                                            .mainDarkmodecolor,
-                                                child: Icon(
-                                                  Icons.content_copy_outlined,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            SizedBox(height: 4.h),
+                                            // ✅ CD Date (السطر اللي تحت)
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                left: 8,
+                                                right: 8,
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.start,
+                                                children: [
+                                                  Icon(
+                                                    Icons.date_range,
+                                                    color:
+                                                        Theme.of(
+                                                                  context,
+                                                                ).brightness ==
+                                                                Brightness.light
+                                                            ? Colors.grey
+                                                            : Constants
+                                                                .mainDarkmodecolor,
+                                                    size: 20,
+                                                  ),
+                                                  SizedBox(width: 6.w),
+                                                  Text(
+                                                    " ${lead.date != null ? formatDateTimeToDubai(lead.date!) : "N/A"}",
+                                                    style: TextStyle(
+                                                      fontSize: 12.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
                                           ],
                                         ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 10.h),
-                                    Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Icon(
-                                            Icons.date_range_outlined,
-                                            color: Colors.grey,
-                                            size: 18,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            lead.stagedateupdated != null
-                                                ? formatDateTimeToDubai(
-                                                  lead.stagedateupdated!,
-                                                )
-                                                : "N/A",
-                                            style: TextStyle(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    // ---------- Row 6: View More Link ----------
-                                    SizedBox(height: 8.h),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: InkWell(
-                                        onTap: () async {
-                                          await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (_) => AdminLeadDetails(
-                                                    leedId: lead.id!,
-                                                    leadName: lead.name ?? '',
-                                                    leadPhone: lead.phone ?? '',
-                                                    leadEmail: lead.email ?? '',
-                                                    leadStage:
-                                                        lead.stage?.name ?? '',
-                                                    leadStageId:
-                                                        lead.stage?.id ?? '',
-                                                    leadChannel:
-                                                        lead.chanel?.name ?? '',
-                                                    leadCreationDate:
-                                                        lead.createdAt != null
-                                                            ? formatDateTime(
-                                                              lead.createdAt!,
-                                                            )
-                                                            : '',
-                                                    leadProject:
-                                                        lead.project?.name ??
-                                                        '',
-                                                    leadLastComment:
-                                                        lead.lastcommentdate ??
-                                                        '',
-                                                    leadcampaign:
-                                                        lead
-                                                            .campaign
-                                                            ?.campainName ??
-                                                        "campaign",
-                                                    leadNotes: "no notes",
-                                                    leaddeveloper:
-                                                        lead
-                                                            .project
-                                                            ?.developer
-                                                            ?.name ??
-                                                        "no developer",
-                                                    salesfcmToken:
-                                                        salesfcmtoken,
-                                                    leadwhatsappnumber:
-                                                        lead.whatsappnumber ??
-                                                        'no whatsapp number',
-                                                    jobdescription:
-                                                        lead.jobdescription ??
-                                                        'no job description',
-                                                    secondphonenumber:
-                                                        lead.secondphonenumber ??
-                                                        'no second phone number',
-                                                  ),
-                                            ),
-                                          );
-                                          // The original refresh logic is restored here, to run after returning from details page
-                                          if (selectedTab == 0) {
-                                            context
-                                                .read<GetAllUsersCubit>()
-                                                .fetchAllUsers();
-                                          } else {
-                                            context
-                                                .read<GetAllUsersCubit>()
-                                                .fetchLeadsInTrash();
-                                          }
-                                        },
-                                        child: Text(
-                                          'View More',
-                                          style: GoogleFonts.montserrat(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
+                                        SizedBox(height: 20.h),
+                                        Container(
+                                          width: double.infinity,
+                                          height:
+                                              22.h, // تم تقليل الارتفاع ليظهر البيضاوي بشكل صحيح
+                                          decoration: BoxDecoration(
                                             color:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Colors.grey
-                                                    : Colors.white,
-                                            decoration:
-                                                TextDecoration.underline,
+                                                (() {
+                                                  if (leadassign == false &&
+                                                      lead.stage?.name !=
+                                                          'Fresh') {
+                                                    return Colors
+                                                        .green
+                                                        .shade200; // قرب للون اللي في الصورة التانية
+                                                  } else if (lead.stage?.name ==
+                                                      'Fresh') {
+                                                    return Colors.grey.shade300;
+                                                  } else {
+                                                    return Constants.maincolor
+                                                        .withOpacity(0.25);
+                                                  }
+                                                })(),
+                                            borderRadius: BorderRadius.circular(
+                                              200.r,
+                                            ), // رقم كبير علشان يكون fully rounded
+                                          ),
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 12.w,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              Builder(
+                                                builder: (_) {
+                                                  String statusText = '';
+                                                  Color textColor =
+                                                      Colors.grey.shade700;
+
+                                                  if (leadassign == false &&
+                                                      lead.stage?.name !=
+                                                          'Fresh') {
+                                                    statusText = 'Approved';
+                                                    textColor =
+                                                        Colors.green.shade800;
+                                                  } else if (lead.stage?.name ==
+                                                      'Fresh') {
+                                                    statusText = 'Not Assigned';
+                                                    textColor =
+                                                        Colors.grey.shade700;
+                                                  } else {
+                                                    statusText = 'Assigned';
+                                                    textColor =
+                                                        Constants.maincolor;
+                                                  }
+                                                  return Text(
+                                                    statusText,
+                                                    style:
+                                                        GoogleFonts.montserrat(
+                                                          fontSize: 11.sp,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          color: textColor,
+                                                        ),
+                                                  );
+                                                },
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           );
                         },
@@ -1995,7 +1901,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                   }
                   // الشرط الخامس: عرض خطأ الـ Leads الرئيسية فقط إذا كانت الحالة مطابقة والتبويب المحدد هو 0
                   else if (state is GetAllUsersFailure && selectedTab == 0) {
-                    return Center(child: Text(' ${state.error}'));
+                    return Center(child: Text(' No leads found'));
                   }
                   // الحالة الافتراضية: إذا لم تتطابق أي من الشروط السابقة
                   // (مثلاً الحالة هي GetLeadsInTrashSuccess والتبويب هو 0)
@@ -2022,6 +1928,90 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
           Text("$title : ", style: TextStyle(fontWeight: FontWeight.w500)),
           Expanded(child: Text(value, overflow: TextOverflow.ellipsis)),
         ],
+      ),
+    );
+  }
+}
+
+class DotLoading extends StatefulWidget {
+  const DotLoading({Key? key}) : super(key: key);
+
+  @override
+  State<DotLoading> createState() => _DotLoadingState();
+}
+
+class _DotLoadingState extends State<DotLoading>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true); // ينور ويطفي باستمرار
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _controller,
+      child: Container(
+        width: 12,
+        height: 12,
+        decoration: const BoxDecoration(
+          color: Colors.green, // اللون الأخضر
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.greenAccent,
+              blurRadius: 8,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionIcon extends StatelessWidget {
+  final Widget icon;
+  const _ActionIcon({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color:
+            isDark
+                ? Colors.white.withOpacity(0.10)
+                : Colors.grey[100], // خلفية خفيفة شيك
+        shape: BoxShape.circle, // دائري بالكامل 👌
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconTheme(
+        data: IconThemeData(
+          size: 22,
+          color: isDark ? Colors.white : Constants.maincolor,
+        ),
+        child: icon,
       ),
     );
   }

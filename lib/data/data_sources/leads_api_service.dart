@@ -13,65 +13,76 @@ class GetLeadsService {
     return prefs.getString('token');
   }
 
-  Future<LeadResponse> getAssignedData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      String? savedEmail = prefs.getString('email');
-      String? token = await _getToken();
+Future<LeadResponse> getAssignedData({
+  int page = 1,
+  int limit = 500,
+  bool forDashboard = false,
+}) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    String? savedEmail = prefs.getString('email');
+    String? token = await _getToken();
 
-      if (savedEmail == null || token == null) {
-        throw Exception("Missing email or token.");
-      }
-
-      final url = Uri.parse(
-        '${Constants.baseUrl}/users/filter-by-email?email=$savedEmail&leadisactive=true',
-      );
-
-      final response = await http.get(
-        url,
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      if (response.statusCode == 200) {
-        final jsonBody = json.decode(response.body);
-        final leadsResponse = LeadResponse.fromJson(jsonBody);
-
-        // ✅ ترتيب البيانات حسب التاريخ (من الأحدث إلى الأقدم)
-        leadsResponse.data?.sort((a, b) {
-          final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
-          final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
-          return dateB.compareTo(dateA); // الأحدث أولاً
-        });
-
-        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
-        leadsResponse.data?.take(5).forEach((lead) {
-          print('${lead.name} - date: ${lead.date}');
-        });
-
-        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
-        leadsResponse.data?.take(5).forEach((lead) {
-          print(
-            '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.stagedateupdated}',
-          );
-        });
-
-        log("✅ Get leads successfully");
-        await prefs.setInt('lastLeadCount', leadsResponse.count ?? 0);
-        await prefs.setString(
-          'userlog',
-          leadsResponse.data!.first.sales!.userlog!.id.toString(),
-        );
-        return leadsResponse;
-      } else {
-        throw Exception(
-          '❌ Failed to load assigned data: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      log('❌ Error in getAssignedData: $e');
-      rethrow;
+    if (savedEmail == null || token == null) {
+      throw Exception("Missing email or token.");
     }
+
+    final url = Uri.parse(
+      '${Constants.baseUrl}/users/filter-by-email?email=$savedEmail&leadisactive=true',
+    );
+
+    final response = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final jsonBody = json.decode(response.body);
+      print("API Response: ${jsonBody['data']?.length ?? 0} items"); // ⚠️ للتحقق
+      
+      var leadsResponse = LeadResponse.fromJson(jsonBody);
+
+      // ترتيب حسب التاريخ
+      leadsResponse.data?.sort((a, b) {
+        final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
+        final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
+        return dateB.compareTo(dateA);
+      });
+
+      final allData = leadsResponse.data ?? [];
+      
+      // ⚠️ تأكد من أن forDashboard تعمل بشكل صحيح
+      if (forDashboard) {
+        print("Dashboard mode: Returning ${allData.length} items");
+        return LeadResponse(
+          count: allData.length,
+          data: allData,
+        );
+      } else {
+        // Pagination عادي
+        final start = (page - 1) * limit;
+        if (start >= allData.length) {
+          return LeadResponse(count: allData.length, data: []);
+        }
+        final end = start + limit;
+        final safeEnd = end > allData.length ? allData.length : end;
+        final paginatedData = allData.sublist(start, safeEnd);
+        
+        print("Pagination mode: page $page, showing ${paginatedData.length} items");
+        
+        return LeadResponse(
+          count: allData.length,
+          data: paginatedData,
+        );
+      }
+    } else {
+      throw Exception('❌ Failed: ${response.statusCode}');
+    }
+  } catch (e) {
+    log('❌ Error in getAssignedData: $e');
+    rethrow;
   }
+}
 
   Future<LeadResponse> getLeadsDataByTeamLeader() async {
     try {
@@ -103,15 +114,15 @@ class GetLeadsService {
         });
 
         // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
-        leadsResponse.data?.take(5).forEach((lead) {
-          print('${lead.name} - date: ${lead.date}');
-        });
-        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
-        leadsResponse.data?.take(5).forEach((lead) {
-          print(
-            '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.lastStageDateUpdated}',
-          );
-        });
+        // leadsResponse.data?.take(5).forEach((lead) {
+        //   print('${lead.name} - date: ${lead.date}');
+        // });
+        // // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
+        // leadsResponse.data?.take(5).forEach((lead) {
+        //   print(
+        //     '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.lastStageDateUpdated}',
+        //   );
+        // });
 
         // 🧠 حفظ بيانات إضافية
         if (leadsResponse.data != null && leadsResponse.data!.isNotEmpty) {
@@ -281,37 +292,32 @@ class GetLeadsService {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
 
-        // ✅ ترتيب البيانات حسب التاريخ (من الأحدث إلى الأقدم)
+        // لو مفيش داتا خالص
+        if (leadsResponse.data == null || leadsResponse.data!.isEmpty) {
+          throw Exception("No leads returned from API.");
+        }
+
+        // ترتيب حسب التاريخ
         leadsResponse.data?.sort((a, b) {
           final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
           final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
-          return dateB.compareTo(dateA); // الأحدث أولاً
+          return dateB.compareTo(dateA);
         });
 
-        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
-        leadsResponse.data?.take(5).forEach((lead) {
-          print('${lead.name} - date: ${lead.date}');
-        });
-        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
-        leadsResponse.data?.take(5).forEach((lead) {
-          print(
-            '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.lastStageDateUpdated}',
-          );
-        });
+        // قراءة أول Lead بطريقة آمنة
+        final firstLead = leadsResponse.data!.first;
 
-        // 🧠 حفظ بيانات إضافية
-        await prefs.setString(
-          'userlog',
-          leadsResponse.data!.first.sales!.userlog!.id.toString(),
-        );
-        await prefs.setString(
-          'markteridSpecific',
-          leadsResponse.data?.first.sales?.manager?.id ?? '',
-        );
-        await prefs.setString(
-          'markterName',
-          leadsResponse.data?.first.sales?.manager?.name ?? '',
-        );
+        final userLogId = firstLead.sales?.userlog?.id;
+        final managerId = firstLead.sales?.manager?.id;
+        final managerName = firstLead.sales?.manager?.name;
+
+        // حفظ بطريقة آمنة بدون Crash
+        if (userLogId != null) {
+          await prefs.setString('userlog', userLogId);
+        }
+
+        await prefs.setString('markteridSpecific', managerId ?? '');
+        await prefs.setString('markterName', managerName ?? '');
 
         return leadsResponse;
       } else {

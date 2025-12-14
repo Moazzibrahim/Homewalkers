@@ -3,6 +3,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'get_leads_team_leader_state.dart';
 
@@ -69,25 +70,45 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
   }
 
   /// فلترة الـ leads حسب المرحلة
-  void filterLeadsByStage(String query) {
+  void filterLeadsByStage(String query) async {
     if (_originalLeadsResponse?.data == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final loggedSalesId = prefs.getString('teamleader_userlog_id') ?? '';
+
+    List<LeadData> filtered = [];
 
     if (query.isEmpty) {
-      emit(GetLeadsTeamLeaderSuccess(_originalLeadsResponse!));
-      return;
+      filtered = _originalLeadsResponse!.data!;
+    } else {
+      final q = query.toLowerCase();
+
+      if (q == 'fresh') {
+        // Fresh = No Stage assigned to loggedSalesId
+        filtered =
+            _originalLeadsResponse!.data!.where((lead) {
+              final stage = (lead.stage?.name ?? '').toLowerCase();
+              final assignedId = lead.sales?.id ?? '';
+              return stage == 'no stage' && assignedId == loggedSalesId;
+            }).toList();
+      } else if (q == 'no stage') {
+        // No Stage = No Stage not assigned to loggedSalesId
+        filtered =
+            _originalLeadsResponse!.data!.where((lead) {
+              final stage = (lead.stage?.name ?? '').toLowerCase();
+              final assignedId = lead.sales?.id ?? '';
+              // تأكد إن المخصص لحد غيرك
+              return stage == 'no stage' && assignedId != loggedSalesId;
+            }).toList();
+      } else {
+        // باقي الستيجات العادية
+        filtered =
+            _originalLeadsResponse!.data!.where((lead) {
+              return lead.stage?.name?.toLowerCase() == q;
+            }).toList();
+      }
     }
 
-    final filtered =
-        _originalLeadsResponse!.data!
-            .where(
-              (lead) =>
-                  lead.stage?.name?.toLowerCase().contains(
-                    query.toLowerCase(),
-                  ) ??
-                  false,
-            )
-            .toList();
-
+    // ✅ ترتيب حسب تاريخ آخر تحديث للـ Stage
     filtered.sort((a, b) {
       DateTime? dateA =
           a.stagedateupdated != null
@@ -106,8 +127,7 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
       if (dateA == null) return 1;
       if (dateB == null) return -1;
 
-      // ترتيب مباشر من الأقدم للأحدث
-      return dateA.compareTo(dateB);
+      return dateA.compareTo(dateB); // الأقدم للأحدث
     });
 
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
@@ -255,4 +275,37 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
             .toList();
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
   }
+  void filterLeadsByStageAndQuery(String stage, String query) {
+  if (_originalLeadsResponse?.data == null) return;
+
+  final q = query.toLowerCase();
+  final cleanedQDigits = q.replaceAll(RegExp(r'\D'), '');
+
+  final filtered = _originalLeadsResponse!.data!.where((lead) {
+    final stageMatch = (lead.stage?.name?.toLowerCase() ?? '') == stage.toLowerCase();
+
+    // فلترة الاسم والإيميل والرقم
+    final matchName = lead.name?.toLowerCase().contains(q) ?? false;
+    final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
+
+    final leadRawPhone = lead.phone ?? '';
+    final cleanedLeadPhone = leadRawPhone.replaceAll(RegExp(r'\D'), '');
+
+    bool matchPhone = false;
+    if (cleanedQDigits.isNotEmpty) {
+      matchPhone =
+          cleanedLeadPhone.contains(cleanedQDigits) ||
+          cleanedLeadPhone.endsWith(cleanedQDigits) ||
+          cleanedLeadPhone.contains(cleanedQDigits.replaceFirst('971', '')) ||
+          cleanedLeadPhone.startsWith(cleanedQDigits);
+    }
+
+    final matchQuery = q.isEmpty || matchName || matchEmail || matchPhone;
+
+    return stageMatch && matchQuery;
+  }).toList();
+
+  emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
+}
+
 }

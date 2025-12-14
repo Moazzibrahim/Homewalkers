@@ -84,11 +84,23 @@ class MarketerDashboardScreen extends StatefulWidget {
   }
 }
 
-class _MarketerDashboardScreenState extends State<MarketerDashboardScreen> {
+class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
+    with WidgetsBindingObserver {
+  late GetLeadsMarketerCubit _marketerCubit;
+  // ignore: unused_field
+  final String _userName = 'User';
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // 👈 مراقبة حالة التطبيق
     checkAuth();
+
+    // إنشاء Cubit مرة واحدة فقط
+    _marketerCubit = GetLeadsMarketerCubit(GetLeadsService())
+      ..getLeadsByMarketer();
+
+    // تهيئة الإشعارات
     context.read<NotificationCubit>().initNotifications();
     print("init notifications called");
   }
@@ -97,6 +109,21 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen> {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('name');
     return name ?? 'User';
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      print("App resumed — refreshing marketer leads...");
+      _marketerCubit.getLeadsByMarketer(); // 👈 تحديث البيانات عند الرجوع
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _marketerCubit.close(); // 👈 قفل الكيوبت لتفادي memory leaks
+    super.dispose();
   }
 
   BarChartData _buildBarChartData(
@@ -244,9 +271,9 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create:
-          (_) => GetLeadsMarketerCubit(GetLeadsService())..getLeadsByMarketer(),
+    return BlocProvider.value(
+      // 👈 نستخدم value عشان نمرر نفس نسخة الكيوبت اللي أنشأناها في initState
+      value: _marketerCubit,
       child: Scaffold(
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
@@ -308,234 +335,244 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen> {
             ],
           ),
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    FutureBuilder(
-                      future: checkAuth(),
-                      builder: (BuildContext context, AsyncSnapshot snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Text("hello ....");
-                        } else if (snapshot.hasError) {
-                          return const Text('Hello');
-                        } else {
-                          return Text(
-                            'Hello ${snapshot.data}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? const Color(0xff080719)
-                                      : Colors.white,
+        body: RefreshIndicator(
+          onRefresh: () async {
+            _marketerCubit.getLeadsByMarketer(); // 👈 هنا التحديث
+            await Future.delayed(Duration(milliseconds: 500));
+          },
+          child: SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(), // 👈 مهم لتفعيل السحب
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      FutureBuilder(
+                        future: checkAuth(),
+                        builder: (
+                          BuildContext context,
+                          AsyncSnapshot snapshot,
+                        ) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Text("hello ....");
+                          } else if (snapshot.hasError) {
+                            return const Text('Hello');
+                          } else {
+                            return Text(
+                              'Hello ${snapshot.data}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color:
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? const Color(0xff080719)
+                                        : Colors.white,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('👋', style: TextStyle(fontSize: 20)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // تم استبدال PieChart بـ BarChart في هذا التعديل
+                  // ... (نفس الكود السابق حتى BlocBuilder)
+                  BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
+                    builder: (context, state) {
+                      if (state is GetLeadsMarketerLoading) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: MarketerDashboardScreen._dashboardCard(
+                                    'Leads',
+                                    '...',
+                                    Icons.group,
+                                    context,
+                                  ),
+                                ),
+                                // SizedBox(width: 12),
+                                // Expanded(
+                                //   child: _dashboardCard(
+                                //     'Deals',
+                                //     '...',
+                                //     Icons.work_outline,
+                                //     context,
+                                //   ),
+                                // ),
+                              ],
                             ),
-                          );
+                            SizedBox(height: 24),
+                            Center(child: CircularProgressIndicator()),
+                          ],
+                        );
+                      } else if (state is GetLeadsMarketerSuccess) {
+                        final allLeads = state.leadsResponse.data ?? [];
+                        final duplicatesCount =
+                            allLeads
+                                .where(
+                                  (user) => (user.allVersions?.length ?? 0) > 1,
+                                )
+                                .length;
+                        // final doneDeals =
+                        //     allLeads
+                        //         .where((lead) => lead.stage?.name == "Done Deal")
+                        //         .toList();
+                        final Map<String, int> stageCounts = {};
+                        for (var lead in allLeads) {
+                          final stageName = lead.stage?.name ?? 'Unknown';
+                          stageCounts[stageName] =
+                              (stageCounts[stageName] ?? 0) + 1;
                         }
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('👋', style: TextStyle(fontSize: 20)),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // تم استبدال PieChart بـ BarChart في هذا التعديل
-                // ... (نفس الكود السابق حتى BlocBuilder)
-                BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
-                  builder: (context, state) {
-                    if (state is GetLeadsMarketerLoading) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: MarketerDashboardScreen._dashboardCard(
-                                  'Leads',
-                                  '...',
-                                  Icons.group,
+                        final stages = stageCounts.keys.toList();
+                        final values = stageCounts.values.toList();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: MarketerDashboardScreen._dashboardCard(
+                                    'Leads',
+                                    '${allLeads.length}',
+                                    Icons.group,
+                                    context,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) =>
+                                                  const LeadsMarketierScreen(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 18),
+
+                            GridView.count(
+                              crossAxisCount: 2,
+                              shrinkWrap: true,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                              childAspectRatio: 1.5,
+                              physics: NeverScrollableScrollPhysics(),
+                              children: [
+                                if (duplicatesCount > 0)
+                                  MarketerDashboardScreen._dashboardCard(
+                                    'Duplicates',
+                                    '$duplicatesCount',
+                                    Icons.copy_all,
+                                    context,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) =>
+                                                  const LeadsMarketierScreen(
+                                                    showDuplicatesOnly: true,
+                                                  ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ...stageCounts.entries.map((entry) {
+                                  return MarketerDashboardScreen._dashboardCard(
+                                    entry.key,
+                                    entry.value.toString(),
+                                    Icons.timeline,
+                                    context,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) => LeadsMarketierScreen(
+                                                stageName: entry.key,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                }),
+                              ],
+                            ),
+
+                            SizedBox(height: 24),
+                            Text(
+                              'Leads by Stage',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Color(0xff080719)
+                                        : Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            Container(
+                              height: 300,
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color:
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Color(0xffF5F8F9)
+                                        : Color(0xff1e1e1e),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: BarChart(
+                                _buildBarChartData(
+                                  stageCounts,
+                                  values,
+                                  stages,
                                   context,
                                 ),
                               ),
-                              // SizedBox(width: 12),
-                              // Expanded(
-                              //   child: _dashboardCard(
-                              //     'Deals',
-                              //     '...',
-                              //     Icons.work_outline,
-                              //     context,
-                              //   ),
-                              // ),
-                            ],
-                          ),
-                          SizedBox(height: 24),
-                          Center(child: CircularProgressIndicator()),
-                        ],
-                      );
-                    } else if (state is GetLeadsMarketerSuccess) {
-                      final allLeads = state.leadsResponse.data ?? [];
-                      final duplicatesCount =
-                          allLeads
-                              .where(
-                                (user) => (user.allVersions?.length ?? 0) > 1,
-                              )
-                              .length;
-                      // final doneDeals =
-                      //     allLeads
-                      //         .where((lead) => lead.stage?.name == "Done Deal")
-                      //         .toList();
-                      final Map<String, int> stageCounts = {};
-                      for (var lead in allLeads) {
-                        final stageName = lead.stage?.name ?? 'Unknown';
-                        stageCounts[stageName] =
-                            (stageCounts[stageName] ?? 0) + 1;
-                      }
-                      final stages = stageCounts.keys.toList();
-                      final values = stageCounts.values.toList();
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: MarketerDashboardScreen._dashboardCard(
-                                  'Leads',
-                                  '${allLeads.length}',
-                                  Icons.group,
-                                  context,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) =>
-                                                const LeadsMarketierScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 18),
-
-                          GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 1.5,
-                            physics: NeverScrollableScrollPhysics(),
-                            children: [
-                              if (duplicatesCount > 0)
-                                MarketerDashboardScreen._dashboardCard(
-                                  'Duplicates',
-                                  '$duplicatesCount',
-                                  Icons.copy_all,
-                                  context,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) =>
-                                                const LeadsMarketierScreen(
-                                                  showDuplicatesOnly: true,
-                                                ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ...stageCounts.entries.map((entry) {
-                                return MarketerDashboardScreen._dashboardCard(
-                                  entry.key,
-                                  entry.value.toString(),
-                                  Icons.timeline,
-                                  context,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => LeadsMarketierScreen(
-                                              stageName: entry.key,
-                                            ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              }),
-                            ],
-                          ),
-
-                          SizedBox(height: 24),
-                          Text(
-                            'Leads by Stage',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Color(0xff080719)
-                                      : Colors.white,
                             ),
-                          ),
-                          SizedBox(height: 12),
-                          Container(
-                            height: 300,
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Color(0xffF5F8F9)
-                                      : Color(0xff1e1e1e),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: BarChart(
-                              _buildBarChartData(
-                                stageCounts,
-                                values,
-                                stages,
+                          ],
+                        );
+                      } else {
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: MarketerDashboardScreen._dashboardCard(
+                                'Leads',
+                                '0',
+                                Icons.group,
                                 context,
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    } else {
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: MarketerDashboardScreen._dashboardCard(
-                              'Leads',
-                              '0',
-                              Icons.group,
-                              context,
-                            ),
-                          ),
-                          // SizedBox(width: 12),
-                          // Expanded(
-                          //   child: _dashboardCard(
-                          //     'Deals',
-                          //     '0',
-                          //     Icons.work_outline,
-                          //     context,
-                          //   ),
-                          // ),
-                        ],
-                      );
-                    }
-                  },
-                ),
-              ],
+                            // SizedBox(width: 12),
+                            // Expanded(
+                            //   child: _dashboardCard(
+                            //     'Deals',
+                            //     '0',
+                            //     Icons.work_outline,
+                            //     context,
+                            //   ),
+                            // ),
+                          ],
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),

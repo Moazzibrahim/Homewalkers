@@ -333,6 +333,11 @@ class _MarketerAdvancedSearchScreenState
                                   ),
                                   TextButton(
                                     onPressed: () {
+                                      final firstVersion =
+                                          (lead.allVersions != null &&
+                                                  lead.allVersions!.isNotEmpty)
+                                              ? lead.allVersions!.first
+                                              : null;
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
@@ -372,6 +377,31 @@ class _MarketerAdvancedSearchScreenState
                                                         .sales!
                                                         .userlog!
                                                         .fcmtokenn!,
+                                                leadSalesName:
+                                                    lead.sales?.name ?? '',
+                                                leadversions: lead.allVersions,
+                                                leadversionscampaign:
+                                                    firstVersion
+                                                        ?.campaignName ??
+                                                    "No campaign",
+                                                leadversionsproject:
+                                                    firstVersion?.projectName ??
+                                                    "No project",
+                                                leadversionsdeveloper:
+                                                    firstVersion
+                                                        ?.developerName ??
+                                                    "No developer",
+                                                leadversionschannel:
+                                                    firstVersion?.channelName ??
+                                                    "No channel",
+                                                leadversionscreationdate:
+                                                    firstVersion?.versionDate ??
+                                                    "No date",
+                                                leadversionscommunicationway:
+                                                    firstVersion
+                                                        ?.communicationWay ??
+                                                    "No communication way",
+                                                leadStages: [lead.stage?.id],
                                               ),
                                         ),
                                       );
@@ -384,7 +414,7 @@ class _MarketerAdvancedSearchScreenState
                                                     Brightness.light
                                                 ? Constants.maincolor
                                                 : Colors.white,
-                                                decoration: TextDecoration.underline,
+                                        decoration: TextDecoration.underline,
                                       ),
                                     ),
                                   ),

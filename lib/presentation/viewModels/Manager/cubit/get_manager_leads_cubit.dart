@@ -15,6 +15,7 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
   Map<String, int> get salesLeadCount => _salesLeadCount;
   List<String> salesNames = [];
   List<String> teamLeaderNames = [];
+  List<LeadData> leads = [];
 
   GetManagerLeadsCubit(this._getLeadsService) : super(GetManagerLeadsInitial());
 
@@ -24,6 +25,8 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
     try {
       final leadsResponse = await _getLeadsService.getLeadsDataByManager();
       _originalLeadsResponse = leadsResponse; // 🟡 حفظ البيانات الأصلية
+      leads = leadsResponse.data ?? [];
+
       // تحميل عدد الـ leads لكل مرحلة
       _salesLeadCount = await _getLeadsService.getLeadCountPerStageInManager();
       final prefs = await SharedPreferences.getInstance();

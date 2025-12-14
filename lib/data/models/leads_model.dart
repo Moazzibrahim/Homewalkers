@@ -1,7 +1,6 @@
-
 class LeadResponse {
   final bool? success;
-  final int? count;
+  final num? count;
   late final List<LeadData>? data;
 
   LeadResponse({this.success, this.count, this.data});
@@ -10,7 +9,7 @@ class LeadResponse {
     if (json == null) return LeadResponse();
     return LeadResponse(
       success: json['success'],
-      count: json['count'],
+      count: json['count'] as num?,
       data: (json['data'] as List?)?.map((x) => LeadData.fromJson(x)).toList(),
     );
   }
@@ -34,9 +33,9 @@ class LeadData {
   final Chanel? chanel;
   final CommunicationWay? communicationway;
   final String? leedtype;
-  final int? budget;
-  final int? revenue;
-  final int? unitPrice;
+  final num? budget;
+  final num? revenue;
+  final num? unitPrice;
   final bool? review;
   final String? dayonly;
   final String? lastStageDateUpdated;
@@ -45,15 +44,15 @@ class LeadData {
   final User? addby;
   final User? updatedby;
   final Campaign? campaign;
-  final int? duplicateCount;
-  final int? relatedLeadsCount;
+  final num? duplicateCount;
+  final num? relatedLeadsCount;
   final List<LeadVersion>? allVersions;
-  final int? totalSubmissions;
+  final num? totalSubmissions;
   final String? stagedateupdated;
   final List<dynamic>? mergeHistory;
   final String? createdAt;
   final String? updatedAt;
-  final int? v;
+  final num? v;
 
   LeadData({
     this.whatsappnumber,
@@ -107,7 +106,7 @@ class LeadData {
       email: json['email'],
       phone: json['phone'],
       project: Project.fromJson(json['project']),
-      sales: Sales.fromJson(json['sales']),
+      sales: json['sales'] != null ? Sales.fromJson(json['sales']) : null,
       notes: json['notes'],
       date: json['date'],
       assign: json['assign'],
@@ -115,9 +114,12 @@ class LeadData {
       chanel: Chanel.fromJson(json['chanel']),
       communicationway: CommunicationWay.fromJson(json['communicationway']),
       leedtype: json['leedtype'],
-      budget: json['budget'],
-      revenue: json['revenue'],
-      unitPrice: json['unit_price'],
+
+      // ✅ هنا التعديلات الآمنة
+      budget: json['budget'] is num ? json['budget'] : null,
+      revenue: json['revenue'] is num ? json['revenue'] : null,
+      unitPrice: json['unit_price'] is num ? json['unit_price'] : null,
+
       review: json['review'],
       dayonly: json['dayonly'],
       lastStageDateUpdated: json['last_stage_date_updated'],
@@ -126,15 +128,24 @@ class LeadData {
       addby: User.fromJson(json['addby']),
       updatedby: User.fromJson(json['updatedby']),
       campaign: Campaign.fromJson(json['campaign']),
-      duplicateCount: json['duplicateCount'],
-      relatedLeadsCount: json['relatedLeadsCount'],
-      allVersions: (json['allVersions'] as List?)?.map((x) => LeadVersion.fromJson(x)).toList(),
-      totalSubmissions: json['totalSubmissions'],
+
+      duplicateCount:
+          json['duplicateCount'] is num ? json['duplicateCount'] : null,
+      relatedLeadsCount:
+          json['relatedLeadsCount'] is num ? json['relatedLeadsCount'] : null,
+      allVersions:
+          (json['allVersions'] as List?)
+              ?.map((x) => LeadVersion.fromJson(x))
+              .toList(),
+      totalSubmissions:
+          json['totalSubmissions'] is num ? json['totalSubmissions'] : null,
+
       stagedateupdated: json['stagedateupdated'],
       mergeHistory: json['mergeHistory'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
-      v: json['__v'],
+
+      v: json['__v'] is num ? json['__v'] : null,
     );
   }
 }
@@ -152,9 +163,10 @@ class Project {
     return Project(
       id: json['_id'],
       name: json['name'],
-      developer: json['developer'] != null
-          ? Developer.fromJson(json['developer'])
-          : null,
+      developer:
+          json['developer'] != null
+              ? Developer.fromJson(json['developer'])
+              : null,
       city: json['city'] != null ? City.fromJson(json['city']) : null,
     );
   }
@@ -168,10 +180,7 @@ class Developer {
 
   factory Developer.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Developer();
-    return Developer(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return Developer(id: json['_id'], name: json['name']);
   }
 }
 
@@ -183,7 +192,14 @@ class Sales {
   final User? manager;
   final User? teamleader;
 
-  Sales({this.id, this.name, this.city, this.userlog, this.manager, this.teamleader});
+  Sales({
+    this.id,
+    this.name,
+    this.city,
+    this.userlog,
+    this.manager,
+    this.teamleader,
+  });
 
   factory Sales.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Sales();
@@ -206,10 +222,7 @@ class City {
 
   factory City.fromJson(Map<String, dynamic>? json) {
     if (json == null) return City();
-    return City(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return City(id: json['_id'], name: json['name']);
   }
 }
 
@@ -220,7 +233,7 @@ class User {
   final String? role;
   final String? fcmtokenn;
 
-  User({this.id, this.name,this.email,this.role,this.fcmtokenn});
+  User({this.id, this.name, this.email, this.role, this.fcmtokenn});
 
   factory User.fromJson(Map<String, dynamic>? json) {
     if (json == null) return User();
@@ -261,10 +274,7 @@ class StageType {
 
   factory StageType.fromJson(Map<String, dynamic>? json) {
     if (json == null) return StageType();
-    return StageType(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return StageType(id: json['_id'], name: json['name']);
   }
 }
 
@@ -276,10 +286,7 @@ class Chanel {
 
   factory Chanel.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Chanel();
-    return Chanel(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return Chanel(id: json['_id'], name: json['name']);
   }
 }
 
@@ -291,10 +298,7 @@ class CommunicationWay {
 
   factory CommunicationWay.fromJson(Map<String, dynamic>? json) {
     if (json == null) return CommunicationWay();
-    return CommunicationWay(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return CommunicationWay(id: json['_id'], name: json['name']);
   }
 }
 
@@ -303,7 +307,7 @@ class Campaign {
   final String? name;
   final String? campaoignType;
 
-  Campaign({this.id, this.name,this.campaoignType});
+  Campaign({this.id, this.name, this.campaoignType});
 
   factory Campaign.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Campaign();
@@ -358,7 +362,3 @@ class LeadVersion {
     );
   }
 }
-
-
-
-

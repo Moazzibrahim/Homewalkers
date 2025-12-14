@@ -41,7 +41,7 @@ class LoginApiService {
         body: jsonEncode({
           'email': email,
           'password': password,
-          // 'fcmToken': fcmToken,
+          'fcmToken': fcmToken,
         }),
       );
 
@@ -159,6 +159,10 @@ class LoginApiService {
         throw Exception("SalesId or DeviceId not found in storage");
       }
 
+      // ✅ حذف FCM Token من Firebase
+      await FirebaseMessaging.instance.deleteToken();
+      log("🧹 FCM Token Deleted ✅");
+
       final url = Uri.parse(
         "${Constants.baseUrl}/userdevices/$savedSalesId/devices/$savedDeviceId/logout",
       );
@@ -177,7 +181,12 @@ class LoginApiService {
         log("✅ Logout successful: ${response.body}");
 
         // 🗑️ امسح كل البيانات من SharedPreferences
-        await prefs.clear();
+        await prefs.remove('token');
+        await prefs.remove('deviceId');
+        await prefs.remove('role');
+        await prefs.remove('salesId');
+
+          context.read<NotificationCubit>().disposeNotifications();
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -186,9 +195,9 @@ class LoginApiService {
       } else {
         log("❌ Logout failed: ${response.statusCode}");
         log("❌ Response body: ${response.body}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("logout failed try again")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("logout failed try again")));
       }
     } catch (e) {
       log("❌ Exception during logout: $e");

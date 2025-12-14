@@ -1,4 +1,7 @@
-// ignore_for_file: unused_local_variable, use_build_context_synchronously, non_constant_identifier_names, avoid_print
+// ignore_for_file: unused_local_variable, use_build_context_synchronously, non_constant_identifier_names, avoid_print, unused_element
+
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -8,15 +11,18 @@ import 'package:homewalkers_app/presentation/viewModels/sales/change_stage/chang
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CustomChangeStageDialog {
-  static Future<void> showChangeDialog({
+  static Future<bool?> showChangeDialog({
     required BuildContext context,
     required String? leadStage,
     required String leedId,
     required String? salesId,
+    String? leadstageupdated,
+    String? stageId,
     required Function(String) onStageChanged,
   }) async {
     final stagesCubit = context.read<StagesCubit>();
@@ -27,14 +33,29 @@ class CustomChangeStageDialog {
     final cashbackRatioController = TextEditingController();
     final unitnumberController = TextEditingController();
     final eoiController = TextEditingController();
+    final stageUpdatedController = TextEditingController(
+      text:
+          leadstageupdated != null && leadstageupdated.isNotEmpty
+              ? DateFormat("yyyy-MM-dd hh:mm a").format(
+                DateTime.tryParse(leadstageupdated)?.toLocal() ??
+                    DateTime.now(),
+              )
+              : DateFormat("yyyy-MM-dd hh:mm a").format(DateTime.now()),
+    );
     String? selectedStageName;
     String? selectedStageId;
     String commissionMoney = '0.00';
     String cashbackMoney = '0.00';
     DateTime? selectedDateTime;
+    DateTime? selectedStageUpdatedDateTime;
     final prefs = await SharedPreferences.getInstance();
     final savedSalesId =
         prefs.getString('salesIDD') ?? 'default_sales_id'; // Provide a default
+    //  bool isAnswered = true;
+    bool isAnswered = !(leadStage?.toLowerCase() == "no answer");
+
+    bool isApplying = false;
+    log(" Saved leadstageupdated: $leadstageupdated ");
 
     Future<void> pickDateTime(
       BuildContext context,
@@ -46,11 +67,13 @@ class CustomChangeStageDialog {
         firstDate: DateTime.now(),
         lastDate: DateTime(2050),
       );
+
       if (date != null) {
         final time = await showTimePicker(
           context: context,
           initialTime: TimeOfDay.now(),
         );
+
         if (time != null) {
           final dateTime = DateTime(
             date.year,
@@ -59,12 +82,20 @@ class CustomChangeStageDialog {
             time.hour,
             time.minute,
           );
+
+          // 🧠 حفظ القيمة في SharedPreferences
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('pickedDateTime', dateTime.toIso8601String());
+
+          // 🔁 استدعاء callback في نفس الوقت لو محتاج تستخدمها جوه الdialog
           onPicked(dateTime);
+
+          print("✅ Picked DateTime saved: $dateTime");
         }
       }
     }
 
-    showDialog(
+    return showDialog(
       context: context,
       builder:
           (context) => MultiBlocProvider(
@@ -162,7 +193,7 @@ class CustomChangeStageDialog {
                                   cashbackRatioController.removeListener(
                                     calculateValues,
                                   );
-                                  Navigator.pop(context);
+                                  Navigator.pop(context, null);
                                 },
                               ),
                             ],
@@ -170,9 +201,43 @@ class CustomChangeStageDialog {
                           SizedBox(height: 12.h),
 
                           /// Old Stage Field
-                          CustomTextField(
-                            hint: "Old stage",
-                            controller: oldStageController,
+                          Row(
+                            children: [
+                              // Expanded علشان الـTextField ياخد المساحة الباقية
+                              Expanded(
+                                child: CustomTextField(
+                                  hint: "Old stage",
+                                  controller: oldStageController,
+                                ),
+                              ),
+                              SizedBox(width: 12.w),
+                              // السويتش + النص
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Switch(
+                                    activeColor: Constants.maincolor,
+                                    value: isAnswered,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        isAnswered = value;
+                                      });
+                                    },
+                                  ),
+                                  Text(
+                                    isAnswered ? "Answer" : "NO Answer",
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color:
+                                          isAnswered
+                                              ? Colors.green
+                                              : Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                           SizedBox(height: 12.h),
 
@@ -189,6 +254,7 @@ class CustomChangeStageDialog {
                                   hint: "Choose Stage",
                                   items: items,
                                   value: selectedStageName,
+
                                   onChanged: (value) async {
                                     setState(() {
                                       selectedStageName = value;
@@ -198,25 +264,54 @@ class CustomChangeStageDialog {
                                                 (stage) => stage.name == value,
                                               )
                                               .id;
+
+                                      /// 🔥 لو اليوزر اختار NO ANSWER → خلي السويتش OFF تلقائي
+                                      if (value?.toLowerCase() == "no answer") {
+                                        isAnswered = false;
+                                      } else {
+                                        isAnswered = true;
+                                      }
                                     });
-                                    // Logic for picking date
-                                    if (value == "Meeting" ||
-                                        value == "Follow" ||
-                                        value == "Interested" ||
-                                        value == "Follow Up" ||
-                                        value == "Long Follow") {
-                                      await pickDateTime(context, (
-                                        pickedDateTime,
-                                      ) {
-                                        setState(() {
-                                          selectedDateTime = pickedDateTime;
-                                        });
-                                      });
-                                    } else {
-                                      setState(() {
-                                        selectedDateTime = null;
-                                      });
-                                    }
+                                    // if (value == "No Answer") {
+                                    //   await pickDateTime(context, (
+                                    //     pickedDateTime,
+                                    //   ) {
+                                    //     setState(() {
+                                    //       selectedDateTime = pickedDateTime;
+                                    //       // ✅ لو تم اختيار تاريخ، حدّث الفيلد بتاع Stage Updated Date أوتوماتيك
+                                    //       stageUpdatedController
+                                    //           .text = DateFormat(
+                                    //         "yyyy-MM-dd hh:mm a",
+                                    //       ).format(pickedDateTime);
+                                    //       isAnswered = false;
+                                    //     });
+                                    //   });
+                                    // }
+                                    // // Logic for picking date
+                                    // if (value == "Meeting" ||
+                                    //     value == "Follow" ||
+                                    //     value == "Follow After Meeting" ||
+                                    //     value == "Transfer" ||
+                                    //     value == "Interested" ||
+                                    //     value == "Follow Up" ||
+                                    //     value == "Long Follow") {
+                                    //   await pickDateTime(context, (
+                                    //     pickedDateTime,
+                                    //   ) {
+                                    //     setState(() {
+                                    //       selectedDateTime = pickedDateTime;
+                                    //       // ✅ لو تم اختيار تاريخ، حدّث الفيلد بتاع Stage Updated Date أوتوماتيك
+                                    //       stageUpdatedController
+                                    //           .text = DateFormat(
+                                    //         "yyyy-MM-dd hh:mm a",
+                                    //       ).format(pickedDateTime);
+                                    //     });
+                                    //   });
+                                    // } else {
+                                    //   setState(() {
+                                    //     selectedDateTime = null;
+                                    //   });
+                                    // }
                                   },
                                 );
                               } else if (state is StagesError) {
@@ -313,6 +408,80 @@ class CustomChangeStageDialog {
                                 ),
                               ],
                             ),
+                          // ✅ TextField لتاريخ Stage Updated
+                          /// New Field: Stage Updated Date
+                          SizedBox(height: 12.h),
+                          // if (leadStage == "Follow After Meeting" ||
+                          //     leadStage == "No Answer" ||
+                          //     leadStage == "Interested" ||
+                          //     leadStage == "Follow Up" ||
+                          //     leadStage == "Long Follow" ||
+                          //     leadStage == "Meeting" ||
+                          //     leadStage == "Done Deal" ||
+                          //     leadStage == "Transfer" ||
+                          //     leadStage == "Follow")
+                          CustomTextField(
+                            hint: "Stage Date Updated",
+                            controller: stageUpdatedController,
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.calendar_today),
+                              onPressed: () async {
+                                // 🧠 لو فيه تاريخ محفوظ مسبقًا نحوله لـ DateTime
+                                if (selectedStageUpdatedDateTime == null &&
+                                    stageUpdatedController.text.isNotEmpty) {
+                                  try {
+                                    selectedStageUpdatedDateTime = DateFormat(
+                                      "yyyy-MM-dd hh:mm a",
+                                    ).parse(stageUpdatedController.text);
+                                  } catch (e) {
+                                    selectedStageUpdatedDateTime =
+                                        DateTime.tryParse(
+                                          leadstageupdated ?? '',
+                                        ) ??
+                                        DateTime.now();
+                                  }
+                                }
+                                // 🗓️ عرض الـ Date Picker
+                                final pickedDate = await showDatePicker(
+                                  context: context,
+                                  initialDate:
+                                      selectedStageUpdatedDateTime ??
+                                      DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2050),
+                                );
+
+                                if (pickedDate != null) {
+                                  // ⏰ عرض الـ Time Picker
+                                  final pickedTime = await showTimePicker(
+                                    context: context,
+                                    initialTime: TimeOfDay.fromDateTime(
+                                      selectedStageUpdatedDateTime ??
+                                          DateTime.now(),
+                                    ),
+                                  );
+
+                                  if (pickedTime != null) {
+                                    // 🧩 دمج التاريخ والوقت
+                                    final fullDate = DateTime(
+                                      pickedDate.year,
+                                      pickedDate.month,
+                                      pickedDate.day,
+                                      pickedTime.hour,
+                                      pickedTime.minute,
+                                    );
+                                    // 🧠 تحديث المتغير + الكنترولر
+                                    selectedStageUpdatedDateTime = fullDate;
+                                    // solution
+                                    selectedDateTime = fullDate;
+                                    stageUpdatedController.text = DateFormat(
+                                      "yyyy-MM-dd hh:mm a",
+                                    ).format(fullDate);
+                                  }
+                                }
+                              },
+                            ),
+                          ),
                           SizedBox(height: 20.h),
 
                           /// Action Buttons
@@ -330,8 +499,7 @@ class CustomChangeStageDialog {
                                       cashbackRatioController.clear();
                                       unitnumberController.clear();
                                       eoiController.clear();
-                                      // No need to call calculateValues() here,
-                                      // the listeners will do it automatically when controllers are cleared.
+                                      //stageUpdatedController.clear();
                                     });
                                   },
                                   style: ElevatedButton.styleFrom(
@@ -365,106 +533,164 @@ class CustomChangeStageDialog {
                               /// Apply Button
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () async {
-                                    if (selectedStageId == null ||
-                                        selectedStageId!.isEmpty) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "Please select a stage",
-                                          ),
-                                        ),
-                                      );
-                                      return;
-                                    }
-                                    final leadStageRequest = LeadStageRequest(
-                                      lastStageDateUpdated:
-                                          DateTime.now().toIso8601String(),
-                                      stage: selectedStageId!,
-                                      stageDateUpdated:
-                                          selectedDateTime
-                                              ?.toUtc()
-                                              .toIso8601String() ??
-                                          DateTime.now()
-                                              .toUtc()
-                                              .toIso8601String(),
-                                      unitPrice: unitPriceController.text,
-                                      unitNumber: unitnumberController.text,
-                                      commissionRatio:
-                                          commissionRatioController.text,
-                                      commissionMoney: commissionMoney,
-                                      cashbackRatio:
-                                          cashbackRatioController.text,
-                                      cashbackMoney: cashbackMoney,
-                                      eoi:
-                                          eoiController.text.isNotEmpty
-                                              ? num.tryParse(eoiController.text)
-                                              : null,
-                                      reservation:
-                                          eoiController.text.isNotEmpty
-                                              ? num.tryParse(eoiController.text)
-                                              : null,
-                                    );
+                                  onPressed:
+                                      isApplying
+                                          ? null
+                                          : () async {
+                                            // ⛔ يمنع الضغط مرتين
+                                            setState(() => isApplying = true);
+                                            final leadStageRequest = LeadStageRequest(
+                                              lastStageDateUpdated:
+                                                  DateTime.now()
+                                                      .toIso8601String(),
+                                              stage:
+                                                  selectedStageId ??
+                                                  stageId ??
+                                                  '',
+                                              stageDateUpdated:
+                                                  (selectedStageName != null &&
+                                                          selectedStageName!
+                                                              .isNotEmpty)
+                                                      ? (selectedDateTime
+                                                              ?.toUtc()
+                                                              .toIso8601String() ??
+                                                          DateTime.now()
+                                                              .toUtc()
+                                                              .toIso8601String())
+                                                      : (selectedStageUpdatedDateTime
+                                                              ?.toUtc()
+                                                              .toIso8601String() ??
+                                                          DateTime.now()
+                                                              .toUtc()
+                                                              .toIso8601String()),
+                                              unitPrice:
+                                                  unitPriceController.text,
+                                              unitNumber:
+                                                  unitnumberController.text,
+                                              commissionRatio:
+                                                  commissionRatioController
+                                                      .text,
+                                              commissionMoney: commissionMoney,
+                                              cashbackRatio:
+                                                  cashbackRatioController.text,
+                                              cashbackMoney: cashbackMoney,
+                                              eoi:
+                                                  eoiController.text.isNotEmpty
+                                                      ? num.tryParse(
+                                                        eoiController.text,
+                                                      )
+                                                      : null,
+                                              reservation:
+                                                  eoiController.text.isNotEmpty
+                                                      ? num.tryParse(
+                                                        eoiController.text,
+                                                      )
+                                                      : null,
+                                            );
+                                            print(
+                                              "leadstageupdated: $selectedStageUpdatedDateTime and  selecteddate: $selectedDateTime",
+                                            );
+                                            final prefs =
+                                                await SharedPreferences.getInstance();
+                                            // 🧮 نفس اللوجيك اللي عندك
+                                            final String
+                                            stageDateUpdatedInSharedPreferences =
+                                                (selectedStageName != null &&
+                                                        selectedStageName
+                                                                ?.isNotEmpty ==
+                                                            true)
+                                                    ? (selectedDateTime
+                                                            ?.toUtc()
+                                                            .toIso8601String() ??
+                                                        DateTime.now()
+                                                            .toUtc()
+                                                            .toIso8601String())
+                                                    : (selectedStageUpdatedDateTime
+                                                            ?.toUtc()
+                                                            .toIso8601String() ??
+                                                        DateTime.now()
+                                                            .toUtc()
+                                                            .toIso8601String());
+                                            // 💾 حفظ في SharedPreferences
+                                            await prefs.setString(
+                                              'stageDateUpdated',
+                                              stageDateUpdatedInSharedPreferences,
+                                            );
+                                            print(
+                                              '✅ Saved stageDateUpdated: $stageDateUpdatedInSharedPreferences',
+                                            );
+                                            final changeStageCubit =
+                                                context
+                                                    .read<ChangeStageCubit>();
+                                            // أول استدعاء لتغيير المرحلة
+                                            await changeStageCubit.changeStage(
+                                              leadId: leedId,
+                                              request: leadStageRequest,
+                                            );
+                                            final stateAfterChange =
+                                                changeStageCubit.state;
+                                            setState(() => isApplying = false);
 
-                                    final changeStageCubit =
-                                        context.read<ChangeStageCubit>();
-                                    // Await the first call
-                                    await changeStageCubit.changeStage(
-                                      leadId: leedId,
-                                      request: leadStageRequest,
-                                    );
-
-                                    // Check the state after the first call
-                                    final stateAfterChange =
-                                        changeStageCubit.state;
-                                    if (stateAfterChange
-                                        is ChangeStageSuccess) {
-                                      await changeStageCubit.postLeadStage(
-                                        leadId: leedId,
-                                        date:
-                                            DateTime.now()
-                                                .toIso8601String()
-                                                .split('T')
-                                                .first,
-                                        stage: selectedStageId!,
-                                        sales: savedSalesId,
-                                      );
-                                      // **Important**: Remove listeners before closing the dialog
-                                      unitPriceController.removeListener(
-                                        calculateValues,
-                                      );
-                                      commissionRatioController.removeListener(
-                                        calculateValues,
-                                      );
-                                      cashbackRatioController.removeListener(
-                                        calculateValues,
-                                      );
-
-                                      Navigator.pop(context);
-                                      onStageChanged(selectedStageName ?? '');
-
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            stateAfterChange.message,
-                                          ),
-                                        ),
-                                      );
-                                    } else if (stateAfterChange
-                                        is ChangeStageError) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(stateAfterChange.error),
-                                        ),
-                                      );
-                                    }
-                                  },
+                                            if (stateAfterChange
+                                                is ChangeStageSuccess) {
+                                              // إرسال الـ stage الجديد للسيرفر
+                                              await changeStageCubit
+                                                  .postLeadStage(
+                                                    leadId: leedId,
+                                                    date:
+                                                        DateTime.now()
+                                                            .toIso8601String()
+                                                            .split('T')
+                                                            .first,
+                                                    stage:
+                                                        selectedStageId ??
+                                                        stageId ??
+                                                        '',
+                                                    sales: savedSalesId,
+                                                  );
+                                              // إزالة الـ listeners
+                                              unitPriceController
+                                                  .removeListener(
+                                                    calculateValues,
+                                                  );
+                                              commissionRatioController
+                                                  .removeListener(
+                                                    calculateValues,
+                                                  );
+                                              cashbackRatioController
+                                                  .removeListener(
+                                                    calculateValues,
+                                                  );
+                                              // ✅ هنا بنرجع القيمة isAnswered للصفحة اللي فتحت الديالوج
+                                              Navigator.pop(
+                                                context,
+                                                isAnswered,
+                                              );
+                                              onStageChanged(
+                                                selectedStageName ?? '',
+                                              );
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    stateAfterChange.message,
+                                                  ),
+                                                ),
+                                              );
+                                            } else if (stateAfterChange
+                                                is ChangeStageError) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    stateAfterChange.error,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor:
                                         Theme.of(context).brightness ==
@@ -478,14 +704,24 @@ class CustomChangeStageDialog {
                                       borderRadius: BorderRadius.circular(4.r),
                                     ),
                                   ),
-                                  child: Text(
-                                    "Apply",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  child:
+                                      isApplying
+                                          ? SizedBox(
+                                            height: 20.h,
+                                            width: 20.w,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                          : Text(
+                                            "Apply",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
                                 ),
                               ),
                             ],

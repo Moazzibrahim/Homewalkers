@@ -97,6 +97,7 @@ class AssignleadCubit extends Cubit<AssignState> {
     required String lastDateAssign,
     required String teamleadersId,
     required String salesId,
+    required String stageId,
     bool? clearhistory,
   }) async {
     emit(AssignLoading());
@@ -119,6 +120,7 @@ class AssignleadCubit extends Cubit<AssignState> {
           "assign": "true",
           "lastdateassign": lastDateAssign,
           "sales": salesId,
+          "stage": stageId,
         };
 
         final putResponse = await dio.put(
@@ -296,14 +298,16 @@ class AssignleadCubit extends Cubit<AssignState> {
     final marketerId = prefs.getString('salesId');
     final token = prefs.getString('token');
 
+
     try {
       for (String leadId in leadIds) {
         // ===== PUT =====
-        final putUrl = '${Constants.baseUrl}/users/$leadId';
+        final putUrl = '${Constants.baseUrl}/users/leads/assign/$leadId/$marketerId/$salesId';
         final putBody = {
-          "assign": "true",
-          "lastdateassign": lastDateAssign,
-          "sales": salesId,
+          // "assign": "true",
+          // "lastdateassign": lastDateAssign,
+          // "sales": salesId,
+          "clearHistory": isClearhistory,
           if (stage != null) "stage": stage,
         };
 
@@ -326,30 +330,30 @@ class AssignleadCubit extends Cubit<AssignState> {
 
         log("✅ PUT success for lead $leadId");
 
-        // ===== POST ===== (Fire & Forget)
-        final postUrl = '${Constants.baseUrl}/LeadAssigned';
-        final postBody = {
-          "LeadId": leadId,
-          "date_Assigned": dateAssigned,
-          "Assigned_From": marketerId,
-          "Assigned_to": salesId,
-          "clearHistory": isClearhistory,
-        };
+        // // ===== POST ===== (Fire & Forget)
+        // final postUrl = '${Constants.baseUrl}/LeadAssigned';
+        // final postBody = {
+        //   "LeadId": leadId,
+        //   "date_Assigned": dateAssigned,
+        //   "Assigned_From": marketerId,
+        //   "Assigned_to": salesId,
+        //   "clearHistory": isClearhistory,
+        // };
 
-        unawaited(
-          dio
-              .post(
-                postUrl,
-                data: postBody,
-                options: Options(headers: {'Content-Type': 'application/json'}),
-              )
-              .then((res) {
-                log("📩 POST success for lead $leadId => ${res.statusCode}");
-              })
-              .catchError((e) {
-                log("⚠️ POST failed for lead $leadId => $e");
-              }),
-        );
+        // unawaited(
+        //   dio
+        //       .post(
+        //         postUrl,
+        //         data: postBody,
+        //         options: Options(headers: {'Content-Type': 'application/json'}),
+        //       )
+        //       .then((res) {
+        //         log("📩 POST success for lead $leadId => ${res.statusCode}");
+        //       })
+        //       .catchError((e) {
+        //         log("⚠️ POST failed for lead $leadId => $e");
+        //       }),
+        // );
 
         // ✅ Save clearHistory locally
         if (isClearhistory != null) {
@@ -365,6 +369,7 @@ class AssignleadCubit extends Cubit<AssignState> {
 
       emit(AssignSuccess());
     } catch (e) {
+      log('❌ Error during combined assignment: $e');
       emit(AssignFailure('❌ Error during combined assignment: $e'));
     }
   }

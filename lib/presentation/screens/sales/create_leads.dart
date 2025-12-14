@@ -15,6 +15,7 @@ import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/communication_ways/cubit/get_communication_ways_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/create_lead/cubit/create_lead_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
@@ -51,6 +52,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   String? _selectedSalesFcmToken;
   String? role;
   String? id;
+  String? name;
 
   Widget _buildDropdown<T>({
     required String hint,
@@ -61,6 +63,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<T>(
+        isExpanded: true, // ✅ أهم تعديل
         value: value,
         items: items,
         onChanged: onChanged,
@@ -87,8 +90,10 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
     setState(() {
       role = prefs.getString('role');
       id = prefs.getString('savedid');
+      name = prefs.getString('name');
       log("Role: $role");
       log("ID: $id");
+      log("Name: $name");
     });
   }
 
@@ -254,42 +259,42 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           );
                         },
                       ),
-                      const SizedBox(height: 12),
-                      // --- MODIFIED: Stage Dropdown ---
-                      BlocBuilder<StagesCubit, StagesState>(
-                        builder: (context, state) {
-                          if (state is StagesLoaded) {
-                            return _buildDropdown<String>(
-                              hint: "Choose Stage",
-                              value: selectedStageId,
-                              items:
-                                  state.stages.map((stage) {
-                                    return DropdownMenuItem<String>(
-                                      value: stage.id,
-                                      child: Text(stage.name!),
-                                    );
-                                  }).toList(),
-                              // 👈 -- الخطوة 2: تحديث كلا المتغيرين عند التغيير
-                              onChanged: (val) {
-                                setState(() {
-                                  selectedStageId = val;
-                                  // Find the stage name corresponding to the selected ID
-                                  selectedStageName =
-                                      state.stages
-                                          .firstWhere(
-                                            (stage) => stage.id == val,
-                                            orElse: () => state.stages.first,
-                                          )
-                                          .name;
-                                });
-                              },
-                            );
-                          }
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        },
-                      ),
+                      // const SizedBox(height: 12),
+                      // // --- MODIFIED: Stage Dropdown ---
+                      // BlocBuilder<StagesCubit, StagesState>(
+                      //   builder: (context, state) {
+                      //     if (state is StagesLoaded) {
+                      //       return _buildDropdown<String>(
+                      //         hint: "Choose Stage",
+                      //         value: selectedStageId,
+                      //         items:
+                      //             state.stages.map((stage) {
+                      //               return DropdownMenuItem<String>(
+                      //                 value: stage.id,
+                      //                 child: Text(stage.name!),
+                      //               );
+                      //             }).toList(),
+                      //         // 👈 -- الخطوة 2: تحديث كلا المتغيرين عند التغيير
+                      //         onChanged: (val) {
+                      //           setState(() {
+                      //             selectedStageId = val;
+                      //             // Find the stage name corresponding to the selected ID
+                      //             selectedStageName =
+                      //                 state.stages
+                      //                     .firstWhere(
+                      //                       (stage) => stage.id == val,
+                      //                       orElse: () => state.stages.first,
+                      //                     )
+                      //                     .name;
+                      //           });
+                      //         },
+                      //       );
+                      //     }
+                      //     return const Center(
+                      //       child: CircularProgressIndicator(),
+                      //     );
+                      //   },
+                      // ),
                       const SizedBox(height: 12),
                       // ... other dropdowns ...
                       if (role != "Sales")
@@ -373,7 +378,12 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                   state.campaigns.data!.map((campaign) {
                                     return DropdownMenuItem<String>(
                                       value: campaign.id,
-                                      child: Text(campaign.campainName!),
+                                      child: Text(
+                                        campaign.campainName!,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
                                     );
                                   }).toList(),
                               onChanged:
@@ -491,28 +501,10 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: BlocConsumer<
+                            child: BlocBuilder<
                               CreateLeadCubit,
                               CreateLeadState
                             >(
-                              listener: (context, state) {
-                                if (state is CreateLeadSuccess) {
-                                  // ✅ بعد النجاح ممكن تعرض Dialog أو SnackBar
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(state.message),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                } else if (state is CreateLeadFailure) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(state.error),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                              },
                               builder: (context, state) {
                                 final isLoading = state is CreateLeadLoading;
                                 return ElevatedButton(
@@ -520,17 +512,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                       isLoading
                                           ? null
                                           : () async {
-                                            // ✅ تحقق من المدخلات قبل الإرسال
                                             if (_nameController.text.isEmpty ||
                                                 _phoneController.text.isEmpty ||
+                                                _budgetController.text.isEmpty ||
                                                 selectedProjectId == null ||
-                                                selectedStageId == null ||
                                                 _selectedChannelId == null ||
-                                                _selectedCommunicationWayId ==
-                                                    null ||
-                                                _budgetController
-                                                    .text
-                                                    .isEmpty ||
                                                 _selectedCampaignId == null) {
                                               ScaffoldMessenger.of(
                                                 context,
@@ -565,7 +551,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                                   notes: _notesController.text,
                                                   leedtype:
                                                       isCold ? "Cold" : "Fresh",
-                                                  stage: selectedStageId ?? '',
                                                   chanel:
                                                       _selectedChannelId ?? '',
                                                   communicationway:
@@ -580,14 +565,14 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                                       _budgetController.text,
                                                 );
 
-                                            // ✅ الإشعارات بعد النجاح
+                                            // ⚡ إرسال الإشعار لا تحتاج SnackBar هنا
                                             if (state is CreateLeadSuccess) {
                                               context
                                                   .read<NotificationCubit>()
                                                   .sendNotificationToToken(
                                                     title: "Lead",
                                                     body:
-                                                        "Lead has been created ✅ to you ",
+                                                        "Lead has been created ✅ to you",
                                                     fcmtokennnn:
                                                         _selectedSalesFcmToken!,
                                                   );

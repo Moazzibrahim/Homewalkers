@@ -1,7 +1,8 @@
-// ignore_for_file: unused_field, unnecessary_null_comparison
+// ignore_for_file: unused_field, unnecessary_null_comparison, avoid_print
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
+import 'package:homewalkers_app/data/models/lead_stats_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
 part 'get_all_users_state.dart';
@@ -9,17 +10,38 @@ part 'get_all_users_state.dart';
 class GetAllUsersCubit extends Cubit<GetAllUsersState> {
   final GetAllUsersApiService apiService;
   AllUsersModel? _originalLeadsResponse;
+  AllUsersModel? get originalLeadsResponse => _originalLeadsResponse;
   LeadResponse? _originalLeadsResponseee;
   final Map<String, int> _salesLeadCount = {};
   Map<String, int> get salesLeadCount => _salesLeadCount;
   List<String> salesNames = [];
   List<String> teamLeaderNames = [];
-
+  int _currentPage = 1;
+  bool _hasMore = true;
+  bool _isLoading = false;
+  List<Lead> leads = [];
+  final List<Lead> _allLeads = []; // كل الداتا هنا
+  bool get isLoading => _isLoading;
+  bool get hasMore => _hasMore;
+  bool get hasMoreUsers => _hasMore;
   GetAllUsersCubit(this.apiService) : super(GetAllUsersInitial());
+
+  void clearLeads() {
+    leads.clear();
+    salesNames.clear();
+    _allLeads.clear();
+    teamLeaderNames.clear();
+    _originalLeadsResponse = null;
+    _originalLeadsResponseee = null;
+    _currentPage = 1;
+    _hasMore = true;
+    _isLoading = false;
+    emit(GetAllUsersInitial());
+  }
+
   Future<void> fetchLeadCounts() async {
-    // No need for a loading state here as it runs in the background
     try {
-      final response = await apiService.getUsers();
+      final response = await apiService.getAllUsers();
 
       if (response != null && response.data != null) {
         final Map<String, int> leadCounts = {};
@@ -27,11 +49,9 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
         for (var lead in response.data!) {
           if (lead.sales?.userlog?.id != null) {
             final salesId = lead.sales!.userlog!.id!;
-            // Add salesId to map and increment count, or set to 1 if new
             leadCounts[salesId] = (leadCounts[salesId] ?? 0) + 1;
           }
         }
-        // Emit success state with the map of counts
         emit(UsersLeadCountSuccess(leadCounts));
       } else {
         emit(const GetAllUsersFailure('Failed to fetch lead counts.'));
@@ -45,44 +65,176 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
     }
   }
 
-  Future<void> fetchAllUsers({String? stageFilter}) async {
-    emit(GetAllUsersLoading());
-    try {
-      final response = await apiService.getUsers();
-      // ترتيب من الأحدث إلى الأقدم
-      response?.data?.sort((a, b) {
-        final aDate = DateTime.tryParse(a.date ?? '') ?? DateTime.now();
-        final bDate = DateTime.tryParse(b.date ?? '') ?? DateTime.now();
-        return bDate.compareTo(aDate); // الحديث قبل القديم
-      });
+  Future<void> fetchAllUsers({
+    String? stageFilter,
+    bool loadAll = false,
+    bool reset = false,
+    bool loadMore = false,
+    bool? duplicatesOnly,
+  }) async {
+    if (_isLoading) return;
 
-      _originalLeadsResponse = response;
+    if (reset) {
+      clearLeads();
+      _currentPage = 1;
+      _hasMore = true;
+    }
+
+    if (loadMore && !_hasMore) {
+      return;
+    }
+
+    if (!loadMore && !reset) {
+      _currentPage = 1;
+      _hasMore = true;
+    }
+
+    _isLoading = true;
+
+    if (!loadMore) {
+      emit(GetAllUsersLoading());
+    }
+
+    try {
+      // ✅ **تعديل هنا: طلب البيانات الحالية + التحميل الكامل في نفس الوقت**
+      final currentPageFuture = apiService.getUsers(
+        page: _currentPage,
+        limit: 5,
+        stageName: stageFilter,
+        duplicates: duplicatesOnly,
+        ignoreDuplicates: duplicatesOnly,
+      );
+
+      // ✅ **إضافة: تحميل جميع البيانات في الخلفية فوراً دون انتظار**
+      Future<void>? loadAllFuture;
+      if (!loadMore && _allLeads.isEmpty) {
+        loadAllFuture = Future.microtask(() async {
+          try {
+            final allResponse = await apiService.getUsers(
+              page: 1,
+              limit: 3000,
+              // stageName: stageFilter,
+            );
+            if (allResponse != null && allResponse.data != null) {
+              _allLeads
+                ..clear()
+                ..addAll(allResponse.data!);
+            }
+          } catch (e) {
+            print('Background load failed: $e');
+          }
+        });
+      }
+
+      // ✅ انتظار البيانات الحالية فقط
+      final response = await currentPageFuture;
 
       if (response != null) {
-        // ... (your existing logic for salesNames, teamLeaderNames etc.)
-        final salesSet = <String>{};
-        final teamLeaderSet = <String>{};
+        final newLeads = response.data ?? [];
 
-        for (var lead in response.data ?? []) {
-          final salesName = lead.sales?.name;
-          final teamLeaderName = lead.sales?.teamleader?.name;
-
-          if (salesName != null && salesName.isNotEmpty) {
-            salesSet.add(salesName);
-          }
-          if (teamLeaderName != null && teamLeaderName.isNotEmpty) {
-            teamLeaderSet.add(teamLeaderName);
-          }
+        if (!loadMore) {
+          _originalLeadsResponse = AllUsersModel(
+            data: List.from(newLeads),
+            pagination: response.pagination,
+            results: response.results,
+          );
+          leads.clear();
+          //  _allLeads.clear();
         }
-        salesNames = salesSet.toList();
-        teamLeaderNames = teamLeaderSet.toList();
+        _allLeads.addAll(newLeads);
+        leads.addAll(newLeads);
 
-        emit(GetAllUsersSuccess(response));
+        // ✅ **تحسين: تخفيف عمليات الفرز**
+        _sortAndExtractNames();
+
+        _currentPage++;
+        final totalPages = response.pagination?.numberOfPages ?? 1;
+        _hasMore = _currentPage <= totalPages;
+
+        emit(
+          GetAllUsersSuccess(
+            AllUsersModel(
+              results: leads.length,
+              pagination: _originalLeadsResponse?.pagination,
+              data: leads,
+            ),
+          ),
+        );
+
+        // ✅ **بدء التحميل الخلفي إذا لم يبدأ بعد**
+        if (loadAllFuture != null) {
+          loadAllFuture.ignore(); // لا ننتظره
+        }
       } else {
-        emit(GetAllUsersFailure('Failed to fetch users.'));
+        if (!loadMore) {
+          emit(GetAllUsersFailure('Failed to load users.'));
+        }
       }
     } catch (e) {
-      emit(GetAllUsersFailure('An error occurred: ${e.toString()}'));
+      if (!loadMore) {
+        emit(GetAllUsersFailure(e.toString()));
+      }
+    } finally {
+      _isLoading = false;
+    }
+  }
+
+  // ✅ **دالة مساعدة للفرز واستخراج الأسماء**
+  void _sortAndExtractNames() {
+    // الفرز
+    leads.sort((a, b) {
+      final aDate = DateTime.tryParse(a.date ?? '') ?? DateTime.now();
+      final bDate = DateTime.tryParse(b.date ?? '') ?? DateTime.now();
+      return bDate.compareTo(aDate);
+    });
+
+    // جمع الأسماء
+    final salesSet = <String>{};
+    final teamLeaderSet = <String>{};
+
+    for (var lead in leads) {
+      final salesName = lead.sales?.name;
+      final teamLeaderName = lead.sales?.teamleader?.name;
+      if (salesName != null && salesName.isNotEmpty) {
+        salesSet.add(salesName);
+      }
+      if (teamLeaderName != null && teamLeaderName.isNotEmpty) {
+        teamLeaderSet.add(teamLeaderName);
+      }
+    }
+
+    salesNames = salesSet.toList();
+    teamLeaderNames = teamLeaderSet.toList();
+  }
+
+  // ✅ دالة مساعدة للتحميل عند السكرول
+  Future<void> loadMoreUsers({String? stageFilter}) async {
+    await fetchAllUsers(
+      stageFilter: stageFilter,
+      loadMore: true, // ✅ إشارة أن هذا تحميل للمزيد
+    );
+  }
+
+  void resetPagination() {
+    _currentPage = 1;
+    _hasMore = true;
+    _isLoading = false;
+    leads.clear();
+    emit(GetAllUsersInitial());
+  }
+
+  Future<void> fetchStagesStats() async {
+    emit(StagesStatsLoading());
+
+    try {
+      final response = await apiService.getStageStats();
+      if (response != null) {
+        emit(StagesStatsSuccess(response));
+      } else {
+        emit(const StagesStatsFailure("Failed to fetch stages stats"));
+      }
+    } catch (e) {
+      emit(StagesStatsFailure(e.toString()));
     }
   }
 
@@ -145,12 +297,16 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       return parsedDate;
     }
 
-    if (_originalLeadsResponse?.data == null) {
+    if (_allLeads.isEmpty) {
       emit(const GetAllUsersFailure("No leads data available for filtering."));
       return;
     }
 
-    List<Lead> filteredLeads = List.from(_originalLeadsResponse!.data!);
+    List<Lead> filteredLeads = List.from(
+      _allLeads,
+    ); // ✅ الفلترة على كل البيانات
+
+    // ✅ فلترة الدوبلكيتس
     if (duplicatesOnly) {
       filteredLeads =
           filteredLeads
@@ -158,7 +314,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
               .toList();
     }
 
-    // General query filter
+    // ✅ فلترة بالكويري
     if (query != null && query.isNotEmpty) {
       final q = query.toLowerCase();
       filteredLeads =
@@ -166,6 +322,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
             final matchName = lead.name?.toLowerCase().contains(q) ?? false;
             final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
             final matchPhone = lead.phone?.contains(q) ?? false;
+
             final matchInVersions =
                 (lead.allVersions?.length ?? 0) > 1
                     ? lead.allVersions!.any((v) {
@@ -177,43 +334,53 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
                       return nameMatch || emailMatch || phoneMatch;
                     })
                     : false;
+
             return matchName || matchEmail || matchPhone || matchInVersions;
           }).toList();
     }
 
-    // Detailed filters
+    // ✅ باقي الفلاتر
     filteredLeads =
         filteredLeads.where((lead) {
           final matchCountry =
               country == null ||
               (lead.phone != null && lead.phone!.startsWith(country));
+
           final matchDev =
               developer == null ||
               (lead.project?.developer?.name?.toLowerCase() ==
                   developer.toLowerCase());
+
           final matchProject =
               project == null ||
               (lead.project?.name?.toLowerCase() == project.toLowerCase());
+
           final matchStage =
               stage == null ||
               (lead.stage?.name?.toLowerCase() == stage.toLowerCase());
+
           final matchChannel =
               channel == null ||
               (lead.chanel?.name?.toLowerCase() == channel.toLowerCase());
+
           final matchSales =
               sales == null ||
               (lead.sales?.name?.toLowerCase() == sales.toLowerCase());
+
           final matchCommunicationWay =
               communicationWay == null ||
               (lead.communicationway?.name?.toLowerCase() ==
                   communicationWay.toLowerCase());
+
           final matchCampaign =
               campaign == null ||
               (lead.campaign?.campainName?.toLowerCase() ==
                   campaign.toLowerCase());
+
           final matchAddedBy =
               addedBy == null ||
               (lead.addby?.name?.toLowerCase() == addedBy.toLowerCase());
+
           final matchAssignedFrom =
               assignedFrom == null ||
               (lead.leadAssigns?.any(
@@ -222,6 +389,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
                         assignedFrom.toLowerCase(),
                   ) ??
                   false);
+
           final matchAssignedTo =
               assignedTo == null ||
               (lead.leadAssigns?.any(
@@ -247,13 +415,10 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
                         oldStageName == null ||
                         (s.stage?.name?.toLowerCase() ==
                             oldStageName.toLowerCase());
-
                     final createdAtDate =
                         parseNullableDate(s.createdAt) ??
                         parseNullableDate(s.dateselectedforstage);
-
                     if (createdAtDate == null) return false;
-
                     final createdAtOnly = getDateOnly(createdAtDate);
                     final oldStageStartOnly =
                         oldStageDateStart != null
@@ -263,13 +428,11 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
                         oldStageDateEnd != null
                             ? getDateOnly(oldStageDateEnd)
                             : null;
-
                     final matchRange =
                         (oldStageStartOnly == null ||
                             !createdAtOnly.isBefore(oldStageStartOnly)) &&
                         (oldStageEndOnly == null ||
                             !createdAtOnly.isAfter(oldStageEndOnly));
-
                     return oldStageNameMatch && matchRange;
                   }) ??
                   false);
@@ -300,7 +463,6 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
               lastStageUpdateEnd != null
                   ? getDateOnly(lastStageUpdateEnd)
                   : null;
-
           final matchLastStageUpdated =
               (lastStageUpdateStart == null && lastStageUpdateEnd == null) ||
               (lastStageUpdatedOnly != null &&
@@ -322,7 +484,6 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
               lastCommentDateEnd != null
                   ? getDateOnly(lastCommentDateEnd)
                   : null;
-
           final matchLastCommentDate =
               (lastCommentDateStart == null && lastCommentDateEnd == null) ||
               (lastCommentDateOnly != null &&
@@ -351,7 +512,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
               matchOldStageDate;
         }).toList();
 
-    // ✅ إضافة الترتيب حسب stage أو date
+    // ✅ الترتيب النهائي
     if (filteredLeads.isNotEmpty) {
       if (stage != null && stage.isNotEmpty) {
         filteredLeads.sort((a, b) {
@@ -367,12 +528,9 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
                     b.stagedateupdated!,
                   ).toUtc().add(const Duration(hours: 4))
                   : null;
-
           if (dateA == null && dateB == null) return 0;
           if (dateA == null) return 1;
           if (dateB == null) return -1;
-
-          // الترتيب من الأقدم للأحدث
           return dateA.compareTo(dateB);
         });
       } else {
@@ -406,6 +564,15 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
     }
   }
 
+  // 🔍 Check if phone number exists in all leads
+  bool phoneExists(String phone) {
+    final normalized = phone.trim();
+
+    return _allLeads.any(
+      (lead) => lead.phone != null && lead.phone!.trim() == normalized,
+    );
+  }
+
   // ✅ الخطوة 7: تحديث دالة الفلترة
   // ✅ الكود الكامل والصحيح للدالة
   void filterLeadsAdminForAdvancedSearch({
@@ -422,7 +589,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       emit(const GetAllUsersFailure("No original data to filter."));
       return;
     }
-    List<Lead> filteredLeads = List.from(_originalLeadsResponse!.data!);
+    List<Lead> filteredLeads = List.from(_allLeads);
 
     // --- التحويلات تتم مرة واحدة هنا لتجنب التكرار وتحسين الأداء ---
     final DateTime? startDate =
@@ -501,9 +668,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
 
   String? getPhoneCodeFromPhone(String phone) {
     String cleanedPhone = phone.replaceAll(RegExp(r'\D'), '');
-    // لتبسيط استخراج كود الدولة، عادة ما يكون أول 2-3 أرقام
-    // ولكن الطريقة الأكثر دقة هي استخدام مكتبة متخصصة في أرقام الهواتف مثل `phone_number`
-    // للتبسيط، نفترض هنا أننا نبحث عن أول رقمين إلى 4 أرقام ككود دولة.
+
     if (cleanedPhone.length >= 2) {
       if (cleanedPhone.startsWith('20')) return '20'; // Egypt
       if (cleanedPhone.startsWith('966')) return '966'; // Saudi Arabia

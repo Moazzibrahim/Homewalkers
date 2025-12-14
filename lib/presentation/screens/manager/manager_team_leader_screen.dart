@@ -52,7 +52,7 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
                       .read<GetManagerLeadsCubit>()
                       .getSalesGroupedByTeamLeader();
               if (groupedLeads.isEmpty) {
-                return const Center(child: Text("لا يوجد Team Leaders."));
+                return const Center(child: Text(" No Team Leaders."));
               }
               // إذا لم يتم اختيار أي team leader، اختار الأول تلقائياً
               selectedTeamLeaderName ??= groupedLeads.keys.first;

@@ -57,3 +57,14 @@ class UsersLeadCountSuccess extends GetAllUsersState {
   @override
   List<Object> get props => [leadCounts];
 }
+class StagesStatsLoading extends GetAllUsersState {}
+
+class StagesStatsSuccess extends GetAllUsersState {
+  final LeadsStatsModel data;
+  const StagesStatsSuccess(this.data);
+}
+
+class StagesStatsFailure extends GetAllUsersState {
+  final String error;
+  const StagesStatsFailure(this.error);
+}

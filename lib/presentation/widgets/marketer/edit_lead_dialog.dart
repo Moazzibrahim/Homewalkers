@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
@@ -15,9 +16,12 @@ class EditLeadDialog extends StatefulWidget {
   final String? initialName;
   final String? initialEmail;
   final String? initialPhone;
+  final String? initialPhone2;
+  final String? initialWhatsappNumber;
   final String? initialNotes;
   final String? initialProjectId;
   final String? initialStageId;
+  final String? initialStalesId;
   final String? initialChannelId;
   final String? initialCampaignId;
   final String? initialCommunicationWayId;
@@ -30,9 +34,12 @@ class EditLeadDialog extends StatefulWidget {
     this.initialName,
     this.initialEmail,
     this.initialPhone,
+    this.initialPhone2,
+    this.initialWhatsappNumber,
     this.initialNotes,
     this.initialProjectId,
     this.initialStageId,
+    this.initialStalesId,
     this.initialChannelId,
     this.initialCampaignId,
     this.initialCommunicationWayId,
@@ -48,11 +55,14 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
   late TextEditingController nameController;
   late TextEditingController emailController;
   late TextEditingController phoneController;
+  late TextEditingController phone2Controller;
+  late TextEditingController whatsappNumberController;
   late TextEditingController notesController;
   String? selectedProjectId;
   String? selectedStageId;
   String? selectedChannelId;
   String? selectedCampaignId;
+  String? selectedStalesId;
   String? selectedCommunicationWayId;
   bool isCold = true;
 
@@ -62,10 +72,15 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
     nameController = TextEditingController(text: widget.initialName ?? '');
     emailController = TextEditingController(text: widget.initialEmail ?? '');
     phoneController = TextEditingController(text: widget.initialPhone ?? '');
+    phone2Controller = TextEditingController(text: widget.initialPhone2 ?? '');
+    whatsappNumberController = TextEditingController(
+      text: widget.initialWhatsappNumber ?? '',
+    );
     notesController = TextEditingController(text: widget.initialNotes ?? '');
     selectedProjectId = widget.initialProjectId;
     selectedStageId = widget.initialStageId;
     selectedChannelId = widget.initialChannelId;
+    selectedStalesId = widget.initialStalesId;
     selectedCampaignId = widget.initialCampaignId;
     selectedCommunicationWayId = widget.initialCommunicationWayId;
     isCold = widget.isCold ?? true;
@@ -76,6 +91,8 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
     nameController.dispose();
     emailController.dispose();
     phoneController.dispose();
+    phone2Controller.dispose();
+    whatsappNumberController.dispose();
     notesController.dispose();
     super.dispose();
   }
@@ -198,7 +215,14 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
                         state.campaigns.data!.map((campaign) {
                           return DropdownMenuItem<String>(
                             value: campaign.id.toString(),
-                            child: Text(campaign.campainName!),
+                            child: SizedBox(
+                              width: 200.w,
+                              child: Text(
+                                campaign.campainName!,
+                                style: TextStyle(fontSize: 12.sp),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           );
                         }).toList(),
                     onChanged: (value) {
@@ -282,6 +306,8 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
               if (widget.onSuccess != null) {
                 widget.onSuccess!(); // 👈 Call callback
               }
+              // ✅ بعد ما يحصل التعديل، نعمل تحديث مباشر للداتا
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Edited Successfully')),
               );
@@ -295,35 +321,72 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
             if (state is EditLeadLoading) {
               return const CircularProgressIndicator();
             }
+
             return ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Constants.maincolor,
               ),
               onPressed: () {
+                // نجهز خريطة بالحقول اللي فيها قيم فعلًا
+                final Map<String, dynamic> updatedFields = {};
+
+                if (nameController.text.trim().isNotEmpty) {
+                  updatedFields['name'] = nameController.text.trim();
+                }
+                if (emailController.text.trim().isNotEmpty) {
+                  updatedFields['email'] = emailController.text.trim();
+                }
+                if (phoneController.text.trim().isNotEmpty) {
+                  updatedFields['phone'] = phoneController.text.trim();
+                }
+                if (notesController.text.trim().isNotEmpty) {
+                  updatedFields['notes'] = notesController.text.trim();
+                }
+                if (selectedProjectId != null &&
+                    selectedProjectId!.isNotEmpty) {
+                  updatedFields['project'] = selectedProjectId;
+                }
+                if (selectedStageId != null && selectedStageId!.isNotEmpty) {
+                  updatedFields['stage'] = selectedStageId;
+                }
+                if (selectedChannelId != null &&
+                    selectedChannelId!.isNotEmpty) {
+                  updatedFields['chanel'] = selectedChannelId;
+                }
+                if (selectedCommunicationWayId != null &&
+                    selectedCommunicationWayId!.isNotEmpty) {
+                  updatedFields['communicationway'] =
+                      selectedCommunicationWayId;
+                }
+                if (selectedCampaignId != null &&
+                    selectedCampaignId!.isNotEmpty) {
+                  updatedFields['campaign'] = selectedCampaignId;
+                }
+
+                updatedFields['leedtype'] = isCold ? "Cold" : "Fresh";
+
+                // نتحقق إن فيه حاجة فعلاً اتغيرت
+                if (updatedFields.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No changes to update')),
+                  );
+                  return;
+                }
+
+                // نرسل الداتا الفعلية
                 context.read<EditLeadCubit>().editLead(
                   userId: widget.userId,
-                  name:
-                      nameController.text.trim().isEmpty
-                          ? null
-                          : nameController.text.trim(),
-                  email:
-                      emailController.text.trim().isEmpty
-                          ? null
-                          : emailController.text.trim(),
-                  phone:
-                      phoneController.text.trim().isEmpty
-                          ? null
-                          : phoneController.text.trim(),
-                  notes:
-                      notesController.text.trim().isEmpty
-                          ? null
-                          : notesController.text.trim(),
-                  project: selectedProjectId,
-                  stage: selectedStageId,
-                  chanel: selectedChannelId,
-                  communicationway: selectedCommunicationWayId,
-                  leedtype: isCold ? "Cold" : "Fresh",
-                  campaign: selectedCampaignId,
+                  salesIdd: widget.initialStalesId,
+                  name: updatedFields['name'],
+                  email: updatedFields['email'],
+                  phone: updatedFields['phone'],
+                  notes: updatedFields['notes'],
+                  project: updatedFields['project'],
+                  stage: updatedFields['stage'],
+                  chanel: updatedFields['chanel'],
+                  communicationway: updatedFields['communicationway'],
+                  leedtype: updatedFields['leedtype'],
+                  campaign: updatedFields['campaign'],
                 );
               },
               child: const Text('Save', style: TextStyle(color: Colors.white)),

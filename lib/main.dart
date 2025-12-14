@@ -1,4 +1,6 @@
-// main.dart
+// ignore_for_file: unused_element
+
+import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +8,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_for_signup_api_service.dart';
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/decider_screen.dart';
@@ -24,8 +25,10 @@ import 'package:homewalkers_app/presentation/viewModels/sales/notifications/noti
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/theme/theme_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:phone_state/phone_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_fonts/google_fonts.dart'; //
+import 'package:google_fonts/google_fonts.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -42,12 +45,11 @@ void main() async {
   await Firebase.initializeApp();
   final token = await FirebaseMessaging.instance.getToken();
   debugPrint("🧪 Main.dart direct FCM Token: $token");
-  // Initialize SharedPreferences and get saved theme
+
+  // تهيئة الثيم
   final prefs = await SharedPreferences.getInstance();
   final isDark = prefs.getBool('isDarkMode') ?? false;
   final initialTheme = isDark ? ThemeMode.dark : ThemeMode.light;
-
-  log("Initial Theme: $initialTheme");
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -57,7 +59,7 @@ void main() async {
     android: androidSettings,
   );
   await flutterLocalNotificationsPlugin.initialize(initSettings);
-  // في main.dart، قبل runApp
+
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'high_importance_channel',
     'High Importance Notifications',
@@ -71,7 +73,158 @@ void main() async {
       >()
       ?.createNotificationChannel(channel);
 
+  // 🟢 جلب بيانات الـ Leads وتخزين أرقامهم عند بداية التشغيل
+  await _fetchAndStoreLeadPhones();
+  await _startCallListener();
+
   runApp(MyApp(initialTheme: initialTheme));
+}
+
+StreamSubscription<PhoneState>? _phoneSubscription;
+
+Future<void> _startCallListener() async {
+  await Permission.phone.request();
+
+  _phoneSubscription = PhoneState.stream.listen((PhoneState event) async {
+    log("📞 الحالة: ${event.status}, الرقم: ${event.number}");
+
+    switch (event.status) {
+      case PhoneStateStatus.CALL_INCOMING:
+        final incomingNumber = event.number ?? "";
+        log("📲 مكالمة واردة من: $incomingNumber");
+
+        if (incomingNumber.isEmpty) {
+          log("⚠️ لم يتمكن النظام من تحديد رقم المتصل (null)");
+          return;
+        }
+
+        final exists = await isLeadNumber(incomingNumber);
+        if (exists) {
+          log("✅ الرقم موجود ضمن الـ Leads — عرض UI خاص");
+          _showLeadPopup(incomingNumber);
+        } else {
+          log("❌ الرقم غير موجود ضمن الـ Leads");
+        }
+        break;
+
+      case PhoneStateStatus.CALL_STARTED:
+        log("📞 المكالمة بدأت");
+        break;
+
+      case PhoneStateStatus.CALL_ENDED:
+        log("🛑 المكالمة انتهت");
+        break;
+
+      default:
+        log("ℹ️ حالة غير معروفة: ${event.status}");
+    }
+  });
+}
+
+void _showLeadPopup(String phoneNumber) async {
+  final ctx = navigatorKey.currentContext;
+  if (ctx == null) return;
+  if (!navigatorKey.currentState!.mounted) return;
+
+  final prefs = await SharedPreferences.getInstance();
+  final leadPhones = prefs.getStringList('leadPhones') ?? [];
+  final leadNames = prefs.getStringList('leadNames') ?? [];
+  final leadStages = prefs.getStringList('leadstages') ?? [];
+
+  // 🔍 نعمل Normalize للرقم ونبحث عنه
+  final normalizedIncoming = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+
+  int matchedIndex = -1;
+  for (int i = 0; i < leadPhones.length; i++) {
+    final normalizedLead = leadPhones[i].replaceAll(RegExp(r'[^0-9]'), '');
+    if (normalizedLead.endsWith(normalizedIncoming) ||
+        normalizedIncoming.endsWith(normalizedLead)) {
+      matchedIndex = i;
+      break;
+    }
+  }
+
+  if (matchedIndex == -1) {
+    log("⚠️ الرقم $phoneNumber مش موجود في الـ leads");
+    return;
+  }
+
+  final leadName =
+      leadNames.length > matchedIndex ? leadNames[matchedIndex] : "غير معروف";
+  final leadStage =
+      leadStages.length > matchedIndex ? leadStages[matchedIndex] : "غير محدد";
+
+  showDialog(
+    context: ctx,
+    barrierDismissible: true,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("📞 Lead Calling!"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("👤 الاسم: $leadName"),
+            const SizedBox(height: 8),
+            Text("📱 الرقم: $phoneNumber"),
+            const SizedBox(height: 8),
+            Text("🧭 المرحلة الحالية: $leadStage"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("إغلاق"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // ممكن هنا تفتح صفحة التفاصيل مثلاً
+              // Navigator.push(context, MaterialPageRoute(builder: (_) => LeadDetailsScreen(phoneNumber: phoneNumber)));
+            },
+            child: const Text("عرض التفاصيل"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Future<void> _fetchAndStoreLeadPhones() async {
+  try {
+    final service = GetLeadsService();
+    await service.getAssignedData(); // 🟢 هنا هو هيعمل كل اللي انت كتبته بالفعل
+    log("📞 تم تحديث أرقام وأسماء الـ Leads في SharedPreferences ✅");
+  } catch (e) {
+    log("❌ خطأ أثناء تحديث بيانات الـ Leads: $e");
+  }
+}
+
+// 🟡 دالة للتحقق من رقم المكالمة
+Future<bool> isLeadNumber(String phoneNumber) async {
+  final prefs = await SharedPreferences.getInstance();
+  final leadPhones = prefs.getStringList('leadPhones') ?? [];
+
+  // إزالة أي رموز + أو مسافات من الرقم للتحقق بدقة
+  final normalizedIncoming = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+
+  return leadPhones.any((leadPhone) {
+    final normalizedLead = leadPhone.replaceAll(RegExp(r'[^0-9]'), '');
+    return normalizedLead.endsWith(normalizedIncoming) ||
+        normalizedIncoming.endsWith(normalizedLead);
+  });
+}
+
+// 🟢 مثال على استخدام التحقق داخل أي مكان في الكود (مثل event المكالمة)
+Future<void> onIncomingCall(String incomingNumber) async {
+  final exists = await isLeadNumber(incomingNumber);
+  if (exists) {
+    log('✅ المتصل Lead معروف - عرض UI خاص');
+    // TODO: اعرض UI خاص مثلاً Navigator.push(context, ...)
+  } else {
+    log('❌ المتصل غير معروف - عرض UI عادي');
+  }
 }
 
 Future<bool> _checkFirstLaunch() async {
@@ -90,7 +243,6 @@ class MyApp extends StatelessWidget {
 
   const MyApp({super.key, required this.initialTheme});
 
-  // داخل MyApp
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -100,7 +252,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (_) {
             final cubit = NotificationCubit();
-            cubit.initNotifications(); // يبدأ من أول ما الاب يشتغل
+            cubit.initNotifications();
             return cubit;
           },
         ),
@@ -115,7 +267,7 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider(
           create:
-              (context) =>
+              (_) =>
                   GetManagerLeadsCubit(GetLeadsService())..getLeadsByManager(),
         ),
         BlocProvider(
@@ -145,15 +297,12 @@ class MyApp extends StatelessWidget {
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
           return ScreenUtilInit(
-            designSize: const Size(
-              375,
-              812,
-            ), // مقاس التصميم الأساسي (مثال iPhone X)
+            designSize: const Size(375, 812),
             minTextAdapt: true,
             splitScreenMode: true,
             builder: (_, __) {
               return MaterialApp(
-                title: 'Realatix crm',
+                title: 'Realatix CRM',
                 navigatorKey: navigatorKey,
                 debugShowCheckedModeBanner: false,
                 theme: ThemeData.light().copyWith(
@@ -167,14 +316,6 @@ class MyApp extends StatelessWidget {
                   ),
                 ),
                 themeMode: themeMode,
-                // locale: locale,
-                // supportedLocales: const [Locale('en'), Locale('ar')],
-                // localizationsDelegates: const [
-                //   AppLocalizations.delegate,
-                //   GlobalMaterialLocalizations.delegate,
-                //   GlobalWidgetsLocalizations.delegate,
-                //   GlobalCupertinoLocalizations.delegate,
-                // ],
                 home: FutureBuilder<bool>(
                   future: _checkFirstLaunch(),
                   builder: (context, snapshot) {
@@ -184,11 +325,9 @@ class MyApp extends StatelessWidget {
                       );
                     }
                     final isFirstLaunch = snapshot.data ?? true;
-                    if (isFirstLaunch) {
-                      return const SplashScreen(); // أول مرة يفتح الاب
-                    } else {
-                      return const DeciderScreen(); // بعد كده على طول
-                    }
+                    return isFirstLaunch
+                        ? const SplashScreen()
+                        : const DeciderScreen();
                   },
                 ),
               );

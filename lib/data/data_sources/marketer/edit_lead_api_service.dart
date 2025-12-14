@@ -11,7 +11,10 @@ class EditLeadApiService {
   Future<void> editLead({
     required String userId,
     String? phone,
+    String? phone2,
+    String? whatsappNumber,
     String? name,
+    String? salesIdd,
     String? email,
     String? project,
     String? notes,
@@ -25,18 +28,32 @@ class EditLeadApiService {
   }) async {
     final url = Uri.parse('$baseUrl/$userId');
     final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('role');
     final salesId = prefs.getString('salesId');
+    final salesUserLogId = prefs.getString('sales_userlog_id');
     final now = DateTime.now().toUtc();
     final String currentDateTime = now.toIso8601String();
 
-    // بناء البودي فقط من القيم غير null وغير الفارغة
     Map<String, dynamic> body = {};
 
     if (phone != null && phone.isNotEmpty) body['phone'] = phone;
+    if (phone2 != null && phone2.isNotEmpty) body['phonenumber2'] = phone2;
+    if (whatsappNumber != null && whatsappNumber.isNotEmpty) {
+      body['whatsappnumber'] = whatsappNumber;
+    }
     if (name != null && name.isNotEmpty) body['name'] = name;
     if (email != null && email.isNotEmpty) body['email'] = email;
     if (project != null && project.isNotEmpty) body['project'] = project;
-    if (salesId != null && salesId.isNotEmpty) body['sales'] = salesId;
+
+    // ✅ تحديد الـ Sales ID اللي هيتبعت بناءً على الدور
+    if (role == 'Admin') {
+      body['sales'] = salesId;
+    } else {
+      // لو sales_userlog_id فاضي أو null، استخدم salesId بدلها
+      body['sales'] =
+          (salesIdd != null && salesIdd.isNotEmpty) ? salesIdd : salesId;
+    }
+
     if (notes != null && notes.isNotEmpty) body['notes'] = notes;
     if (stage != null && stage.isNotEmpty) body['stage'] = stage;
     if (chanel != null && chanel.isNotEmpty) body['chanel'] = chanel;
@@ -56,6 +73,16 @@ class EditLeadApiService {
     body['stagedateupdated'] = currentDateTime;
     body['addby'] = salesId;
     body['updatedby'] = salesId;
+
+    // ✅ الطباعة الواضحة لكل القيم اللي هتتبعت
+    print('----------------------------------------');
+    print('🟩 Editing Lead ID: $userId');
+    print('🧩 Role: $role');
+    print('🧑‍💼 salesId: $salesId');
+    print('🧾 sales_userlog_id: $salesUserLogId');
+    print('📦 Sales ID Sent in Body: ${body['sales']}');
+    print('📤 Final Request Body: ${jsonEncode(body)}');
+    print('----------------------------------------');
 
     try {
       final response = await http.put(
@@ -87,7 +114,7 @@ class EditLeadApiService {
     Map<String, dynamic> body = {};
     final prefs = await SharedPreferences.getInstance();
 
-    if (assign != null ) body['assign'] = assign;
+    if (assign != null) body['assign'] = assign;
 
     try {
       final response = await http.put(

@@ -15,7 +15,7 @@ class CreateLeadApiService {
     required String sales,
     required String notes,
     // required bool assign,
-    required String stage,
+    // required String stage,
     required String chanel,
     required String communicationway,
     required String leedtype,
@@ -33,6 +33,7 @@ class CreateLeadApiService {
       throw ApiException('No token found in SharedPreferences');
     }
     final salesid = prefs.getString('salesId');
+    final pendingStageId = prefs.getString('pending_stage_id');
     final body = {
       "name": name,
       "email": email,
@@ -41,7 +42,7 @@ class CreateLeadApiService {
       "sales": sales,
       "notes": notes,
       // "assign": assign,
-      "stage": stage,
+      "stage": pendingStageId,
       "chanel": chanel,
       "communicationway": communicationway,
       "leedtype": leedtype,
@@ -72,6 +73,14 @@ class CreateLeadApiService {
       print("➡️ Sending Lead Body: ${jsonEncode(body)}");
       print('❌ Failed to create lead. Status: ${response.statusCode}');
       print(response.body);
+      final res = jsonDecode(response.body);
+      final message = res['message'] ?? 'Unknown error';
+      if (message ==
+          "This phone number is already registered. You cannot create a new lead with an existing phone number.") {
+        throw ApiException("phone already exists");
+      } else {
+        throw ApiException(message);
+      } // ❌ ارمي استثناء هنا بدل print
     }
   }
 }

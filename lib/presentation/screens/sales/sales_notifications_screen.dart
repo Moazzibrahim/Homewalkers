@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -176,18 +177,35 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
 
 
   Widget _buildCommentOrassignTile(NotificationItem item) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final senderName = item.userdoaction?.name ?? 'Someone';
-    final actionText =
-        item.typenotification == 'comment' ? 'Commented On' : 'assigned You ';
-    final leadName = item.lead?.name ?? 'Leads';
-    final fullAction = '$senderName $actionText $leadName';
+  final isLight = Theme.of(context).brightness == Brightness.light;
+  final senderName = item.userdoaction?.name ?? 'Someone';
+  final actionText =
+      item.typenotification == 'comment' ? 'Commented On' : 'assigned You ';
+  final leadName = item.lead?.name ?? 'Leads';
+  final fullAction = '$senderName $actionText $leadName';
 
-    final textColor = isLight ? Colors.black : Colors.white;
-    final subTextColor = isLight ? Colors.grey[600] : Colors.grey[300];
-    final cardColor = isLight ? Colors.white : const Color(0xFF1E1E1E);
+  final textColor = isLight ? Colors.black : Colors.white;
+  final subTextColor = isLight ? Colors.grey[600] : Colors.grey[300];
+  final cardColor = isLight ? Colors.white : const Color(0xFF1E1E1E);
 
-    return Card(
+  return InkWell(
+    onTap: () {
+      if (item.typenotification == 'comment') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SalesCommentsScreen(
+              leedId: item.lead?.id ?? "",       // مهم جداً
+              fcmtoken: item.lead?.sales?.userlog?.fcmToken ?? "",           // لو موجود
+              leadName: item.lead?.name ?? "",   // اسم الليد
+              managerfcm: item.userdoaction?.fcmToken,
+            ),
+          ),
+        );
+      }
+    },
+
+    child: Card(
       color: cardColor,
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
@@ -211,7 +229,8 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 14, color: Constants.maincolor),
+                      Icon(Icons.calendar_today,
+                          size: 14, color: Constants.maincolor),
                       const SizedBox(width: 4),
                       Text(
                         _formatDay(
@@ -221,7 +240,8 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
                         style: TextStyle(color: subTextColor, fontSize: 13),
                       ),
                       const SizedBox(width: 16),
-                      Icon(Icons.access_time, size: 14, color: Constants.maincolor),
+                      Icon(Icons.access_time,
+                          size: 14, color: Constants.maincolor),
                       const SizedBox(width: 4),
                       Text(
                         DateFormat('h:mm a').format(
@@ -240,8 +260,10 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildEventTile(NotificationItem item) {
     final isLight = Theme.of(context).brightness == Brightness.light;

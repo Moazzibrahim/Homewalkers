@@ -1,17 +1,15 @@
-// ignore_for_file: file_names, camel_case_types, deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: file_names, camel_case_types, deprecated_member_use, use_build_context_synchronously, unused_field, avoid_print
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_sales_sceen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -57,11 +55,61 @@ class AdminDashboardScreen extends StatefulWidget {
   static Widget _dashboardCard(
     String title,
     String number,
-    IconData icon,
+    IconData? icon,
     BuildContext context, {
     void Function()? onTap,
+    required int totalCount, // ✅ أضف totalCount هنا
   }) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final count = int.tryParse(number) ?? 0;
+    final progress = totalCount == 0 ? 0.0 : count / totalCount;
+
+    IconData selectedIcon;
+    switch (title.toLowerCase()) {
+      case 'fresh':
+        selectedIcon = Icons.fiber_new_rounded;
+        break;
+      case 'follow':
+      case 'follow up':
+      case 'long follow':
+        selectedIcon = Icons.autorenew_rounded;
+        break;
+      case 'no answer':
+        selectedIcon = Icons.phone_missed_rounded;
+        break;
+      case 'transfer':
+        selectedIcon = Icons.sync_alt_rounded;
+        break;
+      case 'interested':
+        selectedIcon = Icons.thumb_up_alt_rounded;
+        break;
+      case 'not interested':
+        selectedIcon = Icons.thumb_down_alt_rounded;
+        break;
+      case 'follow after meeting':
+        selectedIcon = Icons.calendar_today_rounded;
+        break;
+      case 'pending':
+        selectedIcon = Icons.hourglass_empty_rounded;
+        break;
+      case 'done deal':
+        selectedIcon = Icons.check_circle_rounded;
+        break;
+      case 'cancel meeting':
+        selectedIcon = Icons.cancel_rounded;
+        break;
+      case 'meeting':
+        selectedIcon = Icons.people_alt_rounded;
+        break;
+      case 'assigned':
+        selectedIcon = Icons.check;
+        break;
+      case 'delivered':
+        selectedIcon = Icons.done_all;
+        break;
+      default:
+        selectedIcon = icon ?? Icons.bar_chart_rounded;
+    }
 
     return InkWell(
       onTap: onTap,
@@ -69,11 +117,7 @@ class AdminDashboardScreen extends StatefulWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          // Dynamic background color for the card
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.white
-                  : Color(0xff1e1e1e),
+          color: isDarkMode ? const Color(0xff1e1e1e) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -97,8 +141,7 @@ class AdminDashboardScreen extends StatefulWidget {
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: 14.sp,
-                      // Dynamic color for the card title
+                      fontSize: 12.sp,
                       color: isDarkMode ? Colors.white70 : Colors.blueGrey,
                       fontWeight: FontWeight.w600,
                     ),
@@ -124,17 +167,27 @@ class AdminDashboardScreen extends StatefulWidget {
                     ),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: Colors.white, size: 20),
+                  child: Icon(selectedIcon, color: Colors.white, size: 20),
                 ),
               ],
             ),
+
             Text(
               number,
               style: TextStyle(
                 fontSize: 25,
-                // Dynamic color for the main number
                 color: isDarkMode ? Colors.white : const Color(0xFF0D1B2A),
                 fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            // ✅ Progress Bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor: Colors.grey.withOpacity(0.2),
               ),
             ),
           ],
@@ -144,13 +197,31 @@ class AdminDashboardScreen extends StatefulWidget {
   }
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+class _AdminDashboardScreenState extends State<AdminDashboardScreen>
+    with WidgetsBindingObserver {
+  late GetAllUsersCubit _usersCubit;
+  final String _userName = 'User';
+  Timer? _autoRefreshTimer;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     checkAuth();
+    _usersCubit = GetAllUsersCubit(GetAllUsersApiService())..fetchStagesStats();
     context.read<NotificationCubit>().initNotifications();
+    // _autoRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    //   _usersCubit.fetchStagesStats();
+    // });
     print("init notifications called");
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _usersCubit.close();
+    _autoRefreshTimer?.cancel(); // ✅ نوقف التايمر لما نخرج
+    super.dispose();
   }
 
   // Fetches the user's name from shared preferences for display.
@@ -161,19 +232,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 👇 لما التطبيق يرجع من الخلفية
+    if (state == AppLifecycleState.resumed) {
+      print("App resumed — refreshing admin dashboard data...");
+      _usersCubit.fetchStagesStats(); // تحديث بيانات المستخدمين
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Using MultiBlocProvider to provide both Cubits to the screen.
     return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create:
-              (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchAllUsers(),
-        ),
-        BlocProvider(
-          create:
-              (context) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
-        ),
-      ],
+      providers: [BlocProvider.value(value: _usersCubit)],
       child: Scaffold(
         // Use system UI color for background
         backgroundColor:
@@ -241,177 +312,161 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 10),
-                // Greeting text
-                Row(
-                  children: [
-                    FutureBuilder(
-                      future: checkAuth(),
-                      builder: (BuildContext context, AsyncSnapshot snapshot) {
-                        if (snapshot.hasData) {
+        body: RefreshIndicator(
+          onRefresh: () async {
+            await _usersCubit.fetchStagesStats();
+          },
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
+                  // Greeting text
+                  Row(
+                    children: [
+                      FutureBuilder(
+                        future: checkAuth(),
+                        builder: (
+                          BuildContext context,
+                          AsyncSnapshot snapshot,
+                        ) {
+                          if (snapshot.hasData) {
+                            return Text(
+                              'Hello ${snapshot.data}',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                                // Dynamic color for greeting text
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                              ),
+                            );
+                          }
                           return Text(
-                            'Hello ${snapshot.data}',
+                            "Hello ....",
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
-                              // Dynamic color for greeting text
                               color: Theme.of(
                                 context,
                               ).textTheme.bodyMedium?.color?.withOpacity(0.7),
                             ),
                           );
-                        }
-                        return Text(
-                          "Hello ....",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('👋', style: TextStyle(fontSize: 24)),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Main content area that displays user stats
-                // Nesting BlocBuilders to get data from both sources.
-                BlocBuilder<SalesCubit, SalesState>(
-                  builder: (context, salesState) {
-                    return BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
-                      builder: (context, usersState) {
-                        // Loading State: Show a spinner if either cubit is loading.
-                        if (usersState is GetAllUsersLoading ||
-                            salesState is SalesLoading) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        // Success State: Build the UI when both cubits have data.
-                        if (usersState is GetAllUsersSuccess &&
-                            salesState is SalesLoaded) {
-                          final allUsers = usersState.users.data ?? [];
-                          final duplicatesCount =
-                              allUsers
-                                  .where(
-                                    (user) =>
-                                        (user.allVersions?.length ?? 0) > 1,
-                                  )
-                                  .length;
-                          final allSales = salesState.salesData.data ?? [];
-                          final salesCount = allSales.length;
-                          // Calculate counts for different lead stages from the users list.
-                          final Map<String, int> stageCounts = {};
-                          for (var lead in allUsers) {
-                            final stageName = lead.stage?.name ?? 'Unknown';
-                            stageCounts[stageName] =
-                                (stageCounts[stageName] ?? 0) + 1;
-                          }
-                          // Create a list of all cards to display.
-                          final List<Widget> statCards = [
-                            AdminDashboardScreen._dashboardCard(
-                              'Leads',
-                              '${allUsers.length}',
-                              Icons.group,
-                              context,
-                              onTap:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => const AdminLeadsScreen(),
-                                    ),
-                                  ),
-                            ),
-                            // Using salesCount from SalesCubit.
-                            AdminDashboardScreen._dashboardCard(
-                              'Sales',
-                              '$salesCount',
-                              Icons.person,
-                              context,
-                              onTap:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => const AdminSalesSceen(),
-                                    ),
-                                  ),
-                            ),
-                            ...stageCounts.entries.map((entry) {
-                              const iconMap = {"Done Deal": Icons.work};
-                              return AdminDashboardScreen._dashboardCard(
-                                entry.key,
-                                entry.value.toString(),
-                                iconMap[entry.key] ?? Icons.timeline,
-                                context,
-                                onTap:
-                                    () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => AdminLeadsScreen(
-                                              stageName: entry.key,
-                                            ),
-                                      ),
-                                    ),
-                              );
-                            }),
-                            if (duplicatesCount > 0)
-                              AdminDashboardScreen._dashboardCard(
-                                'Duplicates',
-                                '$duplicatesCount',
-                                Icons.copy_all, // أيقونة تمثّل التكرار
-                                context,
-                                onTap: () {
-                                  // ممكن تروح لصفحة فيها تفاصيل أو تعمل حاجة معينة
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => const AdminLeadsScreen(
-                                            showDuplicatesOnly: true,
-                                          ),
-                                    ),
-                                  );
-                                },
-                              ),
-                          ];
-                          return GridView.builder(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
-                                  childAspectRatio: 1.4,
-                                ),
-                            itemCount: statCards.length,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemBuilder: (context, index) {
-                              return statCards[index];
-                            },
-                          );
-                        }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('👋', style: TextStyle(fontSize: 24)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
 
-                        // Error/Initial State: Show a default or error message.
-                        return const Center(child: Text("Couldn't load data."));
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 20),
-              ],
+                  BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
+                    builder: (context, usersState) {
+                      if (usersState is StagesStatsLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (usersState is StagesStatsSuccess) {
+                        final allUsers = usersState.data.totalLeads ?? 0;
+                        final allSales = usersState.data.activeSales ?? 0;
+                        // ✅ ترتيب الـ stages: اللي فيها Leads الأول واللي Zero في الآخر
+
+                        final List<Widget> statCards = [
+                          // Leads Card
+                          AdminDashboardScreen._dashboardCard(
+                            'Leads',
+                            '$allUsers',
+                            Icons.group,
+                            totalCount: allUsers,
+                            context,
+                            onTap:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const AdminLeadsScreen(),
+                                  ),
+                                ),
+                          ),
+                          // Sales Card
+                          AdminDashboardScreen._dashboardCard(
+                            'Sales',
+                            '$allSales',
+                            Icons.person,
+                            totalCount: allSales,
+                            context,
+                            onTap:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const AdminSalesSceen(),
+                                  ),
+                                ),
+                          ),
+                          // ✅ Cards لكل المراحل من API مع الـ count الصحيح
+                          ...usersState.data.stages!
+                              .where(
+                                (entry) =>
+                                    entry.stage?.toLowerCase() != 'follow',
+                              )
+                              .map(
+                                (entry) => AdminDashboardScreen._dashboardCard(
+                                  entry.stage!,
+                                  entry.leadsCount.toString(),
+                                  Icons.timeline,
+                                  totalCount: allUsers,
+                                  context,
+                                  onTap: () {
+                                    if (entry.stage?.toLowerCase() ==
+                                        "duplicate") {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => AdminLeadsScreen(
+                                               // stageName: entry.stage,
+                                                showDuplicatesOnly: true,
+                                              ),
+                                        ),
+                                      );
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => AdminLeadsScreen(
+                                                stageName: entry.stage,
+                                                stageId: entry.stageId,
+                                              ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                        ];
+                        return GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 1.4,
+                              ),
+                          itemCount: statCards.length,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemBuilder: (_, i) => statCards[i],
+                        );
+                      }
+                      return const Center(child: Text("Couldn't load data."));
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),

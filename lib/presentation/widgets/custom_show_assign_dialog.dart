@@ -19,6 +19,7 @@ class AssignDialog extends StatefulWidget {
   final String? fcmtoken; // Optional: if you want to pass a specific lead ID
   final String? teamleaderfcmtoken;
   final String? managerfcmtoken;
+  final VoidCallback? onSuccess; // ← إضافة هذا
 
   const AssignDialog({
     super.key,
@@ -29,6 +30,7 @@ class AssignDialog extends StatefulWidget {
     this.fcmtoken,
     this.teamleaderfcmtoken,
     this.managerfcmtoken,
+    this.onSuccess, // ← إضافة هذا
   });
 
   @override
@@ -153,6 +155,10 @@ class _AssignDialogState extends State<AssignDialog> {
                                   body: "Lead assigned successfully ✅",
                                   fcmtokennnn: widget.managerfcmtoken!,
                                 );
+                          }
+                          // 👇 هنا استدعاء الـ callback لتحديث الصفحة
+                          if (widget.onSuccess != null) {
+                            widget.onSuccess!();
                           }
                         } else if (state is AssignFailure) {
                           ScaffoldMessenger.of(dialogContext).showSnackBar(

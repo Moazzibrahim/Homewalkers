@@ -21,17 +21,45 @@ class AllUsersModel {
 }
 
 class Pagination {
-  int? currentPage;
-  int? limit;
-  int? numberOfPages;
+  final int? currentPage;
+  final int? limit;
+  final int? numberOfPages;
+  final int? totalItems;
+  final int? totalAllLeads;
+  final int? totalLeadsActive;
+  final int? totalLeadsInactive;
+  final int? numberOfPagesInactive;
+  final int? activePercentage;
+  final int? inactivePercentage;
+  final int? next;
 
-  Pagination({this.currentPage, this.limit, this.numberOfPages});
+  Pagination({
+    this.currentPage,
+    this.limit,
+    this.numberOfPages,
+    this.totalItems,
+    this.totalAllLeads,
+    this.totalLeadsActive,
+    this.totalLeadsInactive,
+    this.numberOfPagesInactive,
+    this.activePercentage,
+    this.inactivePercentage,
+    this.next,
+  });
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
     return Pagination(
       currentPage: json['currentPage'],
       limit: json['limit'],
       numberOfPages: json['NumberOfPages'],
+      totalItems: json['totalItems'],
+      totalAllLeads: json['totalAllLeads'],
+      totalLeadsActive: json['totalLeadsActive'],
+      totalLeadsInactive: json['totalLeadsInactive'],
+      numberOfPagesInactive: json['NumberOfPagesInactive'],
+      activePercentage: json['activePercentage'],
+      inactivePercentage: json['inactivePercentage'],
+      next: json['next'],
     );
   }
 }

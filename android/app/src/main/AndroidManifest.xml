@@ -4,6 +4,16 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+
+    <!-- أذونات المكالمات -->
+    <!-- <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <uses-permission android:name="android.permission.READ_CALL_LOG"/>
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" /> -->
+
+    <!-- overlay (لو هنعرض نافذة عائمة) -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- Explicitly remove AD_ID permission if any SDK tries to add it -->
     <uses-permission
@@ -15,7 +25,25 @@
         android:label="Realatix crm"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        
+
+        <!-- 📞 Broadcast Receiver للمكالمات -->
+        <receiver
+            android:name=".IncomingCallReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PHONE_STATE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 🧱 Activity شفافة لعرض UI المكالمة
+        <activity
+            android:name=".CallOverlayActivity"
+            android:theme="@style/Theme.Transparent"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity="">
+        </activity> -->
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -229,6 +229,7 @@ class NotificationCubit extends Cubit<NotificationState> {
           "body": body,
         }),
       );
+      print("Sending notification to token: $fcmtokennnn");
 
       if (response.statusCode == 200) {
         log('✅ Notification sent to: $fcmtokennnn');
@@ -298,6 +299,32 @@ class NotificationCubit extends Cubit<NotificationState> {
       }
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
+    }
+  }
+
+  /// 🛑 Stop listening to notifications & unsubscribe
+  Future<void> disposeNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final salesId = prefs.getString('salesId');
+
+      // ✅ Unsubscribe from topics if you used them
+      await FirebaseMessaging.instance.unsubscribeFromTopic('all_users');
+
+      if (salesId != null && salesId.isNotEmpty) {
+        await FirebaseMessaging.instance.unsubscribeFromTopic("user_$salesId");
+        log("🚫 Unsubscribed from user topic user_$salesId");
+      }
+
+      // ✅ Delete FCM Token locally (extra safety)
+      await FirebaseMessaging.instance.deleteToken();
+      log("🧹 FCM Token Deleted from Firebase");
+
+      // ✅ Clear current listeners
+      _isInitialized = false;
+      log("🔕 Notification listeners stopped successfully");
+    } catch (e) {
+      log("❌ Error in disposeNotifications: $e");
     }
   }
 }

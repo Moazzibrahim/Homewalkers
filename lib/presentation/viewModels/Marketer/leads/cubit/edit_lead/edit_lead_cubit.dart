@@ -12,7 +12,10 @@ class EditLeadCubit extends Cubit<EditLeadState> {
   Future<void> editLead({
     required String userId,
     String? phone,
+    String? phone2,
+    String? whatsappNumber,
     String? name,
+    String? salesIdd,
     String? email,
     String? project,
     String? notes,
@@ -30,7 +33,10 @@ class EditLeadCubit extends Cubit<EditLeadState> {
       await apiService.editLead(
         userId: userId,
         phone: phone,
+        phone2: phone2,
+        whatsappNumber: whatsappNumber,
         name: name,
+        salesIdd: salesIdd,
         email: email,
         project: project,
         notes: notes,

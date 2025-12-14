@@ -8,48 +8,191 @@ import 'package:homewalkers_app/main.dart';
 import 'package:meta/meta.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 part 'get_leads_state.dart';
 
 class GetLeadsCubit extends Cubit<GetLeadsState> {
   final GetLeadsService apiService;
   Timer? _timer;
   LeadResponse? _cachedLeads;
+  int currentPage = 1;
+  final int limit = 500;
+  bool hasMore = true;
+  bool _isDashboardMode = false; // ⚠️ لتتبع الوضع
+  bool _isLoading = false;
+  final List<LeadData> _allLeads = [];
+  bool get isLoading => _isLoading;
+
   GetLeadsCubit(this.apiService) : super(GetLeadsInitial()) {
-    fetchLeads(showLoading: true); // تحميل أولي مع شريط تحميل
-    _startPolling(); // تحديث كل دقيقتين بدون شريط تحميل
+    // ⚠️ لا تجلب بيانات تلقائياً، دع الشاشة تحدد ماذا تريد
+  //  _startPolling();
   }
-  void _startPolling() {
-    _timer = Timer.periodic(Duration(minutes: 1), (_) {
-      fetchLeads(showLoading: false);
-    });
-  }
+
+  // void _startPolling() {
+  //   _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+  //     // ⚠️ تحديث حسب الوضع الحالي
+  //     if (_isDashboardMode && _cachedLeads != null) {
+  //       fetchDashboardLeads(showLoading: false);
+  //     } else if (!_isDashboardMode && _cachedLeads != null) {
+  //       fetchLeads(showLoading: false);
+  //     }
+  //   });
+  // }
 
   @override
   Future<void> close() {
-    _timer?.cancel(); // إلغاء التايمر عند التخلص من Cubit
+    _timer?.cancel();
     return super.close();
   }
 
-  Future<void> fetchLeads({bool showLoading = true}) async {
-    if (showLoading) emit(GetLeadsLoading());
-    try {
-      final data = await apiService.getAssignedData();
+  Future<void> fetchDashboardLeads({bool showLoading = true}) async {
+    _isDashboardMode = true; // ⚠️ وضع dashboard
 
-      _cachedLeads = data;
+    if (showLoading) {
+      emit(GetLeadsLoading());
+    }
+
+    try {
+      // ⚠️ لا تمسح _cachedLeads هنا، دع الخدمة تعيد البيانات كاملة
+      final data = await apiService.getAssignedData(
+        page: 1,
+        limit: 9999,
+        forDashboard: true,
+      );
+
+      _cachedLeads = data; // ⚠️ تحديث الكاش
+
+      // تحديث الإشعارات
+      await _updateNotifications(_cachedLeads!);
+
+      emit(GetLeadsSuccess(_cachedLeads!));
+    } catch (e) {
+      emit(GetLeadsError("Failed to load dashboard data"));
+    }
+  }
+
+  Future<void> fetchLeads({
+    bool showLoading = true,
+    bool loadMore = false,
+    bool forDashboard = false,
+  }) async {
+    _isDashboardMode = false;
+
+    if (_isLoading) return; // 🔒 منع التكرار
+
+    if (showLoading && !loadMore) emit(GetLeadsLoading());
+
+    try {
+      // 🔄 Pagination Logic
+      if (forDashboard) {
+        currentPage = 1;
+        hasMore = false;
+      } else if (loadMore) {
+        currentPage++;
+      } else {
+        currentPage = 1;
+        hasMore = true;
+        _allLeads.clear(); // ⭐️ بداية جديدة
+      }
+
+      _isLoading = true;
+
+      // ⭐️ 1) تحميل الصفحة الحالية فقط (مثل currentPageFuture)
+      final currentPageFuture = apiService.getAssignedData(
+        page: currentPage,
+        limit: forDashboard ? 9999 : limit,
+        forDashboard: forDashboard,
+      );
+
+      // ⭐️ 2) تحميل جميع البيانات في الخلفية فقط في أول مرة
+      Future<void>? backgroundLoadFuture;
+      if (!forDashboard && !loadMore && _allLeads.isEmpty) {
+        backgroundLoadFuture = Future.microtask(() async {
+          try {
+            final allData = await apiService.getAssignedData(
+              page: 1,
+              limit: 3000, // زي ال logic السابق
+              forDashboard: false,
+            );
+
+            if (allData.data != null) {
+              _allLeads
+                ..clear()
+                ..addAll(allData.data!);
+            }
+
+            log("✅ Background leads loaded: ${_allLeads.length}");
+          } catch (e) {
+            log("❌ Background load failed: $e");
+          }
+        });
+      }
+
+      // ⭐️ 3) انتظار بيانات الصفحة الحالية فقط
+      final data = await currentPageFuture;
+
+      final newLeads = data.data ?? [];
+
+      if (newLeads.isEmpty && !forDashboard) {
+        hasMore = false;
+        return;
+      }
+
+      // ⭐️ أول صفحة → reset
+      if (!loadMore || forDashboard) {
+        _cachedLeads = data;
+
+        if (!forDashboard) {
+          _allLeads.clear();
+          _allLeads.addAll(newLeads);
+        }
+      } else {
+        // ⭐️ loadMore → إضافة بيانات
+        _cachedLeads?.data?.addAll(newLeads);
+        _cachedLeads = LeadResponse(
+          count: _cachedLeads?.count ?? 0,
+          data: _cachedLeads?.data ?? [],
+        );
+        _allLeads.addAll(newLeads);
+      }
+
+      // ⭐️ تحديد إذا في pages تانية
+      hasMore = newLeads.isNotEmpty;
+
+      // ⭐️ إرسال نتيجة الصفحة الحالية فقط
+      await _updateNotifications(_cachedLeads!);
+
+      emit(GetLeadsSuccess(_cachedLeads!));
+
+      // ⭐️ تشغيل التحميل الخلفي بدون انتظار
+      if (backgroundLoadFuture != null) {
+        backgroundLoadFuture.ignore();
+      }
+    } catch (e) {
+      emit(GetLeadsError("No Leads Data Found"));
+    } finally {
+      _isLoading = false;
+    }
+  }
+
+  Future<void> _updateNotifications(LeadResponse leadsResponse) async {
+    try {
       final prefs = await SharedPreferences.getInstance();
-      final String? teamleaderId = data.data?.first.sales?.teamleader?.id;
-      final String? salesId = data.data?.first.sales?.id;
-      await prefs.setString("salesIDD", salesId ?? '');
-      await prefs.setString('teamLeaderId', teamleaderId ?? '');
+
+      if (leadsResponse.data != null && leadsResponse.data!.isNotEmpty) {
+        final String? teamleaderId =
+            leadsResponse.data!.first.sales?.teamleader?.id;
+        final String? salesId = leadsResponse.data!.first.sales?.id;
+
+        await prefs.setString("salesIDD", salesId ?? '');
+        await prefs.setString('teamLeaderId', teamleaderId ?? '');
+      }
 
       final lastCount = prefs.getInt('lastLeadCount') ?? 0;
-      final newCount = data.count ?? 0;
+      final newCount = leadsResponse.count ?? 0;
 
       if (newCount > lastCount) {
-        await prefs.setInt('lastLeadCount', newCount);
+        await prefs.setInt('lastLeadCount', newCount.toInt());
 
-        // إشعار محلي
         flutterLocalNotificationsPlugin.show(
           DateTime.now().millisecondsSinceEpoch ~/ 1000,
           '📥 Lead جديد',
@@ -64,30 +207,9 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
             ),
           ),
         );
-        // ********* إضافة تخزين في Firestore *********
-        final firestore = FirebaseFirestore.instance;
-        // لو عايز تخزن كل الـ leads الجديدة
-        final newLeads = data.data?.take(newCount - lastCount);
-        if (newLeads != null) {
-          for (var lead in newLeads) {
-            // ممكن تستخدم معرف الـ lead أو أي ID فريد
-            final docId = lead.id ?? firestore.collection('leads').doc().id;
-            await firestore.collection('leads').doc(docId).set({
-              'name': lead.name ?? '',
-              'phone': lead.phone ?? '',
-              'project': lead.project?.name ?? '',
-              'developer': lead.project?.developer?.name ?? '',
-              'stage': lead.stage?.name ?? '',
-              'sales_teamleader_id': teamleaderId ?? '',
-              'assigned_at': DateTime.now(), // وقت التعيين
-              // أضف حقول أخرى مهمة حسب الحاجة
-            });
-          }
-        }
       }
-      emit(GetLeadsSuccess(data));
     } catch (e) {
-      emit(GetLeadsError("No Leads Data Found"));
+      log("Error updating notifications: $e");
     }
   }
 
@@ -116,10 +238,10 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     DateTime? lastStageUpdateStart,
     DateTime? lastStageUpdateEnd,
   }) {
-    if (_cachedLeads == null || _cachedLeads!.data == null) {
-      emit(GetLeadsError("لا توجد بيانات Leads لفلترتها."));
-      return;
-    }
+    // if (_cachedLeads == null || _cachedLeads!.data == null) {
+    //   emit(GetLeadsError("لا توجد بيانات Leads لفلترتها."));
+    //   return;
+    // }
     DateTime getDateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
     DateTime? parseNullableDate(String? dateStr) {
@@ -211,10 +333,10 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
   }
 
   void filterLeadsByStageName(String stageName) {
-    if (_cachedLeads == null || _cachedLeads!.data == null) {
-      emit(GetLeadsError("لا توجد بيانات Leads لفلترتها."));
-      return;
-    }
+    // if (_cachedLeads == null || _cachedLeads!.data == null) {
+    //   emit(GetLeadsError("لا توجد بيانات Leads لفلترتها."));
+    //   return;
+    // }
 
     final filtered =
         _cachedLeads!.data!
@@ -246,7 +368,8 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
       // مقارنة مباشرة من القديم إلى الجديد
       return dateA.compareTo(dateB); // الأقدم أولاً، الأحدث بعده
     });
+    _cachedLeads = LeadResponse(count: filtered.length, data: filtered);
 
-    emit(GetLeadsSuccess(LeadResponse(data: filtered)));
+    emit(GetLeadsSuccess(_cachedLeads!));
   }
 }

@@ -418,6 +418,7 @@ class _FilterDialogState extends State<FilterDialog> {
                       onChanged: (value) {
                         setState(() {
                           _selectedStage = value;
+                          print("Selected Stage: $_selectedStage");
                         });
                       },
                     );

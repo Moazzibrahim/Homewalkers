@@ -5,24 +5,48 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/campaign_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/communication_way_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
+import 'package:homewalkers_app/data/models/lead_comments_model.dart';
+import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/screens/manager/leads_details_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/communication_ways/cubit/get_communication_ways_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
+import 'package:homewalkers_app/presentation/widgets/manager/assign_lead_dialog_manager.dart';
 import 'package:homewalkers_app/presentation/widgets/manager/manager_custom_filter_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/edit_lead_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ManagerLeadsScreen extends StatefulWidget {
   final String? stageName;
-  const ManagerLeadsScreen({super.key, this.stageName});
+  final bool showDuplicatesOnly;
+  final bool shouldRefreshOnOpen;
+  const ManagerLeadsScreen({
+    super.key,
+    this.stageName,
+    this.showDuplicatesOnly = false,
+    this.shouldRefreshOnOpen = false,
+  });
 
   @override
   State<ManagerLeadsScreen> createState() => _ManagerLeadsScreenState();
@@ -34,6 +58,18 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
   String? managername;
   String? managerid;
   bool isLoading = false;
+
+  final String selectedSalesId = ''; // انت عارف ده من مكان تاني
+  String? _selectedSalesFcmToken;
+  bool _showCheckboxes = false; // عشان نتحكم في ظهور الـ Checkbox
+  List<LeadData> selectedLeadsData = [];
+  bool isSelectionMode = false;
+  List<bool> selected = [];
+  final Set<String> _selectedSalesIds = {};
+  final Set<String> _selectedLeadStagesIds = {};
+  final Set<String> _selectedLeads = {};
+  Set<int> selectedLeadIds = {};
+  late GetManagerLeadsCubit _cubit;
 
   @override
   void initState() {
@@ -77,19 +113,6 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
   Widget build(BuildContext context) {
     final nameController = TextEditingController();
     bool isOutdated = false;
-    String formatDateTime(String dateStr) {
-      try {
-        final dateTime = DateTime.parse(dateStr);
-        final day = dateTime.day.toString().padLeft(2, '0');
-        final month = dateTime.month.toString().padLeft(2, '0');
-        final year = dateTime.year;
-        final hour = dateTime.hour.toString().padLeft(2, '0');
-        final minute = dateTime.minute.toString().padLeft(2, '0');
-        return '$day/$month/$year - $hour:$minute';
-      } catch (e) {
-        return dateStr; // fallback في حال كان التاريخ مش صحيح
-      }
-    }
 
     String formatDateTimeToDubai(String dateStr) {
       try {
@@ -117,85 +140,219 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
       }
     }
 
-    Widget getStatusIcon(String status) {
-      switch (status) {
-        case 'Follow Up':
-        case 'Follow After Meeting':
-        case 'Follow':
-          return Icon(
-            Icons.mark_email_unread_outlined,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Meeting':
-          return Icon(
-            Icons.chat_bubble_outline,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Done Deal':
-          return Icon(
-            Icons.check_box_outlined,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Interested':
-          return Icon(
-            FontAwesomeIcons.check,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Not Interested':
-          return Icon(
-            FontAwesomeIcons.timesCircle,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Fresh':
-          return Icon(
-            Icons.new_releases,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Transfer':
-          return Icon(
-            Icons.no_transfer,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'EOI':
-          return Icon(
-            Icons.event_outlined,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey
-                    : Constants.mainDarkmodecolor,
-          );
-        case 'Reservation':
-          return Icon(
-            Icons.task,
-            color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey
-                    : Constants.mainDarkmodecolor,
-          );
-        default:
-          return const Icon(Icons.info_outline, color: Colors.grey);
-      }
+    Widget buildAssignButtons() {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.only(bottom: 8, right: 8, left: 8),
+        decoration: BoxDecoration(
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.maincolor
+                  : Constants.mainDarkmodecolor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            // زر Assign
+            InkWell(
+              onTap: () async {
+                if (_showCheckboxes && _selectedLeads.isNotEmpty) {
+                  final result = await showDialog(
+                    context: context,
+                    builder: (dialogContext) {
+                      return MultiBlocProvider(
+                        providers: [
+                          BlocProvider(create: (_) => AssignleadCubit()),
+                          BlocProvider(
+                            create:
+                                (_) => LeadCommentsCubit(
+                                  GetAllLeadCommentsApiService(),
+                                )..fetchLeadComments(
+                                  _selectedLeads.toList()[0],
+                                ),
+                          ),
+                          BlocProvider(
+                            create:
+                                (_) =>
+                                    SalesCubit(GetAllSalesApiService())
+                                      ..fetchAllSales(),
+                          ),
+                          BlocProvider(
+                            create:
+                                (_) =>
+                                    StagesCubit(StagesApiService())
+                                      ..fetchStages(),
+                          ),
+                        ],
+                        child: AssignLeadDialogManager(
+                          mainColor:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Constants.maincolor
+                                  : Constants.mainDarkmodecolor,
+                          leadIds: _selectedLeads.toList(),
+                          leadId: _selectedLeads.toList()[0],
+                          fcmtoken: _selectedSalesFcmToken ?? '',
+                          onAssignSuccess: () async {
+                            setState(() {
+                              selected.clear();
+                              selectedLeadsData.clear();
+                              isSelectionMode = false;
+                            });
+
+                            await _cubit.getLeadsByManager();
+                            if (widget.stageName != null &&
+                                widget.stageName!.isNotEmpty) {
+                              _cubit.filterLeadsByStageInManager(
+                                widget.stageName!,
+                              );
+                            }
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Lead assigned successfully! ✅"),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  );
+                  if (result == true) {
+                    context.read<GetManagerLeadsCubit>().getLeadsByManager();
+                    setState(() {
+                      _showCheckboxes = false;
+                      _selectedLeads.clear();
+                      _selectedSalesIds.clear();
+                      _selectedLeadStagesIds.clear();
+                    });
+                  }
+                  log('Assign lead result: $result');
+                }
+              },
+              child: _ActionIcon(
+                icon: Image.asset(
+                  "assets/images/right.png",
+                  width: 20,
+                  height: 20,
+                  fit: BoxFit.cover,
+                  color: Constants.maincolor,
+                ),
+              ),
+            ),
+            // الزر الثاني (ممكن تضيف له الوظيفة بعدين)
+            Container(
+              decoration: BoxDecoration(
+                color:
+                    isDark
+                        ? Colors.white.withOpacity(0.10)
+                        : Colors.grey[100], // خلفية خفيفة شيك
+                shape: BoxShape.circle, // دائري بالكامل 👌
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: InkWell(
+                onTap: () async {
+                  final leadsList = context.read<GetManagerLeadsCubit>().leads;
+                  // نجيب ال lead المختار
+                  final selectedLead = leadsList.firstWhere(
+                    (lead) => lead.id.toString() == _selectedLeads.first,
+                    orElse:
+                        () => LeadData(), // اسم الموديل عندك Lead مش LeadData
+                  );
+                  final result = await showDialog(
+                    context: context,
+                    builder:
+                        (_) => MultiBlocProvider(
+                          providers: [
+                            BlocProvider(
+                              create:
+                                  (_) => EditLeadCubit(EditLeadApiService()),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      ProjectsCubit(ProjectsApiService())
+                                        ..fetchProjects(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      StagesCubit(StagesApiService())
+                                        ..fetchStages(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) => GetCommunicationWaysCubit(
+                                    CommunicationWayApiService(),
+                                  )..fetchCommunicationWays(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      ChannelCubit(GetChannelsApiService())
+                                        ..fetchChannels(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      GetCampaignsCubit(CampaignApiService())
+                                        ..fetchCampaigns(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      SalesCubit(GetAllSalesApiService())
+                                        ..fetchAllSales(),
+                            ),
+                          ],
+                          child: EditLeadDialog(
+                            userId: selectedLead.id ?? '',
+                            initialName: selectedLead.name ?? '',
+                            initialStalesId: selectedLead.sales?.id ?? '',
+                            initialEmail: selectedLead.email ?? '',
+                            initialPhone: selectedLead.phone ?? '',
+                            initialNotes: selectedLead.notes ?? '',
+                            initialProjectId: selectedLead.project?.id,
+                            initialStageId: selectedLead.stage?.id,
+                            initialChannelId: selectedLead.chanel?.id,
+                            initialCampaignId: selectedLead.campaign?.id,
+                            initialCommunicationWayId:
+                                selectedLead.communicationway?.id,
+                            isCold: selectedLead.leedtype == "Cold",
+                            onSuccess: () {
+                              final leadsCubit =
+                                  context.read<GetManagerLeadsCubit>();
+                              // leadsCubit.resetPagination();
+                              leadsCubit.getLeadsByManager();
+                            },
+                          ),
+                        ),
+                  );
+                  if (result == true) {
+                    context.read<GetManagerLeadsCubit>().getLeadsByManager();
+                  }
+                },
+                child: const _ActionIcon(icon: Icon(Icons.edit)),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     void makePhoneCall(String phoneNumber) async {
@@ -246,32 +403,70 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                   horizontal: 16,
                   vertical: 12,
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: nameController,
-                        onChanged: (value) {
-                          context
-                              .read<GetManagerLeadsCubit>()
-                              .filterLeadsManager(query: value.trim());
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Search',
-                          hintStyle: GoogleFonts.montserrat(
-                            color: Color(0xff969696),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                    if (_showCheckboxes && _selectedLeads.isNotEmpty)
+                      SafeArea(child: buildAssignButtons()),
+                    SizedBox(height: 20.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: nameController,
+                            onChanged: (value) {
+                              context
+                                  .read<GetManagerLeadsCubit>()
+                                  .filterLeadsManager(query: value.trim());
+                            },
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              hintStyle: GoogleFonts.montserrat(
+                                color: Color(0xff969696),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color:
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Constants.maincolor
+                                        : Constants.mainDarkmodecolor,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 0,
+                                horizontal: 12,
+                              ),
+                            ),
                           ),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Constants.maincolor
-                                    : Constants.mainDarkmodecolor,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
+                        ),
+                        const SizedBox(width: 10),
+                        Container(
+                          height: 50.h,
+                          width: 50.w,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F1F2),
+                            border: Border.all(
                               color:
                                   Theme.of(context).brightness ==
                                           Brightness.light
@@ -280,91 +475,75 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.filter_list,
                               color:
                                   Theme.of(context).brightness ==
                                           Brightness.light
                                       ? Constants.maincolor
                                       : Constants.mainDarkmodecolor,
                             ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 0,
-                            horizontal: 12,
+                            onPressed: () {
+                              showFilterDialogManager(context);
+                            },
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(
-                      height: 50.h,
-                      width: 50.w,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F1F2),
-                        border: Border.all(
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? Constants.maincolor
-                                  : Constants.mainDarkmodecolor,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.filter_list,
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? Constants.maincolor
-                                  : Constants.mainDarkmodecolor,
-                        ),
-                        onPressed: () {
-                          showFilterDialogManager(context);
-                        },
-                      ),
+                      ],
                     ),
                   ],
                 ),
               ),
               // Create Lead Button
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 10.h,
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateLeadScreen(),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Constants.maincolor
+                                  : Constants.mainDarkmodecolor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.add, size: 20, color: Colors.white),
-                    label: Text(
-                      'Create Lead',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 16.sp,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CreateLeadScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.add,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          'Create Lead',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 16.sp,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
               // Leads List Based on State
               Expanded(
@@ -379,9 +558,16 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                       }
                       return RefreshIndicator(
                         onRefresh: () async {
-                          context
-                              .read<GetManagerLeadsCubit>()
-                              .getLeadsByManager();
+                          final cubit = context.read<GetManagerLeadsCubit>();
+                          // ✅ أول حاجة نرجع كل الداتا
+                          await cubit.getLeadsByManager();
+                          // ✅ بعدين نفلتر على نفس stageName زي BlocBuilder
+                          if (widget.stageName != null &&
+                              widget.stageName!.isNotEmpty) {
+                            cubit.filterLeadsByStageInManager(
+                              widget.stageName!,
+                            );
+                          }
                         },
                         child: ListView.builder(
                           itemCount: leads.length,
@@ -389,6 +575,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                             final lead = leads[index];
                             final salesfcmtoken =
                                 lead.sales?.userlog?.fcmtokenn;
+                            final leadassign = lead.assign;
                             print("assign of lead: ${lead.assign}");
                             final userlognamee = lead.sales?.userlog?.name;
                             final prefs = SharedPreferences.getInstance();
@@ -424,12 +611,36 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                   1; // اعتبره قديم إذا مرّ أكثر من دقيقة
                               log("isOutdated: $isOutdated");
                             }
-                            return InkWell(
+                            return GestureDetector(
+                              onLongPress: () {
+                                setState(() {
+                                  _showCheckboxes = true;
+                                  _selectedLeads.add(
+                                    lead.id!,
+                                  ); // أول كارت تعمل عليه Long Press بيتعلّم
+                                  _selectedLeadStagesIds.add(
+                                    lead.stage?.id ?? '',
+                                  );
+                                });
+                              },
                               onTap: () async {
                                 log("userlogmanagername: $userlognamee");
                                 log("manager name: $managername");
                                 log("leadassign: ${lead.assign}");
-                                if (lead.assign == false) {
+                                if (_showCheckboxes) {
+                                  setState(() {
+                                    if (_selectedLeads.contains(lead.id)) {
+                                      _selectedLeads.remove(lead.id);
+                                    } else {
+                                      _selectedLeads.add(lead.id!);
+                                    }
+                                  });
+                                } else if (lead.assign == false) {
+                                  final firstVersion =
+                                      (lead.allVersions != null &&
+                                              lead.allVersions!.isNotEmpty)
+                                          ? lead.allVersions!.first
+                                          : null;
                                   await Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -450,7 +661,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                   lead.chanel?.name ?? '',
                                               leadCreationDate:
                                                   lead.createdAt != null
-                                                      ? formatDateTime(
+                                                      ? formatDateTimeToDubai(
                                                         lead.createdAt!,
                                                       )
                                                       : '',
@@ -477,6 +688,10 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                   'no job description',
                                               secondphonenumber:
                                                   lead.secondphonenumber,
+                                              laststageupdated:
+                                                  leadstageupdated,
+                                              stageId: lead.stage?.id ?? '',
+                                              sales: lead.sales?.name ?? '',
                                             ),
                                           ),
                                     ),
@@ -524,12 +739,19 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                               },
                               child: Card(
                                 color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Colors.white
-                                        : Colors.grey[900],
+                                    _selectedLeads.contains(lead.id)
+                                        ? (Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors
+                                                .grey[300] // أغمق شوية لو Light Mode
+                                            : Colors
+                                                .grey[800]) // أغمق شوية لو Dark Mode
+                                        : (Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.white
+                                            : Colors.grey[900]),
                                 margin: const EdgeInsets.symmetric(
-                                  horizontal: 16,
+                                  // horizontal: 16,
                                   vertical: 8,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -542,170 +764,241 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       // ---------- Row 1: Name and Status Icon ----------
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              lead.name ?? "No Name",
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: 16.sp,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          if (lead.assign == true &&
-                                              userlognamee == managername)
-                                            InkWell(
-                                              onTap: () {
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (context) {
-                                                    return MultiBlocProvider(
-                                                      providers: [
-                                                        BlocProvider(
-                                                          create:
-                                                              (
-                                                                _,
-                                                              ) => EditLeadCubit(
-                                                                EditLeadApiService(),
-                                                              ),
-                                                        ),
-                                                      ],
-                                                      child: Builder(
-                                                        builder: (
-                                                          innerContext,
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: 8,
+                                          right: 8,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // ✅ الجزء الشمال (Checkbox + Stage + SD Date)
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    if (_showCheckboxes &&
+                                                        _selectedLeads
+                                                            .isNotEmpty)
+                                                      Checkbox(
+                                                        activeColor:
+                                                            Constants.maincolor,
+                                                        value: _selectedLeads
+                                                            .contains(lead.id),
+                                                        onChanged: (
+                                                          bool? value,
                                                         ) {
-                                                          bool isLoading =
-                                                              false;
-
-                                                          return StatefulBuilder(
-                                                            builder: (
-                                                              context,
-                                                              setState,
-                                                            ) {
-                                                              return AlertDialog(
-                                                                title: const Text(
-                                                                  "Confirmation",
-                                                                ),
-                                                                content: const Text(
-                                                                  "Are you sure to receive this lead?",
-                                                                ),
-                                                                actions: [
-                                                                  // Cancel button
-                                                                  TextButton(
-                                                                    style: TextButton.styleFrom(
-                                                                      backgroundColor:
-                                                                          Theme.of(context).brightness ==
-                                                                                  Brightness.light
-                                                                              ? Constants.maincolor
-                                                                              : Constants.mainDarkmodecolor,
-                                                                    ),
-                                                                    onPressed:
-                                                                        () =>
-                                                                            Navigator.of(
-                                                                              context,
-                                                                            ).pop(),
-                                                                    child: const Text(
-                                                                      "Cancel",
-                                                                      style: TextStyle(
-                                                                        color:
-                                                                            Colors.white,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-
-                                                                  // OK button
-                                                                  TextButton(
-                                                                    style: TextButton.styleFrom(
-                                                                      backgroundColor:
-                                                                          Theme.of(context).brightness ==
-                                                                                  Brightness.light
-                                                                              ? Constants.maincolor
-                                                                              : Constants.mainDarkmodecolor,
-                                                                    ),
-                                                                    onPressed:
-                                                                        isLoading
-                                                                            ? null
-                                                                            : () async {
-                                                                              setState(
-                                                                                () {
-                                                                                  isLoading =
-                                                                                      true;
-                                                                                },
-                                                                              );
-
-                                                                              try {
-                                                                                await innerContext
-                                                                                    .read<
-                                                                                      EditLeadCubit
-                                                                                    >()
-                                                                                    .editLeadAssignvalue(
-                                                                                      userId:
-                                                                                          lead.id!,
-                                                                                      assign:
-                                                                                          false,
-                                                                                    );
-
-                                                                                if (context.mounted) {
-                                                                                  Navigator.of(
-                                                                                    innerContext,
-                                                                                  ).pop(); // Close dialog
-                                                                                  innerContext
-                                                                                      .read<
-                                                                                        GetManagerLeadsCubit
-                                                                                      >()
-                                                                                      .getLeadsByManager(); // Refresh data
-                                                                                }
-                                                                              } finally {
-                                                                                if (context.mounted) {
-                                                                                  setState(
-                                                                                    () {
-                                                                                      isLoading =
-                                                                                          false;
-                                                                                    },
-                                                                                  );
-                                                                                }
-                                                                              }
-                                                                            },
-                                                                    child:
-                                                                        isLoading
-                                                                            ? const SizedBox(
-                                                                              height:
-                                                                                  20,
-                                                                              width:
-                                                                                  20,
-                                                                              child: CircularProgressIndicator(
-                                                                                strokeWidth:
-                                                                                    2,
-                                                                                color:
-                                                                                    Colors.white,
-                                                                              ),
-                                                                            )
-                                                                            : const Text(
-                                                                              "OK",
-                                                                              style: TextStyle(
-                                                                                color:
-                                                                                    Colors.white,
-                                                                              ),
-                                                                            ),
-                                                                  ),
-                                                                ],
+                                                          setState(() {
+                                                            if (value == true) {
+                                                              _selectedLeads
+                                                                  .add(
+                                                                    lead.id!,
+                                                                  );
+                                                              _selectedSalesIds.add(
+                                                                lead
+                                                                        .sales
+                                                                        ?.id ??
+                                                                    '',
                                                               );
-                                                            },
-                                                          );
+                                                              _selectedLeadStagesIds.add(
+                                                                lead
+                                                                        .stage
+                                                                        ?.id ??
+                                                                    '',
+                                                              );
+                                                            } else {
+                                                              _selectedLeads
+                                                                  .remove(
+                                                                    lead.id,
+                                                                  );
+                                                              _selectedSalesIds
+                                                                  .remove(
+                                                                    lead.sales?.id ??
+                                                                        '',
+                                                                  );
+                                                              _selectedLeadStagesIds
+                                                                  .remove(
+                                                                    lead.stage?.id ??
+                                                                        '',
+                                                                  );
+                                                            }
+                                                          });
                                                         },
                                                       ),
-                                                    );
-                                                  },
-                                                );
-                                              },
-                                              child: CircleAvatar(
-                                                radius: 18,
-                                                backgroundColor:
+                                                    // 👇 نتحقق من الشرط الخاص باللون
+                                                    Builder(
+                                                      builder: (_) {
+                                                        final bool
+                                                        isFinalStage =
+                                                            stageUpdatedDate !=
+                                                                null &&
+                                                            (leadStagetype ==
+                                                                    "Done Deal" ||
+                                                                leadStagetype ==
+                                                                    "Transfer" ||
+                                                                leadStagetype ==
+                                                                    "Fresh" ||
+                                                                leadStagetype ==
+                                                                    "Not Interested");
+                                                        late final Color
+                                                        stageColor;
+                                                        if (leadStagetype ==
+                                                            "Not Interested") {
+                                                          stageColor =
+                                                              Colors
+                                                                  .black; // ✅ اللون الأسود
+                                                        } else {
+                                                          stageColor =
+                                                              isFinalStage
+                                                                  ? Constants
+                                                                      .maincolor
+                                                                  : isOutdated
+                                                                  ? Colors.red
+                                                                  : Colors
+                                                                      .green;
+                                                        }
+                                                        return Container(
+                                                          padding:
+                                                              EdgeInsets.symmetric(
+                                                                horizontal: 8.w,
+                                                                vertical: 4.h,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color: stageColor
+                                                                .withOpacity(
+                                                                  0.1,
+                                                                ),
+                                                            border: Border.all(
+                                                              color: stageColor,
+                                                            ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  20.r,
+                                                                ),
+                                                          ),
+                                                          child: Row(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: [
+                                                              Icon(
+                                                                Icons.circle,
+                                                                color:
+                                                                    stageColor,
+                                                                size: 10,
+                                                              ),
+                                                              SizedBox(
+                                                                width: 6.w,
+                                                              ),
+                                                              Text(
+                                                                lead
+                                                                        .stage
+                                                                        ?.name ??
+                                                                    "No Stage",
+                                                                style: GoogleFonts.montserrat(
+                                                                  fontSize:
+                                                                      13.sp,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  color:
+                                                                      stageColor,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 8.h),
+                                                Text(
+                                                  "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!) : "N/A"}",
+                                                  style: TextStyle(
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                    color:
+                                                        Theme.of(
+                                                                  context,
+                                                                ).brightness ==
+                                                                Brightness.light
+                                                            ? Colors.black87
+                                                            : Colors.white70,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            // ✅ الجزء اليمين (KSA | EVENT | Skyrise أو اسم المشروع)
+                                            Expanded(
+                                              child: Text(
+                                                lead.project?.name ?? '',
+                                                style: GoogleFonts.montserrat(
+                                                  fontSize: 12.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                textAlign: TextAlign.right,
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(height: 8.h),
+                                      const Divider(height: 3, thickness: 1.5),
+                                      SizedBox(height: 20.h),
+
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: 8,
+                                          right: 8,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                lead.name ?? "No Name",
+                                                style: GoogleFonts.montserrat(
+                                                  fontSize: 19.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(height: 12.h),
+
+                                      // ---------- Row 2: Sales Person ----------
+                                      InkWell(
+                                        onTap: () {
+                                          final phone = lead.phone ?? '';
+                                          final formattedPhone =
+                                              phone.startsWith('0')
+                                                  ? phone
+                                                  : '+$phone';
+                                          makePhoneCall(formattedPhone);
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 8,
+                                            right: 8,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.phone,
+                                                color:
                                                     Theme.of(
                                                               context,
                                                             ).brightness ==
@@ -713,630 +1006,420 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                         ? Colors.grey
                                                         : Constants
                                                             .mainDarkmodecolor,
-                                                child: const Icon(
-                                                  Icons.download,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
+                                                size: 20,
                                               ),
-                                            ),
-                                          const SizedBox(width: 8),
-                                          (stageUpdatedDate != null &&
-                                                  (leadStagetype ==
-                                                          "Done Deal" ||
-                                                      leadStagetype ==
-                                                          "Transfer" ||
-                                                      leadStagetype ==
-                                                          "Fresh" ||
-                                                      leadStagetype ==
-                                                          "Not Interested"))
-                                              ? const SizedBox()
-                                              : Icon(
-                                                isOutdated
-                                                    ? Icons.cancel
-                                                    : Icons.check_circle,
-                                                color:
-                                                    isOutdated
-                                                        ? Colors.red
-                                                        : Colors.green,
-                                                size: 24,
-                                              ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 12.h),
-
-                                      // ---------- Row 2: Sales Person ----------
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.person_pin_outlined,
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Colors.grey
-                                                    : Constants
-                                                        .mainDarkmodecolor,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              lead.sales?.name ?? "No Sales",
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                fontWeight: FontWeight.w400,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 12.h),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          Icon(
-                                            Icons.date_range,
-                                            color: Colors.grey,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            lead.date != null
-                                                ? formatDateTimeToDubai(
-                                                  lead.date!,
-                                                )
-                                                : "N/A",
-                                            style: TextStyle(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 12.h),
-                                      // ---------- Row 4: WhatsApp and Phone Call ----------
-                                      Padding(
-                                        padding: const EdgeInsets.all(4.0),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            InkWell(
-                                              onTap: () async {
-                                                final phone = lead
-                                                    .whatsappnumber
-                                                    ?.replaceAll(
-                                                      RegExp(r'\D'),
-                                                      '',
-                                                    );
-                                                final url =
-                                                    "https://wa.me/$phone";
-                                                if (await canLaunchUrl(
-                                                  Uri.parse(url),
-                                                )) {
-                                                  await launchUrl(
-                                                    Uri.parse(url),
-                                                    mode:
-                                                        LaunchMode
-                                                            .externalApplication,
-                                                  );
-                                                } else {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    const SnackBar(
-                                                      content: Text(
-                                                        "Could not open WhatsApp.",
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                              },
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  FaIcon(
-                                                    FontAwesomeIcons.whatsapp,
-                                                    color:
-                                                        Theme.of(
-                                                                  context,
-                                                                ).brightness ==
-                                                                Brightness.light
-                                                            ? Colors.grey
-                                                            : Constants
-                                                                .mainDarkmodecolor,
-                                                    size: 18,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    lead
-                                                                .whatsappnumber
-                                                                ?.isNotEmpty ==
-                                                            true
-                                                        ? lead.whatsappnumber!
-                                                        : 'no whatsapp number',
-                                                    style: TextStyle(
-                                                      fontSize: 12.sp,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            InkWell(
-                                              onTap:
-                                                  () => makePhoneCall(
-                                                    lead.phone ?? '',
-                                                  ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.phone,
-                                                    color:
-                                                        Theme.of(
-                                                                  context,
-                                                                ).brightness ==
-                                                                Brightness.light
-                                                            ? Colors.grey
-                                                            : Constants
-                                                                .mainDarkmodecolor,
-                                                    size: 18,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    lead.phone ?? '',
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(height: 12.h),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              getStatusIcon(
-                                                lead.stage?.name ?? "",
-                                              ),
-                                              const SizedBox(width: 5),
-                                              Text(
-                                                lead.stage?.name ?? "none",
-                                                style: GoogleFonts.montserrat(
-                                                  fontSize: 10.sp,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.center,
-                                            children: [
-                                              ElevatedButton.icon(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      Theme.of(
-                                                                context,
-                                                              ).brightness ==
-                                                              Brightness.light
-                                                          ? Constants.maincolor
-                                                          : Constants
-                                                              .mainDarkmodecolor,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 8,
-                                                      ),
-                                                ),
-                                                onPressed: () {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (_) {
-                                                      return Dialog(
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        child: BlocProvider(
-                                                          create:
-                                                              (
-                                                                _,
-                                                              ) => LeadCommentsCubit(
-                                                                GetAllLeadCommentsApiService(),
-                                                              )..fetchLeadComments(
-                                                                lead.id!,
-                                                              ),
-                                                          child: Padding(
-                                                            padding:
-                                                                const EdgeInsets.all(
-                                                                  16.0,
-                                                                ),
-                                                            child: BlocBuilder<
-                                                              LeadCommentsCubit,
-                                                              LeadCommentsState
-                                                            >(
-                                                              builder: (
-                                                                context,
-                                                                state,
-                                                              ) {
-                                                                if (state
-                                                                    is LeadCommentsLoading) {
-                                                                  return const SizedBox(
-                                                                    height: 100,
-                                                                    child: Center(
-                                                                      child:
-                                                                          CircularProgressIndicator(),
-                                                                    ),
-                                                                  );
-                                                                } else if (state
-                                                                    is LeadCommentsError) {
-                                                                  return SizedBox(
-                                                                    height: 100,
-                                                                    child: Center(
-                                                                      child: Text(
-                                                                        "No comments available.",
-                                                                      ),
-                                                                    ),
-                                                                  );
-                                                                } else if (state
-                                                                    is LeadCommentsLoaded) {
-                                                                  final data =
-                                                                      state
-                                                                          .leadComments
-                                                                          .data;
-                                                                  if (data ==
-                                                                          null ||
-                                                                      data.isEmpty) {
-                                                                    return const Text(
-                                                                      'No comments available.',
-                                                                    );
-                                                                  }
-                                                                  final firstItem =
-                                                                      data.first;
-                                                                  final firstComment =
-                                                                      firstItem
-                                                                          .comments
-                                                                          ?.first;
-                                                                  final firstcommentdate =
-                                                                      DateTime.tryParse(
-                                                                        firstComment?.firstcomment?.date.toString() ??
-                                                                            "",
-                                                                      )?.toUtc();
-                                                                  final secondcommentdate =
-                                                                      DateTime.tryParse(
-                                                                        firstComment?.secondcomment?.date.toString() ??
-                                                                            "",
-                                                                      )?.toUtc();
-                                                                  final isFirstValid =
-                                                                      isClearHistoryy !=
-                                                                          true ||
-                                                                      (firstcommentdate !=
-                                                                              null &&
-                                                                          firstcommentdate.isAfter(
-                                                                            clearHistoryTimee!,
-                                                                          ));
-                                                                  final isSecondValid =
-                                                                      isClearHistoryy !=
-                                                                          true ||
-                                                                      (secondcommentdate !=
-                                                                              null &&
-                                                                          secondcommentdate.isAfter(
-                                                                            clearHistoryTimee!,
-                                                                          ));
-                                                                  if ((isFirstValid &&
-                                                                      firstComment
-                                                                              ?.firstcomment
-                                                                              ?.text !=
-                                                                          null)) {
-                                                                    return Column(
-                                                                      mainAxisSize:
-                                                                          MainAxisSize
-                                                                              .min,
-                                                                      crossAxisAlignment:
-                                                                          CrossAxisAlignment
-                                                                              .start,
-                                                                      children: [
-                                                                        const Text(
-                                                                          "Last Comment",
-                                                                          style: TextStyle(
-                                                                            fontWeight:
-                                                                                FontWeight.w600,
-                                                                          ),
-                                                                        ),
-                                                                        SizedBox(
-                                                                          height:
-                                                                              10.h,
-                                                                        ),
-                                                                        const Text(
-                                                                          "Comment",
-                                                                          style: TextStyle(
-                                                                            color:
-                                                                                Constants.maincolor,
-                                                                            fontWeight:
-                                                                                FontWeight.w600,
-                                                                          ),
-                                                                        ),
-                                                                        SizedBox(
-                                                                          height:
-                                                                              5.h,
-                                                                        ),
-                                                                        Text(
-                                                                          firstComment?.firstcomment?.text ??
-                                                                              'No comment available.',
-                                                                        ),
-                                                                        SizedBox(
-                                                                          height:
-                                                                              10.h,
-                                                                        ),
-                                                                        const Text(
-                                                                          "Action (Plan)",
-                                                                          style: TextStyle(
-                                                                            color:
-                                                                                Constants.maincolor,
-                                                                            fontWeight:
-                                                                                FontWeight.w600,
-                                                                          ),
-                                                                        ),
-                                                                        const SizedBox(
-                                                                          height:
-                                                                              5,
-                                                                        ),
-                                                                        Text(
-                                                                          firstComment?.secondcomment?.text ??
-                                                                              'No comment available.',
-                                                                        ),
-                                                                      ],
-                                                                    );
-                                                                  } else {
-                                                                    return const SizedBox(
-                                                                      child: Text(
-                                                                        "no comments",
-                                                                      ),
-                                                                    );
-                                                                  }
-                                                                } else {
-                                                                  return const SizedBox(
-                                                                    height: 100,
-                                                                    child: Text(
-                                                                      "no comments",
-                                                                    ),
-                                                                  );
-                                                                }
-                                                              },
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                icon: const Icon(
-                                                  Icons.chat_bubble_outline,
-                                                  color: Colors.white,
-                                                  size: 16,
-                                                ),
-                                                label: const Text(
-                                                  "Last Comment",
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  lead.phone ?? 'N/A',
                                                   style: TextStyle(
-                                                    color: Colors.white,
+                                                    fontSize: 13.sp,
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 10.h),
-                                      Padding(
-                                        padding: const EdgeInsets.all(4.0),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          children: [
-                                            Icon(
-                                              Icons.date_range_outlined,
-                                              color: Colors.grey,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              lead.stagedateupdated != null
-                                                  ? formatDateTimeToDubai(
-                                                    lead.stagedateupdated!,
-                                                  )
-                                                  : "N/A",
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
                                         ),
                                       ),
-                                      // ---------- Row 6: View More Link ----------
-                                      SizedBox(height: 8.h),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
+
+                                      SizedBox(height: 35.h),
+                                      Column(
                                         children: [
-                                          if (lead.assign == true) ...[
-                                            const DotLoading(),
-                                            const Spacer(),
-                                          ],
-                                          if (lead.assign == true &&
-                                              userlognamee == managername) ...[
-                                            DotLoading(),
-                                            Spacer(),
-                                            const SizedBox(width: 10),
-                                          ],
-                                          InkWell(
-                                            onTap: () async {
-                                              log(
-                                                "userlogmanagername: $userlognamee",
-                                              );
-                                              log("manager name: $managername");
-                                              log("leadassign: ${lead.assign}");
-                                              if (lead.assign == false) {
-                                                await Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder:
-                                                        (_) => BlocProvider(
-                                                          create:
-                                                              (
-                                                                _,
-                                                              ) => LeadCommentsCubit(
-                                                                GetAllLeadCommentsApiService(),
-                                                              ),
-                                                          child: LeadsDetailsScreenManager(
-                                                            leedId: lead.id!,
-                                                            leadName:
-                                                                lead.name ?? '',
-                                                            leadPhone:
-                                                                lead.phone ??
-                                                                '',
-                                                            leadEmail:
-                                                                lead.email ??
-                                                                '',
-                                                            leadStage:
-                                                                lead
-                                                                    .stage
-                                                                    ?.name ??
-                                                                '',
-                                                            leadStageId:
-                                                                lead
-                                                                    .stage
-                                                                    ?.id ??
-                                                                '',
-                                                            leadChannel:
-                                                                lead
-                                                                    .chanel
-                                                                    ?.name ??
-                                                                '',
-                                                            leadCreationDate:
-                                                                lead.createdAt !=
-                                                                        null
-                                                                    ? formatDateTime(
-                                                                      lead.createdAt!,
-                                                                    )
-                                                                    : '',
-                                                            leadProject:
-                                                                lead
-                                                                    .project
-                                                                    ?.name ??
-                                                                '',
-                                                            leadLastComment:
-                                                                lead.lastcommentdate ??
-                                                                '',
-                                                            leadcampaign:
-                                                                lead
-                                                                    .campaign
-                                                                    ?.name ??
-                                                                "campaign",
-                                                            leadNotes:
-                                                                lead.notes ??
-                                                                "no notes",
-                                                            leaddeveloper:
-                                                                lead
-                                                                    .project
-                                                                    ?.developer
-                                                                    ?.name ??
-                                                                "no developer",
-                                                            fcmtokenn:
-                                                                salesfcmtoken!,
-                                                            leadwhatsappnumber:
-                                                                lead.whatsappnumber,
-                                                            jobdescription:
-                                                                lead.jobdescription ??
-                                                                'no job description',
-                                                            secondphonenumber:
-                                                                lead.secondphonenumber,
-                                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 8,
+                                              right: 8,
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Icon(
+                                                  Icons.person_pin_outlined,
+                                                  color:
+                                                      Theme.of(
+                                                                context,
+                                                              ).brightness ==
+                                                              Brightness.light
+                                                          ? Colors.grey
+                                                          : Constants
+                                                              .mainDarkmodecolor,
+                                                  size: 20,
+                                                ),
+                                                SizedBox(width: 8.w),
+                                                // 👈 الجزء الشمال (Sales name)
+                                                Expanded(
+                                                  child: Text(
+                                                    lead.sales?.name ?? "none",
+                                                    style:
+                                                        GoogleFonts.montserrat(
+                                                          fontSize: 16.sp,
+                                                          fontWeight:
+                                                              FontWeight.w500,
                                                         ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
-                                                );
-                                                context
-                                                    .read<
-                                                      GetManagerLeadsCubit
-                                                    >()
-                                                    .getLeadsByManager();
-                                              } else {
-                                                showDialog(
-                                                  context: context,
-                                                  builder:
-                                                      (_) => AlertDialog(
-                                                        title: const Text(
-                                                          "Attention",
-                                                        ),
-                                                        content: const Text(
-                                                          "You must receive this lead first.",
-                                                        ),
-                                                        actions: [
-                                                          TextButton(
-                                                            style: TextButton.styleFrom(
-                                                              backgroundColor:
-                                                                  Theme.of(
-                                                                            context,
-                                                                          ).brightness ==
-                                                                          Brightness
-                                                                              .light
-                                                                      ? Constants
-                                                                          .maincolor
-                                                                      : Constants
-                                                                          .mainDarkmodecolor,
+                                                ),
+
+                                                // 👉 الجزء اليمين (الـ 3 أيقونات داخل خلفية)
+                                                Row(
+                                                  children: [
+                                                    // 📞 Phone Call
+                                                    InkWell(
+                                                      onTap: () {
+                                                        final phone =
+                                                            lead.phone ?? '';
+                                                        final formattedPhone =
+                                                            phone.startsWith(
+                                                                  '0',
+                                                                )
+                                                                ? phone
+                                                                : '+$phone';
+                                                        makePhoneCall(
+                                                          formattedPhone,
+                                                        );
+                                                      },
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            30,
+                                                          ),
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              8,
                                                             ),
-                                                            onPressed:
-                                                                () =>
-                                                                    Navigator.of(
-                                                                      context,
-                                                                    ).pop(),
-                                                            child: const Text(
-                                                              "OK",
-                                                              style: TextStyle(
-                                                                color:
-                                                                    Colors
-                                                                        .white,
+                                                        margin:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 4,
+                                                            ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                              color:
+                                                                  Constants
+                                                                      .maincolor,
+                                                              shape:
+                                                                  BoxShape
+                                                                      .circle,
+                                                            ),
+                                                        child: const Icon(
+                                                          Icons.phone,
+                                                          color: Colors.white,
+                                                          size: 18,
+                                                        ),
+                                                      ),
+                                                    ),
+
+                                                    // 💬 WhatsApp
+                                                    InkWell(
+                                                      onTap: () async {
+                                                        final rawPhone =
+                                                            (lead.phone?.isNotEmpty ==
+                                                                        true
+                                                                    ? lead.phone
+                                                                    : lead
+                                                                        .whatsappnumber)
+                                                                ?.replaceAll(
+                                                                  RegExp(r'\D'),
+                                                                  '',
+                                                                ) ??
+                                                            '';
+                                                        final formattedPhone =
+                                                            rawPhone.startsWith(
+                                                                  '0',
+                                                                )
+                                                                ? rawPhone
+                                                                : '+$rawPhone';
+
+                                                        final url =
+                                                            "https://wa.me/$formattedPhone";
+                                                        try {
+                                                          await launchUrl(
+                                                            Uri.parse(url),
+                                                            mode:
+                                                                LaunchMode
+                                                                    .externalApplication,
+                                                          );
+                                                        } catch (e) {
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                "Could not open WhatsApp.",
                                                               ),
                                                             ),
+                                                          );
+                                                        }
+                                                      },
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            30,
                                                           ),
-                                                        ],
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              8,
+                                                            ),
+                                                        margin:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 4,
+                                                            ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                              color:
+                                                                  Constants
+                                                                      .maincolor,
+                                                              shape:
+                                                                  BoxShape
+                                                                      .circle,
+                                                            ),
+                                                        child: const FaIcon(
+                                                          FontAwesomeIcons
+                                                              .whatsapp,
+                                                          color: Colors.white,
+                                                          size: 18,
+                                                        ),
                                                       ),
-                                                );
-                                              }
-                                            },
-                                            child: Text(
-                                              'View More',
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                                color:
-                                                    Theme.of(
-                                                              context,
-                                                            ).brightness ==
-                                                            Brightness.light
-                                                        ? Colors.grey
-                                                        : Colors.white,
-                                                decoration:
-                                                    TextDecoration.underline,
-                                              ),
+                                                    ),
+
+                                                    // 🗨️ Last Comment
+                                                    InkWell(
+                                                      onTap: () {
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (_) {
+                                                            return Dialog(
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      12,
+                                                                    ),
+                                                              ),
+                                                              child: BlocProvider(
+                                                                create:
+                                                                    (
+                                                                      _,
+                                                                    ) => LeadCommentsCubit(
+                                                                      GetAllLeadCommentsApiService(),
+                                                                    )..fetchLeadComments(
+                                                                      lead.id!,
+                                                                    ),
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets.all(
+                                                                        16.0,
+                                                                      ),
+                                                                  child: BlocBuilder<
+                                                                    LeadCommentsCubit,
+                                                                    LeadCommentsState
+                                                                  >(
+                                                                    builder: (
+                                                                      context,
+                                                                      commentState,
+                                                                    ) {
+                                                                      if (commentState
+                                                                          is LeadCommentsLoading) {
+                                                                        return const SizedBox(
+                                                                          height:
+                                                                              100,
+                                                                          child: Center(
+                                                                            child:
+                                                                                CircularProgressIndicator(),
+                                                                          ),
+                                                                        );
+                                                                      } else if (commentState
+                                                                          is LeadCommentsError) {
+                                                                        return SizedBox(
+                                                                          height:
+                                                                              100,
+                                                                          child: Center(
+                                                                            child: Text(
+                                                                              "No comments available: ${commentState.message}",
+                                                                            ),
+                                                                          ),
+                                                                        );
+                                                                      } else if (commentState
+                                                                          is LeadCommentsLoaded) {
+                                                                        final commentsData =
+                                                                            commentState.leadComments.data;
+                                                                        if (commentsData ==
+                                                                                null ||
+                                                                            commentsData.isEmpty) {
+                                                                          return const Text(
+                                                                            'No comments available.',
+                                                                          );
+                                                                        }
+
+                                                                        final commentsList =
+                                                                            commentsData.first.comments ??
+                                                                            [];
+                                                                        final validComments =
+                                                                            commentsList
+                                                                                .where(
+                                                                                  (
+                                                                                    c,
+                                                                                  ) =>
+                                                                                      (c.firstcomment?.text?.isNotEmpty ??
+                                                                                          false) ||
+                                                                                      (c.secondcomment?.text?.isNotEmpty ??
+                                                                                          false),
+                                                                                )
+                                                                                .toList();
+
+                                                                        final Comment?
+                                                                        firstCommentEntry =
+                                                                            validComments.isNotEmpty
+                                                                                ? validComments.first
+                                                                                : null;
+
+                                                                        final String
+                                                                        firstCommentText =
+                                                                            firstCommentEntry?.firstcomment?.text ??
+                                                                            'No comments available.';
+                                                                        final String
+                                                                        secondCommentText =
+                                                                            firstCommentEntry?.secondcomment?.text ??
+                                                                            'No action available.';
+
+                                                                        return Column(
+                                                                          mainAxisSize:
+                                                                              MainAxisSize.min,
+                                                                          crossAxisAlignment:
+                                                                              CrossAxisAlignment.start,
+                                                                          children: [
+                                                                            const Text(
+                                                                              "Last Comment",
+                                                                              style: TextStyle(
+                                                                                fontWeight:
+                                                                                    FontWeight.w600,
+                                                                              ),
+                                                                            ),
+                                                                            const SizedBox(
+                                                                              height:
+                                                                                  5,
+                                                                            ),
+                                                                            Text(
+                                                                              firstCommentText,
+                                                                              maxLines:
+                                                                                  2,
+                                                                              overflow:
+                                                                                  TextOverflow.ellipsis,
+                                                                            ),
+                                                                            const SizedBox(
+                                                                              height:
+                                                                                  10,
+                                                                            ),
+                                                                            const Text(
+                                                                              "Action (Plan)",
+                                                                              style: TextStyle(
+                                                                                color:
+                                                                                    Constants.maincolor,
+                                                                                fontWeight:
+                                                                                    FontWeight.w600,
+                                                                              ),
+                                                                            ),
+                                                                            const SizedBox(
+                                                                              height:
+                                                                                  5,
+                                                                            ),
+                                                                            Text(
+                                                                              secondCommentText,
+                                                                              maxLines:
+                                                                                  2,
+                                                                              overflow:
+                                                                                  TextOverflow.ellipsis,
+                                                                            ),
+                                                                          ],
+                                                                        );
+                                                                      } else {
+                                                                        return const SizedBox(
+                                                                          height:
+                                                                              100,
+                                                                          child: Text(
+                                                                            "No comments",
+                                                                          ),
+                                                                        );
+                                                                      }
+                                                                    },
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
+                                                        );
+                                                      },
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            30,
+                                                          ),
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              8,
+                                                            ),
+                                                        margin:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 4,
+                                                            ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                              color:
+                                                                  Constants
+                                                                      .maincolor,
+                                                              shape:
+                                                                  BoxShape
+                                                                      .circle,
+                                                            ),
+                                                        child: const Icon(
+                                                          Icons
+                                                              .chat_bubble_outline,
+                                                          color: Colors.white,
+                                                          size: 18,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          SizedBox(height: 4.h),
+                                          // ✅ CD Date (السطر اللي تحت)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 8,
+                                              right: 8,
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                              children: [
+                                                Icon(
+                                                  Icons.date_range,
+                                                  color:
+                                                      Theme.of(
+                                                                context,
+                                                              ).brightness ==
+                                                              Brightness.light
+                                                          ? Colors.grey
+                                                          : Constants
+                                                              .mainDarkmodecolor,
+                                                  size: 20,
+                                                ),
+                                                SizedBox(width: 6.w),
+                                                Text(
+                                                  " ${lead.date != null ? formatDateTimeToDubai(lead.date!) : "N/A"}",
+                                                  style: TextStyle(
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ],
@@ -1458,5 +1541,40 @@ class _DotLoadingState extends State<DotLoading>
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+}
+
+class _ActionIcon extends StatelessWidget {
+  final Widget icon;
+  const _ActionIcon({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color:
+            isDark
+                ? Colors.white.withOpacity(0.10)
+                : Colors.grey[100], // خلفية خفيفة شيك
+        shape: BoxShape.circle, // دائري بالكامل 👌
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconTheme(
+        data: IconThemeData(
+          size: 22,
+          color: isDark ? Colors.white : Constants.maincolor,
+        ),
+        child: icon,
+      ),
+    );
   }
 }

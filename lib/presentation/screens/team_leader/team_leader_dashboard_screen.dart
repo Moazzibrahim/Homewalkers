@@ -1,11 +1,13 @@
-// ignore_for_file: file_names, camel_case_types, deprecated_member_use, avoid_print
+// ignore_for_file: file_names, camel_case_types, deprecated_member_use, avoid_print, unused_field, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -84,11 +86,23 @@ class TeamLeaderDashboardScreen extends StatefulWidget {
   }
 }
 
-class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen> {
+class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
+    with WidgetsBindingObserver {
+  late GetLeadsTeamLeaderCubit _teamLeaderCubit;
+  final String _userName = 'User';
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // 👈 لمراقبة حالة التطبيق
     checkAuth();
+
+    // إنشاء Cubit مرة واحدة فقط
+    _teamLeaderCubit = GetLeadsTeamLeaderCubit(GetLeadsService())
+      ..getLeadsByTeamLeader();
+
+    SalesCubit(GetAllSalesApiService()).fetchAllSales();
+
+    // تهيئة الإشعارات
     context.read<NotificationCubit>().initNotifications();
     print("init notifications called");
   }
@@ -100,12 +114,33 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 👇 لما التطبيق يرجع من الخلفية
+    if (state == AppLifecycleState.resumed) {
+      print("App resumed — refreshing team leader leads...");
+      _teamLeaderCubit.getLeadsByTeamLeader(); // إعادة تحميل الداتا
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _teamLeaderCubit.close(); // إغلاق الـ Cubit لتفادي memory leaks
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create:
-          (_) =>
-              GetLeadsTeamLeaderCubit(GetLeadsService())
-                ..getLeadsByTeamLeader(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(
+          // 👈 نستخدم value عشان نمرر نفس نسخة Cubit اللي أنشأناها
+          value: _teamLeaderCubit,
+        ),
+        BlocProvider(
+          create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+        ),
+      ],
       child: Scaffold(
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
@@ -167,191 +202,222 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen> {
             ],
           ),
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        body: RefreshIndicator(
+          onRefresh: () async {
+            await _teamLeaderCubit.getLeadsByTeamLeader();
+            context.read<SalesCubit>().fetchAllSales();
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FutureBuilder(
-                      future: checkAuth(),
-                      builder: (BuildContext context, AsyncSnapshot snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Text("hello ....");
-                        } else if (snapshot.hasError) {
-                          return const Text('Hello');
+                    Row(
+                      children: [
+                        FutureBuilder(
+                          future: checkAuth(),
+                          builder: (
+                            BuildContext context,
+                            AsyncSnapshot snapshot,
+                          ) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Text("hello ....");
+                            } else if (snapshot.hasError) {
+                              return const Text('Hello');
+                            } else {
+                              return Text(
+                                'Hello ${snapshot.data}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? const Color(0xff080719)
+                                          : Colors.white,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('👋', style: TextStyle(fontSize: 20)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
+                      builder: (context, state) {
+                        if (state is GetLeadsTeamLeaderLoading) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child:
+                                        TeamLeaderDashboardScreen._dashboardCard(
+                                          'Leads',
+                                          '...',
+                                          Icons.group,
+                                          context,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              const Center(child: CircularProgressIndicator()),
+                            ],
+                          );
+                        } else if (state is GetLeadsTeamLeaderSuccess) {
+                          return FutureBuilder(
+                            future: SharedPreferences.getInstance(),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+                              final prefs = snapshot.data!;
+                              final loggedSalesId =
+                                  prefs.getString('teamleader_userlog_id') ?? '';
+                              final allLeads = state.leadsData.data ?? [];
+              
+                              // ✅ Fresh Leads = No Stage assigned to loggedSalesId
+                              final freshLeads =
+                                  allLeads.where((lead) {
+                                    final stage =
+                                        (lead.stage?.name ?? '').toLowerCase();
+                                    final assignedId = lead.sales?.id ?? '';
+                                    print(
+                                      "🔍 Lead Stage: $stage, Assigned TeamLeaderId: $assignedId, Logged TeamLeaderId: $loggedSalesId",
+                                    );
+                                    return stage == 'no stage' &&
+                                        assignedId == loggedSalesId;
+                                  }).toList();
+              
+                              final noStageLeads =
+                                  allLeads.where((lead) {
+                                    final stage =
+                                        (lead.stage?.name ?? '').toLowerCase();
+                                    final assignedId = lead.sales?.id ?? '';
+                                    print(
+                                      "🔍 Lead Stage: $stage, Assigned TeamLeaderId: $assignedId, Logged TeamLeaderId: $loggedSalesId",
+                                    );
+                                    return stage == 'no stage' &&
+                                        assignedId != loggedSalesId;
+                                  }).toList();
+              
+                              // ✅ بعد كده بنحسب باقي الـ Stages
+                              final otherStages =
+                                  allLeads.where((lead) {
+                                    final stage =
+                                        (lead.stage?.name ?? '').toLowerCase();
+                                    return stage != 'no stage';
+                                  }).toList();
+              
+                              // 📊 نعمل Map بالأعداد
+                              final Map<String, int> stageCounts = {
+                                "Fresh": freshLeads.length,
+                                "No Stage": noStageLeads.length,
+                              };
+              
+                              // ✅ نضيف باقي stages
+                              for (var lead in otherStages) {
+                                final stageName = lead.stage?.name ?? 'Unknown';
+                                stageCounts[stageName] =
+                                    (stageCounts[stageName] ?? 0) + 1;
+                              }
+              
+                              print("✅ Fresh Count = ${freshLeads.length}");
+                              print("✅ No Stage Count = ${noStageLeads.length}");
+              
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: TeamLeaderDashboardScreen._dashboardCard(
+                                          'Leads',
+                                          '${allLeads.length}',
+                                          Icons.group,
+                                          context,
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) =>
+                                                        const TeamLeaderAssignScreen(),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 18),
+                                  GridView.count(
+                                    crossAxisCount: 2,
+                                    shrinkWrap: true,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                    childAspectRatio: 1.5,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    children:
+                                        stageCounts.entries.map((entry) {
+                                          return TeamLeaderDashboardScreen._dashboardCard(
+                                            entry.key,
+                                            entry.value.toString(),
+                                            Icons.timeline,
+                                            context,
+                                            onTap: () {
+                                              // final stageNameToSend =
+                                              //     entry.key == 'Fresh'
+                                              //         ? 'No Stage'
+                                              //         : entry.key;
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder:
+                                                      (context) =>
+                                                          TeamLeaderAssignScreen(
+                                                            stageName: entry.key,
+                                                          ),
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        }).toList(),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
                         } else {
-                          return Text(
-                            'Hello ${snapshot.data}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? const Color(0xff080719)
-                                      : Colors.white,
-                            ),
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: TeamLeaderDashboardScreen._dashboardCard(
+                                  'Leads',
+                                  '0',
+                                  Icons.group,
+                                  context,
+                                ),
+                              ),
+                            ],
                           );
                         }
                       },
                     ),
-                    const SizedBox(width: 8),
-                    const Text('👋', style: TextStyle(fontSize: 20)),
                   ],
                 ),
-                const SizedBox(height: 20),
-                BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
-                  builder: (context, state) {
-                    if (state is GetLeadsTeamLeaderLoading) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TeamLeaderDashboardScreen._dashboardCard(
-                                  'Leads',
-                                  '...',
-                                  Icons.group,
-                                  context,
-                                ),
-                              ),
-                              // const SizedBox(width: 12),
-                              // Expanded(
-                              //   child: _dashboardCard(
-                              //     'Deals',
-                              //     '...',
-                              //     Icons.work_outline,
-                              //     context,
-                              //   ),
-                              // ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          const Center(child: CircularProgressIndicator()),
-                        ],
-                      );
-                    } else if (state is GetLeadsTeamLeaderSuccess) {
-                      final allLeads = state.leadsData.data ?? [];
-                      // final doneDeals =
-                      //     allLeads
-                      //         .where((lead) => lead.stage?.name == "Done Deal")
-                      //         .toList();
-                      final Map<String, int> stageCounts = {};
-                      for (var lead in allLeads) {
-                        final stageName = lead.stage?.name ?? 'Unknown';
-                        stageCounts[stageName] =
-                            (stageCounts[stageName] ?? 0) + 1;
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TeamLeaderDashboardScreen._dashboardCard(
-                                  'Leads',
-                                  '${allLeads.length}',
-                                  Icons.group,
-                                  context,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) =>
-                                                const TeamLeaderAssignScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              // const SizedBox(width: 12),
-                              // Expanded(
-                              //   child: _dashboardCard(
-                              //     'Deals',
-                              //     '${doneDeals.length}',
-                              //     Icons.work_outline,
-                              //     context,
-                              //     onTap: () {
-                              //       Navigator.push(
-                              //         context,
-                              //         MaterialPageRoute(
-                              //           builder:
-                              //               (context) =>
-                              //                   const TeamLeaderAssignScreen(
-                              //                     stageName: "Done Deal",
-                              //                   ),
-                              //         ),
-                              //       );
-                              //     },
-                              //   ),
-                              // ),
-                            ],
-                          ),
-                          const SizedBox(height: 18),
-                          GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 1.5,
-                            physics: const NeverScrollableScrollPhysics(),
-                            children:
-                                stageCounts.entries.map((entry) {
-                                  return TeamLeaderDashboardScreen._dashboardCard(
-                                    entry.key,
-                                    entry.value.toString(),
-                                    Icons.timeline,
-                                    context,
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (context) =>
-                                                  TeamLeaderAssignScreen(
-                                                    stageName: entry.key,
-                                                  ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                }).toList(),
-                          ),
-                        ],
-                      );
-                    } else {
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: TeamLeaderDashboardScreen._dashboardCard(
-                              'Leads',
-                              '0',
-                              Icons.group,
-                              context,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TeamLeaderDashboardScreen._dashboardCard(
-                              'Deals',
-                              '0',
-                              Icons.work_outline,
-                              context,
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                  },
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
