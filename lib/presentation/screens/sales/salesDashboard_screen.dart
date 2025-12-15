@@ -3,10 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/get_sales_dashboard_count_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/cubit/sales_dashboard_count_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/cubit/sales_dashboard_count_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,7 +22,7 @@ class SalesdashboardScreen extends StatefulWidget {
 class _SalesdashboardScreenState extends State<SalesdashboardScreen>
     with WidgetsBindingObserver {
   String _userName = 'User';
-  late GetLeadsCubit _leadsCubit;
+  late SalesDashboardCubit _dashboardCubit;
 
   @override
   void initState() {
@@ -29,37 +30,26 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
     WidgetsBinding.instance.addObserver(this);
     _checkAuth();
 
-    _leadsCubit = GetLeadsCubit(GetLeadsService());
+    _dashboardCubit =
+        SalesDashboardCubit(SalesDashboardApiService());
 
     // ⚠️ استخدم addPostFrameCallback للتأكد من بناء الشاشة أولاً
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _forceLoadDashboardData();
+      _dashboardCubit.fetchDashboard();
     });
 
     context.read<NotificationCubit>().initNotifications();
   }
 
-  Future<void> _forceLoadDashboardData() async {
-    try {
-      // ⚠️ جلب بيانات dashboard بقوة
-      await _leadsCubit.fetchDashboardLeads(showLoading: true);
-    } catch (e) {
-      print("Error loading dashboard data: $e");
-    }
-  }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      print("App resumed — force refreshing dashboard data...");
       // ⚠️ إضافة تأخير للتأكد من استقرار التطبيق
       Future.delayed(const Duration(milliseconds: 300), () {
-        _forceLoadDashboardData();
+        _dashboardCubit.fetchDashboard();
       });
     }
   }
-
-  // ... باقي الكود
 
   Future<void> _checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
@@ -74,7 +64,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _leadsCubit.close();
+    _dashboardCubit.close();
     super.dispose();
   }
 
@@ -82,7 +72,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
   Widget build(BuildContext context) {
     return BlocProvider.value(
       // 👈 نستخدم .value عشان نمرر نفس الـ cubit اللي أنشأناه في initState
-      value: _leadsCubit,
+      value: _dashboardCubit,
       child: Scaffold(
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
@@ -136,7 +126,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
         ),
         body: RefreshIndicator(
           onRefresh: () async {
-            await _leadsCubit.fetchDashboardLeads(showLoading: true);
+            await _dashboardCubit.fetchDashboard();
           },
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -164,9 +154,9 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                       ],
                     ),
                     const SizedBox(height: 20),
-                    BlocBuilder<GetLeadsCubit, GetLeadsState>(
+                    BlocBuilder<SalesDashboardCubit, SalesDashboardState>(
                       builder: (context, state) {
-                        if (state is GetLeadsLoading) {
+                        if (state is SalesDashboardLoading) {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -186,18 +176,16 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                               const Center(child: CircularProgressIndicator()),
                             ],
                           );
-                        } else if (state is GetLeadsSuccess) {
-                          final allLeads = state.assignedModel.data ?? [];
-                          final Map<String, int> stageCounts = {};
-                          for (var lead in allLeads) {
-                            final rawStageName = lead.stage?.name ?? 'Unknown';
-                            final stageName =
-                                rawStageName == 'No Stage'
-                                    ? 'Fresh'
-                                    : rawStageName;
-                            stageCounts[stageName] =
-                                (stageCounts[stageName] ?? 0) + 1;
-                          }
+                        } else if (state is SalesDashboardError) {
+                          return Center(child: Text(state.message));
+                        } else if (state is SalesDashboardSuccess) {
+                          final cubit = context.read<SalesDashboardCubit>();
+                          final stages =
+                              cubit.getVisibleStages(state.response);
+
+                          final totalLeads =
+                              state.response.data?.summary?.totalLeads ?? 0;
+
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -206,22 +194,20 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                   Expanded(
                                     child: _dashboardCard(
                                       'Leads',
-                                      '${allLeads.length}',
+                                      totalLeads.toString(),
                                       Icons.group,
                                       context,
                                       onTap: () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder:
-                                                (context) =>
-                                                    const SalesLeadsScreen(),
+                                            builder: (_) =>
+                                                const SalesLeadsScreen(),
                                           ),
                                         );
                                       },
                                     ),
                                   ),
-                                  // يمكنك إضافة كرت "Deals" هنا إذا أردت
                                 ],
                               ),
                               const SizedBox(height: 18),
@@ -232,35 +218,34 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                 mainAxisSpacing: 8,
                                 childAspectRatio: 1.5,
                                 physics: const NeverScrollableScrollPhysics(),
-                                children:
-                                    stageCounts.entries.map((entry) {
-                                      return _dashboardCard(
-                                        entry.key,
-                                        entry.value.toString(),
-                                        Icons.timeline,
+                                children: stages.map((stage) {
+                                  final stageName = stage.stageName ?? '';
+
+                                  return _dashboardCard(
+                                    stageName == 'No Stage'
+                                        ? 'Fresh'
+                                        : stageName,
+                                    '${stage.leadsCount ?? 0}',
+                                    Icons.timeline,
+                                    context,
+                                    onTap: () {
+                                      Navigator.push(
                                         context,
-                                        onTap: () {
-                                          final stageNameToSend =
-                                              entry.key == 'Fresh'
-                                                  ? 'No Stage'
-                                                  : entry.key;
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (context) => SalesLeadsScreen(
-                                                    stageName: stageNameToSend,
-                                                  ),
-                                            ),
-                                          );
-                                        },
+                                        MaterialPageRoute(
+                                          builder: (_) => SalesLeadsScreen(
+                                            stageName: stageName == 'Fresh'
+                                                ? 'No Stage'
+                                                : stageName,
+                                          ),
+                                        ),
                                       );
-                                    }).toList(),
+                                    },
+                                  );
+                                }).toList(),
                               ),
                             ],
                           );
                         } else {
-                          //
                           return Row(
                             children: [
                               Expanded(
@@ -323,12 +308,12 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 100, // الارتفاع كان مفقودًا في الكود الأصلي
+        height: 100, 
         decoration: BoxDecoration(
           color:
               Theme.of(context).brightness == Brightness.light
                   ? Colors.white
-                  : Color(0xff1e1e1e),
+                  : const Color(0xff1e1e1e),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
