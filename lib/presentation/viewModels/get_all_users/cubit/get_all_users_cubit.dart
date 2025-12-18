@@ -80,18 +80,18 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       _hasMore = true;
     }
 
-    if (loadMore && !_hasMore) {
-      return;
-    }
+    // if (loadMore && !_hasMore) {
+    //   return;
+    // }
 
-    if (!loadMore && !reset) {
-      _currentPage = 1;
-      _hasMore = true;
-    }
+    // if (!loadMore && !reset) {
+    //   _currentPage = 1;
+    //   _hasMore = true;
+    // }
 
-    _isLoading = true;
+    final bool isInitialFetch = !loadMore && leads.isEmpty;
 
-    if (!loadMore) {
+    if (isInitialFetch || reset) {
       emit(GetAllUsersLoading());
     }
 
@@ -99,7 +99,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       // ✅ **تعديل هنا: طلب البيانات الحالية + التحميل الكامل في نفس الوقت**
       final currentPageFuture = apiService.getUsers(
         page: _currentPage,
-        limit: 5,
+        limit: 10,
         stageName: stageFilter,
         duplicates: duplicatesOnly,
         ignoreDuplicates: duplicatesOnly,
@@ -113,7 +113,9 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
             final allResponse = await apiService.getUsers(
               page: 1,
               limit: 3000,
-              // stageName: stageFilter,
+              stageName: stageFilter,
+              duplicates: duplicatesOnly,
+              ignoreDuplicates: duplicatesOnly,
             );
             if (allResponse != null && allResponse.data != null) {
               _allLeads
@@ -358,6 +360,7 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
           final matchStage =
               stage == null ||
               (lead.stage?.name?.toLowerCase() == stage.toLowerCase());
+              
 
           final matchChannel =
               channel == null ||

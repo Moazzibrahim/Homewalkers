@@ -280,8 +280,8 @@ class MyApp extends StatelessWidget {
           create:
               (_) =>
                   GetAllUsersCubit(GetAllUsersApiService())
-                    ..fetchAllUsers()
-                    ..fetchLeadsInTrash(),
+                    ..fetchAllUsers(),
+                  //  ..fetchLeadsInTrash(),
         ),
         BlocProvider(
           create:

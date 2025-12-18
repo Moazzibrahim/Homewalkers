@@ -63,6 +63,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   String _searchQuery = '';
   late TextEditingController _nameSearchController;
   String? _selectedCountryFilter;
+  String? _selectedStageNameFilter;
   String? _selectedDeveloperFilter;
   String? _selectedProjectFilter;
   String? _selectedStageFilter;
@@ -93,6 +94,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isFetchingMore = false; // 👈 متغير داخلي يمنع التكرار
   bool _hasMoreData = true; // ✅ نعرف إذا كان فيه بيانات زيادة
+  bool _didInitialFetch = false;
 
   @override
   void initState() {
@@ -107,20 +109,31 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
 
     // ✅ إعداد الـ Scroll Listener
     _setupScrollListener();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final cubit = context.read<GetAllUsersCubit>();
-
-      log("⏳ البيانات مش موجودة، هنعمل fetch دلوقتي");
-      cubit.fetchAllUsers(
-        reset: true,
-        stageFilter:
-            (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty)
-                ? _selectedStageFilter
-                : null,
-        duplicatesOnly: _showDuplicatesOnly,
-      );
+    // 🔹 استماع لكل state من الكيوبت
+    final cubit = context.read<GetAllUsersCubit>();
+    cubit.stream.listen((state) {
+      log("📦 Cubit State changed: ${state.toString()}");
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleInitialFetch();
+    });
+  }
+
+  void _handleInitialFetch() {
+    if (_didInitialFetch) return;
+    _didInitialFetch = true;
+
+    final cubit = context.read<GetAllUsersCubit>();
+    log("🚀 Initial fetch triggered");
+
+    cubit.fetchAllUsers(
+      reset: true,
+      stageFilter:
+          (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty)
+              ? _selectedStageFilter
+              : null,
+      duplicatesOnly: _showDuplicatesOnly,
+    );
   }
 
   // ✅ دالة إعداد الـ Scroll Listener
@@ -132,6 +145,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
         // ❌ لو فيه فلترة → امنع تحميل المزيد
         if (_searchQuery.isNotEmpty ||
             _selectedCountryFilter != null ||
+            _selectedStageNameFilter != null ||
             _selectedDeveloperFilter != null ||
             _selectedProjectFilter != null ||
             _selectedChannelFilter != null ||
@@ -206,7 +220,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       log("⏳ لسه البيانات مجتش، مش هنعمل فلترة دلوقتي");
       return;
     }
-
+   
     if (selectedTab == 1) return;
 
     context.read<GetAllUsersCubit>().filterLeadsAdmin(
@@ -214,7 +228,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       country: _selectedCountryFilter,
       developer: _selectedDeveloperFilter,
       project: _selectedProjectFilter,
-      stage: widget.stageName,
+      stage: _selectedStageNameFilter,
       channel: _selectedChannelFilter,
       sales: _selectedSalesFilter,
       communicationWay: _selectedCommunicationWayFilter,
@@ -454,7 +468,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 initialCountry: _selectedCountryFilter,
                                 initialDeveloper: _selectedDeveloperFilter,
                                 initialProject: _selectedProjectFilter,
-                                initialStage: widget.stageName,
+                                initialStage: _selectedStageNameFilter,
                                 initialChannel: _selectedChannelFilter,
                                 initialSales: _selectedSalesFilter,
                                 initialCommunicationWay:
@@ -472,7 +486,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             _selectedCountryFilter = filters['country'];
                             _selectedDeveloperFilter = filters['developer'];
                             _selectedProjectFilter = filters['project'];
-                            _selectedStageFilter = filters['stage'];
+                            _selectedStageNameFilter = filters['stage'];
                             _selectedChannelFilter = filters['channel'];
                             _selectedSalesFilter = filters['sales'];
                             _selectedCommunicationWayFilter =
@@ -947,7 +961,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 } else {}
                               });
                         } else {
-                          context.read<GetAllUsersCubit>().fetchLeadsInTrash();
+                          // context.read<GetAllUsersCubit>().fetchLeadsInTrash();
                         }
                       },
 

@@ -1,5 +1,7 @@
 // filter_leads_dialog.dart
 
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -85,6 +87,8 @@ class _FilterDialogState extends State<FilterDialog> {
     _selectedSales = widget.initialSales;
     _selectedCommunicationWay = widget.initialCommunicationWay;
     _selectedCampaign = widget.initialCampaign;
+
+    print("Initial Stage in Dialog: ${widget.initialStage}");
 
     // ❌ احذف هذا الاستدعاء. الـ dialog لا يجلب بيانات Leads
     // context.read<GetLeadsMarketerCubit>().getLeadsByMarketer();
