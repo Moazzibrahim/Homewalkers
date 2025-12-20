@@ -692,6 +692,8 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                   leadstageupdated,
                                               stageId: lead.stage?.id ?? '',
                                               sales: lead.sales?.name ?? '',
+                                              leadLastDateAssigned:
+                                                  lead.lastdateassign,
                                             ),
                                           ),
                                     ),

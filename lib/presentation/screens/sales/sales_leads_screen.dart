@@ -526,6 +526,9 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                               laststageupdated:
                                                   lead.stagedateupdated,
                                               stageId: lead.stage?.id,
+                                              leadLastDateAssigned:
+                                                  lead.lastdateassign,
+                                                  isleadAssigned: lead.assign,
                                             ),
                                           ),
                                     ),

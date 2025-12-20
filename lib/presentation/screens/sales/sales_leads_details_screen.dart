@@ -1,4 +1,6 @@
 // ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable, avoid_print
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -41,6 +43,8 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
   final String? secondphonenumber;
   final String? laststageupdated;
   final String? stageId;
+  final String? leadLastDateAssigned;
+  final bool? isleadAssigned;
   SalesLeadsDetailsScreen({
     super.key,
     required this.leedId,
@@ -65,6 +69,8 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
     this.secondphonenumber,
     this.laststageupdated,
     this.stageId,
+    this.leadLastDateAssigned,
+    this.isleadAssigned,
   });
   @override
   State<SalesLeadsDetailsScreen> createState() =>
@@ -79,6 +85,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   void initState() {
     super.initState();
     print("fcmtoken: ${widget.fcmtoken}");
+    print("isleadAssigned: ${widget.isleadAssigned}");
     checkRoleName();
     checkClearHistoryTime();
     checkIsClearHistory();
@@ -87,6 +94,8 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   Future<void> checkClearHistoryTime() async {
     final prefs = await SharedPreferences.getInstance();
     final time = prefs.getString('clear_history_time');
+    final lastdateassigned = widget.leadLastDateAssigned;
+    log('lastdateassigned: $lastdateassigned');
     if (time != null) {
       setState(() {
         clearHistoryTimee = DateTime.tryParse(time);
@@ -152,25 +161,27 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
 
   bool isValidComment({
     required bool isClearHistory,
-    required DateTime? clearHistoryTime,
     required DateTime? firstDate,
-    required DateTime? secondDate,
     required String? firstText,
-    required String? secondText,
   }) {
-    if (!isClearHistory) return true;
-    if (clearHistoryTime == null) return true;
+    /// لو مش عامل clear history → اعرض الكل
+    if (isClearHistory) return true;
 
-    bool firstOk =
-        firstDate != null &&
-        firstDate.isAfter(clearHistoryTime) &&
+    if (widget.leadLastDateAssigned == null ||
+        widget.leadLastDateAssigned!.isEmpty) {
+      return true;
+    }
+
+    final lastAssignedDate = DateTime.tryParse(
+      widget.leadLastDateAssigned!,
+    )?.toUtc().add(const Duration(hours: 4));
+
+    if (lastAssignedDate == null) return true;
+
+    /// ❗ اعتمد على first comment فقط
+    return firstDate != null &&
+        firstDate.isAfter(lastAssignedDate) &&
         (firstText?.isNotEmpty ?? false);
-    bool secondOk =
-        secondDate != null &&
-        secondDate.isAfter(clearHistoryTime) &&
-        (secondText?.isNotEmpty ?? false);
-
-    return firstOk || secondOk;
   }
 
   @override
@@ -484,12 +495,11 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                               print('clearHistoryDubai: $clearHistoryTimee');
                               // استخدام دالة isValidComment على آخر تعليق
                               final showLastComment = isValidComment(
-                                isClearHistory: isClearHistoryy ?? false,
-                                clearHistoryTime: clearHistoryTimee,
+                                isClearHistory: widget.isleadAssigned == true,
+
                                 firstDate: firstCommentDate,
-                                secondDate: secondCommentDate,
+
                                 firstText: lastComment?.firstcomment?.text,
-                                secondText: lastComment?.secondcomment?.text,
                               );
 
                               if (showLastComment) {
@@ -646,6 +656,8 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                             fcmtoken: widget.fcmtoken,
                                             leadName: widget.leadName,
                                             managerfcm: widget.managerfcmtoken,
+                                            leadLastDateAssigned:
+                                                widget.leadLastDateAssigned,
                                           ),
                                         ),
                                   ),

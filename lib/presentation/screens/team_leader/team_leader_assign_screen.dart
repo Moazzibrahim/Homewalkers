@@ -67,6 +67,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   @override
   void initState() {
     super.initState();
+    print("Stage Name in Assign Screen: ${widget.stageName}");
     _cubit = GetLeadsTeamLeaderCubit(GetLeadsService());
     _cubit.getLeadsByTeamLeader().then((_) {
       if (widget.stageName != null && widget.stageName!.isNotEmpty) {
@@ -372,6 +373,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                     'no second phone number',
                                 laststageupdated: leadstageupdated!,
                                 stageId: lead.stage?.id ?? 'No Stage ID',
+                                leadLastDateAssigned: lead.lastdateassign ?? '',
                               );
                             },
                           ),
@@ -654,6 +656,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     required String secondphonenumber,
     required String laststageupdated,
     required String stageId,
+    required String leadLastDateAssigned,
   }) {
     return InkWell(
       onTap: () async {
@@ -707,6 +710,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                       secondphonenumber: secondphonenumber,
                       laststageupdated: laststageupdated,
                       stageId: stageId,
+                      leadLastDateAssigned: leadLastDateAssigned,
                     ),
                   ),
             ),
@@ -769,6 +773,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                       secondphonenumber: secondphonenumber,
                       laststageupdated: laststageupdated,
                       stageId: stageId,
+                      leadLastDateAssigned: leadLastDateAssigned,
                     ),
                   ),
             ),

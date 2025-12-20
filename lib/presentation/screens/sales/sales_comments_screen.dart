@@ -1,6 +1,4 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
-
-import 'dart:developer';
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -20,6 +18,7 @@ class SalesCommentsScreen extends StatefulWidget {
   final String? fcmtoken;
   final String? leadName;
   final String? managerfcm;
+  final String? leadLastDateAssigned;
 
   const SalesCommentsScreen({
     super.key,
@@ -27,6 +26,7 @@ class SalesCommentsScreen extends StatefulWidget {
     required this.fcmtoken,
     required this.leadName,
     this.managerfcm,
+    this.leadLastDateAssigned,
   });
 
   @override
@@ -40,48 +40,79 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
   );
   final TextStyle subtitleStyle = const TextStyle(color: Colors.grey);
   final TextStyle commentTextStyle = const TextStyle(fontSize: 14);
-  bool? isClearHistory;
-  DateTime? clearHistoryTime;
-  String? nextActionDate;
+  // bool isClearHistory = false;
+  //DateTime? clearHistoryTime;
   bool isPrefsLoaded = false;
   bool hasFetchedCommentsOnce = false;
+  late final LeadCommentsCubit _commentsCubit;
 
   @override
   void initState() {
     super.initState();
-    _initialize();
+    print("[InitState] Start initState");
+    _commentsCubit = LeadCommentsCubit(GetAllLeadCommentsApiService());
+    print("[InitState] Cubit initialized: $_commentsCubit");
+    _initializeAndLoad();
   }
 
-  Future<void> _initialize() async {
+  Future<void> _initializeAndLoad() async {
     final prefs = await SharedPreferences.getInstance();
     final role = prefs.getString('role');
-    nextActionDate = prefs.getString('stageDateUpdated');
-    log('nextActionDate: $nextActionDate');
+
     if (role != "Admin" && role != "Marketer") {
-      await _loadClearHistoryStatus(prefs);
-    } else {
-      setState(() {
-        isPrefsLoaded = true;
-      });
+      // isClearHistory = prefs.getBool('clearHistory') ?? false;
+    }
+
+    isPrefsLoaded = true;
+
+    if (mounted) setState(() {});
+
+    await _loadComments();
+  }
+
+  Future<void> _loadComments() async {
+    print("[LoadComments] Current Cubit state: ${_commentsCubit.state}");
+    if (_commentsCubit.state is! LeadCommentsFullLoaded) {
+      print(
+        "[LoadComments] Fetching all lead data for leedId: ${widget.leedId}",
+      );
+      await _commentsCubit.fetchAllLeadData(widget.leedId);
+      print("[LoadComments] Fetch all lead data done");
     }
   }
 
-  Future<void> _loadClearHistoryStatus(SharedPreferences prefs) async {
-    final timeString = prefs.getString('clear_history_time');
-    final isCleared = prefs.getBool('clearHistory');
+  // Future<void> _initialize() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final role = prefs.getString('role');
+  //   log(
+  //     " last date assigned in comments screen: ${widget.leadLastDateAssigned}",
+  //   );
+  //   // log("lead assigned status : ${widget.isleadAssigned}");
+  //   if (role != "Admin" && role != "Marketer") {
+  //     await _loadClearHistoryStatus(prefs);
+  //   } else {
+  //     setState(() {
+  //       isPrefsLoaded = true;
+  //     });
+  //   }
+  // }
 
-    if (mounted) {
-      setState(() {
-        clearHistoryTime =
-            timeString != null ? DateTime.tryParse(timeString) : null;
-        isClearHistory = isCleared;
-        isPrefsLoaded = true;
-      });
-    }
+  // Future<void> _loadClearHistoryStatus(SharedPreferences prefs) async {
+  //   //final timeString = prefs.getString('clear_history_time');
+  //   final isCleared = prefs.getBool('clearHistory');
 
-    debugPrint('Clear History Time: $clearHistoryTime');
-    debugPrint('Is Clear History: $isClearHistory');
-  }
+  //   if (mounted) {
+  //     setState(() {
+  //       //clearHistoryTime =
+  //       // timeString != null ? DateTime.tryParse(timeString) : null;
+  //       isClearHistory = isCleared;
+  //       isPrefsLoaded = true;
+  //     });
+  //   }
+
+  //   //debugPrint('Clear History Time: $clearHistoryTime');
+  //   //debugPrint('Is Clear History: $isClearHistory');
+  // }
 
   Future<String> checkAuthName() async {
     final prefs = await SharedPreferences.getInstance();
@@ -93,117 +124,92 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
     return prefs.getString('role') ?? 'User';
   }
 
+  /// ✅ المقارنة على First Comment فقط
   bool isValidComment({
     required bool isClearHistory,
-    required DateTime? clearHistoryTime,
     required DateTime? firstDate,
-    required DateTime? secondDate,
     required String? firstText,
-    required String? secondText,
   }) {
+    /// لو مش عامل clear history → اعرض الكل
     if (!isClearHistory) return true;
-    if (clearHistoryTime == null) return true;
 
-    bool firstOk =
-        firstDate != null && firstDate.isAfter(clearHistoryTime) && (firstText?.isNotEmpty ?? false);
-    bool secondOk =
-        secondDate != null && secondDate.isAfter(clearHistoryTime) && (secondText?.isNotEmpty ?? false);
+    if (widget.leadLastDateAssigned == null ||
+        widget.leadLastDateAssigned!.isEmpty) {
+      return true;
+    }
 
-    return firstOk || secondOk;
+    final lastAssignedDate = DateTime.tryParse(
+      widget.leadLastDateAssigned!,
+    )?.toUtc().add(const Duration(hours: 4));
+
+    if (lastAssignedDate == null) return true;
+
+    /// ❗ اعتمد على first comment فقط
+    return firstDate != null &&
+        firstDate.isAfter(lastAssignedDate) &&
+        (firstText?.isNotEmpty ?? false);
   }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (_) {
-            final cubit = LeadCommentsCubit(GetAllLeadCommentsApiService());
-            cubit.fetchLeadAssignedData(widget.leedId).then((_) {
-              cubit.fetchLeadComments(widget.leedId);
-            });
-            return cubit;
-          },
-        ),
+        BlocProvider.value(value: _commentsCubit),
         BlocProvider(create: (_) => EditCommentCubit(EditCommentApiService())),
       ],
-      child: MultiBlocListener(
-        listeners: [
-          BlocListener<LeadCommentsCubit, LeadCommentsState>(
-            listener: (context, state) {
-              if (state is ReplySentSuccessfully) {
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  context.read<LeadCommentsCubit>().fetchLeadComments(widget.leedId);
-                });
-              }
-            },
-          ),
-          BlocListener<EditCommentCubit, EditCommentState>(
-            listener: (context, state) {
-              if (state is EditCommentSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Comment edited successfully')),
-                );
-              } else if (state is EditCommentFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Failed to edit comment')),
-                );
-              }
-            },
-          ),
-        ],
-        child: Scaffold(
-          backgroundColor:
-              Theme.of(context).brightness == Brightness.light
-                  ? Constants.backgroundlightmode
-                  : Constants.backgroundDarkmode,
-          appBar: CustomAppBar(
-            title: "comments",
-            onBack: () => Navigator.pop(context),
-          ),
-          body: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
-            builder: (context, state) {
-              if (!isPrefsLoaded) return const Center(child: CircularProgressIndicator());
-              if (state is LeadCommentsLoading && !hasFetchedCommentsOnce) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state is LeadCommentsError) {
-                return Center(child: Text('Error: ${state.message}'));
-              }
-              if (state is LeadCommentsLoaded && isPrefsLoaded) {
-                hasFetchedCommentsOnce = true;
-                final leadComments = state.leadComments;
-                final filteredData = leadComments.data!.where((item) {
-                  final first = item.comments?.first.firstcomment;
-                  final second = item.comments?.first.secondcomment;
+      child: Scaffold(
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.light
+                ? Constants.backgroundlightmode
+                : Constants.backgroundDarkmode,
+        appBar: CustomAppBar(
+          title: "comments",
+          onBack: () => Navigator.pop(context),
+        ),
+        body: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
+          builder: (context, state) {
+            if (!isPrefsLoaded || state is LeadCommentsLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-                  final firstDate = DateTime.tryParse(first?.date?.toString() ?? '')?.toUtc().add(const Duration(hours: 4));
-                  final secondDate = DateTime.tryParse(second?.date?.toString() ?? '')?.toUtc().add(const Duration(hours: 4));
+            if (state is LeadCommentsError) {
+              return Center(child: Text(state.message));
+            }
 
-                  return isValidComment(
-                    isClearHistory: isClearHistory ?? false,
-                    clearHistoryTime: clearHistoryTime,
-                    firstDate: firstDate,
-                    secondDate: secondDate,
-                    firstText: first?.text,
-                    secondText: second?.text,
-                  );
-                }).toList();
+            if (state is LeadCommentsFullLoaded) {
+              hasFetchedCommentsOnce = true;
+              final bool isClearHistory =
+                  state.assigned.data?.first.clearHistory ?? false;
+              final filteredData =
+                  state.comments.data!.where((item) {
+                    final first = item.comments?.first.firstcomment;
 
-                if (filteredData.isEmpty) return const Center(child: Text('No comments found'));
+                    final firstDate = DateTime.tryParse(
+                      first?.date?.toString() ?? '',
+                    )?.toUtc().add(const Duration(hours: 4));
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredData.length,
-                  itemBuilder: (context, index) {
-                    final dataItem = filteredData[index];
-                    return buildCommentCard(context, dataItem);
-                  },
-                );
+                    return isValidComment(
+                      isClearHistory: isClearHistory,
+                      firstDate: firstDate,
+                      firstText: first?.text,
+                    );
+                  }).toList();
+
+              if (filteredData.isEmpty) {
+                return const Center(child: Text('No comments found'));
               }
-              return const SizedBox.shrink();
-            },
-          ),
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: filteredData.length,
+                itemBuilder: (context, index) {
+                  return buildCommentCard(context, filteredData[index]);
+                },
+              );
+            }
+
+            return const SizedBox();
+          },
         ),
       ),
     );
@@ -212,9 +218,10 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
   Widget buildCommentCard(BuildContext context, DataItem dataItem) {
     final TextStyle commentTitleStyle = TextStyle(
       fontWeight: FontWeight.bold,
-      color: Theme.of(context).brightness == Brightness.light
-          ? Constants.maincolor
-          : Constants.mainDarkmodecolor,
+      color:
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.maincolor
+              : Constants.mainDarkmodecolor,
     );
     final dateFormat = DateFormat('yyyy-MM-dd hh:mm a');
     final firstComment = dataItem.comments?.first.firstcomment;
@@ -223,22 +230,12 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
     final salesName = dataItem.comments?.first.sales?.name;
     final leadName = dataItem.leed?.name;
 
-    final firstDate = DateTime.tryParse(firstComment?.date?.toString() ?? '')?.toUtc().add(const Duration(hours: 4));
-    final secondDate = (nextActionDate != null
-            ? DateTime.tryParse(nextActionDate!)?.toUtc()
-            : DateTime.tryParse(secondComment?.date?.toString() ?? '')?.toUtc())
-        ?.add(const Duration(hours: 4));
-
-    if (!isValidComment(
-      isClearHistory: isClearHistory ?? false,
-      clearHistoryTime: clearHistoryTime,
-      firstDate: firstDate,
-      secondDate: secondDate,
-      firstText: firstComment?.text,
-      secondText: secondComment?.text,
-    )) {
-      return const SizedBox.shrink();
-    }
+    final firstDate = DateTime.tryParse(
+      firstComment?.date?.toString() ?? '',
+    )?.toUtc().add(const Duration(hours: 4));
+    final secondDate = DateTime.tryParse(
+      secondComment?.date?.toString() ?? '',
+    )?.toUtc().add(const Duration(hours: 4));
 
     bool isFirstValid = firstComment?.text?.isNotEmpty ?? false;
     bool isSecondValid = secondComment?.text?.isNotEmpty ?? false;
@@ -248,10 +245,13 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
       return '${date.day}/${date.month}/${date.year}, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     }
 
-    final firstDateString = firstDate != null ? dateFormat.format(firstDate) : 'N/A';
-    final secondDateString = secondDate != null ? dateFormat.format(secondDate) : 'N/A';
+    final firstDateString =
+        firstDate != null ? dateFormat.format(firstDate) : 'N/A';
+    final secondDateString =
+        secondDate != null ? dateFormat.format(secondDate) : 'N/A';
 
-    if ((isFirstValid && firstComment?.text != null) || (isSecondValid && secondComment?.text != null)) {
+    if ((isFirstValid && firstComment?.text != null) ||
+        (isSecondValid && secondComment?.text != null)) {
       return Card(
         margin: const EdgeInsets.symmetric(vertical: 8),
         elevation: 2,
@@ -268,32 +268,52 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                     children: [
                       FutureBuilder(
                         future: checkAuthName(),
-                        builder: (BuildContext context, AsyncSnapshot snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) return const Text(" ....");
-                          if (snapshot.hasError) return const Text('Error fetching name');
+                        builder: (
+                          BuildContext context,
+                          AsyncSnapshot snapshot,
+                        ) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Text(" ....");
+                          }
+                          if (snapshot.hasError) {
+                            return const Text('Error fetching name');
+                          }
                           return Text(
                             '$salesName',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Theme.of(context).brightness == Brightness.light
-                                  ? const Color(0xff080719)
-                                  : Colors.white,
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? const Color(0xff080719)
+                                      : Colors.white,
                             ),
                           );
                         },
                       ),
                       FutureBuilder(
                         future: checkRoleName(),
-                        builder: (BuildContext context, AsyncSnapshot snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) return const Text(" ....");
-                          if (snapshot.hasError) return const Text('Error fetching name');
+                        builder: (
+                          BuildContext context,
+                          AsyncSnapshot snapshot,
+                        ) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Text(" ....");
+                          }
+                          if (snapshot.hasError) {
+                            return const Text('Error fetching name');
+                          }
                           return Text(
                             '$leadName',
                             style: TextStyle(
-                              color: Theme.of(context).brightness == Brightness.light
-                                  ? const Color(0xff080719)
-                                  : Colors.grey,
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? const Color(0xff080719)
+                                      : Colors.grey,
                             ),
                           );
                         },
@@ -305,52 +325,72 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
               const SizedBox(height: 10),
               if (isFirstValid) ...[
                 Text('First action', style: commentTitleStyle),
-                SelectableText(firstComment?.text ?? 'No Comment', style: const TextStyle(fontSize: 14)),
+                SelectableText(
+                  firstComment?.text ?? 'No Comment',
+                  style: const TextStyle(fontSize: 14),
+                ),
                 if (firstComment?.date != null)
-                  Text("comment at :$firstDateString", style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                  Text(
+                    "comment at :$firstDateString",
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
               ],
               const SizedBox(height: 6),
               if (isSecondValid) ...[
                 Text('Second action', style: commentTitleStyle),
-                SelectableText(secondComment?.text ?? 'No Comment', style: const TextStyle(fontSize: 14)),
+                SelectableText(
+                  secondComment?.text ?? 'No Comment',
+                  style: const TextStyle(fontSize: 14),
+                ),
                 if (secondComment?.date != null)
-                  Text("next action at : $secondDateString", style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                  Text(
+                    "next action at : $secondDateString",
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
               ],
               const SizedBox(height: 8),
               Text('Replies:', style: commentTitleStyle),
               const SizedBox(height: 6),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: (reply != null && reply.isNotEmpty)
-                    ? reply.map((r) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(r.text ?? 'No Reply Text', style: const TextStyle(fontSize: 14)),
-                              if (r.date != null)
+                children:
+                    (reply != null && reply.isNotEmpty)
+                        ? reply.map((r) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Text(
-                                  "replied at: ${formatDate(r.date)}",
-                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                  r.text ?? 'No Reply Text',
+                                  style: const TextStyle(fontSize: 14),
                                 ),
-                            ],
-                          ),
-                        );
-                      }).toList()
-                    : [const Text('No Replies')],
+                                if (r.date != null)
+                                  Text(
+                                    "replied at: ${formatDate(r.date)}",
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }).toList()
+                        : [const Text('No Replies')],
               ),
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton.icon(
                   onPressed: () async {
-                    final TextEditingController replyController = TextEditingController();
+                    final TextEditingController replyController =
+                        TextEditingController();
                     showDialog(
                       context: context,
                       builder: (BuildContext ctx) {
@@ -365,39 +405,60 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                             ),
                           ),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text("Cancel"),
+                            ),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).brightness == Brightness.light
-                                    ? Constants.maincolor
-                                    : Constants.mainDarkmodecolor,
+                                backgroundColor:
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Constants.maincolor
+                                        : Constants.mainDarkmodecolor,
                               ),
                               onPressed: () async {
                                 final replyText = replyController.text.trim();
                                 if (replyText.isEmpty) return;
                                 Navigator.pop(ctx);
-                                context.read<LeadCommentsCubit>().sendReplyToComment(
-                                      commentId: dataItem.comments?.first.id ?? '',
+                                context
+                                    .read<LeadCommentsCubit>()
+                                    .sendReplyToComment(
+                                      commentId:
+                                          dataItem.comments?.first.id ?? '',
                                       replyText: replyText,
                                     );
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reply sent!')));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Reply sent!')),
+                                );
                                 if (widget.fcmtoken != null) {
-                                  context.read<NotificationCubit>().sendNotificationToToken(
+                                  context
+                                      .read<NotificationCubit>()
+                                      .sendNotificationToToken(
                                         title: "Comment Reply",
-                                        body: "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
+                                        body:
+                                            "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
                                         fcmtokennnn: widget.fcmtoken!,
                                       );
                                   if (widget.managerfcm != null) {
-                                    context.read<NotificationCubit>().sendNotificationToToken(
+                                    context
+                                        .read<NotificationCubit>()
+                                        .sendNotificationToToken(
                                           title: "Comment Reply",
-                                          body: "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
+                                          body:
+                                              "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
                                           fcmtokennnn: widget.managerfcm!,
                                         );
                                   }
                                 }
-                                context.read<LeadCommentsCubit>().fetchLeadComments(widget.leedId);
+                                context
+                                    .read<LeadCommentsCubit>()
+                                    .fetchAllLeadData(widget.leedId);
                               },
-                              child: const Text("Send", style: TextStyle(color: Colors.white)),
+                              child: const Text(
+                                "Send",
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ),
                           ],
                         );
@@ -405,32 +466,46 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                     );
                   },
                   icon: const Icon(Icons.reply, color: Colors.white),
-                  label: const Text("Reply", style: TextStyle(color: Colors.white)),
+                  label: const Text(
+                    "Reply",
+                    style: TextStyle(color: Colors.white),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
-                        : Constants.mainDarkmodecolor,
+                    backgroundColor:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
                   ),
                 ),
               ),
               FutureBuilder(
                 future: checkRoleName(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox();
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox();
+                  }
                   if (snapshot.hasData && snapshot.data == "Admin") {
                     return Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.edit, color: Colors.white),
-                        label: const Text("Edit", style: TextStyle(color: Colors.white)),
+                        label: const Text(
+                          "Edit",
+                          style: TextStyle(color: Colors.white),
+                        ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
+                          backgroundColor:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Constants.maincolor
+                                  : Constants.mainDarkmodecolor,
                         ),
                         onPressed: () {
-                          final firstTextController = TextEditingController(text: firstComment?.text ?? '');
-                          final secondTextController = TextEditingController(text: secondComment?.text ?? '');
+                          final firstTextController = TextEditingController(
+                            text: firstComment?.text ?? '',
+                          );
+                          final secondTextController = TextEditingController(
+                            text: secondComment?.text ?? '',
+                          );
                           showDialog(
                             context: context,
                             builder: (ctx) {
@@ -439,52 +514,95 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                 content: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    TextField(controller: firstTextController, decoration: const InputDecoration(labelText: 'First Comment')),
+                                    TextField(
+                                      controller: firstTextController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'First Comment',
+                                      ),
+                                    ),
                                     const SizedBox(height: 10),
-                                    TextField(controller: secondTextController, decoration: const InputDecoration(labelText: 'Second Comment')),
+                                    TextField(
+                                      controller: secondTextController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Second Comment',
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 actions: [
-                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Cancel'),
+                                  ),
                                   ElevatedButton(
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Theme.of(context).brightness == Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
+                                      backgroundColor:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
                                     ),
                                     onPressed: () {
-                                      final firstText = firstTextController.text.trim();
-                                      final secondText = secondTextController.text.trim();
+                                      final firstText =
+                                          firstTextController.text.trim();
+                                      final secondText =
+                                          secondTextController.text.trim();
                                       Navigator.pop(ctx);
-                                      context.read<EditCommentCubit>().editComment(
-                                            commentId: dataItem.comments?.first.id ?? '',
+                                      context
+                                          .read<EditCommentCubit>()
+                                          .editComment(
+                                            commentId:
+                                                dataItem.comments?.first.id ??
+                                                '',
                                             firstText: firstText,
                                             secondText: secondText,
-                                          ).then((isSuccess) {
+                                          )
+                                          .then((isSuccess) {
                                             if (isSuccess) {
-                                              context.read<LeadCommentsCubit>().fetchLeadComments(widget.leedId);
+                                              context
+                                                  .read<LeadCommentsCubit>()
+                                                  .fetchAllLeadData(
+                                                    widget.leedId,
+                                                  );
                                               if (widget.fcmtoken != null) {
-                                                context.read<NotificationCubit>().sendNotificationToToken(
+                                                context
+                                                    .read<NotificationCubit>()
+                                                    .sendNotificationToToken(
                                                       title: "Lead",
-                                                      body: " comment has been edited ✅ on ${widget.leadName}",
-                                                      fcmtokennnn: widget.fcmtoken!,
+                                                      body:
+                                                          " comment has been edited ✅ on ${widget.leadName}",
+                                                      fcmtokennnn:
+                                                          widget.fcmtoken!,
                                                     );
                                                 if (widget.managerfcm != null) {
-                                                  context.read<NotificationCubit>().sendNotificationToToken(
+                                                  context
+                                                      .read<NotificationCubit>()
+                                                      .sendNotificationToToken(
                                                         title: "Lead",
-                                                        body: " comment has been edited ✅ on ${widget.leadName}",
-                                                        fcmtokennnn: widget.managerfcm!,
+                                                        body:
+                                                            " comment has been edited ✅ on ${widget.leadName}",
+                                                        fcmtokennnn:
+                                                            widget.managerfcm!,
                                                       );
                                                 }
                                               }
                                             } else {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text(" Failed to edit comment ❌")),
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    " Failed to edit comment ❌",
+                                                  ),
+                                                ),
                                               );
                                             }
                                           });
                                     },
-                                    child: const Text('Save', style: TextStyle(color: Colors.white)),
+                                    child: const Text(
+                                      'Save',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ),
                                 ],
                               );

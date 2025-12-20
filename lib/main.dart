@@ -9,6 +9,7 @@ import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_for_signup_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/newCommentsApiService.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/decider_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -19,6 +20,7 @@ import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manage
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users_signup/cubit/getalluserssignup_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/newComments/new_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
@@ -278,10 +280,8 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider(
           create:
-              (_) =>
-                  GetAllUsersCubit(GetAllUsersApiService())
-                    ..fetchAllUsers(),
-                  //  ..fetchLeadsInTrash(),
+              (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchAllUsers(),
+          //  ..fetchLeadsInTrash(),
         ),
         BlocProvider(
           create:
@@ -293,6 +293,7 @@ class MyApp extends StatelessWidget {
           create:
               (context) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
         ),
+       // BlocProvider(create: (_) => CommentsCubit(Newcommentsapiservice())),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {

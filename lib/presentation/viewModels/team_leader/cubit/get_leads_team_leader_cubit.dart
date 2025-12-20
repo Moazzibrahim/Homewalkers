@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -70,12 +72,77 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
   }
 
   /// فلترة الـ leads حسب المرحلة
-  void filterLeadsByStage(String query) async {
+  // void filterLeadsByStage(String query) async {
+  //   if (_originalLeadsResponse?.data == null) return;
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final loggedSalesId = prefs.getString('teamleader_userlog_id') ?? '';
+
+  //   List<LeadData> filtered = [];
+
+  //   if (query.isEmpty) {
+  //     filtered = _originalLeadsResponse!.data!;
+  //   } else {
+  //     final q = query.toLowerCase();
+
+  //     if (q == 'fresh') {
+  //       // Fresh = No Stage assigned to loggedSalesId
+  //       filtered =
+  //           _originalLeadsResponse!.data!.where((lead) {
+  //             final stage = (lead.stage?.name ?? '').toLowerCase();
+  //             final assignedId = lead.sales?.id ?? '';
+  //             return stage == 'no stage' && assignedId == loggedSalesId;
+  //           }).toList();
+  //     } else if (q == 'no stage') {
+  //       // No Stage = No Stage not assigned to loggedSalesId
+  //       filtered =
+  //           _originalLeadsResponse!.data!.where((lead) {
+  //             final stage = (lead.stage?.name ?? '').toLowerCase();
+  //             final assignedId = lead.sales?.id ?? '';
+  //             // تأكد إن المخصص لحد غيرك
+  //             return stage == 'no stage' && assignedId != loggedSalesId;
+  //           }).toList();
+  //     } else {
+  //       // باقي الستيجات العادية
+  //       filtered =
+  //           _originalLeadsResponse!.data!.where((lead) {
+  //             return lead.stage?.name?.toLowerCase() == q;
+  //           }).toList();
+  //     }
+  //   }
+
+  //   // ✅ ترتيب حسب تاريخ آخر تحديث للـ Stage
+  //   filtered.sort((a, b) {
+  //     DateTime? dateA =
+  //         a.stagedateupdated != null
+  //             ? DateTime.parse(
+  //               a.stagedateupdated!,
+  //             ).toUtc().add(const Duration(hours: 4))
+  //             : null;
+  //     DateTime? dateB =
+  //         b.stagedateupdated != null
+  //             ? DateTime.parse(
+  //               b.stagedateupdated!,
+  //             ).toUtc().add(const Duration(hours: 4))
+  //             : null;
+
+  //     if (dateA == null && dateB == null) return 0;
+  //     if (dateA == null) return 1;
+  //     if (dateB == null) return -1;
+
+  //     return dateA.compareTo(dateB); // الأقدم للأحدث
+  //   });
+
+  //   emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
+  // }
+    void filterLeadsByStage(String query) async {
     if (_originalLeadsResponse?.data == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    final loggedSalesId = prefs.getString('teamleader_userlog_id') ?? '';
 
     List<LeadData> filtered = [];
+
+    bool hasNoStage(LeadData lead) {
+      final name = lead.stage?.name;
+      return name == null || name.trim().isEmpty;
+    }
 
     if (query.isEmpty) {
       filtered = _originalLeadsResponse!.data!;
@@ -83,32 +150,27 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
       final q = query.toLowerCase();
 
       if (q == 'fresh') {
-        // Fresh = No Stage assigned to loggedSalesId
+        // ✅ Fresh Stage حقيقي
         filtered =
-            _originalLeadsResponse!.data!.where((lead) {
-              final stage = (lead.stage?.name ?? '').toLowerCase();
-              final assignedId = lead.sales?.id ?? '';
-              return stage == 'no stage' && assignedId == loggedSalesId;
-            }).toList();
+            _originalLeadsResponse!.data!
+                .where((lead) => lead.stage?.name?.toLowerCase() == 'fresh')
+                .toList();
       } else if (q == 'no stage') {
-        // No Stage = No Stage not assigned to loggedSalesId
+        // ✅ No Stage Stage حقيقي
         filtered =
-            _originalLeadsResponse!.data!.where((lead) {
-              final stage = (lead.stage?.name ?? '').toLowerCase();
-              final assignedId = lead.sales?.id ?? '';
-              // تأكد إن المخصص لحد غيرك
-              return stage == 'no stage' && assignedId != loggedSalesId;
-            }).toList();
+            _originalLeadsResponse!.data!
+                .where((lead) => lead.stage?.name?.toLowerCase() == 'no stage')
+                .toList();
       } else {
-        // باقي الستيجات العادية
+        // باقي ال stages (Done Deal – Follow Up – ...)
         filtered =
-            _originalLeadsResponse!.data!.where((lead) {
-              return lead.stage?.name?.toLowerCase() == q;
-            }).toList();
+            _originalLeadsResponse!.data!
+                .where((lead) => lead.stage?.name?.toLowerCase() == q)
+                .toList();
       }
     }
 
-    // ✅ ترتيب حسب تاريخ آخر تحديث للـ Stage
+    // ✅ ترتيب حسب آخر تحديث
     filtered.sort((a, b) {
       DateTime? dateA =
           a.stagedateupdated != null
@@ -127,11 +189,12 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
       if (dateA == null) return 1;
       if (dateB == null) return -1;
 
-      return dateA.compareTo(dateB); // الأقدم للأحدث
+      return dateA.compareTo(dateB);
     });
 
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
   }
+
 
   /// تحميل عدد الـ leads حسب المرحلة
   Future<void> loadStageCounts() async {

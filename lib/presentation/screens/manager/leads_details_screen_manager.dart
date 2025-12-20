@@ -42,6 +42,7 @@ class LeadsDetailsScreenManager extends StatefulWidget {
   final String? laststageupdated;
   final String? stageId;
   final String? sales;
+  final String? leadLastDateAssigned;
 
   LeadsDetailsScreenManager({
     super.key,
@@ -66,6 +67,7 @@ class LeadsDetailsScreenManager extends StatefulWidget {
     this.laststageupdated,
     this.stageId,
     this.sales,
+    this.leadLastDateAssigned,
   });
   @override
   State<LeadsDetailsScreenManager> createState() =>
@@ -143,25 +145,27 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
 
   bool isValidComment({
     required bool isClearHistory,
-    required DateTime? clearHistoryTime,
     required DateTime? firstDate,
-    required DateTime? secondDate,
     required String? firstText,
-    required String? secondText,
   }) {
-    if (!isClearHistory) return true;
-    if (clearHistoryTime == null) return true;
+    /// لو مش عامل clear history → اعرض الكل
+    if (isClearHistory) return true;
 
-    bool firstOk =
-        firstDate != null &&
-        firstDate.isAfter(clearHistoryTime) &&
+    if (widget.leadLastDateAssigned == null ||
+        widget.leadLastDateAssigned!.isEmpty) {
+      return true;
+    }
+
+    final lastAssignedDate = DateTime.tryParse(
+      widget.leadLastDateAssigned!,
+    )?.toUtc().add(const Duration(hours: 4));
+
+    if (lastAssignedDate == null) return true;
+
+    /// ❗ اعتمد على first comment فقط
+    return firstDate != null &&
+        firstDate.isAfter(lastAssignedDate) &&
         (firstText?.isNotEmpty ?? false);
-    bool secondOk =
-        secondDate != null &&
-        secondDate.isAfter(clearHistoryTime) &&
-        (secondText?.isNotEmpty ?? false);
-
-    return firstOk || secondOk;
   }
 
   void makePhoneCall(String phoneNumber) async {
@@ -607,11 +611,8 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                               // استخدام دالة isValidComment على آخر تعليق
                               final showLastComment = isValidComment(
                                 isClearHistory: isClearHistoryy ?? false,
-                                clearHistoryTime: clearHistoryTimee,
                                 firstDate: firstCommentDate,
-                                secondDate: secondCommentDate,
                                 firstText: lastComment?.firstcomment?.text,
-                                secondText: lastComment?.secondcomment?.text,
                               );
 
                               if (showLastComment) {
@@ -766,6 +767,8 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                             leedId: widget.leedId,
                                             fcmtoken: widget.fcmtokenn,
                                             leadName: widget.leadName,
+                                            leadLastDateAssigned:
+                                                widget.leadLastDateAssigned,
                                           ),
                                         ),
                                   ),

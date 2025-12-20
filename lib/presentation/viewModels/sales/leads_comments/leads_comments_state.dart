@@ -43,3 +43,16 @@ class LeadAssignedLoaded extends LeadCommentsState {
 }
 
 class ReplySentSuccessfully extends LeadCommentsState {}
+
+class LeadCommentsFullLoaded extends LeadCommentsState {
+  final LeadCommentsModel comments;
+  final LeadAssignedModel assigned;
+
+  const LeadCommentsFullLoaded({
+    required this.comments,
+    required this.assigned,
+  });
+
+  @override
+  List<Object?> get props => [comments, assigned];
+}

@@ -1,9 +1,8 @@
-// ignore_for_file: file_names, camel_case_types, deprecated_member_use
+// ignore_for_file: file_names, camel_case_types, deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
-import 'package:homewalkers_app/data/data_sources/team_leader/get_dashboard_leads_count.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
@@ -96,6 +95,7 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    context.read<TeamleaderDashboardCubit>().fetchDashboard();
     context.read<NotificationCubit>().initNotifications();
   }
 
@@ -114,166 +114,159 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create:
-          (_) =>
-              TeamleaderDashboardCubit(TeamleaderDashboardApiService())
-                ..fetchDashboard(),
-
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.backgroundlightmode
+              : Constants.backgroundDarkmode,
+      appBar: AppBar(
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
-                ? Constants.backgroundlightmode
+                ? Colors.white
                 : Constants.backgroundDarkmode,
-        appBar: AppBar(
-          backgroundColor:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.white
-                  : Constants.backgroundDarkmode,
-          elevation: 0,
-          toolbarHeight: 100,
-          automaticallyImplyLeading: false,
-          title: Row(
-            children: [
-              FutureBuilder<String>(
-                future: _getUserName(),
-                builder: (context, snapshot) {
-                  final name = snapshot.data ?? 'User';
+        elevation: 0,
+        toolbarHeight: 100,
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            FutureBuilder<String>(
+              future: _getUserName(),
+              builder: (context, snapshot) {
+                final name = snapshot.data ?? 'User';
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? const Color(0xff080719)
+                                : Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const Text(
+                      'Team Leader',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const Spacer(),
+            TeamLeaderDashboardScreen._iconBox(Icons.notifications_none, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SalesNotificationsScreen(),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await context.read<TeamleaderDashboardCubit>().fetchDashboard();
+          await context.read<SalesCubit>().fetchAllSales();
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          children: [
+            Row(
+              children: const [
+                Text('Hello 👋', style: TextStyle(fontSize: 14)),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            /// 🔥 Dashboard Data
+            BlocBuilder<TeamleaderDashboardCubit, TeamleaderDashboardState>(
+              builder: (context, state) {
+                if (state is TeamleaderDashboardLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state is TeamleaderDashboardError) {
+                  return Center(child: Text(state.message));
+                }
+
+                if (state is TeamleaderDashboardSuccess) {
+                  final dashboard = state.response.data?.dashboard ?? [];
+                  final totalLeads =
+                      state.response.data?.summary?.totalLeads ?? 0;
+
+                  /// ✅ نخفي أي stage عددها = 0
+                  final visibleStages =
+                      dashboard
+                          .where((e) => (e.leadsCount ?? 0) > 0)
+                          // .where((e) => e.stageName?.toLowerCase() != 'fresh')
+                          .toList();
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        name,
-                        style: TextStyle(
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? const Color(0xff080719)
-                                  : Colors.white,
-                          fontSize: 12,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TeamLeaderDashboardScreen._dashboardCard(
+                              'Leads',
+                              totalLeads.toString(),
+                              Icons.group,
+                              context,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => const TeamLeaderAssignScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                      const Text(
-                        'Team Leader',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const Spacer(),
-              TeamLeaderDashboardScreen._iconBox(Icons.notifications_none, () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const SalesNotificationsScreen(),
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
-        body: RefreshIndicator(
-          onRefresh: () async {
-            context.read<TeamleaderDashboardCubit>().fetchDashboard();
-            context.read<SalesCubit>().fetchAllSales();
-          },
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(20),
-            children: [
-              Row(
-                children: const [
-                  Text('Hello 👋', style: TextStyle(fontSize: 14)),
-                ],
-              ),
-              const SizedBox(height: 20),
+                      const SizedBox(height: 18),
 
-              /// 🔥 Dashboard Data
-              BlocBuilder<TeamleaderDashboardCubit, TeamleaderDashboardState>(
-                builder: (context, state) {
-                  if (state is TeamleaderDashboardLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (state is TeamleaderDashboardError) {
-                    return Center(child: Text(state.message));
-                  }
-
-                  if (state is TeamleaderDashboardSuccess) {
-                    final dashboard = state.response.data?.dashboard ?? [];
-                    final totalLeads =
-                        state.response.data?.summary?.totalLeads ?? 0;
-
-                    /// ✅ نخفي أي stage عددها = 0
-                    final visibleStages =
-                        dashboard
-                            .where((e) => (e.leadsCount ?? 0) > 0)
-                            .where((e) => e.stageName?.toLowerCase() != 'fresh')
-                            .toList();
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TeamLeaderDashboardScreen._dashboardCard(
-                                'Leads',
-                                totalLeads.toString(),
-                                Icons.group,
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        childAspectRatio: 1.5,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children:
+                            visibleStages.map((item) {
+                              return TeamLeaderDashboardScreen._dashboardCard(
+                                item.stageName ?? '',
+                                '${item.leadsCount ?? 0}',
+                                Icons.timeline,
                                 context,
                                 onTap: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder:
-                                          (_) => const TeamLeaderAssignScreen(),
+                                          (_) => TeamLeaderAssignScreen(
+                                            stageName: item.stageName,
+                                          ),
                                     ),
                                   );
                                 },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
+                              );
+                            }).toList(),
+                      ),
+                    ],
+                  );
+                }
 
-                        GridView.count(
-                          crossAxisCount: 2,
-                          shrinkWrap: true,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 1.5,
-                          physics: const NeverScrollableScrollPhysics(),
-                          children:
-                              visibleStages.map((item) {
-                                return TeamLeaderDashboardScreen._dashboardCard(
-                                  item.stageName ?? '',
-                                  '${item.leadsCount ?? 0}',
-                                  Icons.timeline,
-                                  context,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (_) => TeamLeaderAssignScreen(
-                                              stageName: item.stageName,
-                                            ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              }).toList(),
-                        ),
-                      ],
-                    );
-                  }
-
-                  return const SizedBox();
-                },
-              ),
-            ],
-          ),
+                return const SizedBox();
+              },
+            ),
+          ],
         ),
       ),
     );

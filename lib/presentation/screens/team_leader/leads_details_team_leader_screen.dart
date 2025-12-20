@@ -43,6 +43,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
   final String? secondphonenumber;
   final String? laststageupdated;
   final String? stageId;
+  final String? leadLastDateAssigned;
   LeadsDetailsTeamLeaderScreen({
     super.key,
     required this.leedId,
@@ -69,6 +70,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
     this.secondphonenumber,
     this.laststageupdated,
     this.stageId,
+    this.leadLastDateAssigned,
   });
   @override
   State<LeadsDetailsTeamLeaderScreen> createState() =>
@@ -158,25 +160,27 @@ class _SalesLeadsDetailsScreenState
 
   bool isValidComment({
     required bool isClearHistory,
-    required DateTime? clearHistoryTime,
     required DateTime? firstDate,
-    required DateTime? secondDate,
     required String? firstText,
-    required String? secondText,
   }) {
-    if (!isClearHistory) return true;
-    if (clearHistoryTime == null) return true;
+    /// لو مش عامل clear history → اعرض الكل
+    if (isClearHistory) return true;
 
-    bool firstOk =
-        firstDate != null &&
-        firstDate.isAfter(clearHistoryTime) &&
+    if (widget.leadLastDateAssigned == null ||
+        widget.leadLastDateAssigned!.isEmpty) {
+      return true;
+    }
+
+    final lastAssignedDate = DateTime.tryParse(
+      widget.leadLastDateAssigned!,
+    )?.toUtc().add(const Duration(hours: 4));
+
+    if (lastAssignedDate == null) return true;
+
+    /// ❗ اعتمد على first comment فقط
+    return firstDate != null &&
+        firstDate.isAfter(lastAssignedDate) &&
         (firstText?.isNotEmpty ?? false);
-    bool secondOk =
-        secondDate != null &&
-        secondDate.isAfter(clearHistoryTime) &&
-        (secondText?.isNotEmpty ?? false);
-
-    return firstOk || secondOk;
   }
 
   @override
@@ -559,7 +563,8 @@ class _SalesLeadsDetailsScreenState
                         ),
                         child: BlocBuilder<
                           LeadCommentsCubit,
-                          LeadCommentsState>(
+                          LeadCommentsState
+                        >(
                           builder: (context, state) {
                             if (state is LeadCommentsLoading) {
                               return Center(child: CircularProgressIndicator());
@@ -602,11 +607,8 @@ class _SalesLeadsDetailsScreenState
                               // استخدام دالة isValidComment على آخر تعليق
                               final showLastComment = isValidComment(
                                 isClearHistory: isClearHistoryy ?? false,
-                                clearHistoryTime: clearHistoryTimee,
                                 firstDate: firstCommentDate,
-                                secondDate: secondCommentDate,
                                 firstText: lastComment?.firstcomment?.text,
-                                secondText: lastComment?.secondcomment?.text,
                               );
 
                               if (showLastComment) {
@@ -763,6 +765,8 @@ class _SalesLeadsDetailsScreenState
                                             fcmtoken: widget.fcmtoken,
                                             leadName: widget.leadName,
                                             managerfcm: widget.managerfcmtoken,
+                                            leadLastDateAssigned:
+                                                widget.leadLastDateAssigned,
                                           ),
                                         ),
                                   ),

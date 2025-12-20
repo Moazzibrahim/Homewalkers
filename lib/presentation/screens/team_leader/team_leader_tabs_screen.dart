@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 // ignore_for_file: deprecated_member_use
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/team_leader/get_dashboard_leads_count.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_dashboard_screen.dart';
@@ -10,6 +11,7 @@ import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_pro
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_sales_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/cubit/teamleader_dashboard_cubit.dart';
 
 class TeamLeaderTabsScreen extends StatefulWidget {
   final String? name;
@@ -67,7 +69,10 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
                   });
                 },
                 children: [
-                  TeamLeaderDashboardScreen(),
+                  BlocProvider(
+                    create: (context) => TeamleaderDashboardCubit(TeamleaderDashboardApiService()),
+                    child: TeamLeaderDashboardScreen(),
+                  ),
                   TeamLeaderSalesScreen(),
                   TeamLeaderAssignScreen(),
                   BlocProvider(

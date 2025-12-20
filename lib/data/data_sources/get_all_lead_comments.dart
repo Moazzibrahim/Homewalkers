@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
@@ -14,6 +16,9 @@ class GetAllLeadCommentsApiService {
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
+        print(
+          'Lead Comments JSON Data: ${response.body}',
+        ); // طباعة البيانات المستلمة
         return LeadCommentsModel.fromJson(jsonData);
       } else {
         throw Exception(
@@ -29,38 +34,24 @@ class GetAllLeadCommentsApiService {
   Future<LeadAssignedModel> fetchLeadAssigned(String id) async {
     final Uri url = Uri.parse('${Constants.baseUrl}/LeadAssigned?LeadId=$id');
 
-    try {
-      final response = await http.get(url);
+    final response = await http.get(url);
 
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        final leadAssigned = LeadAssignedModel.fromJson(jsonData);
-
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool(
-          'clearHistory',
-          leadAssigned.data!.first.clearHistory!,
-        );
-        return leadAssigned; // لو الموديل يبدأ من key "data"
-      } else {
-        throw Exception(
-          'Failed to load LeadAssigned data, status code: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Failed to fetch LeadAssigned data: $e');
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      return LeadAssignedModel.fromJson(jsonData);
+    } else {
+      throw Exception('Failed to load LeadAssigned data');
     }
   }
-   // ✅ New function to post a reply to a comment
+
+  // ✅ New function to post a reply to a comment
   Future<void> postReply({
     required String commentId,
     required String replyText,
   }) async {
     final Uri url = Uri.parse('${Constants.baseUrl}/Action/reply');
 
-    final Map<String, String> headers = {
-      'Content-Type': 'application/json',
-    };
+    final Map<String, String> headers = {'Content-Type': 'application/json'};
 
     final prefs = await SharedPreferences.getInstance();
     final salesId = prefs.getString('salesId');
