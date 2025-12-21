@@ -67,12 +67,13 @@ class ProjectsTrash extends StatelessWidget {
                                           AddInMenuCubit
                                         >(), // استخدم نفس الـ cubit
                                 child: AddProjectDialog(
-                                  onAdd: (name, developerId, cityId, area) {
+                                  onAdd: (name, developerId, cityId, area, startprice) {
                                     context.read<AddInMenuCubit>().addProject(
                                       name,
                                       developerId,
                                       cityId,
                                       area,
+                                      startprice,
                                     );
                                   },
                                   title: "projects",

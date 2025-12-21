@@ -104,7 +104,8 @@ class UpdateMenuApiService {
     String developerId,
     String cityId,
     String area,
-    String projectId
+    String projectId,
+    num startprice,
   ) async {
     final String url = '${Constants.baseUrl}/Projectss/$projectId';
     final body = {
@@ -112,6 +113,7 @@ class UpdateMenuApiService {
       "developer": developerId,
       "city": cityId,
       "area": area,
+      "startprice": startprice,
     };
     await updateData(url: url, body: body);
   }

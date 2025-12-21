@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class TeamleaderDashboardApiService {
   static const String _baseUrl =
-      '${Constants.baseUrl}/users/teamleader/dashboard-cached';
+      '${Constants.baseUrl}/users/teamleader/dashboard-cached2';
 
   /// Get token from SharedPreferences
   Future<String?> _getToken() async {

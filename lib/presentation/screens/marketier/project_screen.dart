@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,7 +12,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_project_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/update_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/marketer/update_project_dialog.dart';
 
 class ProjectScreen extends StatelessWidget {
   const ProjectScreen({super.key});
@@ -67,12 +67,19 @@ class ProjectScreen extends StatelessWidget {
                                           AddInMenuCubit
                                         >(), // استخدم نفس الـ cubit
                                 child: AddProjectDialog(
-                                  onAdd: (name, developerId, cityId, area) {
+                                  onAdd: (
+                                    name,
+                                    developerId,
+                                    cityId,
+                                    area,
+                                    startprice,
+                                  ) {
                                     context.read<AddInMenuCubit>().addProject(
                                       name,
                                       developerId,
                                       cityId,
                                       area,
+                                      startprice,
                                     );
                                   },
                                   title: "projects",
@@ -151,6 +158,7 @@ class ProjectScreen extends StatelessWidget {
     final name = projectData.name;
     final dateTime = DateTime.parse(projectData.createdAt!);
     final formattedDate = Formatters.formatDate(dateTime);
+    final startPrice = projectData.startPrice;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -208,6 +216,30 @@ class ProjectScreen extends StatelessWidget {
                 radius: 14,
                 backgroundColor: Color(0xFFE5F4F5),
                 child: Icon(
+                  Icons.money,
+                  size: 16,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "start price : $startPrice",
+                  style: GoogleFonts.montserrat(fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: Color(0xFFE5F4F5),
+                child: Icon(
                   Icons.calendar_today,
                   size: 16,
                   color:
@@ -243,16 +275,18 @@ class ProjectScreen extends StatelessWidget {
                     builder:
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
-                          child: UpdateDialog(
+                          child: UpdateProjectDialog(
                             initialValue: projectData.name,
+                            initialStartPrice: projectData.startPrice,
                             title: "project",
-                            onAdd: (value) {
+                            onAdd: (value, startPrice) {
                               context.read<AddInMenuCubit>().updateProject(
                                 value,
                                 projectData.developer!.id.toString(),
                                 projectData.city!.id.toString(),
                                 projectData.area ?? '',
                                 projectData.id.toString(),
+                                startPrice,
                               );
                             },
                           ),

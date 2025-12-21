@@ -134,7 +134,7 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
 
   //   emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
   // }
-    void filterLeadsByStage(String query) async {
+  void filterLeadsByStage(String query) async {
     if (_originalLeadsResponse?.data == null) return;
 
     List<LeadData> filtered = [];
@@ -148,12 +148,17 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
       filtered = _originalLeadsResponse!.data!;
     } else {
       final q = query.toLowerCase();
-
+      final prefs = await SharedPreferences.getInstance();
+      final name = prefs.getString('name') ?? '';
       if (q == 'fresh') {
         // ✅ Fresh Stage حقيقي
         filtered =
             _originalLeadsResponse!.data!
-                .where((lead) => lead.stage?.name?.toLowerCase() == 'fresh')
+                .where(
+                  (lead) =>
+                      lead.sales?.userlog?.name?.toLowerCase() ==
+                      name.toLowerCase(),
+                )
                 .toList();
       } else if (q == 'no stage') {
         // ✅ No Stage Stage حقيقي
@@ -194,7 +199,6 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
 
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
   }
-
 
   /// تحميل عدد الـ leads حسب المرحلة
   Future<void> loadStageCounts() async {
@@ -338,37 +342,41 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
             .toList();
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
   }
+
   void filterLeadsByStageAndQuery(String stage, String query) {
-  if (_originalLeadsResponse?.data == null) return;
+    if (_originalLeadsResponse?.data == null) return;
 
-  final q = query.toLowerCase();
-  final cleanedQDigits = q.replaceAll(RegExp(r'\D'), '');
+    final q = query.toLowerCase();
+    final cleanedQDigits = q.replaceAll(RegExp(r'\D'), '');
 
-  final filtered = _originalLeadsResponse!.data!.where((lead) {
-    final stageMatch = (lead.stage?.name?.toLowerCase() ?? '') == stage.toLowerCase();
+    final filtered =
+        _originalLeadsResponse!.data!.where((lead) {
+          final stageMatch =
+              (lead.stage?.name?.toLowerCase() ?? '') == stage.toLowerCase();
 
-    // فلترة الاسم والإيميل والرقم
-    final matchName = lead.name?.toLowerCase().contains(q) ?? false;
-    final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
+          // فلترة الاسم والإيميل والرقم
+          final matchName = lead.name?.toLowerCase().contains(q) ?? false;
+          final matchEmail = lead.email?.toLowerCase().contains(q) ?? false;
 
-    final leadRawPhone = lead.phone ?? '';
-    final cleanedLeadPhone = leadRawPhone.replaceAll(RegExp(r'\D'), '');
+          final leadRawPhone = lead.phone ?? '';
+          final cleanedLeadPhone = leadRawPhone.replaceAll(RegExp(r'\D'), '');
 
-    bool matchPhone = false;
-    if (cleanedQDigits.isNotEmpty) {
-      matchPhone =
-          cleanedLeadPhone.contains(cleanedQDigits) ||
-          cleanedLeadPhone.endsWith(cleanedQDigits) ||
-          cleanedLeadPhone.contains(cleanedQDigits.replaceFirst('971', '')) ||
-          cleanedLeadPhone.startsWith(cleanedQDigits);
-    }
+          bool matchPhone = false;
+          if (cleanedQDigits.isNotEmpty) {
+            matchPhone =
+                cleanedLeadPhone.contains(cleanedQDigits) ||
+                cleanedLeadPhone.endsWith(cleanedQDigits) ||
+                cleanedLeadPhone.contains(
+                  cleanedQDigits.replaceFirst('971', ''),
+                ) ||
+                cleanedLeadPhone.startsWith(cleanedQDigits);
+          }
 
-    final matchQuery = q.isEmpty || matchName || matchEmail || matchPhone;
+          final matchQuery = q.isEmpty || matchName || matchEmail || matchPhone;
 
-    return stageMatch && matchQuery;
-  }).toList();
+          return stageMatch && matchQuery;
+        }).toList();
 
-  emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
-}
-
+    emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
+  }
 }

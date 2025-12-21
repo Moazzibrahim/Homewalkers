@@ -19,15 +19,18 @@ class TeamleaderDashboardResponse {
     );
   }
 }
+
 class DashboardData {
   final TeamLeaderInfo? teamleaderInfo;
   final List<StageDashboard>? dashboard;
+  final TeamLeaderFresh? teamLeaderFresh; // ✅ جديد
   final int? salesCount;
   final Summary? summary;
 
   DashboardData({
     this.teamleaderInfo,
     this.dashboard,
+    this.teamLeaderFresh,
     this.salesCount,
     this.summary,
   });
@@ -42,12 +45,16 @@ class DashboardData {
               .map((e) => StageDashboard.fromJson(e))
               .toList()
           : null,
+      teamLeaderFresh: json['teamLeaderFresh'] != null
+          ? TeamLeaderFresh.fromJson(json['teamLeaderFresh'])
+          : null,
       salesCount: json['salesCount'],
       summary:
           json['summary'] != null ? Summary.fromJson(json['summary']) : null,
     );
   }
 }
+
 class TeamLeaderInfo {
   final String? id;
   final String? name;
@@ -67,6 +74,7 @@ class TeamLeaderInfo {
     );
   }
 }
+
 class StageDashboard {
   final String? stageId;
   final String? stageName;
@@ -86,13 +94,37 @@ class StageDashboard {
     );
   }
 }
+
+/// ✅ موديل teamLeaderFresh
+class TeamLeaderFresh {
+  final String? stageName;
+  final int? leadsCount;
+  final String? description;
+
+  TeamLeaderFresh({
+    this.stageName,
+    this.leadsCount,
+    this.description,
+  });
+
+  factory TeamLeaderFresh.fromJson(Map<String, dynamic> json) {
+    return TeamLeaderFresh(
+      stageName: json['stageName'],
+      leadsCount: json['leadsCount'],
+      description: json['description'],
+    );
+  }
+}
+
 class Summary {
   final int? totalLeads;
+  final int? teamLeaderFreshLeads; // ✅ جديد
   final int? totalStages;
   final int? stagesWithLeads;
 
   Summary({
     this.totalLeads,
+    this.teamLeaderFreshLeads,
     this.totalStages,
     this.stagesWithLeads,
   });
@@ -100,11 +132,13 @@ class Summary {
   factory Summary.fromJson(Map<String, dynamic> json) {
     return Summary(
       totalLeads: json['totalLeads'],
+      teamLeaderFreshLeads: json['teamLeaderFreshLeads'],
       totalStages: json['totalStages'],
       stagesWithLeads: json['stagesWithLeads'],
     );
   }
 }
+
 class Meta {
   final String? executionTime;
   final bool? fromCache;

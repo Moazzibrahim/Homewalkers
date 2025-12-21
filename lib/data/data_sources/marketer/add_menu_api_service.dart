@@ -69,6 +69,7 @@ class AddMenuApiService {
     String developerId,
     String cityId,
     String area,
+    num startprice,
   ) async {
     const String url = '${Constants.baseUrl}/Projectss';
     final body = {
@@ -76,6 +77,7 @@ class AddMenuApiService {
       "developer": developerId,
       "city": cityId,
       "area": area,
+      "startprice": startprice,
     };
     await postData(url: url, body: body);
   }

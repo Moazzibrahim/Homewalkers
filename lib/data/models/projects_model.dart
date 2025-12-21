@@ -46,6 +46,7 @@ class Pagination {
 class ProjectData {
   final String? id;
   final String? name;
+  final num? startPrice;
   final Developer? developer;
   final City? city;
   final String? area;
@@ -57,6 +58,7 @@ class ProjectData {
   ProjectData({
     this.id,
     this.name,
+    this.startPrice,
     this.developer,
     this.city,
     this.area,
@@ -70,6 +72,7 @@ class ProjectData {
     return ProjectData(
       id: json['_id'],
       name: json['name'],
+      startPrice: json['startprice'],
       developer: json['developer'] != null
           ? Developer.fromJson(json['developer'])
           : null,

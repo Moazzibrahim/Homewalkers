@@ -197,12 +197,14 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                   final dashboard = state.response.data?.dashboard ?? [];
                   final totalLeads =
                       state.response.data?.summary?.totalLeads ?? 0;
+                  final teamLeaderFresh = state.response.data?.teamLeaderFresh;
+                  final teamleaderfreshcount = teamLeaderFresh?.leadsCount ?? 0;
 
                   /// ✅ نخفي أي stage عددها = 0
                   final visibleStages =
                       dashboard
                           .where((e) => (e.leadsCount ?? 0) > 0)
-                          // .where((e) => e.stageName?.toLowerCase() != 'fresh')
+                          .where((e) => e.stageName?.toLowerCase() != 'fresh')
                           .toList();
 
                   return Column(
@@ -230,6 +232,34 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                         ],
                       ),
                       const SizedBox(height: 18),
+
+                      /// ✅ Team Leader Fresh (قبل الـ GridView مباشرة)
+                      if (teamLeaderFresh != null && teamleaderfreshcount > 0)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TeamLeaderDashboardScreen._dashboardCard(
+                                'Fresh',
+                                '$teamleaderfreshcount',
+                                Icons.timeline,
+                                context,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => TeamLeaderAssignScreen(
+                                            stageName: "fresh",
+                                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+
+                      if (teamLeaderFresh != null) const SizedBox(height: 18),
 
                       GridView.count(
                         crossAxisCount: 2,

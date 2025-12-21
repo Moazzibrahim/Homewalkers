@@ -16,6 +16,7 @@ class AddProjectDialog extends StatefulWidget {
     String developerId,
     String cityId,
     String area,
+    num startprice,
   )?
   onAdd;
   final String? title;
@@ -28,6 +29,7 @@ class AddProjectDialog extends StatefulWidget {
 class _AddProjectDialogState extends State<AddProjectDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _areaController = TextEditingController();
+  final TextEditingController _startPriceController = TextEditingController();
 
   String? selectedDeveloperId;
   String? selectedCityId;
@@ -86,13 +88,22 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                         style: GoogleFonts.montserrat(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Colors.black
+                                  : Colors.white,
                         ),
                       ),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
-                      child:  Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,),
+                      child: Icon(
+                        Icons.close,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.black
+                                : Colors.white,
+                      ),
                     ),
                   ],
                 ),
@@ -102,6 +113,12 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                 TextField(
                   controller: _nameController,
                   decoration: _inputDecoration("Project Name"),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  keyboardType: TextInputType.number,
+                  controller: _startPriceController,
+                  decoration: _inputDecoration("Start Price"),
                 ),
                 const SizedBox(height: 14),
 
@@ -204,6 +221,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                                 selectedDeveloperId!,
                                 selectedCityId!,
                                 _areaController.text.trim(),
+                                num.parse(_startPriceController.text.trim()),
                               );
                               Navigator.of(context).pop();
                             }

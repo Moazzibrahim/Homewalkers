@@ -115,10 +115,11 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
     String developerId,
     String cityId,
     String area,
+    num startprice,
   ) async {
     emit(AddInMenuLoading());
     try {
-      await _apiService.addDProject(name, developerId, cityId, area);
+      await _apiService.addDProject(name, developerId, cityId, area, startprice);
       emit(AddInMenuSuccess(message: 'Project added successfully'));
     } catch (e) {
       emit(AddInMenuError(message: 'Failed to add project: $e'));
@@ -373,6 +374,7 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
     String cityId,
     String area,
     String id,
+    num startprice,
   ) async {
     emit(AddInMenuLoading());
     try {
@@ -382,6 +384,7 @@ class AddInMenuCubit extends Cubit<AddInMenuState> {
         cityId,
         area,
         id,
+        startprice,
       );
       emit(AddInMenuSuccess(message: 'Project updated successfully'));
     } catch (e) {
