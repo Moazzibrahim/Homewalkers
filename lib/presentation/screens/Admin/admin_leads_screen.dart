@@ -1,10 +1,11 @@
 // leads_marketier_screen.dart
 // ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, unused_field, use_super_parameters
+import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/campaign_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/communication_way_api_service.dart';
@@ -37,8 +38,36 @@ import 'package:homewalkers_app/presentation/widgets/marketer/assign_lead_markte
 import 'package:homewalkers_app/presentation/widgets/marketer/edit_lead_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/filter_leads_dialog.dart'; // تأكد أن المسار صحيح
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+class LeadsShimmer extends StatelessWidget {
+  const LeadsShimmer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: 6,
+      itemBuilder: (_, __) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey.shade300,
+            highlightColor: Colors.grey.shade100,
+            child: Container(
+              height: 90,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
 
 class AdminLeadsScreen extends StatefulWidget {
   final String? stageName;
@@ -95,6 +124,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   bool _isFetchingMore = false; // 👈 متغير داخلي يمنع التكرار
   bool _hasMoreData = true; // ✅ نعرف إذا كان فيه بيانات زيادة
   bool _didInitialFetch = false;
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -125,7 +155,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
 
     final cubit = context.read<GetAllUsersCubit>();
     log("🚀 Initial fetch triggered");
-
     cubit.fetchAllUsers(
       reset: true,
       stageFilter:
@@ -213,17 +242,51 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   void _applyCurrentFilters() {
     final cubit = context.read<GetAllUsersCubit>();
 
-    // ✅ لو لسه بيحمل أو الداتا فاضية — متعملش فلترة
+    // لو لسه بيحمل أو الداتا فاضية — متعملش فلترة
     if (cubit.state is GetAllUsersLoading ||
         cubit.originalLeadsResponse?.data == null ||
         cubit.originalLeadsResponse!.data!.isEmpty) {
       log("⏳ لسه البيانات مجتش، مش هنعمل فلترة دلوقتي");
       return;
     }
-   
+
     if (selectedTab == 1) return;
 
-    context.read<GetAllUsersCubit>().filterLeadsAdmin(
+    // لو مفيش سيرش ولا أي فلتر
+    if (_searchQuery.isEmpty &&
+        _selectedCountryFilter == null &&
+        _selectedDeveloperFilter == null &&
+        _selectedProjectFilter == null &&
+        _selectedStageNameFilter == null &&
+        _selectedChannelFilter == null &&
+        _selectedSalesFilter == null &&
+        _selectedCommunicationWayFilter == null &&
+        _selectedCampaignFilter == null &&
+        _addedByFilter == null &&
+        _assignedFromFilter == null &&
+        _assignedToFilter == null &&
+        _startDateFilter == null &&
+        _endDateFilter == null &&
+        _lastStageUpdateStartFilter == null &&
+        _lastStageUpdateEndFilter == null &&
+        _oldStageNameFilter == null) {
+      _hasMoreData = true; // ✅ مهم عشان يسمح بالتحميل التالي
+      _isFetchingMore = false; // ✅ مهم عشان يسمح للـ Scroll Loader بالعمل
+
+      // ✅ رجع كل الـ leads من الكيوبت
+      cubit.fetchAllUsers(
+        reset: true,
+        stageFilter:
+            (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty)
+                ? _selectedStageFilter
+                : null, // ممكن تحافظ على stage لو عايز
+        duplicatesOnly: _showDuplicatesOnly,
+      );
+      return;
+    }
+
+    // لو فيه سيرش أو فلتر، طبق الفلترة
+    cubit.filterLeadsAdmin(
       query: _searchQuery,
       country: _selectedCountryFilter,
       developer: _selectedDeveloperFilter,
@@ -345,7 +408,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                       },
                       decoration: InputDecoration(
                         hintText: 'Search',
-                        hintStyle: GoogleFonts.montserrat(
+                        hintStyle: TextStyle(
                           color: const Color(0xff969696),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -553,6 +616,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 onTap: () async {
                                   if (_showCheckboxes &&
                                       _selectedLeads.isNotEmpty) {
+                                    final String? selectedStageIddd =
+                                        _selectedLeadStagesIds.isNotEmpty
+                                            ? _selectedLeadStagesIds.first
+                                            : null;
+
                                     final result = await showDialog(
                                       context: context,
                                       builder: (dialogContext) {
@@ -595,6 +663,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                 _selectedLeadStagesIds.toList(),
                                             leadSalesId:
                                                 _selectedSalesIds.toList(),
+                                            leadStage: selectedStageIddd,
                                           ),
                                         );
                                       },
@@ -636,6 +705,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                         () =>
                                             Lead(), // اسم الموديل عندك Lead مش LeadData
                                   );
+                                  print('_selectedLeads: $_selectedLeads');
+                                  print('found lead: $selectedLead');
+
                                   final result = await showDialog(
                                     context: context,
                                     builder:
@@ -687,7 +759,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             ),
                                           ],
                                           child: EditLeadDialog(
-                                            userId: selectedLead.id ?? '',
+                                            userId: selectedLead.id.toString(),
                                             initialName:
                                                 selectedLead.name ?? '',
                                             initialEmail:
@@ -697,25 +769,38 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             initialNotes:
                                                 selectedLead.notes ?? '',
                                             initialProjectId:
-                                                selectedLead.project?.id,
+                                                selectedLead.project?.id
+                                                    ?.toString(),
                                             initialStageId:
-                                                selectedLead.stage?.id,
+                                                selectedLead.stage?.id
+                                                    ?.toString(),
                                             initialChannelId:
-                                                selectedLead.chanel?.id,
+                                                selectedLead.chanel?.id
+                                                    ?.toString(),
                                             initialCampaignId:
-                                                selectedLead.campaign?.id,
+                                                selectedLead.campaign?.id
+                                                    ?.toString(),
                                             initialCommunicationWayId:
                                                 selectedLead
                                                     .communicationway
-                                                    ?.id,
+                                                    ?.id
+                                                    ?.toString(),
                                             isCold:
                                                 selectedLead.leedtype == "Cold",
+
                                             onSuccess: () {
+                                              setState(() {
+                                                _showCheckboxes = false;
+                                                _selectedLeads.clear();
+                                              });
+
                                               final leadsCubit =
                                                   context
                                                       .read<GetAllUsersCubit>();
                                               leadsCubit.resetPagination();
-                                              leadsCubit.fetchAllUsers();
+                                              leadsCubit.fetchAllUsers(
+                                                stageFilter: widget.stageId,
+                                              );
                                             },
                                           ),
                                         ),
@@ -723,11 +808,138 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                   if (result == true) {
                                     context
                                         .read<GetAllUsersCubit>()
-                                        .fetchAllUsers();
+                                        .fetchAllUsers(
+                                          stageFilter: widget.stageId,
+                                        );
+                                    _showCheckboxes = false;
+                                    _selectedLeads.clear();
                                   }
                                 },
                                 child: const _ActionIcon(
                                   icon: Icon(Icons.edit),
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () async {
+                                  final leadsList =
+                                      context.read<GetAllUsersCubit>().leads;
+
+                                  final selectedLead = leadsList.firstWhere(
+                                    (lead) =>
+                                        lead.id.toString() ==
+                                        _selectedLeads.first,
+                                    orElse: () => Lead(),
+                                  );
+
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) {
+                                      return BlocProvider(
+                                        create:
+                                            (_) => EditLeadCubit(
+                                              EditLeadApiService(),
+                                            ),
+                                        child: AlertDialog(
+                                          title: const Text("Delete Lead"),
+                                          content: const Text(
+                                            "Are you sure you want to delete this lead?",
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context, false);
+                                              },
+                                              child: const Text("Cancel"),
+                                            ),
+                                            BlocConsumer<
+                                              EditLeadCubit,
+                                              EditLeadState
+                                            >(
+                                              listener: (context, state) {
+                                                if (state is EditLeadSuccess) {
+                                                  Navigator.pop(context, true);
+                                                }
+                                                if (state is EditLeadFailure) {
+                                                  Navigator.pop(context, false);
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                        "Failed to delete the lead. Please try again.",
+                                                      ),
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              builder: (context, state) {
+                                                return TextButton(
+                                                  onPressed:
+                                                      state is EditLeadLoading
+                                                          ? null
+                                                          : () {
+                                                            _showCheckboxes =
+                                                                false;
+                                                            _selectedLeads
+                                                                .clear();
+                                                            context
+                                                                .read<
+                                                                  EditLeadCubit
+                                                                >()
+                                                                .editLead(
+                                                                  userId:
+                                                                      selectedLead
+                                                                          .id ??
+                                                                      '',
+                                                                  isLeadActivte:
+                                                                      false,
+                                                                );
+                                                            setState(() {
+                                                              _showCheckboxes =
+                                                                  false;
+                                                              _selectedLeads
+                                                                  .clear();
+                                                            });
+                                                          },
+                                                  child:
+                                                      state is EditLeadLoading
+                                                          ? const SizedBox(
+                                                            height: 18,
+                                                            width: 18,
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                                  strokeWidth:
+                                                                      2,
+                                                                ),
+                                                          )
+                                                          : const Text(
+                                                            "Delete",
+                                                            style: TextStyle(
+                                                              color: Colors.red,
+                                                            ),
+                                                          ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  );
+
+                                  if (confirm == true) {
+                                    final cubit =
+                                        context.read<GetAllUsersCubit>();
+                                    cubit.resetPagination();
+                                    cubit.fetchAllUsers(
+                                      stageFilter: widget.stageId,
+                                    );
+                                  }
+                                },
+                                child: const _ActionIcon(
+                                  icon: Icon(Icons.delete),
                                 ),
                               ),
                             ],
@@ -773,7 +985,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                         children: [
                           Text(
                             'Manage Leads',
-                            style: GoogleFonts.montserrat(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color:
@@ -806,7 +1018,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                         children: [
                           Text(
                             'Leads Trash',
-                            style: GoogleFonts.montserrat(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color:
@@ -853,7 +1065,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                   icon: const Icon(Icons.add, size: 11, color: Colors.white),
                   label: Text(
                     'Create Lead',
-                    style: GoogleFonts.montserrat(
+                    style: TextStyle(
                       fontSize: 11.sp,
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -868,7 +1080,24 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                   // الشرط الأول: عرض مؤشر التحميل إذا كانت أي من الحالتين loading
                   if (state is GetAllUsersLoading ||
                       state is GetLeadsInTrashLoading) {
-                    return const Center(child: CircularProgressIndicator());
+                    return Shimmer.fromColors(
+                      baseColor: Colors.grey.shade300,
+                      highlightColor: Colors.grey.shade100,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: 6,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          );
+                        },
+                      ),
+                    );
                   }
                   // الشرط الثاني: عرض بيانات سلة المهملات فقط إذا كانت الحالة مطابقة والتبويب المحدد هو 1
                   else if (state is GetLeadsInTrashSuccess &&
@@ -936,7 +1165,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           _selectedCampaignFilter = null;
 
                           // ✅ خليك دايمًا ماسك الـ stage اللي دخل بيها المستخدم
-                          _selectedStageFilter = widget.stageName;
+                          _selectedStageFilter = widget.stageId;
                         });
 
                         if (selectedTab == 0) {
@@ -967,8 +1196,26 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
 
                       child: ListView.builder(
                         controller: _scrollController,
-                        itemCount: leads.length,
+                        itemCount: leads.length + 1, // ✅ خليها length + 1
                         itemBuilder: (context, index) {
+                          if (index == leads.length) {
+                            // العنصر الأخير → Loading
+                            return _isFetchingMore
+                                ? Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                : const SizedBox(); // لو مش بيتم تحميل → فاضي
+                          }
+
                           final lead = leads[index];
                           final leadassign = lead.assign;
                           final salesfcmtoken = lead.sales?.userlog?.fcmtoken;
@@ -995,20 +1242,16 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           }
                           if (stageUpdatedDate != null) {
                             final now = DateTime.now().toUtc();
-                            log("now: $now");
                             final difference =
                                 now.difference(stageUpdatedDate).inMinutes;
-                            log("difference: $difference");
                             isOutdated = difference > 1;
-                            log("isOutdated: $isOutdated");
                           }
+
                           return GestureDetector(
                             onLongPress: () {
                               setState(() {
                                 _showCheckboxes = true;
-                                _selectedLeads.add(
-                                  lead.id!,
-                                ); // أول كارت تعمل عليه Long Press بيتعلّم
+                                _selectedLeads.add(lead.id!);
                                 _selectedLeadStagesIds.add(
                                   lead.stage?.id ?? '',
                                 );
@@ -1029,10 +1272,14 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             lead.allVersions!.isNotEmpty)
                                         ? lead.allVersions!.first
                                         : null;
+                                final lastVersion =
+                                    (lead.allVersions != null &&
+                                            lead.allVersions!.isNotEmpty)
+                                        ? lead.allVersions!.last
+                                        : null;
                                 final currentScrollOffset =
                                     _scrollController.offset;
 
-                                // لو مش في وضع التحديد، نفذ الإجراء العادي
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -1104,6 +1351,12 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   ?.name ??
                                               "No communication way",
                                           leadStages: [lead.stage?.id],
+                                          cashbackmoney: lead.cashbackmoney,
+                                          cashbackratio: lead.cashbackratio,
+                                          commissionmoney: lead.commissionmoney,
+                                          commissionratio: lead.commissionratio,
+                                          unitPrice: lead.unitPrice,
+                                          unitnumber: lead.unitnumber,
                                         ),
                                   ),
                                 ).then((_) {
@@ -1113,16 +1366,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                     curve: Curves.easeInOut,
                                   );
                                 });
-                                // The original refresh logic is restored here, to run after returning from details page
-                                // if (selectedTab == 0) {
-                                //   context
-                                //       .read<GetAllUsersCubit>()
-                                //       .fetchAllUsers();
-                                // } else {
-                                //   context
-                                //       .read<GetAllUsersCubit>()
-                                //       .fetchLeadsInTrash();
-                                // }
                               }
                             },
                             child: Column(
@@ -1296,7 +1539,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                           .stage
                                                                           ?.name ??
                                                                       "No Stage",
-                                                                  style: GoogleFonts.montserrat(
+                                                                  style: TextStyle(
                                                                     fontSize:
                                                                         13.sp,
                                                                     fontWeight:
@@ -1336,7 +1579,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               Expanded(
                                                 child: Text(
                                                   lead.project?.name ?? '',
-                                                  style: GoogleFonts.montserrat(
+                                                  style: TextStyle(
                                                     fontSize: 12.sp,
                                                     fontWeight: FontWeight.w500,
                                                   ),
@@ -1367,7 +1610,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               Expanded(
                                                 child: Text(
                                                   lead.name ?? "No Name",
-                                                  style: GoogleFonts.montserrat(
+                                                  style: TextStyle(
                                                     fontSize: 19.sp,
                                                     fontWeight: FontWeight.bold,
                                                   ),
@@ -1457,14 +1700,15 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   // 👈 الجزء الشمال (Sales name)
                                                   Expanded(
                                                     child: Text(
-                                                      lead.sales?.name ??
-                                                          "none",
-                                                      style:
-                                                          GoogleFonts.montserrat(
-                                                            fontSize: 16.sp,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
+                                                      lead.assigntype == true
+                                                          ? "team: ${lead.sales?.name}"
+                                                          : lead.sales?.name ??
+                                                              'N/A',
+                                                      style: TextStyle(
+                                                        fontSize: 16.sp,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),
@@ -1631,12 +1875,43 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                       ) {
                                                                         if (commentState
                                                                             is LeadCommentsLoading) {
-                                                                          return const SizedBox(
+                                                                          return SizedBox(
                                                                             height:
                                                                                 100,
                                                                             child: Center(
-                                                                              child:
-                                                                                  CircularProgressIndicator(),
+                                                                              child: Shimmer.fromColors(
+                                                                                baseColor:
+                                                                                    Colors.grey.shade300,
+                                                                                highlightColor:
+                                                                                    Colors.grey.shade100,
+                                                                                child: ListView.builder(
+                                                                                  padding: const EdgeInsets.all(
+                                                                                    16,
+                                                                                  ),
+                                                                                  itemCount:
+                                                                                      6,
+                                                                                  itemBuilder: (
+                                                                                    context,
+                                                                                    index,
+                                                                                  ) {
+                                                                                    return Container(
+                                                                                      margin: const EdgeInsets.only(
+                                                                                        bottom:
+                                                                                            16,
+                                                                                      ),
+                                                                                      height:
+                                                                                          80,
+                                                                                      decoration: BoxDecoration(
+                                                                                        color:
+                                                                                            Colors.white,
+                                                                                        borderRadius: BorderRadius.circular(
+                                                                                          12,
+                                                                                        ),
+                                                                                      ),
+                                                                                    );
+                                                                                  },
+                                                                                ),
+                                                                              ),
                                                                             ),
                                                                           );
                                                                         } else if (commentState
@@ -1889,13 +2164,12 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   }
                                                   return Text(
                                                     statusText,
-                                                    style:
-                                                        GoogleFonts.montserrat(
-                                                          fontSize: 11.sp,
-                                                          fontWeight:
-                                                              FontWeight.w700,
-                                                          color: textColor,
-                                                        ),
+                                                    style: TextStyle(
+                                                      fontSize: 11.sp,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: textColor,
+                                                    ),
                                                   );
                                                 },
                                               ),
@@ -1921,7 +2195,24 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                   // (مثلاً الحالة هي GetLeadsInTrashSuccess والتبويب هو 0)
                   // نعرض مؤشر تحميل لأننا ننتظر الحالة الصحيحة
                   else {
-                    return const Center(child: CircularProgressIndicator());
+                    return Shimmer.fromColors(
+                      baseColor: Colors.grey.shade300,
+                      highlightColor: Colors.grey.shade100,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: 6,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          );
+                        },
+                      ),
+                    );
                   }
                 },
               ),

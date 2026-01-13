@@ -96,7 +96,7 @@ class Lead {
   Campaign? campaign;
   int? duplicateCount;
   int? relatedLeadsCount;
-  List<LeadVersion>? allVersions;
+  List<LeadVersionnn>? allVersions;
   int? totalSubmissions;
   String? date;
   List<dynamic>? mergeHistory;
@@ -109,6 +109,8 @@ class Lead {
   String? lastStageDateUpdated;
   List<LeadStage>? leadStages;
   List<LeadAssign>? leadAssigns;
+  final bool? assigntype;
+  final bool? resetcreationdate;
 
   Lead({
     this.whatsappnumber,
@@ -155,6 +157,8 @@ class Lead {
     this.lastStageDateUpdated,
     this.leadStages,
     this.leadAssigns,
+    this.assigntype,
+    this.resetcreationdate,
   });
 
   factory Lead.fromJson(Map<String, dynamic> json) {
@@ -200,8 +204,8 @@ class Lead {
       relatedLeadsCount: json['relatedLeadsCount'],
       allVersions:
           json['allVersions'] != null
-              ? List<LeadVersion>.from(
-                json['allVersions'].map((e) => LeadVersion.fromJson(e)),
+              ? List<LeadVersionnn>.from(
+                json['allVersions'].map((e) => LeadVersionnn.fromJson(e)),
               )
               : null,
       totalSubmissions: json['totalSubmissions'],
@@ -226,6 +230,8 @@ class Lead {
                 json['leadAssigns'].map((e) => LeadAssign.fromJson(e)),
               )
               : null,
+      assigntype: json['assigntype'],
+      resetcreationdate: json['resetcreationdate'],
     );
   }
 }
@@ -400,7 +406,7 @@ class Campaign {
   }
 }
 
-class LeadVersion {
+class LeadVersionnn {
   String? name;
   String? email;
   String? phone;
@@ -416,7 +422,7 @@ class LeadVersion {
   num? budget;
   num? unitPrice;
 
-  LeadVersion({
+  LeadVersionnn({
     this.name,
     this.email,
     this.phone,
@@ -433,8 +439,8 @@ class LeadVersion {
     this.unitPrice,
   });
 
-  factory LeadVersion.fromJson(Map<String, dynamic> json) {
-    return LeadVersion(
+  factory LeadVersionnn.fromJson(Map<String, dynamic> json) {
+    return LeadVersionnn(
       name: json['name'],
       email: json['email'],
       phone: json['phone'],

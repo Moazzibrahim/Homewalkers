@@ -1,11 +1,14 @@
-// ignore_for_file: must_be_immutable, use_build_context_synchronously, avoid_print
+// ignore_for_file: must_be_immutable, use_build_context_synchronously, avoid_print, unused_field
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/models/leadStagesModel.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_state.dart';
-import 'package:homewalkers_app/presentation/widgets/custom_change_stage_dialog.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/change_stage/change_stage_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/change_stage/change_stage_state.dart';
+import 'package:homewalkers_app/presentation/widgets/change_stage_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,6 +43,13 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
   final TextEditingController _dateController = TextEditingController();
   String? salesId;
   String? userlogId;
+  bool _showStageSection = false;
+
+  String? _selectedStageName;
+  String? _selectedStageId;
+
+  bool _isAnswered = true;
+  Map<String, dynamic>? doneDealData;
 
   @override
   void initState() {
@@ -60,6 +70,20 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
       log("Userlog ID: $userlogId");
       log("Sales ID: $salesId");
     });
+  }
+
+  void _applyNoAnswerLogic() {
+    final now = DateTime.now();
+    final formatted = DateFormat("yyyy-MM-dd hh:mm a").format(now);
+
+    _firstCommentController.text = "No Answer";
+    _secondCommentController.text = "No Answer هتواصل معاه في $formatted";
+    _dateController.text = formatted;
+  }
+
+  void _clearNoAnswerLogic() {
+    _firstCommentController.clear();
+    _secondCommentController.clear();
   }
 
   @override
@@ -98,100 +122,14 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                   ),
                   const Spacer(),
                   TextButton(
-                    onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      final String salesId = prefs.getString('salesIdD') ?? '';
-
-                      // 🧠 استدعاء الديالوج وانتظار النتيجة
-                      final bool?
-                      isAnswered = await CustomChangeStageDialog.showChangeDialog(
-                        context: context,
-                        leadStage: widget.leadStage,
-                        leedId: widget.leadId!,
-                        salesId: salesId,
-                        stageId: widget.stageId,
-                        onStageChanged: (newStage) {
-                          // 🔒 هنخلي التغيير داخل setState يحصل بس لما العملية تنجح (هنتأكد تحت)
-                          widget.leadStage = newStage;
-                        },
-                        leadstageupdated: widget.laststageupdated,
-                      );
-
-                      // ✅ لو العملية فشلت أو رجعت null (يعني المستخدم قفل الديالوج أو حصل خطأ)
-                      if (isAnswered == null) {
-                        log(
-                          "❌ Stage change canceled or failed, no updates applied.",
-                        );
-                        return;
-                      }
-
-                      // ✅ لو العملية نجحت فعلاً، نكمل
-                      final pickedDateTimeStr = prefs.getString(
-                        'pickedDateTime',
-                      );
-                      final now = DateTime.now();
-                      String formattedNow = DateFormat(
-                        "yyyy-MM-dd hh:mm a",
-                      ).format(now);
-                      String formattedPickedDate = formattedNow;
-
-                      if (pickedDateTimeStr != null &&
-                          pickedDateTimeStr.isNotEmpty) {
-                        try {
-                          final pickedDateTime = DateTime.parse(
-                            pickedDateTimeStr,
-                          );
-                          formattedPickedDate = DateFormat(
-                            "yyyy-MM-dd hh:mm a",
-                          ).format(pickedDateTime);
-                        } catch (e) {
-                          print("❌ Error parsing pickedDateTime: $e");
-                        }
-                      }
-
-                      await Future.delayed(const Duration(milliseconds: 200));
-                      log("✅ Stage change success, isAnswered: $isAnswered");
-
+                    onPressed: () {
                       setState(() {
-                        if (isAnswered == true) {
-                          _firstCommentController.text = "Answer";
-                          _secondCommentController.text = "Answer";
-                          _dateController.text = formattedPickedDate;
-                        } else {
-                          _firstCommentController.text = "No Answer";
-                          _secondCommentController.text =
-                              "No Answer هتواصل معاه في $formattedPickedDate";
-                          _dateController.text = formattedPickedDate;
-                        }
+                        _showStageSection = !_showStageSection;
                       });
-                      // // ✅ التحديث يحصل فقط بعد نجاح العملية
-                      // setState(() {
-                      //   // لو مش Transfer و مش Not Interested
-                      //   if (isAnswered == true &&
-                      //       widget.leadStage != "Transfer" &&
-                      //       widget.leadStage != "Not Interested") {
-                      //     _firstCommentController.text = "Answer";
-                      //     _secondCommentController.text =
-                      //         "${widget.leadStage} within $formattedPickedDate";
-                      //     _dateController.text = formattedPickedDate;
-                      //   } else if (isAnswered == false &&
-                      //       widget.leadStage != "Transfer" &&
-                      //       widget.leadStage != "Not Interested") {
-                      //     _firstCommentController.text = "No Answer";
-                      //     _secondCommentController.text =
-                      //         "${widget.leadStage} within $formattedPickedDate";
-                      //     _dateController.text = formattedPickedDate;
-                      //   } else if (widget.leadStage == "Transfer" ||
-                      //       widget.leadStage == "Not Interested") {
-                      //     _firstCommentController.text = "";
-                      //     _secondCommentController.text = "";
-                      //     _dateController.text = formattedPickedDate;
-                      //   }
-                      // });
                     },
-                    child: const Text(
-                      "Add action",
-                      style: TextStyle(
+                    child: Text(
+                      _showStageSection ? "Hide Stage" : "Add action",
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -235,6 +173,56 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                   ),
                 ),
               ),
+              if (_showStageSection)
+                Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Change Stage",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    CustomChangeStageWidget(
+                      leadStage: widget.leadStage ?? '',
+                      leedId: widget.leadId!,
+                      salesId: salesId,
+                      stageId: widget.stageId,
+                      leadstageupdated: widget.laststageupdated,
+
+                      onDoneDealDataChanged: (data) {
+                        doneDealData = data;
+                      },
+
+                      onAnswerChanged: (isAnswered) {
+                        _isAnswered = isAnswered;
+
+                        if (!isAnswered) {
+                          _applyNoAnswerLogic();
+                        } else {
+                          _clearNoAnswerLogic();
+                        }
+                      },
+
+                      onStageSelected: (stageName, stageId) {
+                        setState(() {
+                          _selectedStageName = stageName;
+                          _selectedStageId = stageId;
+                        });
+
+                        if (stageName.toLowerCase() == "no answer") {
+                          _applyNoAnswerLogic();
+                        } else {
+                          // _clearNoAnswerLogic();
+                        }
+                      },
+                    ),
+                  ],
+                ),
+
               const SizedBox(height: 16),
               // Buttons
               Row(
@@ -308,6 +296,22 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                               isLoading
                                   ? null
                                   : () async {
+                                    // ❗ لو فاتح Add action لازم Stage
+                                    if (_showStageSection &&
+                                        _selectedStageId == null) {
+                                      showDialog(
+                                        context: context,
+                                        builder:
+                                            (_) => const AlertDialog(
+                                              title: Text("Warning"),
+                                              content: Text(
+                                                "Please choose a stage before adding action.",
+                                              ),
+                                            ),
+                                      );
+                                      return;
+                                    }
+
                                     final text1 =
                                         _firstCommentController.text.trim();
                                     final text2 =
@@ -327,7 +331,103 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                         text1.isNotEmpty &&
                                         text2.isNotEmpty &&
                                         userlogId != null) {
-                                      context
+                                      // ✅ إذا تم اختيار Stage جديد
+                                      if (_selectedStageId != null &&
+                                          _selectedStageName != null) {
+                                        try {
+                                          final leadStageRequest = LeadStageRequest(
+                                            lastStageDateUpdated:
+                                                DateTime.now()
+                                                    .toIso8601String(),
+                                            stage: _selectedStageId!,
+                                            stageDateUpdated:
+                                                DateTime.now()
+                                                    .toUtc()
+                                                    .toIso8601String(),
+                                            unitPrice:
+                                                doneDealData?['unitPrice'] ??
+                                                '',
+                                            // ضع القيم المناسبة إذا لزم الأمر
+                                            unitNumber:
+                                                doneDealData?['unitNumber'] ??
+                                                '',
+                                            commissionRatio:
+                                                doneDealData?['commissionRatio'] ??
+                                                '',
+                                            commissionMoney:
+                                                doneDealData?['commissionMoney'] ??
+                                                '0.00',
+                                            cashbackRatio:
+                                                doneDealData?['cashbackRatio'] ??
+                                                '',
+                                            cashbackMoney:
+                                                doneDealData?['cashbackMoney'] ??
+                                                '0.00',
+                                            eoi: null,
+                                            reservation: null,
+                                          );
+
+                                          final changeStageCubit =
+                                              context.read<ChangeStageCubit>();
+                                          await changeStageCubit.changeStage(
+                                            leadId: widget.leadId!,
+                                            request: leadStageRequest,
+                                          );
+
+                                          if (changeStageCubit.state
+                                              is ChangeStageSuccess) {
+                                            await changeStageCubit
+                                                .postLeadStage(
+                                                  leadId: widget.leadId!,
+                                                  date:
+                                                      DateTime.now()
+                                                          .toIso8601String()
+                                                          .split('T')
+                                                          .first,
+                                                  stage: _selectedStageId!,
+                                                  sales: salesId!,
+                                                );
+
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  "Stage changed to $_selectedStageName",
+                                                ),
+                                              ),
+                                            );
+                                          } else if (changeStageCubit.state
+                                              is ChangeStageError) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  (changeStageCubit.state
+                                                          as ChangeStageError)
+                                                      .error,
+                                                ),
+                                              ),
+                                            );
+                                            return; // لو فشل التغيير، لا تضيف الكومنت
+                                          }
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                "Error changing stage: $e",
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                      }
+
+                                      // ✅ بعد نجاح تغيير Stage أو لو لم يتم تغييره
+                                      await context
                                           .read<AddCommentCubit>()
                                           .addComment(
                                             sales: salesId!,
@@ -342,10 +442,6 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                       await context
                                           .read<AddCommentCubit>()
                                           .editLastDateComment(widget.leadId!);
-
-                                      log(
-                                        "text 1: $text1, text 2: $text2, date: $date",
-                                      );
                                     } else {
                                       showDialog(
                                         context: context,

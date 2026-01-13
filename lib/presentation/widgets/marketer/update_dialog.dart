@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class UpdateDialog extends StatefulWidget {
@@ -54,7 +54,7 @@ class _NewCommunicationDialogState extends State<UpdateDialog> {
                 Expanded(
                   child: Text(
                     "Update ${widget.title}",
-                    style: GoogleFonts.montserrat(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: textColor,
@@ -74,7 +74,7 @@ class _NewCommunicationDialogState extends State<UpdateDialog> {
               style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 hintText: "${widget.title} Name",
-                hintStyle: GoogleFonts.montserrat(color: hintTextColor),
+                hintStyle: TextStyle(color: hintTextColor),
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: 14,
                   horizontal: 12,
@@ -106,7 +106,7 @@ class _NewCommunicationDialogState extends State<UpdateDialog> {
                     ),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.montserrat(color: cancelTextColor),
+                      style: TextStyle(color: cancelTextColor),
                     ),
                   ),
                 ),
@@ -125,7 +125,7 @@ class _NewCommunicationDialogState extends State<UpdateDialog> {
                     ),
                     child: Text(
                       "Update",
-                      style: GoogleFonts.montserrat(color: Colors.white),
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),

@@ -44,6 +44,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
   final String? laststageupdated;
   final String? stageId;
   final String? leadLastDateAssigned;
+  final bool? isresetcreationdate;
   LeadsDetailsTeamLeaderScreen({
     super.key,
     required this.leedId,
@@ -71,6 +72,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
     this.laststageupdated,
     this.stageId,
     this.leadLastDateAssigned,
+    this.isresetcreationdate,
   });
   @override
   State<LeadsDetailsTeamLeaderScreen> createState() =>
@@ -539,18 +541,19 @@ class _SalesLeadsDetailsScreenState
                               label: 'campaign',
                               value: '${widget.leadcampaign}',
                             ),
-                            InfoRow(
-                              icon: Icons.calendar_today,
-                              label: 'Creation Date',
-                              value: formatDateTimeToDubai(
-                                widget.leadCreationDate!,
+                            if (widget.isresetcreationdate == false)
+                              InfoRow(
+                                icon: Icons.calendar_today,
+                                label: 'Creation Date',
+                                value: formatDateTimeToDubai(
+                                  widget.leadCreationDate!,
+                                ),
                               ),
-                            ),
-                            InfoRow(
-                              icon: Icons.link,
-                              label: 'Channel',
-                              value: '${widget.leadChannel}',
-                            ),
+                            // InfoRow(
+                            //   icon: Icons.link,
+                            //   label: 'Channel',
+                            //   value: '${widget.leadChannel}',
+                            // ),
                           ],
                         ),
                       ),

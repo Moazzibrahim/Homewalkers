@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
@@ -193,10 +193,7 @@ class ChannelsTrash extends StatelessWidget {
               Expanded(
                 child: Text(
                   "channel Name : $name",
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -220,7 +217,7 @@ class ChannelsTrash extends StatelessWidget {
               Expanded(
                 child: Text(
                   "Creation Date : $formattedDate",
-                  style: GoogleFonts.montserrat(fontSize: 13),
+                  style: TextStyle(fontSize: 13),
                 ),
               ),
             ],
@@ -242,10 +239,7 @@ class ChannelsTrash extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  "Code : $code",
-                  style: GoogleFonts.montserrat(fontSize: 13),
-                ),
+                child: Text("Code : $code", style: TextStyle(fontSize: 13)),
               ),
             ],
           ),

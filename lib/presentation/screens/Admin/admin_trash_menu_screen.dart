@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/add_menu_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/delete_menu_api_service.dart';
@@ -281,7 +281,10 @@ class AdminTrashMenuScreen extends StatelessWidget {
       ),
     ];
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.light ? Constants.backgroundlightmode : Constants.backgroundDarkmode,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.backgroundlightmode
+              : Constants.backgroundDarkmode,
       appBar: CustomAppBar(
         title: "Trash",
         onBack: () {
@@ -312,14 +315,11 @@ class AdminTrashMenuScreen extends StatelessWidget {
                             color: const Color(0xFFE2F0F1),
                             borderRadius: BorderRadius.circular(8.r),
                           ),
-                          child: Icon(
-                            item.icon,
-                            color: Constants.maincolor,
-                          ),
+                          child: Icon(item.icon, color: Constants.maincolor),
                         ),
                         title: Text(
                           item.label,
-                          style: GoogleFonts.montserrat(
+                          style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w500,
                           ),

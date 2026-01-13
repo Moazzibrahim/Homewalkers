@@ -37,7 +37,7 @@ class CreateLeadApiService {
     final body = {
       "name": name,
       "email": email,
-      "phone": phone,
+      "phone": "+$phone",
       "project": project,
       "sales": sales,
       "notes": notes,

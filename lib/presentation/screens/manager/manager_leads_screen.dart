@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/campaign_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/communication_way_api_service.dart';
@@ -420,7 +420,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                             },
                             decoration: InputDecoration(
                               hintText: 'Search',
-                              hintStyle: GoogleFonts.montserrat(
+                              hintStyle: TextStyle(
                                 color: Color(0xff969696),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
@@ -534,7 +534,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                         ),
                         label: Text(
                           'Create Lead',
-                          style: GoogleFonts.montserrat(
+                          style: TextStyle(
                             fontSize: 16.sp,
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
@@ -902,7 +902,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                                         .stage
                                                                         ?.name ??
                                                                     "No Stage",
-                                                                style: GoogleFonts.montserrat(
+                                                                style: TextStyle(
                                                                   fontSize:
                                                                       13.sp,
                                                                   fontWeight:
@@ -940,7 +940,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             Expanded(
                                               child: Text(
                                                 lead.project?.name ?? '',
-                                                style: GoogleFonts.montserrat(
+                                                style: TextStyle(
                                                   fontSize: 12.sp,
                                                   fontWeight: FontWeight.w500,
                                                 ),
@@ -968,7 +968,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             Expanded(
                                               child: Text(
                                                 lead.name ?? "No Name",
-                                                style: GoogleFonts.montserrat(
+                                                style: TextStyle(
                                                   fontSize: 19.sp,
                                                   fontWeight: FontWeight.bold,
                                                 ),
@@ -1057,12 +1057,11 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                 Expanded(
                                                   child: Text(
                                                     lead.sales?.name ?? "none",
-                                                    style:
-                                                        GoogleFonts.montserrat(
-                                                          fontSize: 16.sp,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
+                                                    style: TextStyle(
+                                                      fontSize: 16.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
                                                     overflow:
                                                         TextOverflow.ellipsis,
                                                   ),

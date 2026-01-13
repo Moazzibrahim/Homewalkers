@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_cities_api_service.dart';
@@ -85,7 +85,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                     Expanded(
                       child: Text(
                         "New Project",
-                        style: GoogleFonts.montserrat(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color:
@@ -201,9 +201,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                         ),
                         child: Text(
                           "Cancel",
-                          style: GoogleFonts.montserrat(
-                            color: Constants.maincolor,
-                          ),
+                          style: TextStyle(color: Constants.maincolor),
                         ),
                       ),
                     ),
@@ -236,7 +234,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
                         ),
                         child: Text(
                           "Add",
-                          style: GoogleFonts.montserrat(color: Colors.white),
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),
@@ -253,7 +251,7 @@ class _AddProjectDialogState extends State<AddProjectDialog> {
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+      hintStyle: TextStyle(color: Colors.grey),
       contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );

@@ -44,6 +44,7 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
   final String? laststageupdated;
   final String? stageId;
   final String? leadLastDateAssigned;
+  final bool? resetcreationdate;
   final bool? isleadAssigned;
   SalesLeadsDetailsScreen({
     super.key,
@@ -71,6 +72,7 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
     this.stageId,
     this.leadLastDateAssigned,
     this.isleadAssigned,
+    this.resetcreationdate,
   });
   @override
   State<SalesLeadsDetailsScreen> createState() =>
@@ -157,6 +159,20 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
     } catch (e) {
       return dateStr; // fallback في حال كان التاريخ مش صحيح
     }
+  }
+
+  String normalizePhoneNumber(String phone) {
+    String cleaned = phone.replaceAll(RegExp(r'\s+'), '');
+
+    if (cleaned.startsWith('00')) {
+      cleaned = '+${cleaned.substring(2)}';
+    }
+
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+$cleaned';
+    }
+
+    return cleaned;
   }
 
   bool isValidComment({
@@ -300,10 +316,14 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                         widget.leadwhatsappnumber!.isNotEmpty)
                                       InkWell(
                                         onTap: () async {
-                                          final phone = widget
-                                              .leadwhatsappnumber
-                                              ?.replaceAll(RegExp(r'\D'), '');
-                                          final url = "https://wa.me/$phone";
+                                          final normalizedPhone =
+                                              normalizePhoneNumber(
+                                                widget.leadwhatsappnumber!,
+                                              );
+                                          // wa.me لازم من غير +
+                                          final waPhone = normalizedPhone
+                                              .replaceAll(RegExp(r'\D'), '');
+                                          final url = "https://wa.me/$waPhone";
                                           try {
                                             await launchUrl(
                                               Uri.parse(url),
@@ -428,18 +448,20 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                               label: 'campaign',
                               value: '${widget.leadcampaign}',
                             ),
-                            InfoRow(
-                              icon: Icons.calendar_today,
-                              label: 'Creation Date',
-                              value: formatDateTimeToDubai(
-                                widget.leadCreationDate!,
+                            // ignore: unrelated_type_equality_checks
+                            if (widget.leadCreationDate == false)
+                              InfoRow(
+                                icon: Icons.calendar_today,
+                                label: 'Creation Date',
+                                value: formatDateTimeToDubai(
+                                  widget.leadCreationDate!,
+                                ),
                               ),
-                            ),
-                            InfoRow(
-                              icon: Icons.link,
-                              label: 'Channel',
-                              value: '${widget.leadChannel}',
-                            ),
+                            // InfoRow(
+                            //   icon: Icons.link,
+                            //   label: 'Channel',
+                            //   value: '${widget.leadChannel}',
+                            // ),
                           ],
                         ),
                       ),

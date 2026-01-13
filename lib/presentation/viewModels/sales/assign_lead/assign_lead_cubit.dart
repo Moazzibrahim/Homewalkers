@@ -121,6 +121,7 @@ class AssignleadCubit extends Cubit<AssignState> {
           "lastdateassign": lastDateAssign,
           "sales": salesId,
           "stage": stageId,
+          "assigntype": false, // false = Salesman | true = Team Leader
         };
 
         final putResponse = await dio.put(
@@ -284,6 +285,8 @@ class AssignleadCubit extends Cubit<AssignState> {
     required String salesId,
     bool? isClearhistory,
     String? stage,
+    bool assigntype = false, // false = Salesman | true = Team Leader
+    bool resetcreationdate = false, // false = show | true = hide
   }) async {
     emit(AssignLoading());
 
@@ -298,17 +301,20 @@ class AssignleadCubit extends Cubit<AssignState> {
     final marketerId = prefs.getString('salesId');
     final token = prefs.getString('token');
 
-
     try {
       for (String leadId in leadIds) {
         // ===== PUT =====
-        final putUrl = '${Constants.baseUrl}/users/leads/assign/$leadId/$marketerId/$salesId';
+        final putUrl =
+            '${Constants.baseUrl}/users/leads/assign/$leadId/$marketerId/$salesId';
         final putBody = {
           // "assign": "true",
           // "lastdateassign": lastDateAssign,
           // "sales": salesId,
           "clearHistory": isClearhistory,
           if (stage != null) "stage": stage,
+          // 🆕 NEW KEYS
+          "assigntype": assigntype,
+          "resetcreationdate": resetcreationdate,
         };
 
         final putResponse = await dio.put(
@@ -324,11 +330,15 @@ class AssignleadCubit extends Cubit<AssignState> {
 
         if (putResponse.statusCode != 200 && putResponse.statusCode != 201) {
           emit(AssignFailure('❌ Failed to assign lead in PUT: $leadId'));
+
           log('❌ Failed to assign lead in PUT: $leadId');
           return;
         }
 
         log("✅ PUT success for lead $leadId");
+        log(
+          assigntype ? "👑 Assigned as TEAM LEADER" : "👤 Assigned as SALESMAN",
+        );
 
         // // ===== POST ===== (Fire & Forget)
         // final postUrl = '${Constants.baseUrl}/LeadAssigned';

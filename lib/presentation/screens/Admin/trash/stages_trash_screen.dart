@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print, deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/get_stage_types_api_service.dart';
@@ -70,10 +70,10 @@ class _StagesScreenState extends State<StagesTrashScreen>
           }
         },
         child: Scaffold(
-        backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Stages",
             onBack: () => Navigator.pop(context),
@@ -326,10 +326,7 @@ class _StagesScreenState extends State<StagesTrashScreen>
         Expanded(
           child: Text(
             "$label : $value",
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ),
       ],

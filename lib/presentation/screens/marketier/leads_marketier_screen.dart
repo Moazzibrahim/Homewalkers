@@ -4,7 +4,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/campaign_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/communication_way_api_service.dart';
@@ -237,7 +237,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                       },
                       decoration: InputDecoration(
                         hintText: 'Search',
-                        hintStyle: GoogleFonts.montserrat(
+                        hintStyle: TextStyle(
                           color: const Color(0xff969696),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -665,7 +665,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                         children: [
                           Text(
                             'Manage Leads',
-                            style: GoogleFonts.montserrat(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color:
@@ -710,7 +710,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                         children: [
                           Text(
                             'Leads Trash',
-                            style: GoogleFonts.montserrat(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color:
@@ -757,7 +757,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                   icon: const Icon(Icons.add, size: 11, color: Colors.white),
                   label: Text(
                     'Create Lead',
-                    style: GoogleFonts.montserrat(
+                    style: TextStyle(
                       fontSize: 11.sp,
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -1116,7 +1116,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                                       .stage
                                                                       ?.name ??
                                                                   "No Stage",
-                                                              style: GoogleFonts.montserrat(
+                                                              style: TextStyle(
                                                                 fontSize: 13.sp,
                                                                 fontWeight:
                                                                     FontWeight
@@ -1153,7 +1153,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                           Expanded(
                                             child: Text(
                                               lead.project?.name ?? '',
-                                              style: GoogleFonts.montserrat(
+                                              style: TextStyle(
                                                 fontSize: 12.sp,
                                                 fontWeight: FontWeight.w500,
                                               ),
@@ -1180,7 +1180,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                           Expanded(
                                             child: Text(
                                               lead.name ?? "No Name",
-                                              style: GoogleFonts.montserrat(
+                                              style: TextStyle(
                                                 fontSize: 19.sp,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -1271,7 +1271,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                               Expanded(
                                                 child: Text(
                                                   lead.sales?.name ?? "none",
-                                                  style: GoogleFonts.montserrat(
+                                                  style: TextStyle(
                                                     fontSize: 16.sp,
                                                     fontWeight: FontWeight.w500,
                                                   ),
@@ -1688,7 +1688,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                               }
                                               return Text(
                                                 statusText,
-                                                style: GoogleFonts.montserrat(
+                                                style: TextStyle(
                                                   fontSize: 11.sp,
                                                   fontWeight: FontWeight.w700,
                                                   color: textColor,

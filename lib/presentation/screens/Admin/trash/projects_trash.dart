@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
@@ -67,7 +67,13 @@ class ProjectsTrash extends StatelessWidget {
                                           AddInMenuCubit
                                         >(), // استخدم نفس الـ cubit
                                 child: AddProjectDialog(
-                                  onAdd: (name, developerId, cityId, area, startprice) {
+                                  onAdd: (
+                                    name,
+                                    developerId,
+                                    cityId,
+                                    area,
+                                    startprice,
+                                  ) {
                                     context.read<AddInMenuCubit>().addProject(
                                       name,
                                       developerId,
@@ -194,10 +200,7 @@ class ProjectsTrash extends StatelessWidget {
               Expanded(
                 child: Text(
                   "project Name : $name",
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -221,7 +224,7 @@ class ProjectsTrash extends StatelessWidget {
               Expanded(
                 child: Text(
                   "Creation Date : $formattedDate",
-                  style: GoogleFonts.montserrat(fontSize: 13),
+                  style: TextStyle(fontSize: 13),
                 ),
               ),
             ],

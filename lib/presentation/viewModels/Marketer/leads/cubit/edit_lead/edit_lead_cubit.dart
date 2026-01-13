@@ -26,6 +26,7 @@ class EditLeadCubit extends Cubit<EditLeadState> {
     String? dayonly,
     String? campaign,
     String? lastStageDateUpdated,
+    bool? isLeadActivte,
   }) async {
     emit(EditLeadLoading());
 
@@ -47,6 +48,7 @@ class EditLeadCubit extends Cubit<EditLeadState> {
         dayonly: dayonly,
         campaign: campaign,
         lastStageDateUpdated: lastStageDateUpdated,
+        islLeadactivte: isLeadActivte,
       );
       emit(EditLeadSuccess());
     } catch (e) {

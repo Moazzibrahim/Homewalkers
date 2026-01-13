@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class UpdateProjectDialog extends StatefulWidget {
@@ -29,7 +29,8 @@ class _NewCommunicationDialogState extends State<UpdateProjectDialog> {
   void _checkChanges() {
     final nameChanged = _controller.text.trim() != (widget.initialValue ?? '');
     final priceChanged =
-        _startPriceController.text.trim() != (widget.initialStartPrice?.toString() ?? '');
+        _startPriceController.text.trim() !=
+        (widget.initialStartPrice?.toString() ?? '');
     setState(() {
       _hasChanges = nameChanged || priceChanged;
     });
@@ -86,7 +87,7 @@ class _NewCommunicationDialogState extends State<UpdateProjectDialog> {
                 Expanded(
                   child: Text(
                     "Update ${widget.title}",
-                    style: GoogleFonts.montserrat(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: textColor,
@@ -106,7 +107,7 @@ class _NewCommunicationDialogState extends State<UpdateProjectDialog> {
               style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 hintText: "${widget.title} Name",
-                hintStyle: GoogleFonts.montserrat(color: hintTextColor),
+                hintStyle: TextStyle(color: hintTextColor),
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: 14,
                   horizontal: 12,
@@ -133,7 +134,7 @@ class _NewCommunicationDialogState extends State<UpdateProjectDialog> {
               style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 hintText: "Start Price",
-                hintStyle: GoogleFonts.montserrat(color: hintTextColor),
+                hintStyle: TextStyle(color: hintTextColor),
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: 14,
                   horizontal: 12,
@@ -165,38 +166,45 @@ class _NewCommunicationDialogState extends State<UpdateProjectDialog> {
                     ),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.montserrat(color: cancelTextColor),
+                      style: TextStyle(color: cancelTextColor),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _hasChanges
-                        ? () {
-                            if (widget.onAdd != null) {
-                              final name = _controller.text.trim();
-                              final priceText = _startPriceController.text.trim();
+                    onPressed:
+                        _hasChanges
+                            ? () {
+                              if (widget.onAdd != null) {
+                                final name = _controller.text.trim();
+                                final priceText =
+                                    _startPriceController.text.trim();
 
-                              // استخدم القيمة القديمة إذا لم تتغير
-                              final updatedName =
-                                  name.isNotEmpty ? name : (widget.initialValue ?? '');
-                              final updatedPrice = priceText.isNotEmpty
-                                  ? num.tryParse(priceText) ?? widget.initialStartPrice ?? 0
-                                  : widget.initialStartPrice ?? 0;
+                                // استخدم القيمة القديمة إذا لم تتغير
+                                final updatedName =
+                                    name.isNotEmpty
+                                        ? name
+                                        : (widget.initialValue ?? '');
+                                final updatedPrice =
+                                    priceText.isNotEmpty
+                                        ? num.tryParse(priceText) ??
+                                            widget.initialStartPrice ??
+                                            0
+                                        : widget.initialStartPrice ?? 0;
 
-                              widget.onAdd!(updatedName, updatedPrice);
+                                widget.onAdd!(updatedName, updatedPrice);
+                              }
+                              Navigator.of(context).pop();
                             }
-                            Navigator.of(context).pop();
-                          }
-                        : null,
+                            : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: mainColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: Text(
                       "Update",
-                      style: GoogleFonts.montserrat(color: Colors.white),
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),

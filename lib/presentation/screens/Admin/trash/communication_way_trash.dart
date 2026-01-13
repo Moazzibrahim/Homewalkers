@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/communication_way_api_service.dart';
@@ -28,7 +28,9 @@ class CommunicationWayTrash extends StatelessWidget {
               context,
             ).showSnackBar(const SnackBar(content: Text('Done successfully')));
             // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
-            context.read<GetCommunicationWaysCubit>().fetchCommunicationWaysInTrash();
+            context
+                .read<GetCommunicationWaysCubit>()
+                .fetchCommunicationWaysInTrash();
           } else if (state is AddInMenuError) {
             ScaffoldMessenger.of(
               context,
@@ -36,10 +38,10 @@ class CommunicationWayTrash extends StatelessWidget {
           }
         },
         child: Scaffold(
-        backgroundColor:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.backgroundlightmode
-                    : Constants.backgroundDarkmode,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Communication Way",
             onBack: () {
@@ -153,7 +155,9 @@ class CommunicationWayTrash extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color:
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
             Theme.of(context).brightness == Brightness.light
                 ? Colors
                     .white // لون الكارت في light mode
@@ -167,7 +171,8 @@ class CommunicationWayTrash extends StatelessWidget {
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
-        ],),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -189,10 +194,7 @@ class CommunicationWayTrash extends StatelessWidget {
               Expanded(
                 child: Text(
                   "Communication Name : $name",
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -216,7 +218,7 @@ class CommunicationWayTrash extends StatelessWidget {
               Expanded(
                 child: Text(
                   "Creation Date : $formattedDate",
-                  style: GoogleFonts.montserrat(fontSize: 13),
+                  style: TextStyle(fontSize: 13),
                 ),
               ),
             ],
@@ -225,7 +227,7 @@ class CommunicationWayTrash extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-                InkWell(
+              InkWell(
                 child: Icon(
                   Icons.restore_from_trash,
                   color: Constants.maincolor,

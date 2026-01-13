@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -85,16 +85,25 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
                   Expanded(
                     child: Text(
                       "New campaign",
-                      style: GoogleFonts.montserrat(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.black
+                                : Colors.white,
                       ),
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
-                    child: Icon(Icons.close, color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,),
+                    child: Icon(
+                      Icons.close,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Colors.black
+                              : Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -129,10 +138,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Is Active",
-                    style: GoogleFonts.montserrat(fontSize: 14),
-                  ),
+                  Text("Is Active", style: TextStyle(fontSize: 14)),
                   Switch(
                     value: _isActive,
                     activeColor:
@@ -161,9 +167,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
                       ),
                       child: Text(
                         "Cancel",
-                        style: GoogleFonts.montserrat(
-                          color: Constants.maincolor,
-                        ),
+                        style: TextStyle(color: Constants.maincolor),
                       ),
                     ),
                   ),
@@ -194,10 +198,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
                                 : Constants.maincolor,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: Text(
-                        "Add",
-                        style: GoogleFonts.montserrat(color: Colors.white),
-                      ),
+                      child: Text("Add", style: TextStyle(color: Colors.white)),
                     ),
                   ),
                 ],
@@ -212,7 +213,7 @@ class _AddProjectDialogState extends State<AddCampaignDialog> {
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+      hintStyle: TextStyle(color: Colors.grey),
       contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );

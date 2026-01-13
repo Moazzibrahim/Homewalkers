@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class UpdateUserPasswordDialog extends StatefulWidget {
@@ -67,7 +67,7 @@ class _UpdateUserPasswordDialogState extends State<UpdateUserPasswordDialog> {
                     Expanded(
                       child: Text(
                         "Update Password",
-                        style: GoogleFonts.montserrat(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color:
@@ -119,7 +119,7 @@ class _UpdateUserPasswordDialogState extends State<UpdateUserPasswordDialog> {
                         ),
                         child: Text(
                           "Cancel",
-                          style: GoogleFonts.montserrat(color: Colors.white),
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),
@@ -146,7 +146,7 @@ class _UpdateUserPasswordDialogState extends State<UpdateUserPasswordDialog> {
                         ),
                         child: Text(
                           "Update",
-                          style: GoogleFonts.montserrat(color: Colors.white),
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),
@@ -166,7 +166,7 @@ class _UpdateUserPasswordDialogState extends State<UpdateUserPasswordDialog> {
       obscureText: true,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+        hintStyle: TextStyle(color: Colors.grey),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 14,
           horizontal: 12,

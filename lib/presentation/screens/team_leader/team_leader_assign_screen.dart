@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
@@ -26,6 +26,7 @@ import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/custom_
 import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/custom_filter_teamleader_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/edit_lead_sales_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TeamLeaderAssignScreen extends StatefulWidget {
@@ -55,6 +56,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
 
   void init() async {
     final prefs = await SharedPreferences.getInstance();
+    //print("stage name: ${widget.stageName}");
     if (!mounted) return;
     setState(() {
       teamleadname = prefs.getString('name');
@@ -64,18 +66,33 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   }
 
   late GetLeadsTeamLeaderCubit _cubit;
+
   @override
   void initState() {
     super.initState();
-    print("Stage Name in Assign Screen: ${widget.stageName}");
+
+    log("Stage Name in Assign Screen: ${widget.stageName}");
+
     _cubit = GetLeadsTeamLeaderCubit(GetLeadsService());
-    _cubit.getLeadsByTeamLeader().then((_) {
-      if (widget.stageName != null && widget.stageName!.isNotEmpty) {
-        _cubit.filterLeadsByStage(widget.stageName!);
-      }
-    });
+
+    _loadLeads();
+
     context.read<SalesCubit>().fetchAllSales();
     init();
+  }
+
+  Future<void> _loadLeads() async {
+    await _cubit.getLeadsByTeamLeader();
+
+    if (widget.stageName == null || widget.stageName!.isEmpty) return;
+
+    if (widget.stageName == "Team Leader Pending") {
+      log("Filtering Team Leader Pending");
+      _cubit.filterPendingLeadsForLoggedSales();
+    } else {
+      log("Filtering by stage: ${widget.stageName}");
+      _cubit.filterLeadsByStage(widget.stageName!);
+    }
   }
 
   String formatDateTimeToDubai(String dateStr) {
@@ -255,7 +272,24 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   >(
                     builder: (context, state) {
                       if (state is GetLeadsTeamLeaderLoading) {
-                        return const Center(child: CircularProgressIndicator());
+                        return Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: 6,
+                            itemBuilder: (context, index) {
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              );
+                            },
+                          ),
+                        );
                       } else if (state is GetLeadsTeamLeaderSuccess) {
                         _leads = state.leadsData.data ?? [];
                         if (selected.length != _leads.length) {
@@ -374,6 +408,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 laststageupdated: leadstageupdated!,
                                 stageId: lead.stage?.id ?? 'No Stage ID',
                                 leadLastDateAssigned: lead.lastdateassign ?? '',
+                                resetCreationDate:
+                                    lead.resetcreationdate ?? false,
                               );
                             },
                           ),
@@ -657,6 +693,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     required String laststageupdated,
     required String stageId,
     required String leadLastDateAssigned,
+    required bool resetCreationDate,
   }) {
     return InkWell(
       onTap: () async {
@@ -711,6 +748,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                       laststageupdated: laststageupdated,
                       stageId: stageId,
                       leadLastDateAssigned: leadLastDateAssigned,
+                      isresetcreationdate: resetCreationDate,
                     ),
                   ),
             ),
@@ -774,6 +812,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                       laststageupdated: laststageupdated,
                       stageId: stageId,
                       leadLastDateAssigned: leadLastDateAssigned,
+                      isresetcreationdate: resetCreationDate,
                     ),
                   ),
             ),
@@ -860,7 +899,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                   SizedBox(width: 6.w),
                                   Text(
                                     lead.stage?.name ?? "Unknown",
-                                    style: GoogleFonts.montserrat(
+                                    style: TextStyle(
                                       fontSize: 13.sp,
                                       fontWeight: FontWeight.bold,
                                       color: stageColor,
@@ -983,7 +1022,11 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                                                 .read<
                                                                   GetLeadsTeamLeaderCubit
                                                                 >()
-                                                                .getLeadsByTeamLeader();
+                                                                .refreshLeads(
+                                                                  stageName:
+                                                                      widget
+                                                                          .stageName,
+                                                                );
                                                           }
                                                         } finally {
                                                           if (mounted) {
@@ -1096,7 +1139,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                 Expanded(
                   child: Text(
                     name,
-                    style: GoogleFonts.montserrat(
+                    style: TextStyle(
                       fontSize: 19.sp,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1163,8 +1206,10 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                     // 👈 الجزء الشمال (Sales name)
                     Expanded(
                       child: Text(
-                        lead.sales?.name ?? "none",
-                        style: GoogleFonts.montserrat(
+                        lead.assigntype == true
+                            ? "team: ${lead.sales?.name}"
+                            : lead.sales?.name ?? 'N/A',
+                        style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1266,11 +1311,41 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                         builder: (context, commentState) {
                                           if (commentState
                                               is LeadCommentsLoading) {
-                                            return const SizedBox(
+                                            return SizedBox(
                                               height: 100,
                                               child: Center(
-                                                child:
-                                                    CircularProgressIndicator(),
+                                                child: Shimmer.fromColors(
+                                                  baseColor:
+                                                      Colors.grey.shade300,
+                                                  highlightColor:
+                                                      Colors.grey.shade100,
+                                                  child: ListView.builder(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          16,
+                                                        ),
+                                                    itemCount: 6,
+                                                    itemBuilder: (
+                                                      context,
+                                                      index,
+                                                    ) {
+                                                      return Container(
+                                                        margin:
+                                                            const EdgeInsets.only(
+                                                              bottom: 16,
+                                                            ),
+                                                        height: 80,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
                                               ),
                                             );
                                           } else if (commentState
@@ -1400,27 +1475,28 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                 ),
                 SizedBox(height: 4.h),
                 // ✅ CD Date (السطر اللي تحت)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.date_range,
-                      color:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Colors.grey
-                              : Constants.mainDarkmodecolor,
-                      size: 20,
-                    ),
-                    SizedBox(width: 6.w),
-                    Text(
-                      " ${lead.date != null ? formatDateTimeToDubai(lead.date!) : "N/A"}",
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w500,
+                if (resetCreationDate == false)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.date_range,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.grey
+                                : Constants.mainDarkmodecolor,
+                        size: 20,
                       ),
-                    ),
-                  ],
-                ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        " ${lead.date != null ? formatDateTimeToDubai(lead.date!) : "N/A"}",
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ],

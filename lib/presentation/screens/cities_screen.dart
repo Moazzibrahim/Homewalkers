@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/get_cities_api_service.dart';
@@ -186,10 +186,7 @@ class CitiesScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   "City Name : $name",
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -213,7 +210,7 @@ class CitiesScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   "Creation Date : $formattedDate",
-                  style: GoogleFonts.montserrat(fontSize: 13),
+                  style: TextStyle(fontSize: 13),
                 ),
               ),
             ],

@@ -4,7 +4,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
@@ -25,6 +25,7 @@ import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_filter_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/edit_lead_sales_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -57,33 +58,27 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
     //     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // 1) تحميل كل الداتا
-      await _initializeData();
+      log("📌 SalesLeadsScreen initState post frame callback");
 
-      // 2) بعد ما كل حاجة تخلص نطبق الفلترة مرة واحدة فقط
-      if (widget.stageName != null) {
-        context.read<GetLeadsCubit>().filterLeadsByStageName(widget.stageName!);
+      final cubit = context.read<GetLeadsCubit>();
+      log(
+        "📌 Before fetchLeads, cachedLeadsHasData=${cubit.cachedLeadsHasData}",
+      );
+
+      await cubit.fetchLeads();
+
+      log(
+        "📌 After fetchLeads, cachedLeadsHasData=${cubit.cachedLeadsHasData}",
+      );
+
+      if (widget.stageName != null && cubit.cachedLeadsHasData) {
+        log("📌 Applying filter for stage: ${widget.stageName}");
+        cubit.filterLeadsByStageName(widget.stageName!);
       }
+
+      context.read<SalesCubit>().fetchAllSales();
     });
   }
-
-  Future<void> _initializeData() async {
-    final cubit = context.read<GetLeadsCubit>();
-
-    // تحميل الصفحة الأولى
-    await cubit.fetchLeads();
-
-    // تحميل مبيعات
-    context.read<SalesCubit>().fetchAllSales();
-  }
-
-  // void _loadMore() async {
-  //   if (_isLoadingMore) return;
-
-  //   _isLoadingMore = true;
-  //   await context.read<GetLeadsCubit>().fetchLeads(loadMore: true);
-  //   _isLoadingMore = false;
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +130,12 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
         //     useAllLeads: true,
         //   );
         // }
+        // ✅ فلترة أول مرة بعد نجاح تحميل البيانات
+        if (state is GetLeadsSuccess && widget.stageName != null) {
+          context.read<GetLeadsCubit>().filterLeadsByStageNameOnce(
+            widget.stageName!,
+          );
+        }
         return Scaffold(
           backgroundColor:
               Theme.of(context).brightness == Brightness.light
@@ -176,7 +177,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: 'Search',
-                          hintStyle: GoogleFonts.montserrat(
+                          hintStyle: TextStyle(
                             color: Color(0xff969696),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -373,7 +374,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                         ),
                         label: Text(
                           'Create Lead',
-                          style: GoogleFonts.montserrat(
+                          style: TextStyle(
                             fontSize: 16.sp,
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
@@ -389,7 +390,24 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                 child: Builder(
                   builder: (_) {
                     if (state is GetLeadsLoading) {
-                      return const Center(child: CircularProgressIndicator());
+                      return Shimmer.fromColors(
+                        baseColor: Colors.grey.shade300,
+                        highlightColor: Colors.grey.shade100,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: 6,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            );
+                          },
+                        ),
+                      );
                     } else if (state is GetLeadsSuccess) {
                       final leads = state.assignedModel.data;
                       if (leads!.isEmpty) {
@@ -528,7 +546,9 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                               stageId: lead.stage?.id,
                                               leadLastDateAssigned:
                                                   lead.lastdateassign,
-                                                  isleadAssigned: lead.assign,
+                                              isleadAssigned: lead.assign,
+                                              resetcreationdate:
+                                                  lead.resetcreationdate,
                                             ),
                                           ),
                                     ),
@@ -675,7 +695,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                                                       .stage
                                                                       ?.name ??
                                                                   "Unknown",
-                                                              style: GoogleFonts.montserrat(
+                                                              style: TextStyle(
                                                                 fontSize: 13.sp,
                                                                 fontWeight:
                                                                     FontWeight
@@ -916,7 +936,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                           Expanded(
                                             child: Text(
                                               lead.name ?? "No Name",
-                                              style: GoogleFonts.montserrat(
+                                              style: TextStyle(
                                                 fontSize: 19.sp,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -999,7 +1019,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                               Expanded(
                                                 child: Text(
                                                   lead.sales?.name ?? "none",
-                                                  style: GoogleFonts.montserrat(
+                                                  style: TextStyle(
                                                     fontSize: 16.sp,
                                                     fontWeight: FontWeight.w500,
                                                   ),
@@ -1155,12 +1175,43 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                                                   ) {
                                                                     if (commentState
                                                                         is LeadCommentsLoading) {
-                                                                      return const SizedBox(
+                                                                      return SizedBox(
                                                                         height:
                                                                             100,
                                                                         child: Center(
-                                                                          child:
-                                                                              CircularProgressIndicator(),
+                                                                          child: Shimmer.fromColors(
+                                                                            baseColor:
+                                                                                Colors.grey.shade300,
+                                                                            highlightColor:
+                                                                                Colors.grey.shade100,
+                                                                            child: ListView.builder(
+                                                                              padding: const EdgeInsets.all(
+                                                                                16,
+                                                                              ),
+                                                                              itemCount:
+                                                                                  6,
+                                                                              itemBuilder: (
+                                                                                context,
+                                                                                index,
+                                                                              ) {
+                                                                                return Container(
+                                                                                  margin: const EdgeInsets.only(
+                                                                                    bottom:
+                                                                                        16,
+                                                                                  ),
+                                                                                  height:
+                                                                                      80,
+                                                                                  decoration: BoxDecoration(
+                                                                                    color:
+                                                                                        Colors.white,
+                                                                                    borderRadius: BorderRadius.circular(
+                                                                                      12,
+                                                                                    ),
+                                                                                  ),
+                                                                                );
+                                                                              },
+                                                                            ),
+                                                                          ),
                                                                         ),
                                                                       );
                                                                     } else if (commentState
@@ -1325,32 +1376,33 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                           ),
                                           SizedBox(height: 4.h),
                                           // ✅ CD Date (السطر اللي تحت)
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            children: [
-                                              Icon(
-                                                Icons.date_range,
-                                                color:
-                                                    Theme.of(
-                                                              context,
-                                                            ).brightness ==
-                                                            Brightness.light
-                                                        ? Colors.grey
-                                                        : Constants
-                                                            .mainDarkmodecolor,
-                                                size: 20,
-                                              ),
-                                              SizedBox(width: 6.w),
-                                              Text(
-                                                " ${lead.date != null ? formatDateTimeToDubai(lead.date!) : "N/A"}",
-                                                style: TextStyle(
-                                                  fontSize: 12.sp,
-                                                  fontWeight: FontWeight.w500,
+                                          if (lead.resetcreationdate == false)
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                              children: [
+                                                Icon(
+                                                  Icons.date_range,
+                                                  color:
+                                                      Theme.of(
+                                                                context,
+                                                              ).brightness ==
+                                                              Brightness.light
+                                                          ? Colors.grey
+                                                          : Constants
+                                                              .mainDarkmodecolor,
+                                                  size: 20,
                                                 ),
-                                              ),
-                                            ],
-                                          ),
+                                                SizedBox(width: 6.w),
+                                                Text(
+                                                  " ${lead.date != null ? formatDateTimeToDubai(lead.date!) : "N/A"}",
+                                                  style: TextStyle(
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                         ],
                                       ),
                                     ],

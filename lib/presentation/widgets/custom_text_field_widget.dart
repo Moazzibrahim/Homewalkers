@@ -9,6 +9,9 @@ class CustomTextField extends StatefulWidget {
   final bool? enabled;
   final Function(String)? onChanged;
 
+  /// ✅ الجديد
+  final String? Function(String?)? validator;
+
   const CustomTextField({
     super.key,
     required this.hint,
@@ -18,6 +21,7 @@ class CustomTextField extends StatefulWidget {
     this.textInputType,
     this.enabled,
     this.onChanged,
+    this.validator, // ✅
   });
 
   @override
@@ -29,24 +33,24 @@ class _CustomTextFieldState extends State<CustomTextField> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextField(
+      child: TextFormField(
         controller: widget.controller,
         keyboardType: widget.textInputType,
         enabled: widget.enabled,
+        onChanged: widget.onChanged,
+        validator: widget.validator, // ✅ هنا
         decoration: InputDecoration(
           hintText: widget.hint,
           hintStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w400,
-            // color: Color.fromRGBO(143, 146, 146, 1),
           ),
-          prefixIcon:
-              widget.prefix != null
-                  ? Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: InkWell(child: widget.prefix),
-                  )
-                  : null,
+          prefixIcon: widget.prefix != null
+              ? Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: InkWell(child: widget.prefix),
+                )
+              : null,
           suffixIcon: widget.suffixIcon,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),

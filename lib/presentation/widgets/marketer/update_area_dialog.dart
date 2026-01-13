@@ -1,7 +1,7 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/region_api_service.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/Region/region_cubit.dart';
@@ -64,19 +64,22 @@ class _AddProjectDialogState extends State<UpdateAreaDialog> {
                     CircleAvatar(
                       radius: 18,
                       backgroundColor:
-                          isDark ? Constants.mainDarkmodecolor : Constants.maincolor,
+                          isDark
+                              ? Constants.mainDarkmodecolor
+                              : Constants.maincolor,
                       child: Image.asset("assets/images/Vector.png"),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         "update area",
-                        style: GoogleFonts.montserrat(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Theme.of(context).brightness == Brightness.light
-                              ? Colors.black
-                              : Colors.white,
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Colors.black
+                                  : Colors.white,
                         ),
                       ),
                     ),
@@ -84,9 +87,10 @@ class _AddProjectDialogState extends State<UpdateAreaDialog> {
                       onTap: () => Navigator.of(context).pop(),
                       child: Icon(
                         Icons.close,
-                        color: Theme.of(context).brightness == Brightness.light
-                            ? Colors.black
-                            : Colors.white,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.black
+                                : Colors.white,
                       ),
                     ),
                   ],
@@ -107,7 +111,8 @@ class _AddProjectDialogState extends State<UpdateAreaDialog> {
                       return const CircularProgressIndicator();
                     } else if (state is RegionLoaded) {
                       final regions = state.regions.data;
-                      final regionIds = regions.map((dev) => dev.id.toString()).toList();
+                      final regionIds =
+                          regions.map((dev) => dev.id.toString()).toList();
 
                       // تحقق أن القيمة القديمة موجودة في اللستة
                       if (!regionIds.contains(selectedRegionId)) {
@@ -117,18 +122,20 @@ class _AddProjectDialogState extends State<UpdateAreaDialog> {
                       return DropdownButtonFormField<String>(
                         value: selectedRegionId,
                         decoration: _inputDecoration("Select region"),
-                        items: regions
-                            .map<DropdownMenuItem<String>>(
-                              (dev) => DropdownMenuItem<String>(
-                                value: dev.id.toString(),
-                                child: Text(dev.name),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) => setState(() {
-                          selectedRegionId = value;
-                          log("Selected region ID: $selectedRegionId");
-                        }),
+                        items:
+                            regions
+                                .map<DropdownMenuItem<String>>(
+                                  (dev) => DropdownMenuItem<String>(
+                                    value: dev.id.toString(),
+                                    child: Text(dev.name),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged:
+                            (value) => setState(() {
+                              selectedRegionId = value;
+                              log("Selected region ID: $selectedRegionId");
+                            }),
                       );
                     } else {
                       return const Text("Failed to load regions");
@@ -147,11 +154,13 @@ class _AddProjectDialogState extends State<UpdateAreaDialog> {
                           side: const BorderSide(color: Constants.maincolor),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           backgroundColor:
-                              isDark ? Constants.mainDarkmodecolor : Constants.maincolor,
+                              isDark
+                                  ? Constants.mainDarkmodecolor
+                                  : Constants.maincolor,
                         ),
                         child: Text(
                           "Cancel",
-                          style: GoogleFonts.montserrat(color: Colors.white),
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),
@@ -164,7 +173,7 @@ class _AddProjectDialogState extends State<UpdateAreaDialog> {
 
                           final isChanged =
                               newName != (widget.oldName ?? '') ||
-                                  newRegionId != (widget.oldRegionId ?? '');
+                              newRegionId != (widget.oldRegionId ?? '');
 
                           if (!isChanged) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -191,7 +200,7 @@ class _AddProjectDialogState extends State<UpdateAreaDialog> {
                         ),
                         child: Text(
                           "update",
-                          style: GoogleFonts.montserrat(color: Colors.white),
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),
@@ -208,7 +217,7 @@ class _AddProjectDialogState extends State<UpdateAreaDialog> {
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+      hintStyle: TextStyle(color: Colors.grey),
       contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );

@@ -45,6 +45,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
   bool isPrefsLoaded = false;
   bool hasFetchedCommentsOnce = false;
   late final LeadCommentsCubit _commentsCubit;
+  String? userRole;
 
   @override
   void initState() {
@@ -57,11 +58,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
 
   Future<void> _initializeAndLoad() async {
     final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('role');
-
-    if (role != "Admin" && role != "Marketer") {
-      // isClearHistory = prefs.getBool('clearHistory') ?? false;
-    }
+    userRole = prefs.getString('role'); // ✅ خزّن الرول
 
     isPrefsLoaded = true;
 
@@ -179,21 +176,38 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
             if (state is LeadCommentsFullLoaded) {
               hasFetchedCommentsOnce = true;
               final bool isClearHistory =
-                  state.assigned.data?.first.clearHistory ?? false;
-              final filteredData =
-                  state.comments.data!.where((item) {
-                    final first = item.comments?.first.firstcomment;
+                  (state.assigned.data != null &&
+                          state.assigned.data!.isNotEmpty)
+                      ? state.assigned.data!.first.clearHistory ?? false
+                      : false;
 
-                    final firstDate = DateTime.tryParse(
-                      first?.date?.toString() ?? '',
-                    )?.toUtc().add(const Duration(hours: 4));
+              final List<DataItem> filteredData;
 
-                    return isValidComment(
-                      isClearHistory: isClearHistory,
-                      firstDate: firstDate,
-                      firstText: first?.text,
-                    );
-                  }).toList();
+              if (userRole == "Admin" || userRole == "Marketer") {
+                /// ✅ Admin & Marketer → رجّع كل الكومنتات
+                filteredData = state.comments.data!;
+              } else {
+                /// ✅ باقي الرولز → طبّق الفلترة
+                filteredData =
+                    state.comments.data!.where((item) {
+                      // 🔐 حماية من الليست الفاضية
+                      if (item.comments == null || item.comments!.isEmpty) {
+                        return false;
+                      }
+
+                      final first = item.comments!.first.firstcomment;
+
+                      final firstDate = DateTime.tryParse(
+                        first?.date?.toString() ?? '',
+                      )?.toUtc().add(const Duration(hours: 4));
+
+                      return isValidComment(
+                        isClearHistory: isClearHistory,
+                        firstDate: firstDate,
+                        firstText: first?.text,
+                      );
+                    }).toList();
+              }
 
               if (filteredData.isEmpty) {
                 return const Center(child: Text('No comments found'));

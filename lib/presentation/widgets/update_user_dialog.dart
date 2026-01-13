@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class UpdateUserDialog extends StatefulWidget {
@@ -92,7 +92,7 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                   Expanded(
                     child: Text(
                       "Update User",
-                      style: GoogleFonts.montserrat(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color:
@@ -131,10 +131,7 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                     roles.map((role) {
                       return DropdownMenuItem<String>(
                         value: role,
-                        child: Text(
-                          role,
-                          style: GoogleFonts.montserrat(fontSize: 14),
-                        ),
+                        child: Text(role, style: TextStyle(fontSize: 14)),
                       );
                     }).toList(),
                 onChanged: (value) {
@@ -151,7 +148,7 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   hintText: "Select Role",
-                  hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+                  hintStyle: TextStyle(color: Colors.grey),
                 ),
               ),
 
@@ -163,7 +160,7 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                     Theme.of(context).brightness == Brightness.light
                         ? Constants.maincolor
                         : Constants.mainDarkmodecolor,
-                title: Text("Open Comments", style: GoogleFonts.montserrat()),
+                title: Text("Open Comments", style: TextStyle()),
                 value: _openComments,
                 onChanged: (value) {
                   setState(() => _openComments = value);
@@ -174,10 +171,7 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                     Theme.of(context).brightness == Brightness.light
                         ? Constants.maincolor
                         : Constants.mainDarkmodecolor,
-                title: Text(
-                  "Close Done Deal Comments",
-                  style: GoogleFonts.montserrat(),
-                ),
+                title: Text("Close Done Deal Comments", style: TextStyle()),
                 value: _closeDoneDealComments,
                 onChanged: (value) {
                   setState(() => _closeDoneDealComments = value);
@@ -202,7 +196,7 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                       ),
                       child: Text(
                         "Cancel",
-                        style: GoogleFonts.montserrat(color: Colors.white),
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ),
@@ -253,7 +247,7 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
                       ),
                       child: Text(
                         "Update",
-                        style: GoogleFonts.montserrat(color: Colors.white),
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ),
@@ -271,7 +265,7 @@ class _UpdateUserDialogState extends State<UpdateUserDialog> {
       controller: controller,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+        hintStyle: TextStyle(color: Colors.grey),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 14,
           horizontal: 12,

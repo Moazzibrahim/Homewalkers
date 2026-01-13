@@ -9,7 +9,6 @@ import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_for_signup_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
-import 'package:homewalkers_app/data/data_sources/newCommentsApiService.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/decider_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -20,7 +19,6 @@ import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manage
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users_signup/cubit/getalluserssignup_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/newComments/new_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
@@ -30,7 +28,6 @@ import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_le
 import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -293,7 +290,7 @@ class MyApp extends StatelessWidget {
           create:
               (context) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
         ),
-       // BlocProvider(create: (_) => CommentsCubit(Newcommentsapiservice())),
+        // BlocProvider(create: (_) => CommentsCubit(Newcommentsapiservice())),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
@@ -307,15 +304,17 @@ class MyApp extends StatelessWidget {
                 navigatorKey: navigatorKey,
                 debugShowCheckedModeBanner: false,
                 theme: ThemeData.light().copyWith(
-                  textTheme: GoogleFonts.montserratTextTheme(
-                    ThemeData.light().textTheme,
+                  textTheme: ThemeData.light().textTheme.apply(
+                    fontFamily: 'Montserrat',
                   ),
                 ),
+
                 darkTheme: ThemeData.dark().copyWith(
-                  textTheme: GoogleFonts.montserratTextTheme(
-                    ThemeData.dark().textTheme,
+                  textTheme: ThemeData.dark().textTheme.apply(
+                    fontFamily: 'Montserrat',
                   ),
                 ),
+
                 themeMode: themeMode,
                 home: FutureBuilder<bool>(
                   future: _checkFirstLaunch(),

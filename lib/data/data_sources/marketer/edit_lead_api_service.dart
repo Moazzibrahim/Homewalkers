@@ -25,6 +25,7 @@ class EditLeadApiService {
     String? dayonly,
     String? campaign,
     String? lastStageDateUpdated,
+    bool? islLeadactivte,
   }) async {
     final url = Uri.parse('$baseUrl/$userId');
     final prefs = await SharedPreferences.getInstance();
@@ -46,13 +47,13 @@ class EditLeadApiService {
     if (project != null && project.isNotEmpty) body['project'] = project;
 
     // ✅ تحديد الـ Sales ID اللي هيتبعت بناءً على الدور
-    if (role == 'Admin') {
-      body['sales'] = salesId;
-    } else {
-      // لو sales_userlog_id فاضي أو null، استخدم salesId بدلها
-      body['sales'] =
-          (salesIdd != null && salesIdd.isNotEmpty) ? salesIdd : salesId;
-    }
+    // if (role == 'Admin') {
+    //   body['sales'] = salesId;
+    // } else {
+    //   // لو sales_userlog_id فاضي أو null، استخدم salesId بدلها
+    //   body['sales'] =
+    //       (salesIdd != null && salesIdd.isNotEmpty) ? salesIdd : salesId;
+    // }
 
     if (notes != null && notes.isNotEmpty) body['notes'] = notes;
     if (stage != null && stage.isNotEmpty) body['stage'] = stage;
@@ -73,6 +74,9 @@ class EditLeadApiService {
     body['stagedateupdated'] = currentDateTime;
     body['addby'] = salesId;
     body['updatedby'] = salesId;
+    if (islLeadactivte != null) {
+      body['leadisactive'] = islLeadactivte;
+    }
 
     // ✅ الطباعة الواضحة لكل القيم اللي هتتبعت
     print('----------------------------------------');

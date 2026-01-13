@@ -725,31 +725,10 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                               label: 'Channel',
                               value: '${widget.leadChannel}',
                             ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  "Σ",
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
-                                    fontSize: 18.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Text(
-                                  "Total Submission: ${widget.totalsubmissions ?? '0'}",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 14,
-                                    color: Color(0xff6A6A75),
-                                  ),
-                                ),
-                              ],
+                            InfoRow(
+                              icon: Icons.list,
+                              label: 'Total Submissions',
+                              value: widget.totalsubmissions ?? '0',
                             ),
                           ],
                         ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class AddStageTypeDialog extends StatefulWidget {
@@ -53,7 +53,7 @@ class _AddProjectDialogState extends State<AddStageTypeDialog> {
                   Expanded(
                     child: Text(
                       "New stage type",
-                      style: GoogleFonts.montserrat(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: Colors.black,
@@ -151,7 +151,7 @@ class _AddProjectDialogState extends State<AddStageTypeDialog> {
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+      hintStyle: TextStyle(color: Colors.grey),
       contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );

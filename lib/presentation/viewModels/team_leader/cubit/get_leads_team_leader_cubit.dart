@@ -151,15 +151,17 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
       final prefs = await SharedPreferences.getInstance();
       final name = prefs.getString('name') ?? '';
       if (q == 'fresh') {
-        // ✅ Fresh Stage حقيقي
         filtered =
-            _originalLeadsResponse!.data!
-                .where(
-                  (lead) =>
-                      lead.sales?.userlog?.name?.toLowerCase() ==
-                      name.toLowerCase(),
-                )
-                .toList();
+            _originalLeadsResponse!.data!.where((lead) {
+              final assignedToMe =
+                  lead.sales?.userlog?.name?.toLowerCase() ==
+                  name.toLowerCase();
+
+              final stageName = lead.stage?.name;
+              final isNoStage = stageName?.toLowerCase() == 'no stage';
+
+              return assignedToMe && isNoStage;
+            }).toList();
       } else if (q == 'no stage') {
         // ✅ No Stage Stage حقيقي
         filtered =
@@ -196,8 +198,19 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
 
       return dateA.compareTo(dateB);
     });
-
+    // ✅ لو مفيش Leads
+    if (filtered.isEmpty) {
+      emit(const GetLeadsTeamLeaderError('No leads found'));
+      return;
+    }
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
+  }
+
+  Future<void> refreshLeads({String? stageName}) async {
+    await getLeadsByTeamLeader(); // جلب كل الليدز
+    if (stageName != null && stageName.isNotEmpty) {
+      filterLeadsByStage(stageName); // فلترة حسب stageName لو موجود
+    }
   }
 
   /// تحميل عدد الـ leads حسب المرحلة
@@ -376,6 +389,52 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
 
           return stageMatch && matchQuery;
         }).toList();
+
+    emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
+  }
+
+  Future<void> filterPendingLeadsForLoggedSales() async {
+    if (_originalLeadsResponse?.data == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final salesName = prefs.getString('name')?.toLowerCase() ?? '';
+
+    final filtered =
+        _originalLeadsResponse!.data!.where((lead) {
+          final stageName = lead.stage?.name?.toLowerCase();
+          final leadSalesName = lead.sales?.userlog?.name?.toLowerCase();
+
+          return stageName == 'pending' && leadSalesName == salesName;
+        }).toList();
+
+    // ترتيب حسب آخر تحديث للـ stage
+    filtered.sort((a, b) {
+      DateTime? dateA =
+          a.stagedateupdated != null
+              ? DateTime.parse(
+                a.stagedateupdated!,
+              ).toUtc().add(const Duration(hours: 4))
+              : null;
+
+      DateTime? dateB =
+          b.stagedateupdated != null
+              ? DateTime.parse(
+                b.stagedateupdated!,
+              ).toUtc().add(const Duration(hours: 4))
+              : null;
+
+      if (dateA == null && dateB == null) return 0;
+      if (dateA == null) return 1;
+      if (dateB == null) return -1;
+
+      return dateA.compareTo(dateB);
+    });
+    log("sales name: $salesName");
+
+    if (filtered.isEmpty) {
+      emit(const GetLeadsTeamLeaderError('No pending leads found'));
+      return;
+    }
 
     emit(GetLeadsTeamLeaderSuccess(LeadResponse(data: filtered)));
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class AddDialog extends StatefulWidget {
@@ -19,12 +19,13 @@ class _NewCommunicationDialogState extends State<AddDialog> {
   @override
   Widget build(BuildContext context) {
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final mainColor = isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
     final textColor = isLight ? Colors.black : Colors.white;
     final backgroundColor = isLight ? Colors.white : const Color(0xFF1E1E1E);
     final hintTextColor = isLight ? Colors.grey : Colors.grey[400];
     final borderColor = mainColor;
-    final cancelTextColor = isLight ?  Constants.maincolor : Colors.grey[300];
+    final cancelTextColor = isLight ? Constants.maincolor : Colors.grey[300];
 
     return Dialog(
       backgroundColor: backgroundColor,
@@ -46,7 +47,7 @@ class _NewCommunicationDialogState extends State<AddDialog> {
                 Expanded(
                   child: Text(
                     "New ${widget.title}",
-                    style: GoogleFonts.montserrat(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: textColor,
@@ -66,8 +67,11 @@ class _NewCommunicationDialogState extends State<AddDialog> {
               style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 hintText: "${widget.title} Name",
-                hintStyle: GoogleFonts.montserrat(color: hintTextColor),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                hintStyle: TextStyle(color: hintTextColor),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: borderColor),
@@ -95,7 +99,7 @@ class _NewCommunicationDialogState extends State<AddDialog> {
                     ),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.montserrat(color: cancelTextColor),
+                      style: TextStyle(color: cancelTextColor),
                     ),
                   ),
                 ),
@@ -112,14 +116,11 @@ class _NewCommunicationDialogState extends State<AddDialog> {
                       backgroundColor: mainColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text(
-                      "Add",
-                      style: GoogleFonts.montserrat(color: Colors.white),
-                    ),
+                    child: Text("Add", style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

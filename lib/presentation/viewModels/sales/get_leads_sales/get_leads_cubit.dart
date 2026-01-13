@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable
+// ignore_for_file: unused_local_variable, unused_field
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,10 +21,15 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
   bool _isLoading = false;
   final List<LeadData> _allLeads = [];
   bool get isLoading => _isLoading;
+  bool get cachedLeadsHasData =>
+      _cachedLeads != null &&
+      _cachedLeads!.data != null &&
+      _cachedLeads!.data!.isNotEmpty;
+  bool _hasFilteredStage = false;
 
   GetLeadsCubit(this.apiService) : super(GetLeadsInitial()) {
     // ⚠️ لا تجلب بيانات تلقائياً، دع الشاشة تحدد ماذا تريد
-  //  _startPolling();
+    //  _startPolling();
   }
 
   // void _startPolling() {
@@ -76,97 +81,33 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     bool forDashboard = false,
   }) async {
     _isDashboardMode = false;
-
-    if (_isLoading) return; // 🔒 منع التكرار
+    if (_isLoading) return;
 
     if (showLoading && !loadMore) emit(GetLeadsLoading());
 
     try {
-      // 🔄 Pagination Logic
-      if (forDashboard) {
-        currentPage = 1;
-        hasMore = false;
-      } else if (loadMore) {
-        currentPage++;
-      } else {
-        currentPage = 1;
-        hasMore = true;
-        _allLeads.clear(); // ⭐️ بداية جديدة
-      }
+      currentPage = loadMore ? currentPage + 1 : 1;
+      if (!loadMore) _allLeads.clear();
 
       _isLoading = true;
 
-      // ⭐️ 1) تحميل الصفحة الحالية فقط (مثل currentPageFuture)
-      final currentPageFuture = apiService.getAssignedData(
+      final data = await apiService.getAssignedData(
         page: currentPage,
         limit: forDashboard ? 9999 : limit,
         forDashboard: forDashboard,
       );
 
-      // ⭐️ 2) تحميل جميع البيانات في الخلفية فقط في أول مرة
-      Future<void>? backgroundLoadFuture;
-      if (!forDashboard && !loadMore && _allLeads.isEmpty) {
-        backgroundLoadFuture = Future.microtask(() async {
-          try {
-            final allData = await apiService.getAssignedData(
-              page: 1,
-              limit: 3000, // زي ال logic السابق
-              forDashboard: false,
-            );
-
-            if (allData.data != null) {
-              _allLeads
-                ..clear()
-                ..addAll(allData.data!);
-            }
-
-            log("✅ Background leads loaded: ${_allLeads.length}");
-          } catch (e) {
-            log("❌ Background load failed: $e");
-          }
-        });
-      }
-
-      // ⭐️ 3) انتظار بيانات الصفحة الحالية فقط
-      final data = await currentPageFuture;
-
-      final newLeads = data.data ?? [];
-
-      if (newLeads.isEmpty && !forDashboard) {
-        hasMore = false;
-        return;
-      }
-
-      // ⭐️ أول صفحة → reset
-      if (!loadMore || forDashboard) {
+      if (!loadMore) {
         _cachedLeads = data;
-
-        if (!forDashboard) {
-          _allLeads.clear();
-          _allLeads.addAll(newLeads);
-        }
+        _allLeads.addAll(data.data ?? []);
       } else {
-        // ⭐️ loadMore → إضافة بيانات
-        _cachedLeads?.data?.addAll(newLeads);
-        _cachedLeads = LeadResponse(
-          count: _cachedLeads?.count ?? 0,
-          data: _cachedLeads?.data ?? [],
-        );
-        _allLeads.addAll(newLeads);
+        _cachedLeads?.data?.addAll(data.data ?? []);
+        _allLeads.addAll(data.data ?? []);
       }
 
-      // ⭐️ تحديد إذا في pages تانية
-      hasMore = newLeads.isNotEmpty;
-
-      // ⭐️ إرسال نتيجة الصفحة الحالية فقط
-      await _updateNotifications(_cachedLeads!);
+      hasMore = (data.data?.isNotEmpty ?? false);
 
       emit(GetLeadsSuccess(_cachedLeads!));
-
-      // ⭐️ تشغيل التحميل الخلفي بدون انتظار
-      if (backgroundLoadFuture != null) {
-        backgroundLoadFuture.ignore();
-      }
     } catch (e) {
       emit(GetLeadsError("No Leads Data Found"));
     } finally {
@@ -371,5 +312,13 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     _cachedLeads = LeadResponse(count: filtered.length, data: filtered);
 
     emit(GetLeadsSuccess(_cachedLeads!));
+  }
+
+  void filterLeadsByStageNameOnce(String stageName) {
+    if (_hasFilteredStage) return; // ✅ منع الفلترة المتكررة
+    if (_cachedLeads == null || _cachedLeads!.data == null) return;
+
+    _hasFilteredStage = true; // تعليم أن الفلترة حصلت
+    filterLeadsByStageName(stageName); // استدعاء الفلترة العادية
   }
 }

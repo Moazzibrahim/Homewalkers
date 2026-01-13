@@ -7,6 +7,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
+import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
@@ -20,8 +21,8 @@ import 'package:homewalkers_app/presentation/widgets/custom_add_comment_admin.da
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/assign_lead_markter_dialog.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AdminLeadDetails extends StatefulWidget {
@@ -55,7 +56,12 @@ class AdminLeadDetails extends StatefulWidget {
   final String? leadversionschannel;
   final String? leadversionscreationdate;
   final String? leadversionscommunicationway;
-
+  final num? unitPrice;
+  final String? unitnumber;
+  final num? commissionratio;
+  final num? commissionmoney;
+  final num? cashbackratio;
+  final num? cashbackmoney;
   AdminLeadDetails({
     super.key,
     required this.leedId,
@@ -88,6 +94,12 @@ class AdminLeadDetails extends StatefulWidget {
     this.leadversionschannel,
     this.leadversionscreationdate,
     this.leadversionscommunicationway,
+    this.unitPrice,
+    this.unitnumber,
+    this.commissionratio,
+    this.commissionmoney,
+    this.cashbackratio,
+    this.cashbackmoney,
   });
   @override
   State<AdminLeadDetails> createState() => _SalesLeadsDetailsScreenState();
@@ -435,6 +447,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                                     mainAxisSize:
                                                         MainAxisSize.min,
                                                     children: [
+                                                      // Header
                                                       Row(
                                                         children: [
                                                           CircleAvatar(
@@ -460,7 +473,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                                           Text(
                                                             "Show Duplicate",
                                                             style: TextStyle(
-                                                              fontSize: 18,
+                                                              fontSize: 15,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .bold,
@@ -482,82 +495,111 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                                       const SizedBox(
                                                         height: 16,
                                                       ),
-                                                      Row(
-                                                        children: [
-                                                          Text(
-                                                            widget.leadName ??
-                                                                "",
-                                                            style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontSize: 16,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 20,
-                                                      ),
-                                                      Align(
-                                                        alignment:
-                                                            Alignment
-                                                                .centerLeft,
-                                                        child: Text(
-                                                          "Lead Information :",
-                                                          style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            color:
-                                                                Colors
-                                                                    .grey[700],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 10,
-                                                      ),
-                                                      buildInfoRow(
-                                                        Icons.location_city,
-                                                        "Project",
-                                                        widget.leadversionsproject ??
-                                                            'No Project',
-                                                      ),
-                                                      buildInfoRow(
-                                                        Icons.settings,
-                                                        "Developer",
-                                                        widget.leadversionsdeveloper ??
-                                                            'No Developer',
-                                                      ),
-                                                      buildInfoRow(
-                                                        Icons.chat,
-                                                        "Communication Way",
-                                                        widget.leadversionscommunicationway ??
-                                                            'No Communication Way',
-                                                      ),
-                                                      buildInfoRow(
-                                                        Icons.date_range,
-                                                        "Creation Date",
-                                                        widget.leadversionscreationdate !=
-                                                                null
-                                                            ? DateTime.parse(
-                                                              widget
-                                                                  .leadversionscreationdate!,
-                                                            ).toLocal().toString()
-                                                            : 'No Date',
-                                                      ),
-                                                      buildInfoRow(
-                                                        Icons.device_hub,
-                                                        "Channel",
-                                                        widget.leadversionschannel ??
-                                                            'No Channel',
-                                                      ),
-                                                      buildInfoRow(
-                                                        Icons.campaign,
-                                                        "Campaign",
-                                                        widget.leadversionscampaign ??
-                                                            'No Campaign',
-                                                      ),
+                                                      // List all versions
+                                                      if (widget.leadversions !=
+                                                              null &&
+                                                          widget
+                                                              .leadversions!
+                                                              .isNotEmpty)
+                                                        ...(widget.leadversions!
+                                                                as List<
+                                                                  LeadVersionnn
+                                                                >)
+                                                            .map((version) {
+                                                              return Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
+                                                                children: [
+                                                                  Divider(
+                                                                    thickness:
+                                                                        1,
+                                                                    height: 30,
+                                                                  ),
+                                                                  Text(
+                                                                    version.name ??
+                                                                        '',
+                                                                    style: TextStyle(
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                      fontSize:
+                                                                          16,
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    height: 10,
+                                                                  ),
+                                                                  buildInfoRow(
+                                                                    Icons
+                                                                        .location_city,
+                                                                    "Project",
+                                                                    version
+                                                                            .project
+                                                                            ?.name ??
+                                                                        'No Project',
+                                                                  ),
+                                                                  buildInfoRow(
+                                                                    Icons
+                                                                        .settings,
+                                                                    "Developer",
+                                                                    version
+                                                                            .project
+                                                                            ?.developer
+                                                                            ?.name ??
+                                                                        'No Developer',
+                                                                  ),
+                                                                  buildInfoRow(
+                                                                    Icons.chat,
+                                                                    "Communication Way",
+                                                                    version
+                                                                            .communicationway
+                                                                            ?.name ??
+                                                                        'No Communication Way',
+                                                                  ),
+                                                                  buildInfoRow(
+                                                                    Icons
+                                                                        .date_range,
+                                                                    "Creation Date",
+                                                                    version.recordedAt !=
+                                                                            null
+                                                                        ? formatDateTimeToDubai(
+                                                                          version
+                                                                              .recordedAt!,
+                                                                        )
+                                                                        : 'No Date',
+                                                                  ),
+                                                                  buildInfoRow(
+                                                                    Icons
+                                                                        .device_hub,
+                                                                    "Channel",
+                                                                    version
+                                                                            .chanel
+                                                                            ?.name ??
+                                                                        'No Channel',
+                                                                  ),
+                                                                  buildInfoRow(
+                                                                    Icons
+                                                                        .campaign,
+                                                                    "Campaign",
+                                                                    version
+                                                                            .campaign
+                                                                            ?.campainName ??
+                                                                        'No Campaign',
+                                                                  ),
+                                                                  buildInfoRow(
+                                                                    Icons
+                                                                        .person,
+                                                                    "Added By",
+                                                                    version
+                                                                            .addby
+                                                                            ?.name ??
+                                                                        'No Added By',
+                                                                  ),
+                                                                ],
+                                                              );
+                                                            })
+                                                            .toList(),
                                                     ],
                                                   ),
                                                 ),
@@ -602,6 +644,150 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                     ),
                                   ),
                                 ),
+                                if (widget.leadStage == "Done Deal") ...[
+                                  SizedBox(width: 22.w),
+                                  InkWell(
+                                    onTap: () {
+                                      showDialog(
+                                        context: context,
+                                        builder:
+                                            (context) => Dialog(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  16.0,
+                                                ),
+                                                child: SingleChildScrollView(
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            " Done Deal Details",
+                                                            style: TextStyle(
+                                                              fontSize: 18.sp,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                          const Spacer(),
+                                                          IconButton(
+                                                            icon: const Icon(
+                                                              Icons.close,
+                                                            ),
+                                                            onPressed:
+                                                                () =>
+                                                                    Navigator.pop(
+                                                                      context,
+                                                                    ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 16,
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            widget.leadName ??
+                                                                "",
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontSize: 16,
+                                                                ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 20,
+                                                      ),
+                                                      Align(
+                                                        alignment:
+                                                            Alignment
+                                                                .centerLeft,
+                                                        child: Text(
+                                                          "Lead Information :",
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color:
+                                                                Colors
+                                                                    .grey[700],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 10,
+                                                      ),
+                                                      buildInfoRow(
+                                                        Icons.location_city,
+                                                        "Unit Number",
+                                                        widget.unitnumber
+                                                                ?.toString() ??
+                                                            'N/A',
+                                                      ),
+                                                      buildInfoRow(
+                                                        Icons.money,
+                                                        "Unit Price",
+                                                        widget.unitPrice
+                                                                ?.toString() ??
+                                                            'N/A',
+                                                      ),
+                                                      buildInfoRow(
+                                                        Icons.aspect_ratio,
+                                                        "Commission Ratio",
+                                                        "${widget.commissionratio?.toString()}%",
+                                                      ),
+                                                      buildInfoRow(
+                                                        Icons.attach_money,
+                                                        "Commission Money",
+                                                        widget.commissionmoney
+                                                                ?.toString() ??
+                                                            'No Commission Money',
+                                                      ),
+                                                      buildInfoRow(
+                                                        Icons.cached,
+                                                        "Cashback Ratio",
+                                                        "${widget.cashbackratio?.toString()}%",
+                                                      ),
+                                                      buildInfoRow(
+                                                        Icons.cached_outlined,
+                                                        "Cashback Money",
+                                                        widget.cashbackmoney
+                                                                ?.toString() ??
+                                                            'N/A',
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                      );
+                                    },
+                                    child: CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                      child: const Icon(
+                                        Icons.done_all,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                                 // ElevatedButton(
                                 //   style: ElevatedButton.styleFrom(
                                 //     shape: RoundedRectangleBorder(
@@ -724,32 +910,37 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                               label: 'Channel',
                               value: '${widget.leadChannel}',
                             ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  "Σ",
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
-                                    fontSize: 18.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Text(
-                                  "Total Submission: ${widget.totalsubmissions ?? '0'}",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 14,
-                                    color: Color(0xff6A6A75),
-                                  ),
-                                ),
-                              ],
+                            InfoRow(
+                              icon: Icons.list,
+                              label: 'Total Submissions',
+                              value: widget.totalsubmissions ?? '0',
                             ),
+                            // Row(
+                            //   mainAxisSize: MainAxisSize.min,
+                            //   children: [
+                            //     Text(
+                            //       "Σ",
+                            //       style: TextStyle(
+                            //         color:
+                            //             Theme.of(context).brightness ==
+                            //                     Brightness.light
+                            //                 ? Constants.maincolor
+                            //                 : Constants.mainDarkmodecolor,
+                            //         fontSize: 18.sp,
+                            //         fontWeight: FontWeight.bold,
+                            //       ),
+                            //     ),
+                            //     const SizedBox(width: 14),
+                            //     Text(
+                            //       "Total Submission: ${widget.totalsubmissions ?? '0'}",
+                            //       style: const TextStyle(
+                            //         fontWeight: FontWeight.w400,
+                            //         fontSize: 14,
+                            //         color: Color(0xff6A6A75),
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
                           ],
                         ),
                       ),
@@ -768,7 +959,20 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                         >(
                           builder: (context, state) {
                             if (state is LeadCommentsLoading) {
-                              return Center(child: CircularProgressIndicator());
+                              return Center(
+                                child: Shimmer.fromColors(
+                                  baseColor: Colors.grey.shade300,
+                                  highlightColor: Colors.grey.shade100,
+                                  child: Container(
+                                    width: 120,
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+                              );
                             } else if (state is LeadCommentsError) {
                               return Center(
                                 child: Text('Error: ${state.message}'),

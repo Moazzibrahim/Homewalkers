@@ -23,7 +23,8 @@ class TeamleaderDashboardResponse {
 class DashboardData {
   final TeamLeaderInfo? teamleaderInfo;
   final List<StageDashboard>? dashboard;
-  final TeamLeaderFresh? teamLeaderFresh; // ✅ جديد
+  final TeamLeaderFresh? teamLeaderFresh;
+  final TeamLeaderPending? teamLeaderPending; // ✅ جديد
   final int? salesCount;
   final Summary? summary;
 
@@ -31,6 +32,7 @@ class DashboardData {
     this.teamleaderInfo,
     this.dashboard,
     this.teamLeaderFresh,
+    this.teamLeaderPending,
     this.salesCount,
     this.summary,
   });
@@ -47,6 +49,9 @@ class DashboardData {
           : null,
       teamLeaderFresh: json['teamLeaderFresh'] != null
           ? TeamLeaderFresh.fromJson(json['teamLeaderFresh'])
+          : null,
+      teamLeaderPending: json['teamLeaderPending'] != null
+          ? TeamLeaderPending.fromJson(json['teamLeaderPending'])
           : null,
       salesCount: json['salesCount'],
       summary:
@@ -95,16 +100,18 @@ class StageDashboard {
   }
 }
 
-/// ✅ موديل teamLeaderFresh
+/// ✅ موديل teamLeaderFresh مع إضافة stageId
 class TeamLeaderFresh {
   final String? stageName;
   final int? leadsCount;
   final String? description;
+  final String? stageId; // ✅ جديد
 
   TeamLeaderFresh({
     this.stageName,
     this.leadsCount,
     this.description,
+    this.stageId,
   });
 
   factory TeamLeaderFresh.fromJson(Map<String, dynamic> json) {
@@ -112,19 +119,51 @@ class TeamLeaderFresh {
       stageName: json['stageName'],
       leadsCount: json['leadsCount'],
       description: json['description'],
+      stageId: json['stageId'],
+    );
+  }
+}
+
+/// ✅ موديل teamLeaderPending
+class TeamLeaderPending {
+  final String? stageName;
+  final int? leadsCount;
+  final String? description;
+  final String? stageId;
+  final List<String>? salesIds;
+
+  TeamLeaderPending({
+    this.stageName,
+    this.leadsCount,
+    this.description,
+    this.stageId,
+    this.salesIds,
+  });
+
+  factory TeamLeaderPending.fromJson(Map<String, dynamic> json) {
+    return TeamLeaderPending(
+      stageName: json['stageName'],
+      leadsCount: json['leadsCount'],
+      description: json['description'],
+      stageId: json['stageId'],
+      salesIds: json['salesIds'] != null
+          ? List<String>.from(json['salesIds'])
+          : null,
     );
   }
 }
 
 class Summary {
   final int? totalLeads;
-  final int? teamLeaderFreshLeads; // ✅ جديد
+  final int? teamLeaderFreshLeads;
+  final int? teamLeaderPendingLeads; // ✅ جديد
   final int? totalStages;
   final int? stagesWithLeads;
 
   Summary({
     this.totalLeads,
     this.teamLeaderFreshLeads,
+    this.teamLeaderPendingLeads,
     this.totalStages,
     this.stagesWithLeads,
   });
@@ -133,6 +172,7 @@ class Summary {
     return Summary(
       totalLeads: json['totalLeads'],
       teamLeaderFreshLeads: json['teamLeaderFreshLeads'],
+      teamLeaderPendingLeads: json['teamLeaderPendingLeads'],
       totalStages: json['totalStages'],
       stagesWithLeads: json['stagesWithLeads'],
     );

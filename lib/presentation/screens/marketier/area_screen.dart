@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/area_api_service.dart';
@@ -38,9 +38,9 @@ class AreaScreen extends StatelessWidget {
         },
         child: Scaffold(
           backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.backgroundlightmode
+                  : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: "Areas",
             onBack: () {
@@ -109,9 +109,7 @@ class AreaScreen extends StatelessWidget {
                       } else if (state is GetAreaLoaded) {
                         final dsvelopers = state.areas;
                         if (dsvelopers.isEmpty) {
-                          return const Center(
-                            child: Text('No areas Found.'),
-                          );
+                          return const Center(child: Text('No areas Found.'));
                         }
                         return ListView.separated(
                           itemCount: dsvelopers.length,
@@ -152,7 +150,9 @@ class AreaScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color:
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color:
             Theme.of(context).brightness == Brightness.light
                 ? Colors
                     .white // لون الكارت في light mode
@@ -166,7 +166,8 @@ class AreaScreen extends StatelessWidget {
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
-        ],),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -188,10 +189,7 @@ class AreaScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   "area Name : $name",
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -215,7 +213,7 @@ class AreaScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   "Creation Date : $formattedDate",
-                  style: GoogleFonts.montserrat(fontSize: 13),
+                  style: TextStyle(fontSize: 13),
                 ),
               ),
             ],
@@ -255,17 +253,21 @@ class AreaScreen extends StatelessWidget {
                 },
               ),
               InkWell(
-              onTap: () {
+                onTap: () {
                   showDialog(
                     context: context,
                     builder:
-                        (_) => BlocProvider.value(value: context.read<AddInMenuCubit>(),
+                        (_) => BlocProvider.value(
+                          value: context.read<AddInMenuCubit>(),
                           child: DeleteDialog(
                             onCancel: () => Navigator.of(context).pop(),
                             onConfirm: () {
                               // تنفيذ الحذف
                               Navigator.of(context).pop();
-                              context.read<AddInMenuCubit>().updateAreaStatus(developerData.id.toString(),false);
+                              context.read<AddInMenuCubit>().updateAreaStatus(
+                                developerData.id.toString(),
+                                false,
+                              );
                             },
                             title: "area",
                           ),

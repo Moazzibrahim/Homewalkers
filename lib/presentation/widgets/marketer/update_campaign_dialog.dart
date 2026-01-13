@@ -1,7 +1,7 @@
 // ignore_for_file: unused_field, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -111,7 +111,7 @@ class _AddProjectDialogState extends State<UpdateCampaignDialog> {
                   Expanded(
                     child: Text(
                       "update campaign",
-                      style: GoogleFonts.montserrat(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color:
@@ -164,10 +164,7 @@ class _AddProjectDialogState extends State<UpdateCampaignDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Is Active",
-                    style: GoogleFonts.montserrat(fontSize: 14),
-                  ),
+                  Text("Is Active", style: TextStyle(fontSize: 14)),
                   Switch(
                     value: _isActive,
                     activeColor:
@@ -200,7 +197,7 @@ class _AddProjectDialogState extends State<UpdateCampaignDialog> {
                       ),
                       child: Text(
                         "Cancel",
-                        style: GoogleFonts.montserrat(color: Colors.white),
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ),
@@ -233,7 +230,7 @@ class _AddProjectDialogState extends State<UpdateCampaignDialog> {
                       ),
                       child: Text(
                         "update",
-                        style: GoogleFonts.montserrat(color: Colors.white),
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ),
@@ -249,7 +246,7 @@ class _AddProjectDialogState extends State<UpdateCampaignDialog> {
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+      hintStyle: TextStyle(color: Colors.grey),
       contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );

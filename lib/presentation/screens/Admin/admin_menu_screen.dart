@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/add_menu_api_service.dart';
@@ -410,10 +410,7 @@ class AdminMenuScreen extends StatelessWidget {
                         ),
                         Text(
                           'Admin',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14.sp,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 14.sp, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -458,7 +455,7 @@ class AdminMenuScreen extends StatelessWidget {
                         ),
                         title: Text(
                           item.label,
-                          style: GoogleFonts.montserrat(
+                          style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w500,
                           ),

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_for_signup_api_service.dart';
 import 'package:homewalkers_app/data/models/all_users_model_for_add_users.dart';
@@ -241,23 +241,20 @@ class _UsersScreenState extends State<UsersScreen> {
               const SizedBox(width: 10),
               RichText(
                 text: TextSpan(
-                  style: GoogleFonts.montserrat(
+                  style: TextStyle(
                     fontSize: 14,
                     color: primaryTextColor,
                     fontWeight: FontWeight.w500,
                   ),
                   children: <TextSpan>[
-                    TextSpan(
-                      text: 'Status : ',
-                      style: GoogleFonts.montserrat(fontSize: 13),
-                    ),
+                    TextSpan(text: 'Status : ', style: TextStyle(fontSize: 13)),
                     // Specific style for the "Active" / "Inactive" part
                     TextSpan(
                       text:
                           (switchStates[user.id] ?? user.active ?? false)
                               ? "Active"
                               : "Inactive",
-                      style: GoogleFonts.montserrat(fontSize: 13),
+                      style: TextStyle(fontSize: 13),
                     ),
                   ],
                 ),
@@ -415,9 +412,7 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        Expanded(
-          child: Text(text, style: GoogleFonts.montserrat(fontSize: 13)),
-        ),
+        Expanded(child: Text(text, style: TextStyle(fontSize: 13))),
       ],
     );
   }

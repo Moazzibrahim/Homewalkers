@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_for_signup_api_service.dart';
 import 'package:homewalkers_app/data/models/all_users_model_for_add_users.dart';
@@ -247,9 +247,7 @@ class UsersTrashScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Expanded(
-          child: Text(text, style: GoogleFonts.montserrat(fontSize: 13)),
-        ),
+        Expanded(child: Text(text, style: TextStyle(fontSize: 13))),
       ],
     );
   }

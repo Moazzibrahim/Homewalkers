@@ -199,6 +199,10 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                       state.response.data?.summary?.totalLeads ?? 0;
                   final teamLeaderFresh = state.response.data?.teamLeaderFresh;
                   final teamleaderfreshcount = teamLeaderFresh?.leadsCount ?? 0;
+                  final teamLeaderPending =
+                      state.response.data?.teamLeaderPending;
+                  final teamleaderpendingcount =
+                      teamLeaderPending?.leadsCount ?? 0;
 
                   /// ✅ نخفي أي stage عددها = 0
                   final visibleStages =
@@ -210,6 +214,7 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Leads
                       Row(
                         children: [
                           Expanded(
@@ -233,7 +238,7 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                       ),
                       const SizedBox(height: 18),
 
-                      /// ✅ Team Leader Fresh (قبل الـ GridView مباشرة)
+                      // Fresh
                       if (teamLeaderFresh != null && teamleaderfreshcount > 0)
                         Row(
                           children: [
@@ -258,16 +263,47 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                             ),
                           ],
                         ),
+                      if (teamLeaderFresh != null && teamleaderfreshcount > 0)
+                        const SizedBox(height: 18),
 
-                      if (teamLeaderFresh != null) const SizedBox(height: 18),
+                      // Pending
+                      if (teamLeaderPending != null &&
+                          teamleaderpendingcount > 0)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TeamLeaderDashboardScreen._dashboardCard(
+                                'Team Leader Pending',
+                                '$teamleaderpendingcount',
+                                Icons.pending_actions,
+                                context,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => TeamLeaderAssignScreen(
+                                            stageName: "Team Leader Pending",
+                                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (teamLeaderPending != null &&
+                          teamleaderpendingcount > 0)
+                        const SizedBox(height: 18),
 
+                      // باقي الـ stages
                       GridView.count(
                         crossAxisCount: 2,
                         shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         crossAxisSpacing: 8,
                         mainAxisSpacing: 8,
                         childAspectRatio: 1.5,
-                        physics: const NeverScrollableScrollPhysics(),
                         children:
                             visibleStages.map((item) {
                               return TeamLeaderDashboardScreen._dashboardCard(

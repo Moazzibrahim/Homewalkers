@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class UpdateChannelDialog extends StatefulWidget {
@@ -54,7 +54,7 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
                 Expanded(
                   child: Text(
                     "Update ${widget.title}",
-                    style: GoogleFonts.montserrat(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color:
@@ -81,7 +81,7 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
               controller: _controller,
               decoration: InputDecoration(
                 hintText: "${widget.title} Name",
-                hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+                hintStyle: TextStyle(color: Colors.grey),
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: 14,
                   horizontal: 12,
@@ -96,7 +96,7 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
               controller: _codeController,
               decoration: InputDecoration(
                 hintText: "Code",
-                hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+                hintStyle: TextStyle(color: Colors.grey),
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: 14,
                   horizontal: 12,
@@ -122,7 +122,7 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
                     ),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.montserrat(color: Colors.white),
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
@@ -147,7 +147,7 @@ class _NewCommunicationDialogState extends State<UpdateChannelDialog> {
                     ),
                     child: Text(
                       "Update",
-                      style: GoogleFonts.montserrat(color: Colors.white),
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),

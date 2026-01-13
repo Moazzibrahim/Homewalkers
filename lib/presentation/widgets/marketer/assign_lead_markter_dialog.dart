@@ -52,6 +52,8 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
   String selectedOption = 'same';
   String? selectedStageId;
   String? selectedstagename;
+  bool isTeamLeaderAssign = false; // assigntype
+  bool resetCreationDate = false;
 
   Future<void> saveClearHistoryTime() async {
     final prefs = await SharedPreferences.getInstance();
@@ -84,18 +86,63 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  /// ===== Assign As =====
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Assign As",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: widget.mainColor,
+                      ),
+                    ),
+                  ),
+                  RadioListTile<bool>(
+                    value: false,
+                    groupValue: isTeamLeaderAssign,
+                    title: const Text("Salesman"),
+                    onChanged: (val) {
+                      setState(() {
+                        isTeamLeaderAssign = val!;
+                        filteredSales.clear();
+                        selectedSales.clear();
+                        selectedSalesId = null;
+                      });
+                    },
+                  ),
+                  RadioListTile<bool>(
+                    value: true,
+                    groupValue: isTeamLeaderAssign,
+                    title: const Text("Team Leader"),
+                    onChanged: (val) {
+                      setState(() {
+                        isTeamLeaderAssign = val!;
+                        filteredSales.clear();
+                        selectedSales.clear();
+                        selectedSalesId = null;
+                      });
+                    },
+                  ),
                   BlocBuilder<SalesCubit, SalesState>(
                     builder: (context, state) {
                       if (state is SalesLoading) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (state is SalesLoaded) {
                         final uniqueSalesMap = <String, SalesData>{};
+
                         for (var sale in state.salesData.data!) {
                           final user = sale.userlog;
-                          if ((user!.role == "Sales" ||
-                              user.role == "Team Leader" ||
-                              user.role == "Manager")) {
-                            uniqueSalesMap[sale.id!] = sale;
+
+                          if (isTeamLeaderAssign) {
+                            if (user!.role == "Team Leader") {
+                              uniqueSalesMap[sale.id!] = sale;
+                            }
+                          } else {
+                            if (user!.role == "Sales" ||
+                                user.role == "Team Leader" ||
+                                user.role == "Manager") {
+                              uniqueSalesMap[sale.id!] = sale;
+                            }
                           }
                         }
 
@@ -164,7 +211,12 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                       final sale = filteredSales[index];
                                       final userId = sale.id;
                                       return ListTile(
-                                        title: Text(sale.name!),
+                                        title: Text(
+                                          isTeamLeaderAssign
+                                              ? 'Team: ${sale.name}'
+                                              : sale.name!,
+                                        ),
+
                                         subtitle: Text(
                                           sale.userlog!.role!,
                                           style: TextStyle(
@@ -210,6 +262,17 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                     value: clearHistory,
                     onChanged: (newValue) {
                       setState(() => clearHistory = newValue ?? false);
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: widget.mainColor,
+                  ),
+
+                  CheckboxListTile(
+                    title: const Text("Reset Creation Date"),
+                    value: resetCreationDate,
+                    onChanged: (val) {
+                      setState(() => resetCreationDate = val ?? false);
                     },
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
@@ -278,8 +341,9 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                   BlocListener<AssignleadCubit, AssignState>(
                     listener: (dialogContext, state) async {
                       if (state is AssignSuccess) {
-                        if (dialogContext.mounted)
+                        if (dialogContext.mounted) {
                           Navigator.of(dialogContext).pop(true);
+                        }
 
                         try {
                           final parentContext = context;
@@ -361,6 +425,8 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                                 "68d110bbad5a0732ad44e5cf"
                                             ? ""
                                             : stageToSend,
+                                    assigntype: isTeamLeaderAssign,
+                                    resetcreationdate: resetCreationDate,
                                   );
 
                                   await leadCommentsCubit.apiService

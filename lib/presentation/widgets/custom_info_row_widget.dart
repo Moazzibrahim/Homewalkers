@@ -18,25 +18,19 @@ class InfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 18, color: Constants.maincolor),
           const SizedBox(width: 8),
-          Text(
-            '$label : ',
-            style: const TextStyle(
-              fontWeight: FontWeight.w400,
-              fontSize: 14,
-              color: Color(0xff6A6A75),
-            ),
-          ),
           Expanded(
-            child: Text(
-              value,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Color(0xff6A6A75),
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xff6A6A75),
+                ),
+                children: [TextSpan(text: '$label : '), TextSpan(text: value)],
               ),
             ),
           ),

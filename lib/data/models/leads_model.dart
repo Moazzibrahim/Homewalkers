@@ -53,6 +53,8 @@ class LeadData {
   final String? createdAt;
   final String? updatedAt;
   final num? v;
+  final bool? assigntype;
+  final bool? resetcreationdate;
 
   LeadData({
     this.whatsappnumber,
@@ -92,6 +94,8 @@ class LeadData {
     this.createdAt,
     this.updatedAt,
     this.v,
+    this.assigntype,
+    this.resetcreationdate,
   });
 
   factory LeadData.fromJson(Map<String, dynamic>? json) {
@@ -146,6 +150,8 @@ class LeadData {
       updatedAt: json['updatedAt'],
 
       v: json['__v'] is num ? json['__v'] : null,
+      assigntype: json['assigntype'],
+      resetcreationdate: json['resetcreationdate'],
     );
   }
 }

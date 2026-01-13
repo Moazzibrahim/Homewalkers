@@ -68,3 +68,9 @@ class StagesStatsFailure extends GetAllUsersState {
   final String error;
   const StagesStatsFailure(this.error);
 }
+
+/// ✅ State تدل أن كل الـ leads اتحملت (3000) وجاهزة للفلترة
+class AllLeadsLoaded extends GetAllUsersState {
+  const AllLeadsLoaded();
+}
+

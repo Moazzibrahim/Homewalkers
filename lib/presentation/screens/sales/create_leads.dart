@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,7 +15,6 @@ import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/communication_ways/cubit/get_communication_ways_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/create_lead/cubit/create_lead_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
@@ -305,14 +304,30 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                   state.salesData.data?.where((sales) {
                                     final role =
                                         sales.userlog?.role?.toLowerCase();
-                                    return role == 'sales' ||
-                                        role == 'team leader' ||
-                                        role == 'manager';
+                                    final name = sales.name;
+                                    return (role == 'sales' ||
+                                            role == 'team leader' ||
+                                            role == 'manager') &&
+                                        name?.toLowerCase() !=
+                                            'default m'; // منع "default m"
                                   }).toList() ??
                                   [];
+
+                              // ترتيب بحيث "No Sales" يظهر أول واحد
+                              filteredSales.sort((a, b) {
+                                if ((a.name ?? '').toLowerCase() == 'no sales') {
+                                  return -1;
+                                }
+                                if ((b.name ?? '').toLowerCase() == 'no sales') {
+                                  return 1;
+                                }
+                                return 0; // الباقي على نفس الترتيب
+                              });
+
                               return _buildDropdown<String>(
                                 hint: "Choose Sales",
-                                value: _selectedSalesId,
+                                value:
+                                    _selectedSalesId, // خليها null لحد ما المستخدم يختار
                                 items:
                                     filteredSales.map((sale) {
                                       return DropdownMenuItem<String>(
@@ -323,7 +338,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                 onChanged: (val) {
                                   setState(() {
                                     _selectedSalesId = val;
-                                    // Find the selected sales person and get their fcm token
                                     _selectedSalesFcmToken =
                                         filteredSales
                                             .firstWhere(
@@ -514,7 +528,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                           : () async {
                                             if (_nameController.text.isEmpty ||
                                                 _phoneController.text.isEmpty ||
-                                                _budgetController.text.isEmpty ||
+                                                _budgetController
+                                                    .text
+                                                    .isEmpty ||
                                                 selectedProjectId == null ||
                                                 _selectedChannelId == null ||
                                                 _selectedCampaignId == null) {

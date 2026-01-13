@@ -30,8 +30,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
     WidgetsBinding.instance.addObserver(this);
     _checkAuth();
 
-    _dashboardCubit =
-        SalesDashboardCubit(SalesDashboardApiService());
+    _dashboardCubit = SalesDashboardCubit(SalesDashboardApiService());
 
     // ⚠️ استخدم addPostFrameCallback للتأكد من بناء الشاشة أولاً
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -180,8 +179,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                           return Center(child: Text(state.message));
                         } else if (state is SalesDashboardSuccess) {
                           final cubit = context.read<SalesDashboardCubit>();
-                          final stages =
-                              cubit.getVisibleStages(state.response);
+                          final stages = cubit.getVisibleStages(state.response);
 
                           final totalLeads =
                               state.response.data?.summary?.totalLeads ?? 0;
@@ -201,8 +199,8 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) =>
-                                                const SalesLeadsScreen(),
+                                            builder:
+                                                (_) => const SalesLeadsScreen(),
                                           ),
                                         );
                                       },
@@ -211,6 +209,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                 ],
                               ),
                               const SizedBox(height: 18),
+
                               GridView.count(
                                 crossAxisCount: 2,
                                 shrinkWrap: true,
@@ -218,30 +217,33 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                 mainAxisSpacing: 8,
                                 childAspectRatio: 1.5,
                                 physics: const NeverScrollableScrollPhysics(),
-                                children: stages.map((stage) {
-                                  final stageName = stage.stageName ?? '';
+                                children:
+                                    stages.map((stage) {
+                                      final stageName = stage.stageName ?? '';
 
-                                  return _dashboardCard(
-                                    stageName == 'No Stage'
-                                        ? 'Fresh'
-                                        : stageName,
-                                    '${stage.leadsCount ?? 0}',
-                                    Icons.timeline,
-                                    context,
-                                    onTap: () {
-                                      Navigator.push(
+                                      return _dashboardCard(
+                                        stageName == 'No Stage'
+                                            ? 'Fresh'
+                                            : stageName,
+                                        '${stage.leadsCount ?? 0}',
+                                        Icons.timeline,
                                         context,
-                                        MaterialPageRoute(
-                                          builder: (_) => SalesLeadsScreen(
-                                            stageName: stageName == 'Fresh'
-                                                ? 'No Stage'
-                                                : stageName,
-                                          ),
-                                        ),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => SalesLeadsScreen(
+                                                    stageName:
+                                                        stageName == 'Fresh'
+                                                            ? 'No Stage'
+                                                            : stageName,
+                                                  ),
+                                            ),
+                                          );
+                                        },
                                       );
-                                    },
-                                  );
-                                }).toList(),
+                                    }).toList(),
                               ),
                             ],
                           );
@@ -308,7 +310,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 100, 
+        height: 100,
         decoration: BoxDecoration(
           color:
               Theme.of(context).brightness == Brightness.light

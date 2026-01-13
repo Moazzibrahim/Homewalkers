@@ -24,6 +24,12 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
   bool get isLoading => _isLoading;
   bool get hasMore => _hasMore;
   bool get hasMoreUsers => _hasMore;
+  String? _activeStageFilter;
+  bool _isBackgroundLoading = false;
+  bool _isAllLeadsReady = false;
+
+  bool get isAllLeadsReady => _isAllLeadsReady;
+
   GetAllUsersCubit(this.apiService) : super(GetAllUsersInitial());
 
   void clearLeads() {
@@ -72,31 +78,54 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
     bool loadMore = false,
     bool? duplicatesOnly,
   }) async {
-    if (_isLoading) return;
+    print(
+      "🔥 fetchAllUsers CALLED | "
+      "stageFilter=$stageFilter | "
+      "loadAll=$loadAll | "
+      "reset=$reset | "
+      "loadMore=$loadMore | "
+      "duplicatesOnly=$duplicatesOnly",
+    );
+    // ❌ امنع أي fetch قديم أو غلط
+    if (_activeStageFilter != null &&
+        stageFilter != _activeStageFilter &&
+        !reset) {
+      print("⛔ Ignored outdated fetch | stage=$stageFilter");
+      return;
+    }
+
+    if (_isLoading && !reset && !loadMore) {
+      print("⛔ fetchAllUsers BLOCKED (already loading)");
+      return;
+    }
+
+    _isLoading = true;
+    print("⏳ Loading STARTED");
 
     if (reset) {
+      print("♻️ RESET triggered → clearing leads & resetting pagination");
       clearLeads();
       _currentPage = 1;
+      _activeStageFilter = stageFilter;
       _hasMore = true;
     }
 
-    // if (loadMore && !_hasMore) {
-    //   return;
-    // }
-
-    // if (!loadMore && !reset) {
-    //   _currentPage = 1;
-    //   _hasMore = true;
-    // }
-
     final bool isInitialFetch = !loadMore && leads.isEmpty;
+    print(
+      "📌 isInitialFetch = $isInitialFetch | leads.length = ${leads.length}",
+    );
 
     if (isInitialFetch || reset) {
+      print("🌀 Emitting GetAllUsersLoading");
       emit(GetAllUsersLoading());
     }
 
     try {
-      // ✅ **تعديل هنا: طلب البيانات الحالية + التحميل الكامل في نفس الوقت**
+      print(
+        "➡️ API CALL (current page) | "
+        "page=$_currentPage | limit=10 | stage=$stageFilter",
+      );
+
       final currentPageFuture = apiService.getUsers(
         page: _currentPage,
         limit: 10,
@@ -105,54 +134,92 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
         ignoreDuplicates: duplicatesOnly,
       );
 
-      // ✅ **إضافة: تحميل جميع البيانات في الخلفية فوراً دون انتظار**
+      /// 🔹 Background load
       Future<void>? loadAllFuture;
       if (!loadMore && _allLeads.isEmpty) {
-        loadAllFuture = Future.microtask(() async {
-          try {
-            final allResponse = await apiService.getUsers(
-              page: 1,
-              limit: 3000,
-              stageName: stageFilter,
-              duplicates: duplicatesOnly,
-              ignoreDuplicates: duplicatesOnly,
-            );
-            if (allResponse != null && allResponse.data != null) {
-              _allLeads
-                ..clear()
-                ..addAll(allResponse.data!);
-            }
-          } catch (e) {
-            print('Background load failed: $e');
-          }
-        });
-      }
+  print("🧵 Starting BACKGROUND LOAD");
 
-      // ✅ انتظار البيانات الحالية فقط
+  _isAllLeadsReady = false;
+
+  loadAllFuture = Future.microtask(() async {
+    try {
+      final allResponse = await apiService.getUsers(
+        page: 1,
+        limit: 3000,
+        duplicates: duplicatesOnly,
+        ignoreDuplicates: duplicatesOnly,
+      );
+
+      if (allResponse != null && allResponse.data != null) {
+        _allLeads
+          ..clear()
+          ..addAll(allResponse.data!);
+
+        _isAllLeadsReady = true; // 🔥 مهم جداً
+
+        print("✅ All leads READY for filtering");
+      }
+    } catch (e) {
+      print("❌ Background load failed: $e");
+      _isAllLeadsReady = false;
+    }
+  });
+}
+
+
+      /// 🔹 Await main response
       final response = await currentPageFuture;
+
+      // ⛔⛔⛔ GUARD AFTER AWAIT (المهم)
+      if (stageFilter != _activeStageFilter) {
+        print(
+          "🗑️ DROPPED RESPONSE | "
+          "responseStage=$stageFilter | "
+          "activeStage=$_activeStageFilter",
+        );
+        return;
+      }
 
       if (response != null) {
         final newLeads = response.data ?? [];
 
+        print(
+          "📥 API RESPONSE | "
+          "received=${newLeads.length} | "
+          "page=$_currentPage | "
+          "stage=$stageFilter",
+        );
+
         if (!loadMore) {
+          print("🧹 Clearing current leads before adding new ones");
+
           _originalLeadsResponse = AllUsersModel(
             data: List.from(newLeads),
             pagination: response.pagination,
             results: response.results,
           );
-          leads.clear();
-          //  _allLeads.clear();
-        }
-        _allLeads.addAll(newLeads);
-        leads.addAll(newLeads);
 
-        // ✅ **تحسين: تخفيف عمليات الفرز**
+          leads.clear();
+        }
+
+        leads.addAll(newLeads);
+        print("📊 leads.length AFTER add = ${leads.length}");
+
         _sortAndExtractNames();
+        print("🔀 Sorting & extracting names DONE");
 
         _currentPage++;
         final totalPages = response.pagination?.numberOfPages ?? 1;
         _hasMore = _currentPage <= totalPages;
 
+        print(
+          "📄 Pagination | "
+          "currentPage=$_currentPage | "
+          "totalPages=$totalPages | "
+          "hasMore=$_hasMore",
+        );
+
+        print("✅ Emitting GetAllUsersSuccess");
         emit(
           GetAllUsersSuccess(
             AllUsersModel(
@@ -163,21 +230,26 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
           ),
         );
 
-        // ✅ **بدء التحميل الخلفي إذا لم يبدأ بعد**
         if (loadAllFuture != null) {
-          loadAllFuture.ignore(); // لا ننتظره
+          print("🧵 Background load is running (not awaited)");
+          loadAllFuture.ignore();
         }
       } else {
+        print("❌ API RESPONSE = null");
+
         if (!loadMore) {
           emit(GetAllUsersFailure('Failed to load users.'));
         }
       }
     } catch (e) {
+      print("💥 EXCEPTION in fetchAllUsers: $e");
+
       if (!loadMore) {
         emit(GetAllUsersFailure(e.toString()));
       }
     } finally {
       _isLoading = false;
+      print("✅ Loading FINISHED\n");
     }
   }
 
@@ -299,14 +371,13 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       return parsedDate;
     }
 
-    if (_allLeads.isEmpty) {
-      emit(const GetAllUsersFailure("No leads data available for filtering."));
-      return;
-    }
+    // if (!_isAllLeadsReady) {
+    //   emit(const GetAllUsersFailure("No leads data available for filtering."));
+    //   return;
+    // }
 
-    List<Lead> filteredLeads = List.from(
-      _allLeads,
-    ); // ✅ الفلترة على كل البيانات
+    List<Lead> filteredLeads =
+        _allLeads.isNotEmpty ? List.from(_allLeads) : List.from(leads);
 
     // ✅ فلترة الدوبلكيتس
     if (duplicatesOnly) {
@@ -360,7 +431,6 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
           final matchStage =
               stage == null ||
               (lead.stage?.name?.toLowerCase() == stage.toLowerCase());
-              
 
           final matchChannel =
               channel == null ||
