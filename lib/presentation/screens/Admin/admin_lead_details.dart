@@ -7,6 +7,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
+import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
 import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
@@ -14,7 +15,6 @@ import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign
 import 'package:homewalkers_app/presentation/viewModels/sales/change_stage/change_stage_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_add_comment_admin.dart';
@@ -22,7 +22,6 @@ import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/assign_lead_markter_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AdminLeadDetails extends StatefulWidget {
@@ -62,6 +61,9 @@ class AdminLeadDetails extends StatefulWidget {
   final num? commissionmoney;
   final num? cashbackratio;
   final num? cashbackmoney;
+  final CommentDetails? lastcommentFirst;
+  final CommentDetails? lastcommentNext;
+
   AdminLeadDetails({
     super.key,
     required this.leedId,
@@ -100,6 +102,8 @@ class AdminLeadDetails extends StatefulWidget {
     this.commissionmoney,
     this.cashbackratio,
     this.cashbackmoney,
+    this.lastcommentFirst,
+    this.lastcommentNext,
   });
   @override
   State<AdminLeadDetails> createState() => _SalesLeadsDetailsScreenState();
@@ -953,109 +957,54 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: BlocBuilder<
-                          LeadCommentsCubit,
-                          LeadCommentsState
-                        >(
-                          builder: (context, state) {
-                            if (state is LeadCommentsLoading) {
-                              return Center(
-                                child: Shimmer.fromColors(
-                                  baseColor: Colors.grey.shade300,
-                                  highlightColor: Colors.grey.shade100,
-                                  child: Container(
-                                    width: 120,
-                                    height: 20,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            } else if (state is LeadCommentsError) {
-                              return Center(
-                                child: Text('Error: ${state.message}'),
-                              );
-                            } else if (state is LeadCommentsLoaded) {
-                              final leadComments = state.leadComments;
-                              if (leadComments.data == null ||
-                                  leadComments.data!.isEmpty) {
-                                return Center(child: Text('No comments found'));
-                              }
-                              final firstItem = leadComments.data!.first;
-                              final firstComment = firstItem.comments?.first;
-                              final firstcommentdate =
-                                  DateTime.tryParse(
-                                    firstComment?.firstcomment?.date
-                                            .toString() ??
-                                        "",
-                                  )?.toUtc();
-                              final secondcommentdate =
-                                  DateTime.tryParse(
-                                    firstComment?.secondcomment?.date
-                                            .toString() ??
-                                        "",
-                                  )?.toUtc();
-                              final isFirstValid = (firstcommentdate != null);
-                              final isSecondValid = (secondcommentdate != null);
-                              if ((isFirstValid &&
-                                  firstComment?.firstcomment?.text != null)) {
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Last Comment",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14.sp,
-                                        color: Color(0xff6A6A75),
-                                      ),
-                                    ),
-                                    SizedBox(height: 10.h),
-                                    Text(
-                                      "Comment",
-                                      style: TextStyle(
-                                        color: Constants.maincolor,
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    SizedBox(height: 7.h),
-                                    SelectableText(
-                                      firstComment?.firstcomment?.text ??
-                                          'No comment available.',
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                    SizedBox(height: 7.h),
-                                    Text(
-                                      "Action (Plan)",
-                                      style: TextStyle(
-                                        color: Constants.maincolor,
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    SizedBox(height: 7.h),
-                                    SelectableText(
-                                      firstComment?.secondcomment?.text ??
-                                          'No comment available.',
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }
-                              return Center(child: Text('No comments found'));
-                            } else {
-                              return SizedBox(); // Or a Placeholder
-                            }
-                          },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Last Comment",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: Color(0xff6A6A75),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            const Text(
+                              "Comment",
+                              style: TextStyle(
+                                color: Constants.maincolor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 7),
+                            SelectableText(
+                              widget.lastcommentFirst?.text ??
+                                  'No comment available.',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(height: 7),
+                            const Text(
+                              "Action (Plan)",
+                              style: TextStyle(
+                                color: Constants.maincolor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 7),
+                            SelectableText(
+                              widget.lastcommentNext?.text ??
+                                  'No action available.',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       Container(

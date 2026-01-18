@@ -70,6 +70,36 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       );
     }
   }
+Future<void> prefetchAllLeads({bool? duplicatesOnly}) async {
+  if (_allLeads.isNotEmpty || _isAllLeadsReady) {
+    print("⚡ All leads already prefetched");
+    return;
+  }
+
+  print("🚀 PREFETCHING all leads...");
+  _isAllLeadsReady = false;
+
+  try {
+    final response = await apiService.getUsers(
+      page: 1,
+      limit: 3000,
+      duplicates: duplicatesOnly,
+      ignoreDuplicates: duplicatesOnly,
+    );
+
+    if (response?.data != null) {
+      _allLeads
+        ..clear()
+        ..addAll(response!.data!);
+
+      _isAllLeadsReady = true;
+      print("✅ PREFETCH DONE | allLeads=${_allLeads.length}");
+    }
+  } catch (e) {
+    print("❌ Prefetch failed: $e");
+    _isAllLeadsReady = false;
+  }
+}
 
   Future<void> fetchAllUsers({
     String? stageFilter,
@@ -141,32 +171,30 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
 
   _isAllLeadsReady = false;
 
-  loadAllFuture = Future.microtask(() async {
-    try {
-      final allResponse = await apiService.getUsers(
-        page: 1,
-        limit: 3000,
-        duplicates: duplicatesOnly,
-        ignoreDuplicates: duplicatesOnly,
-      );
+  // loadAllFuture = Future.microtask(() async {
+  //   try {
+  //     final allResponse = await apiService.getUsers(
+  //       page: 1,
+  //       limit: 3000,
+  //       duplicates: duplicatesOnly,
+  //       ignoreDuplicates: duplicatesOnly,
+  //     );
 
-      if (allResponse != null && allResponse.data != null) {
-        _allLeads
-          ..clear()
-          ..addAll(allResponse.data!);
+  //     if (allResponse != null && allResponse.data != null) {
+  //       _allLeads
+  //         ..clear()
+  //         ..addAll(allResponse.data!);
 
-        _isAllLeadsReady = true; // 🔥 مهم جداً
+  //       _isAllLeadsReady = true; // 🔥 مهم جداً
 
-        print("✅ All leads READY for filtering");
-      }
-    } catch (e) {
-      print("❌ Background load failed: $e");
-      _isAllLeadsReady = false;
-    }
-  });
+  //       print("✅ All leads READY for filtering");
+  //     }
+  //   } catch (e) {
+  //     print("❌ Background load failed: $e");
+  //     _isAllLeadsReady = false;
+  //   }
+  // });
 }
-
-
       /// 🔹 Await main response
       final response = await currentPageFuture;
 

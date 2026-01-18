@@ -20,6 +20,7 @@ class CustomChangeStageWidget extends StatefulWidget {
   final Function(String, String?) onStageSelected;
   final Function(bool isAnswered)? onAnswerChanged;
   final Function(Map<String, dynamic>)? onDoneDealDataChanged;
+  final Function(DateTime)? onStageDateChanged;
 
   const CustomChangeStageWidget({
     Key? key,
@@ -31,6 +32,7 @@ class CustomChangeStageWidget extends StatefulWidget {
     this.stageId,
     this.onAnswerChanged,
     this.onDoneDealDataChanged,
+    this.onStageDateChanged,
   }) : super(key: key);
 
   @override
@@ -203,11 +205,13 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
 
         setState(() {
           selectedStageUpdatedDateTime = fullDate;
-          selectedDateTime = fullDate;
           stageUpdatedController.text = DateFormat(
             "yyyy-MM-dd hh:mm a",
           ).format(fullDate);
         });
+
+        // ✅ ابعت التاريخ للـ Parent
+        widget.onStageDateChanged?.call(fullDate);
 
         // حفظ في SharedPreferences
         final prefs = await SharedPreferences.getInstance();

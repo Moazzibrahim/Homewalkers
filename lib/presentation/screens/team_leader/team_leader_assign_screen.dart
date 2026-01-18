@@ -699,6 +699,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
       onTap: () async {
         final bool hasDownloadIcon =
             assign == true && userlogteamleadername == teamleadname;
+            final bool isPendingStage = stage.toLowerCase() == 'pending';
+
         if (isSelectionMode) {
           if (hasDownloadIcon) return; // منع الاختيار للكارت اللي عنده Download
           setState(() {
@@ -714,7 +716,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
         log("teamleadname: $teamleadname");
         // <--- استخدام المتغير الصحيح 'assign' بدلاً من 'leadassign'
         log("leadassign: $assign");
-        if (assign == false) {
+        if (assign == false || isPendingStage) {
           await Navigator.push(
             context,
             MaterialPageRoute(

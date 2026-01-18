@@ -55,6 +55,7 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
   // متغير للتحكم في إظهار/إخفاء قسم تغيير المرحلة
   bool _showStageSection = false;
   Map<String, dynamic>? doneDealData;
+  DateTime? _selectedStageDate;
 
   @override
   void initState() {
@@ -180,6 +181,20 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
     }
   }
 
+  // Future<DateTime> _getStageDateTime() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final pickedDateTimeStr = prefs.getString('pickedDateTime');
+
+  //   if (pickedDateTimeStr != null && pickedDateTimeStr.isNotEmpty) {
+  //     try {
+  //       return DateTime.parse(pickedDateTimeStr).toUtc();
+  //     } catch (_) {
+  //       return DateTime.now().toUtc();
+  //     }
+  //   }
+  //   return DateTime.now().toUtc();
+  // }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -302,6 +317,10 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                               doneDealData = data;
                             });
                           },
+                          onStageDateChanged: (date) {
+                            _selectedStageDate = date;
+                          },
+
                           onAnswerChanged: (isAnswered) {
                             if (!isAnswered) {
                               _applyNoAnswerLogic();
@@ -455,15 +474,19 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                                           print("");
 
                                           try {
+                                            //final stageDate =
+                                            // await _getStageDateTime();
+                                            final stageDate =
+                                                _selectedStageDate?.toUtc() ??
+                                                DateTime.now().toUtc();
                                             final leadStageRequest = LeadStageRequest(
                                               lastStageDateUpdated:
-                                                  DateTime.now()
-                                                      .toIso8601String(),
+                                                  stageDate.toIso8601String(),
+
                                               stage: _selectedStageId!,
                                               stageDateUpdated:
-                                                  DateTime.now()
-                                                      .toUtc()
-                                                      .toIso8601String(),
+                                                  stageDate.toIso8601String(),
+
                                               unitPrice:
                                                   doneDealData?['unitPrice'] ??
                                                   '',

@@ -1,5 +1,5 @@
 // leads_marketier_screen.dart
-// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, unused_field, use_super_parameters
+// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, unused_field, use_super_parameters, unnecessary_null_comparison
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
@@ -16,21 +16,21 @@ import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart'
 import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
-import 'package:homewalkers_app/data/models/lead_comments_model.dart';
-import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
+import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_lead_details.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
+import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/communication_ways/cubit/get_communication_ways_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
+//import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
@@ -125,6 +125,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   bool _hasMoreData = true; // ✅ نعرف إذا كان فيه بيانات زيادة
   bool _didInitialFetch = false;
   Timer? _searchDebounce;
+  late Future<void> _initialFetch;
+  late AllLeadsCubitWithPagination _cubit;
+  int _currentPage = 1;
 
   @override
   void initState() {
@@ -139,31 +142,47 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
 
     // ✅ إعداد الـ Scroll Listener
     _setupScrollListener();
+
     // 🔹 استماع لكل state من الكيوبت
-    final cubit = context.read<GetAllUsersCubit>();
-    cubit.stream.listen((state) {
-      log("📦 Cubit State changed: ${state.toString()}");
-    });
+    //  final cubit = context.read<GetAllUsersCubit>();
+    // cubit.stream.listen((state) {
+    //   log("📦 Cubit State changed: ${state.toString()}");
+    // });
+    _cubit = context.read<AllLeadsCubitWithPagination>();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _handleInitialFetch();
+      // _handleInitialFetch();
+      _fetchInitial();
     });
   }
 
-  void _handleInitialFetch() {
-    if (_didInitialFetch) return;
-    _didInitialFetch = true;
-
-    final cubit = context.read<GetAllUsersCubit>();
-    log("🚀 Initial fetch triggered");
-    cubit.fetchAllUsers(
-      reset: true,
-      stageFilter:
-          (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty)
-              ? _selectedStageFilter
-              : null,
-      duplicatesOnly: _showDuplicatesOnly,
+  void _fetchInitial() {
+    _hasMoreData = true;
+    _currentPage = 1;
+    _cubit.fetchLeads(
+      page: _currentPage,
+      limit: 10,
+      stageId: _selectedStageFilter,
+      duplicates: _showDuplicatesOnly,
+      ignoreDuplicate: _showDuplicatesOnly,
     );
   }
+
+  // void _handleInitialFetch() {
+  //   if (_didInitialFetch) return;
+  //   _didInitialFetch = true;
+
+  //   final cubit = context.read<GetAllUsersCubit>();
+  //   log("🚀 Initial fetch triggered");
+  //   cubit.fetchAllUsers(
+  //     reset: true,
+  //     stageFilter:
+  //         (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty)
+  //             ? _selectedStageFilter
+  //             : null,
+  //     duplicatesOnly: _showDuplicatesOnly,
+  //   );
+  // }
 
   // ✅ دالة إعداد الـ Scroll Listener
   void _setupScrollListener() {
@@ -197,39 +216,41 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     });
   }
 
-  // ✅ دالة تحميل المزيد من البيانات
-  Future<void> _loadMoreData() async {
-    // ✅ منع التحميل المزدوج
+  void _loadMoreData() {
     if (_isFetchingMore || !_hasMoreData) return;
+    setState(() {
+      _isFetchingMore = true;
+    });
 
-    final cubit = context.read<GetAllUsersCubit>();
+    _currentPage++;
 
-    // ✅ تحقق إذا كان الكيوبت يدعم الـ pagination
-    if (cubit.hasMoreUsers) {
-      setState(() {
-        _isFetchingMore = true;
-      });
-
-      try {
-        await cubit.fetchAllUsers(
-          stageFilter: _selectedStageFilter,
-          loadMore: true, // ✅ إشارة أن هذا تحميل للمزيد
-          duplicatesOnly: _showDuplicatesOnly,
-        );
-
-        // ✅ تحديث حالة الـ hasMoreData من الكيوبت
-        _hasMoreData = cubit.hasMoreUsers;
-      } catch (e) {
-        log("Error loading more data: $e");
-      } finally {
-        setState(() {
+    _cubit
+        .fetchLeads(
+          page: _currentPage,
+          limit: 10,
+          ignoreDuplicate: _showDuplicatesOnly,
+          search: _searchQuery.isNotEmpty ? _searchQuery : null,
+          stageId: _selectedStageFilter,
+          developerId: _selectedDeveloperFilter,
+          projectId: _selectedProjectFilter,
+          channelId: _selectedChannelFilter,
+          salesId: _selectedSalesFilter,
+          communicationWayId: _selectedCommunicationWayFilter,
+          campaignId: _selectedCampaignFilter,
+          addedById: _addedByFilter,
+          assignedFromId: _assignedFromFilter,
+          assignedToId: _assignedToFilter,
+          creationDateFrom: _startDateFilter,
+          creationDateTo: _endDateFilter,
+          lastStageUpdateFrom: _lastStageUpdateStartFilter,
+          lastStageUpdateTo: _lastStageUpdateEndFilter,
+          lastCommentDateFrom: _lastCommentDateStartFilter,
+          lastCommentDateTo: _lastCommentDateEndFilter,
+          duplicates: _showDuplicatesOnly,
+        )
+        .whenComplete(() {
           _isFetchingMore = false;
         });
-      }
-    } else {
-      // ✅ لا يوجد بيانات أكثر للتحميل
-      _hasMoreData = false;
-    }
   }
 
   @override
@@ -239,80 +260,109 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     super.dispose();
   }
 
+  // void _applyCurrentFilters() {
+  //   final cubit = context.read<GetAllUsersCubit>();
+
+  //   // لو لسه بيحمل أو الداتا فاضية — متعملش فلترة
+  //   if (cubit.state is GetAllUsersLoading ||
+  //       cubit.originalLeadsResponse?.data == null ||
+  //       cubit.originalLeadsResponse!.data!.isEmpty) {
+  //     log("⏳ لسه البيانات مجتش، مش هنعمل فلترة دلوقتي");
+  //     return;
+  //   }
+
+  //   if (selectedTab == 1) return;
+
+  //   // لو مفيش سيرش ولا أي فلتر
+  //   if (_searchQuery.isEmpty &&
+  //       _selectedCountryFilter == null &&
+  //       _selectedDeveloperFilter == null &&
+  //       _selectedProjectFilter == null &&
+  //       _selectedStageNameFilter == null &&
+  //       _selectedChannelFilter == null &&
+  //       _selectedSalesFilter == null &&
+  //       _selectedCommunicationWayFilter == null &&
+  //       _selectedCampaignFilter == null &&
+  //       _addedByFilter == null &&
+  //       _assignedFromFilter == null &&
+  //       _assignedToFilter == null &&
+  //       _startDateFilter == null &&
+  //       _endDateFilter == null &&
+  //       _lastStageUpdateStartFilter == null &&
+  //       _lastStageUpdateEndFilter == null &&
+  //       _oldStageNameFilter == null) {
+  //     _hasMoreData = true; // ✅ مهم عشان يسمح بالتحميل التالي
+  //     _isFetchingMore = false; // ✅ مهم عشان يسمح للـ Scroll Loader بالعمل
+
+  //     // ✅ رجع كل الـ leads من الكيوبت
+  //     cubit.fetchAllUsers(
+  //       reset: true,
+  //       stageFilter:
+  //           (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty)
+  //               ? _selectedStageFilter
+  //               : null, // ممكن تحافظ على stage لو عايز
+  //       duplicatesOnly: _showDuplicatesOnly,
+  //     );
+  //     return;
+  //   }
+
+  //   // لو فيه سيرش أو فلتر، طبق الفلترة
+  //   cubit.filterLeadsAdmin(
+  //     query: _searchQuery,
+  //     country: _selectedCountryFilter,
+  //     developer: _selectedDeveloperFilter,
+  //     project: _selectedProjectFilter,
+  //     stage: _selectedStageNameFilter,
+  //     channel: _selectedChannelFilter,
+  //     sales: _selectedSalesFilter,
+  //     communicationWay: _selectedCommunicationWayFilter,
+  //     campaign: _selectedCampaignFilter,
+  //     addedBy: _addedByFilter,
+  //     assignedFrom: _assignedFromFilter,
+  //     assignedTo: _assignedToFilter,
+  //     startDate: _startDateFilter,
+  //     endDate: _endDateFilter,
+  //     lastStageUpdateStart: _lastStageUpdateStartFilter,
+  //     lastStageUpdateEnd: _lastStageUpdateEndFilter,
+  //     lastCommentDateStart: _lastCommentDateStartFilter,
+  //     lastCommentDateEnd: _lastCommentDateEndFilter,
+  //     oldStageName: _oldStageNameFilter,
+  //     oldStageDateStart: _oldStageDateStartFilter,
+  //     oldStageDateEnd: _oldStageDateEndFilter,
+  //   );
+  //   setState(() {
+  //     _hasMoreData = false; // وقف اللود مور
+  //     _isFetchingMore = false;
+  //   });
+  // }
+
   void _applyCurrentFilters() {
-    final cubit = context.read<GetAllUsersCubit>();
+    _currentPage = 1;
+    _hasMoreData = true;
 
-    // لو لسه بيحمل أو الداتا فاضية — متعملش فلترة
-    if (cubit.state is GetAllUsersLoading ||
-        cubit.originalLeadsResponse?.data == null ||
-        cubit.originalLeadsResponse!.data!.isEmpty) {
-      log("⏳ لسه البيانات مجتش، مش هنعمل فلترة دلوقتي");
-      return;
-    }
-
-    if (selectedTab == 1) return;
-
-    // لو مفيش سيرش ولا أي فلتر
-    if (_searchQuery.isEmpty &&
-        _selectedCountryFilter == null &&
-        _selectedDeveloperFilter == null &&
-        _selectedProjectFilter == null &&
-        _selectedStageNameFilter == null &&
-        _selectedChannelFilter == null &&
-        _selectedSalesFilter == null &&
-        _selectedCommunicationWayFilter == null &&
-        _selectedCampaignFilter == null &&
-        _addedByFilter == null &&
-        _assignedFromFilter == null &&
-        _assignedToFilter == null &&
-        _startDateFilter == null &&
-        _endDateFilter == null &&
-        _lastStageUpdateStartFilter == null &&
-        _lastStageUpdateEndFilter == null &&
-        _oldStageNameFilter == null) {
-      _hasMoreData = true; // ✅ مهم عشان يسمح بالتحميل التالي
-      _isFetchingMore = false; // ✅ مهم عشان يسمح للـ Scroll Loader بالعمل
-
-      // ✅ رجع كل الـ leads من الكيوبت
-      cubit.fetchAllUsers(
-        reset: true,
-        stageFilter:
-            (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty)
-                ? _selectedStageFilter
-                : null, // ممكن تحافظ على stage لو عايز
-        duplicatesOnly: _showDuplicatesOnly,
-      );
-      return;
-    }
-
-    // لو فيه سيرش أو فلتر، طبق الفلترة
-    cubit.filterLeadsAdmin(
-      query: _searchQuery,
-      country: _selectedCountryFilter,
-      developer: _selectedDeveloperFilter,
-      project: _selectedProjectFilter,
-      stage: _selectedStageNameFilter,
-      channel: _selectedChannelFilter,
-      sales: _selectedSalesFilter,
-      communicationWay: _selectedCommunicationWayFilter,
-      campaign: _selectedCampaignFilter,
-      addedBy: _addedByFilter,
-      assignedFrom: _assignedFromFilter,
-      assignedTo: _assignedToFilter,
-      startDate: _startDateFilter,
-      endDate: _endDateFilter,
-      lastStageUpdateStart: _lastStageUpdateStartFilter,
-      lastStageUpdateEnd: _lastStageUpdateEndFilter,
-      lastCommentDateStart: _lastCommentDateStartFilter,
-      lastCommentDateEnd: _lastCommentDateEndFilter,
-      oldStageName: _oldStageNameFilter,
-      oldStageDateStart: _oldStageDateStartFilter,
-      oldStageDateEnd: _oldStageDateEndFilter,
+    _cubit.fetchLeads(
+      page: _currentPage,
+      limit: 10,
+      search: _searchQuery.isNotEmpty ? _searchQuery : null,
+      stageId: _selectedStageFilter,
+      developerId: _selectedDeveloperFilter,
+      projectId: _selectedProjectFilter,
+      channelId: _selectedChannelFilter,
+      salesId: _selectedSalesFilter,
+      communicationWayId: _selectedCommunicationWayFilter,
+      campaignId: _selectedCampaignFilter,
+      addedById: _addedByFilter,
+      assignedFromId: _assignedFromFilter,
+      assignedToId: _assignedToFilter,
+      creationDateFrom: _startDateFilter,
+      creationDateTo: _endDateFilter,
+      lastStageUpdateFrom: _lastStageUpdateStartFilter,
+      lastStageUpdateTo: _lastStageUpdateEndFilter,
+      lastCommentDateFrom: _lastCommentDateStartFilter,
+      lastCommentDateTo: _lastCommentDateEndFilter,
+      duplicates: _showDuplicatesOnly,
+      ignoreDuplicate: _showDuplicatesOnly,
     );
-    setState(() {
-      _hasMoreData = false; // وقف اللود مور
-      _isFetchingMore = false;
-    });
   }
 
   String formatDateTime(String dateStr) {
@@ -375,7 +425,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       appBar: CustomAppBar(
         title: 'Leads',
         onBack: () {
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => AdminTabsScreen()),
           );
@@ -399,12 +449,14 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                     child: TextField(
                       controller: _nameSearchController,
                       onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value.trim();
-                        });
-                        if (selectedTab == 0) {
-                          _applyCurrentFilters();
-                        }
+                        _searchDebounce?.cancel();
+                        _searchDebounce = Timer(
+                          const Duration(milliseconds: 500),
+                          () {
+                            _searchQuery = value.trim();
+                            _applyCurrentFilters();
+                          },
+                        );
                       },
                       decoration: InputDecoration(
                         hintText: 'Search',
@@ -547,14 +599,15 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             _searchQuery = filters['name'] ?? _searchQuery;
                             _nameSearchController.text = _searchQuery;
                             _selectedCountryFilter = filters['country'];
-                            _selectedDeveloperFilter = filters['developer'];
-                            _selectedProjectFilter = filters['project'];
-                            _selectedStageNameFilter = filters['stage'];
-                            _selectedChannelFilter = filters['channel'];
-                            _selectedSalesFilter = filters['sales'];
+                            _selectedDeveloperFilter = filters['developerId'];
+                            _selectedProjectFilter = filters['projectId'];
+                            _selectedStageNameFilter = filters['stageId'];
+                            _selectedChannelFilter = filters['channelId'];
+                            _selectedSalesFilter = filters['salesId'];
                             _selectedCommunicationWayFilter =
-                                filters['communicationWay'];
-                            _selectedCampaignFilter = filters['campaign'];
+                                filters['communicationWayId'];
+                            _selectedCampaignFilter = filters['campaignId'];
+
                             _addedByFilter = filters['addedBy'];
                             _assignedFromFilter = filters['assignedFrom'];
                             _assignedToFilter = filters['assignedTo'];
@@ -694,7 +747,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                               InkWell(
                                 onTap: () async {
                                   final leadsList =
-                                      context.read<GetAllUsersCubit>().leads;
+                                      context
+                                          .read<AllLeadsCubitWithPagination>()
+                                          .leads;
 
                                   // نجيب ال lead المختار
                                   final selectedLead = leadsList.firstWhere(
@@ -703,7 +758,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                         _selectedLeads.first,
                                     orElse:
                                         () =>
-                                            Lead(), // اسم الموديل عندك Lead مش LeadData
+                                            LeadDataWithPagination(), // اسم الموديل عندك Lead مش LeadData
                                   );
                                   print('_selectedLeads: $_selectedLeads');
                                   print('found lead: $selectedLead');
@@ -766,8 +821,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                 selectedLead.email ?? '',
                                             initialPhone:
                                                 selectedLead.phone ?? '',
-                                            initialNotes:
-                                                selectedLead.notes ?? '',
+                                            // initialNotes:
+                                            //     selectedLead. ?? '',
                                             initialProjectId:
                                                 selectedLead.project?.id
                                                     ?.toString(),
@@ -796,10 +851,14 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
 
                                               final leadsCubit =
                                                   context
-                                                      .read<GetAllUsersCubit>();
-                                              leadsCubit.resetPagination();
-                                              leadsCubit.fetchAllUsers(
-                                                stageFilter: widget.stageId,
+                                                      .read<
+                                                        AllLeadsCubitWithPagination
+                                                      >();
+                                              //   leadsCubit.resetPagination();
+                                              leadsCubit.fetchLeads(
+                                                stageId: widget.stageId,
+                                                duplicates: _showDuplicatesOnly,
+                                                ignoreDuplicate: _showDuplicatesOnly,
                                               );
                                             },
                                           ),
@@ -807,9 +866,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                   );
                                   if (result == true) {
                                     context
-                                        .read<GetAllUsersCubit>()
-                                        .fetchAllUsers(
-                                          stageFilter: widget.stageId,
+                                        .read<AllLeadsCubitWithPagination>()
+                                        .fetchLeads(
+                                          stageId: widget.stageId,
+                                          duplicates: _showDuplicatesOnly,
+                                          ignoreDuplicate: _showDuplicatesOnly,
                                         );
                                     _showCheckboxes = false;
                                     _selectedLeads.clear();
@@ -822,13 +883,15 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                               InkWell(
                                 onTap: () async {
                                   final leadsList =
-                                      context.read<GetAllUsersCubit>().leads;
+                                      context
+                                          .read<AllLeadsCubitWithPagination>()
+                                          .leads;
 
                                   final selectedLead = leadsList.firstWhere(
                                     (lead) =>
                                         lead.id.toString() ==
                                         _selectedLeads.first,
-                                    orElse: () => Lead(),
+                                    orElse: () => LeadDataWithPagination(),
                                   );
 
                                   final confirm = await showDialog<bool>(
@@ -931,10 +994,15 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
 
                                   if (confirm == true) {
                                     final cubit =
-                                        context.read<GetAllUsersCubit>();
-                                    cubit.resetPagination();
-                                    cubit.fetchAllUsers(
-                                      stageFilter: widget.stageId,
+                                        context
+                                            .read<
+                                              AllLeadsCubitWithPagination
+                                            >();
+                                    //  cubit.resetPagination();
+                                    cubit.fetchLeads(
+                                      stageId: widget.stageId,
+                                      duplicates: _showDuplicatesOnly,
+                                      ignoreDuplicate: _showDuplicatesOnly,
                                     );
                                   }
                                 },
@@ -977,8 +1045,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           _applyCurrentFilters(); // لو جاية من الـ Widget نفذ فلترة
                         } else {
                           context
-                              .read<GetAllUsersCubit>()
-                              .fetchAllUsers(); // غير كده هات الكل
+                              .read<AllLeadsCubitWithPagination>()
+                              .fetchLeads(); // غير كده هات الكل
                         }
                       },
                       child: Column(
@@ -1012,7 +1080,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           _searchQuery = '';
                           _nameSearchController.clear();
                         });
-                        context.read<GetAllUsersCubit>().fetchLeadsInTrash();
+                        context
+                            .read<AllLeadsCubitWithPagination>()
+                            .fetchLeadsInTrash();
                       },
                       child: Column(
                         children: [
@@ -1075,11 +1145,13 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
               ],
             ),
             Expanded(
-              child: BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
+              child: //BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
+                  BlocBuilder<AllLeadsCubitWithPagination, AllLeadsState>(
                 builder: (context, state) {
                   // الشرط الأول: عرض مؤشر التحميل إذا كانت أي من الحالتين loading
-                  if (state is GetAllUsersLoading ||
-                      state is GetLeadsInTrashLoading) {
+                  // if (state is GetAllUsersLoading ||
+                  //     state is GetLeadsInTrashLoading) {
+                  if (state is AllLeadsLoading && _currentPage == 1) {
                     return Shimmer.fromColors(
                       baseColor: Colors.grey.shade300,
                       highlightColor: Colors.grey.shade100,
@@ -1100,15 +1172,19 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                     );
                   }
                   // الشرط الثاني: عرض بيانات سلة المهملات فقط إذا كانت الحالة مطابقة والتبويب المحدد هو 1
-                  else if (state is GetLeadsInTrashSuccess &&
-                      selectedTab == 1) {
-                    final leads = state.leads.data;
+                  // else if (state is GetLeadsInTrashSuccess &&
+                  //     selectedTab == 1) {
+                  else if (state is AllLeadsTrashLoaded && selectedTab == 1) {
+                    final leads = state.leadsData.data;
                     if (leads == null || leads.isEmpty) {
                       return const Center(child: Text('Leads trash is empty.'));
                     }
                     return RefreshIndicator(
                       onRefresh: () async {
-                        context.read<GetAllUsersCubit>().fetchLeadsInTrash();
+                        //   context.read<GetAllUsersCubit>().fetchLeadsInTrash();
+                        context
+                            .read<AllLeadsCubitWithPagination>()
+                            .fetchLeadsInTrash();
                       },
                       child: ListView.builder(
                         itemCount: leads.length,
@@ -1139,19 +1215,20 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                     );
                   }
                   // الشرط الثالث: عرض خطأ سلة المهملات فقط إذا كانت الحالة مطابقة والتبويب المحدد هو 1
-                  else if (state is GetLeadsInTrashFailure &&
-                      selectedTab == 1) {
-                    return Center(child: Text(state.error));
+                  else if (state is AllLeadsTrashError && selectedTab == 1) {
+                    return Center(child: Text(state.message));
                   }
                   // الشرط الرابع: عرض قائمة الـ Leads الرئيسية فقط إذا كانت الحالة مطابقة والتبويب المحدد هو 0
-                  else if (state is GetAllUsersSuccess && selectedTab == 0) {
-                    final leads = state.users.data;
+                  else if (state is AllLeadsLoaded && selectedTab == 0) {
+                    final cubit = context.read<AllLeadsCubitWithPagination>();
+                    final leads = cubit.leads;
                     if (leads == null || leads.isEmpty) {
                       return const Center(child: Text('No leads found.'));
                     }
                     return RefreshIndicator(
                       onRefresh: () async {
-                        final cubit = context.read<GetAllUsersCubit>();
+                        final cubit =
+                            context.read<AllLeadsCubitWithPagination>();
 
                         setState(() {
                           _searchQuery = '';
@@ -1163,40 +1240,45 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           _selectedSalesFilter = null;
                           _selectedCommunicationWayFilter = null;
                           _selectedCampaignFilter = null;
-
                           // ✅ خليك دايمًا ماسك الـ stage اللي دخل بيها المستخدم
                           _selectedStageFilter = widget.stageId;
                         });
 
                         if (selectedTab == 0) {
-                          cubit.resetPagination();
+                          //  cubit.resetPagination();
 
                           log("⏳ Refreshing with stage: $_selectedStageFilter");
 
                           await cubit
-                              .fetchAllUsers(
-                                reset: true,
-                                stageFilter:
+                              .fetchLeads(
+                                stageId:
                                     (_selectedStageFilter != null &&
                                             _selectedStageFilter!.isNotEmpty)
                                         ? _selectedStageFilter
                                         : null,
+                                duplicates: _showDuplicatesOnly,
+                                ignoreDuplicate: _showDuplicatesOnly,
                               )
                               .then((_) {
                                 log("✅ Leads fetched successfully");
                                 // ✅ بعد ما الداتا ترجع، فعّل الفلاتر (stage وغيره)
                                 if (_showDuplicatesOnly) {
-                                  cubit.filterLeadsAdmin(duplicatesOnly: true);
+                                  cubit.fetchLeads(duplicates: true,ignoreDuplicate: true,);
                                 } else {}
                               });
                         } else {
                           // context.read<GetAllUsersCubit>().fetchLeadsInTrash();
+                          cubit.fetchLeadsInTrash();
                         }
                       },
 
                       child: ListView.builder(
                         controller: _scrollController,
-                        itemCount: leads.length + 1, // ✅ خليها length + 1
+                        itemCount:
+                            leads.length +
+                            ((_isFetchingMore || _hasMoreData) ? 1 : 0),
+
+                        // ✅ خليها length + 1
                         itemBuilder: (context, index) {
                           if (index == leads.length) {
                             // العنصر الأخير → Loading
@@ -1218,7 +1300,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
 
                           final lead = leads[index];
                           final leadassign = lead.assign;
-                          final salesfcmtoken = lead.sales?.userlog?.fcmtoken;
+                          final salesfcmtoken = lead.sales?.userlog?.fcmToken;
                           final prefs = SharedPreferences.getInstance();
                           final fcmToken = prefs.then(
                             (prefs) => prefs.setString(
@@ -1233,7 +1315,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           if (leadstageupdated != null) {
                             try {
                               stageUpdatedDate = DateTime.parse(
-                                leadstageupdated,
+                                leadstageupdated.toString(),
                               );
                               log("stageUpdatedDate: $stageUpdatedDate");
                             } catch (_) {
@@ -1296,14 +1378,14 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           leadCreationDate:
                                               lead.createdAt != null
                                                   ? formatDateTimeToDubai(
-                                                    lead.createdAt!,
+                                                    lead.createdAt!.toString(),
                                                   )
                                                   : '',
                                           leadProject: lead.project?.name ?? '',
                                           leadLastComment:
-                                              lead.lastcommentdate ?? '',
+                                              lead.lastcommentdate.toString(),
                                           leadcampaign:
-                                              lead.campaign?.campainName ??
+                                              lead.campaign?.CampainName ??
                                               "campaign",
                                           leadNotes: "no notes",
                                           leaddeveloper:
@@ -1317,10 +1399,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               lead.jobdescription ??
                                               'no job description',
                                           secondphonenumber:
-                                              lead.secondphonenumber ??
+                                              lead.phonenumber2 ??
                                               'no second phone number',
                                           laststageupdated:
-                                              lead.stagedateupdated,
+                                              lead.stagedateupdated.toString(),
                                           stageId: lead.stage?.id,
                                           totalsubmissions:
                                               lead.totalSubmissions.toString(),
@@ -1328,7 +1410,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           leadversionscampaign:
                                               firstVersion
                                                   ?.campaign
-                                                  ?.campainName ??
+                                                  ?.CampainName ??
                                               "No campaign",
                                           leadversionsproject:
                                               firstVersion?.project?.name ??
@@ -1343,7 +1425,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               firstVersion?.chanel?.name ??
                                               "No channel",
                                           leadversionscreationdate:
-                                              firstVersion?.recordedAt ??
+                                              firstVersion?.recordedAt
+                                                  .toString() ??
                                               "No date",
                                           leadversionscommunicationway:
                                               firstVersion
@@ -1355,8 +1438,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           cashbackratio: lead.cashbackratio,
                                           commissionmoney: lead.commissionmoney,
                                           commissionratio: lead.commissionratio,
-                                          unitPrice: lead.unitPrice,
+                                          unitPrice: lead.unit_price,
                                           unitnumber: lead.unitnumber,
+                                          lastcommentFirst: lead.lastComment?.firstcomment,
+                                          lastcommentNext: lead.lastComment?.secondcomment,
                                         ),
                                   ),
                                 ).then((_) {
@@ -1558,7 +1643,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   ),
                                                   SizedBox(height: 8.h),
                                                   Text(
-                                                    "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!) : "N/A"}",
+                                                    "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!.toString()) : "N/A"}",
                                                     style: TextStyle(
                                                       fontSize: 12.sp,
                                                       fontWeight:
@@ -1839,232 +1924,69 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                       ),
 
                                                       // 🗨️ Last Comment
-                                                      InkWell(
-                                                        onTap: () {
-                                                          showDialog(
-                                                            context: context,
-                                                            builder: (_) {
-                                                              return Dialog(
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        12,
-                                                                      ),
-                                                                ),
-                                                                child: BlocProvider(
-                                                                  create:
-                                                                      (
-                                                                        _,
-                                                                      ) => LeadCommentsCubit(
-                                                                        GetAllLeadCommentsApiService(),
-                                                                      )..fetchLeadComments(
-                                                                        lead.id!,
-                                                                      ),
-                                                                  child: Padding(
-                                                                    padding:
-                                                                        const EdgeInsets.all(
-                                                                          16.0,
-                                                                        ),
-                                                                    child: BlocBuilder<
-                                                                      LeadCommentsCubit,
-                                                                      LeadCommentsState
-                                                                    >(
-                                                                      builder: (
-                                                                        context,
-                                                                        commentState,
-                                                                      ) {
-                                                                        if (commentState
-                                                                            is LeadCommentsLoading) {
-                                                                          return SizedBox(
-                                                                            height:
-                                                                                100,
-                                                                            child: Center(
-                                                                              child: Shimmer.fromColors(
-                                                                                baseColor:
-                                                                                    Colors.grey.shade300,
-                                                                                highlightColor:
-                                                                                    Colors.grey.shade100,
-                                                                                child: ListView.builder(
-                                                                                  padding: const EdgeInsets.all(
-                                                                                    16,
-                                                                                  ),
-                                                                                  itemCount:
-                                                                                      6,
-                                                                                  itemBuilder: (
-                                                                                    context,
-                                                                                    index,
-                                                                                  ) {
-                                                                                    return Container(
-                                                                                      margin: const EdgeInsets.only(
-                                                                                        bottom:
-                                                                                            16,
-                                                                                      ),
-                                                                                      height:
-                                                                                          80,
-                                                                                      decoration: BoxDecoration(
-                                                                                        color:
-                                                                                            Colors.white,
-                                                                                        borderRadius: BorderRadius.circular(
-                                                                                          12,
-                                                                                        ),
-                                                                                      ),
-                                                                                    );
-                                                                                  },
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                          );
-                                                                        } else if (commentState
-                                                                            is LeadCommentsError) {
-                                                                          return SizedBox(
-                                                                            height:
-                                                                                100,
-                                                                            child: Center(
-                                                                              child: Text(
-                                                                                "No comments available: ${commentState.message}",
-                                                                              ),
-                                                                            ),
-                                                                          );
-                                                                        } else if (commentState
-                                                                            is LeadCommentsLoaded) {
-                                                                          final commentsData =
-                                                                              commentState.leadComments.data;
-                                                                          if (commentsData ==
-                                                                                  null ||
-                                                                              commentsData.isEmpty) {
-                                                                            return const Text(
-                                                                              'No comments available.',
-                                                                            );
-                                                                          }
+InkWell(
+  onTap: () {
+    showDialog(
+      context: context,
+      builder: (_) {
+        final lastComment = lead.lastComment;
+        final firstCommentText =
+            lastComment?.firstcomment?.text ?? 'No comments available.';
+        final secondCommentText =
+            lastComment?.secondcomment?.text ?? 'No action available.';
 
-                                                                          final commentsList =
-                                                                              commentsData.first.comments ??
-                                                                              [];
-                                                                          final validComments =
-                                                                              commentsList
-                                                                                  .where(
-                                                                                    (
-                                                                                      c,
-                                                                                    ) =>
-                                                                                        (c.firstcomment?.text?.isNotEmpty ??
-                                                                                            false) ||
-                                                                                        (c.secondcomment?.text?.isNotEmpty ??
-                                                                                            false),
-                                                                                  )
-                                                                                  .toList();
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Last Comment",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(firstCommentText), // كل النص يظهر بالكامل
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Action (Plan)",
+                    style: TextStyle(
+                      color: Constants.maincolor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(secondCommentText), // كل النص يظهر بالكامل
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  },
+  borderRadius: BorderRadius.circular(30),
+  child: Container(
+    padding: const EdgeInsets.all(8),
+    margin: const EdgeInsets.symmetric(horizontal: 4),
+    decoration: BoxDecoration(
+      color: Constants.maincolor,
+      shape: BoxShape.circle,
+    ),
+    child: const Icon(
+      Icons.chat_bubble_outline,
+      color: Colors.white,
+      size: 18,
+    ),
+  ),
+),
 
-                                                                          final Comment?
-                                                                          firstCommentEntry =
-                                                                              validComments.isNotEmpty
-                                                                                  ? validComments.first
-                                                                                  : null;
-
-                                                                          final String
-                                                                          firstCommentText =
-                                                                              firstCommentEntry?.firstcomment?.text ??
-                                                                              'No comments available.';
-                                                                          final String
-                                                                          secondCommentText =
-                                                                              firstCommentEntry?.secondcomment?.text ??
-                                                                              'No action available.';
-
-                                                                          return Column(
-                                                                            mainAxisSize:
-                                                                                MainAxisSize.min,
-                                                                            crossAxisAlignment:
-                                                                                CrossAxisAlignment.start,
-                                                                            children: [
-                                                                              const Text(
-                                                                                "Last Comment",
-                                                                                style: TextStyle(
-                                                                                  fontWeight:
-                                                                                      FontWeight.w600,
-                                                                                ),
-                                                                              ),
-                                                                              const SizedBox(
-                                                                                height:
-                                                                                    5,
-                                                                              ),
-                                                                              Text(
-                                                                                firstCommentText,
-                                                                                maxLines:
-                                                                                    2,
-                                                                                overflow:
-                                                                                    TextOverflow.ellipsis,
-                                                                              ),
-                                                                              const SizedBox(
-                                                                                height:
-                                                                                    10,
-                                                                              ),
-                                                                              const Text(
-                                                                                "Action (Plan)",
-                                                                                style: TextStyle(
-                                                                                  color:
-                                                                                      Constants.maincolor,
-                                                                                  fontWeight:
-                                                                                      FontWeight.w600,
-                                                                                ),
-                                                                              ),
-                                                                              const SizedBox(
-                                                                                height:
-                                                                                    5,
-                                                                              ),
-                                                                              Text(
-                                                                                secondCommentText,
-                                                                                maxLines:
-                                                                                    2,
-                                                                                overflow:
-                                                                                    TextOverflow.ellipsis,
-                                                                              ),
-                                                                            ],
-                                                                          );
-                                                                        } else {
-                                                                          return const SizedBox(
-                                                                            height:
-                                                                                100,
-                                                                            child: Text(
-                                                                              "No comments",
-                                                                            ),
-                                                                          );
-                                                                        }
-                                                                      },
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              );
-                                                            },
-                                                          );
-                                                        },
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              30,
-                                                            ),
-                                                        child: Container(
-                                                          padding:
-                                                              const EdgeInsets.all(
-                                                                8,
-                                                              ),
-                                                          margin:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 4,
-                                                              ),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                                color:
-                                                                    Constants
-                                                                        .maincolor,
-                                                                shape:
-                                                                    BoxShape
-                                                                        .circle,
-                                                              ),
-                                                          child: const Icon(
-                                                            Icons
-                                                                .chat_bubble_outline,
-                                                            color: Colors.white,
-                                                            size: 18,
-                                                          ),
-                                                        ),
-                                                      ),
                                                     ],
                                                   ),
                                                 ],
@@ -2095,7 +2017,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   ),
                                                   SizedBox(width: 6.w),
                                                   Text(
-                                                    " ${lead.date != null ? formatDateTimeToDubai(lead.date!) : "N/A"}",
+                                                    " ${lead.date != null ? formatDateTimeToDubai(lead.date!.toString()) : "N/A"}",
                                                     style: TextStyle(
                                                       fontSize: 12.sp,
                                                       fontWeight:
@@ -2188,7 +2110,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                     );
                   }
                   // الشرط الخامس: عرض خطأ الـ Leads الرئيسية فقط إذا كانت الحالة مطابقة والتبويب المحدد هو 0
-                  else if (state is GetAllUsersFailure && selectedTab == 0) {
+                  else if (state is AllLeadsError && selectedTab == 0) {
                     return Center(child: Text(' No leads found'));
                   }
                   // الحالة الافتراضية: إذا لم تتطابق أي من الشروط السابقة

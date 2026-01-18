@@ -50,6 +50,7 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
 
   bool _isAnswered = true;
   Map<String, dynamic>? doneDealData;
+  DateTime? _selectedStageDate;
 
   @override
   void initState() {
@@ -196,6 +197,9 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                       onDoneDealDataChanged: (data) {
                         doneDealData = data;
                       },
+                      onStageDateChanged: (date) {
+                        _selectedStageDate = date;
+                      },
 
                       onAnswerChanged: (isAnswered) {
                         _isAnswered = isAnswered;
@@ -335,15 +339,15 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                       if (_selectedStageId != null &&
                                           _selectedStageName != null) {
                                         try {
+                                          final stageDate =
+                                              _selectedStageDate?.toUtc() ??
+                                              DateTime.now().toUtc();
                                           final leadStageRequest = LeadStageRequest(
                                             lastStageDateUpdated:
-                                                DateTime.now()
-                                                    .toIso8601String(),
+                                                stageDate.toIso8601String(),
                                             stage: _selectedStageId!,
                                             stageDateUpdated:
-                                                DateTime.now()
-                                                    .toUtc()
-                                                    .toIso8601String(),
+                                                stageDate.toIso8601String(),
                                             unitPrice:
                                                 doneDealData?['unitPrice'] ??
                                                 '',

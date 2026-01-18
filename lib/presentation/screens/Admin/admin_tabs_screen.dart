@@ -4,14 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // ignore_for_file: deprecated_member_use
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/Admin_with_pagination/fetch_data_with_pagination.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_menu_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_sales_sceen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
+import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 
 class AdminTabsScreen extends StatefulWidget {
   final String? name;
@@ -27,7 +30,6 @@ class _TabsScreenState extends State<AdminTabsScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<NotificationCubit>().initNotifications();
     print("init notifications called");
   }
 
@@ -68,8 +70,20 @@ class _TabsScreenState extends State<AdminTabsScreen> {
                   });
                 },
                 children: [
-                  AdminDashboardScreen(),
-                  AdminLeadsScreen(),
+                  BlocProvider(
+                    create:
+                        (context) =>
+                            GetAllUsersCubit(GetAllUsersApiService())
+                              ..fetchStagesStats(),
+                    child: AdminDashboardScreen(),
+                  ),
+                  BlocProvider(
+                    create:
+                        (_) => AllLeadsCubitWithPagination(
+                          LeadsApiServiceWithQuery(),
+                        ),
+                    child: const AdminLeadsScreen(),
+                  ),
                   AdminSalesSceen(),
                   BlocProvider(
                     create: (context) => AuthCubit(LoginApiService()),

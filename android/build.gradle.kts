@@ -7,13 +7,12 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // ✅ نسخة كوتلن محدثة ومباشرة
+        classpath("com.android.tools.build:gradle:8.5.2")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22")
-
-        // Google Services Plugin
         classpath("com.google.gms:google-services:4.4.0")
     }
 }
+
 
 allprojects {
     repositories {

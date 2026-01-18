@@ -1,6 +1,6 @@
 // filter_leads_dialog.dart
 
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, unused_field
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,10 +16,8 @@ import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
-import 'package:country_picker/country_picker.dart'; // تأكد أن هذا المستورد موجود
 
 class FilterDialog extends StatefulWidget {
-  // 🟡 جديد: لاستقبال القيم الأولية (الحالية) للفلاتر
   final String? initialCountry;
   final String? initialDeveloper;
   final String? initialProject;
@@ -28,7 +26,7 @@ class FilterDialog extends StatefulWidget {
   final String? initialSales;
   final String? initialCommunicationWay;
   final String? initialCampaign;
-  final String? initialSearchName; // 🟡 لاستقبال نص البحث من الشاشة الرئيسية
+  final String? initialSearchName;
 
   const FilterDialog({
     super.key,
@@ -48,55 +46,51 @@ class FilterDialog extends StatefulWidget {
 }
 
 class _FilterDialogState extends State<FilterDialog> {
-  // 🟡 استخدم TextEditingController مع قيمة أولية
   late TextEditingController _nameController;
 
-  String? _selectedCountry; // 🟡 تم تغيير الاسم ليكون أوضح
-  String? _selectedDeveloper;
-  String? _selectedProject;
-  String? _selectedStage;
-  String? _selectedChannel;
-  String? _selectedCommunicationWay;
-  String? _selectedCampaign;
-  String? _selectedSales;
+  String? _selectedCountry;
+  String? _selectedDeveloperId;
+  String? _selectedDeveloperName;
+  String? _selectedProjectId;
+  String? _selectedProjectName;
+  String? _selectedStageId;
+  String? _selectedStageName;
+  String? _selectedChannelId;
+  String? _selectedChannelName;
+  String? _selectedCommunicationWayId;
+  String? _selectedCommunicationWayName;
+  String? _selectedCampaignId;
+  String? _selectedCampaignName;
+  String? _selectedSalesId;
+  String? _selectedSalesName;
+
   DateTime? _startDate;
   DateTime? _endDate;
   DateTime? _lastStageUpdateStart;
   DateTime? _lastStageUpdateEnd;
   DateTime? _lastCommentDateStart;
   DateTime? _lastCommentDateEnd;
+  DateTime? _oldStageStartDate;
+  DateTime? _oldStageEndDate;
 
   String? _selectedAddedBy;
   String? _selectedAssignedFrom;
   String? _selectedAssignedTo;
   String? _selectedOldStage;
-  DateTime? _oldStageStartDate;
-  DateTime? _oldStageEndDate;
+  String? _selectedAddedById;
+  String? _selectedAssignedFromId;
+  String? _selectedAssignedToId;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: widget.initialSearchName,
-    ); // 🟡 تهيئة بنص البحث الحالي
+    _nameController = TextEditingController(text: widget.initialSearchName);
     _selectedCountry = widget.initialCountry;
-    _selectedDeveloper = widget.initialDeveloper;
-    _selectedProject = widget.initialProject;
-    _selectedStage = widget.initialStage;
-    _selectedChannel = widget.initialChannel;
-    _selectedSales = widget.initialSales;
-    _selectedCommunicationWay = widget.initialCommunicationWay;
-    _selectedCampaign = widget.initialCampaign;
-
-    print("Initial Stage in Dialog: ${widget.initialStage}");
-
-    // ❌ احذف هذا الاستدعاء. الـ dialog لا يجلب بيانات Leads
-    // context.read<GetLeadsMarketerCubit>().getLeadsByMarketer();
   }
 
   @override
   void dispose() {
-    _nameController.dispose(); // 🟡 مهم: التخلص من الـ controller
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -180,70 +174,18 @@ class _FilterDialogState extends State<FilterDialog> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
-                    onPressed:
-                        () => Navigator.pop(
-                          context,
-                          null,
-                        ), // 🟡 إرجاع null عند الإغلاق
+                    onPressed: () => Navigator.pop(context, null),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              // 🟡 الـ CustomTextField ده هيستخدم كـ 'query' للبحث عن الاسم أو الايميل أو الرقم
               CustomTextField(
                 hint: "Search Name, Email, or Phone",
                 controller: _nameController,
               ),
               const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () {
-                  showCountryPicker(
-                    context: context,
-                    showPhoneCode: true,
-                    onSelect: (Country country) {
-                      setState(() {
-                        _selectedCountry = country.name;
-                      });
-                    },
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      hintText: "Select Country",
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        color: Color.fromRGBO(143, 146, 146, 1),
-                        fontWeight: FontWeight.w400,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xffE1E1E1)),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 16,
-                      ),
-                      suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
-                    ),
-                    child: Text(
-                      _selectedCountry ?? "Select Country",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? const Color(0xff080719)
-                                : const Color(0xffFFFFFF),
-                        fontFamily: 'Montserrat',
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // 🟡 CustomDropdownField لباقي الفلاتر
+
+              // Sales Dropdown
               BlocBuilder<SalesCubit, SalesState>(
                 builder: (context, state) {
                   if (state is SalesLoaded) {
@@ -258,9 +200,15 @@ class _FilterDialogState extends State<FilterDialog> {
                     return CustomDropdownField(
                       hint: "Choose Sales",
                       items: filteredSales.map((e) => e.name ?? '').toList(),
-                      value: _selectedSales,
-                      onChanged: (value) {
-                        setState(() => _selectedSales = value);
+                      value: _selectedSalesName,
+                      onChanged: (name) {
+                        final sales = filteredSales.firstWhere(
+                          (e) => e.name == name,
+                        );
+                        setState(() {
+                          _selectedSalesName = name;
+                          _selectedSalesId = sales.id;
+                        });
                       },
                     );
                   } else if (state is SalesLoading) {
@@ -268,10 +216,12 @@ class _FilterDialogState extends State<FilterDialog> {
                   } else if (state is SalesError) {
                     return Text("Error: ${state.message}");
                   }
-                  return const SizedBox(); // Default empty widget
+                  return const SizedBox();
                 },
               ),
+
               const SizedBox(height: 12),
+              // Developers Dropdown
               BlocBuilder<DevelopersCubit, DevelopersState>(
                 builder: (context, state) {
                   if (state is DeveloperLoading) {
@@ -284,9 +234,16 @@ class _FilterDialogState extends State<FilterDialog> {
                     return CustomDropdownField(
                       hint: "Choose Developer",
                       items: items,
-                      value: _selectedDeveloper,
-                      onChanged:
-                          (val) => setState(() => _selectedDeveloper = val),
+                      value: _selectedDeveloperName,
+                      onChanged: (name) {
+                        final dev = state.developersModel.data.firstWhere(
+                          (e) => e.name == name,
+                        );
+                        setState(() {
+                          _selectedDeveloperName = name;
+                          _selectedDeveloperId = dev.id;
+                        });
+                      },
                     );
                   } else if (state is DeveloperError) {
                     return Text(
@@ -298,7 +255,10 @@ class _FilterDialogState extends State<FilterDialog> {
                   }
                 },
               ),
+
               const SizedBox(height: 12),
+
+              // Channels Dropdown
               BlocBuilder<ChannelCubit, ChannelState>(
                 builder: (context, state) {
                   if (state is ChannelLoading) {
@@ -311,9 +271,16 @@ class _FilterDialogState extends State<FilterDialog> {
                     return CustomDropdownField(
                       hint: "Choose channel",
                       items: items,
-                      value: _selectedChannel,
-                      onChanged:
-                          (val) => setState(() => _selectedChannel = val),
+                      value: _selectedChannelName,
+                      onChanged: (name) {
+                        final channel = state.channelResponse.data.firstWhere(
+                          (e) => e.name == name,
+                        );
+                        setState(() {
+                          _selectedChannelName = name;
+                          _selectedChannelId = channel.id;
+                        });
+                      },
                     );
                   } else if (state is ChannelError) {
                     return Text(
@@ -325,7 +292,9 @@ class _FilterDialogState extends State<FilterDialog> {
                   }
                 },
               ),
+
               const SizedBox(height: 12),
+              // Projects Dropdown
               BlocBuilder<ProjectsCubit, ProjectsState>(
                 builder: (context, state) {
                   if (state is ProjectsLoading) {
@@ -338,9 +307,16 @@ class _FilterDialogState extends State<FilterDialog> {
                     return CustomDropdownField(
                       hint: "Choose Project",
                       items: items,
-                      value: _selectedProject,
-                      onChanged:
-                          (val) => setState(() => _selectedProject = val),
+                      value: _selectedProjectName,
+                      onChanged: (name) {
+                        final project = state.projectsModel.data!.firstWhere(
+                          (e) => e.name == name,
+                        );
+                        setState(() {
+                          _selectedProjectName = name;
+                          _selectedProjectId = project.id;
+                        });
+                      },
                     );
                   } else if (state is ProjectsError) {
                     return Text(
@@ -352,7 +328,9 @@ class _FilterDialogState extends State<FilterDialog> {
                   }
                 },
               ),
+
               const SizedBox(height: 12),
+              // Campaigns Dropdown
               BlocBuilder<GetCampaignsCubit, GetCampaignsState>(
                 builder: (context, state) {
                   if (state is GetCampaignsLoading) {
@@ -365,9 +343,16 @@ class _FilterDialogState extends State<FilterDialog> {
                     return CustomDropdownField(
                       hint: "Choose Campaign",
                       items: items,
-                      value: _selectedCampaign,
-                      onChanged:
-                          (val) => setState(() => _selectedCampaign = val),
+                      value: _selectedCampaignName,
+                      onChanged: (name) {
+                        final campaign = state.campaigns.data!.firstWhere(
+                          (e) => e.campainName == name,
+                        );
+                        setState(() {
+                          _selectedCampaignName = name;
+                          _selectedCampaignId = campaign.id;
+                        });
+                      },
                     );
                   } else if (state is GetCampaignsFailure) {
                     return Text(
@@ -379,23 +364,29 @@ class _FilterDialogState extends State<FilterDialog> {
                   }
                 },
               ),
+
               const SizedBox(height: 12),
+              // Communication Ways Dropdown
               BlocBuilder<GetCommunicationWaysCubit, GetCommunicationWaysState>(
                 builder: (context, state) {
                   if (state is GetCommunicationWaysLoading) {
                     return const CircularProgressIndicator();
                   } else if (state is GetCommunicationWaysLoaded) {
                     final items =
-                        state.response.data!
-                            .map((communicationway) => communicationway.name)
-                            .toList();
+                        state.response.data!.map((way) => way.name).toList();
                     return CustomDropdownField(
                       hint: "Choose communication way",
                       items: items,
-                      value: _selectedCommunicationWay,
-                      onChanged:
-                          (val) =>
-                              setState(() => _selectedCommunicationWay = val),
+                      value: _selectedCommunicationWayName,
+                      onChanged: (name) {
+                        final way = state.response.data!.firstWhere(
+                          (e) => e.name == name,
+                        );
+                        setState(() {
+                          _selectedCommunicationWayName = name;
+                          _selectedCommunicationWayId = way.id;
+                        });
+                      },
                     );
                   } else if (state is GetCommunicationWaysError) {
                     return Text(
@@ -407,7 +398,9 @@ class _FilterDialogState extends State<FilterDialog> {
                   }
                 },
               ),
+
               const SizedBox(height: 12),
+              // Stages Dropdown
               BlocBuilder<StagesCubit, StagesState>(
                 builder: (context, state) {
                   if (state is StagesLoading) {
@@ -418,11 +411,14 @@ class _FilterDialogState extends State<FilterDialog> {
                     return CustomDropdownField(
                       hint: "Choose Stage",
                       items: items,
-                      value: _selectedStage,
-                      onChanged: (value) {
+                      value: _selectedStageName,
+                      onChanged: (name) {
+                        final stage = state.stages.firstWhere(
+                          (e) => e.name == name,
+                        );
                         setState(() {
-                          _selectedStage = value;
-                          print("Selected Stage: $_selectedStage");
+                          _selectedStageName = name;
+                          _selectedStageId = stage.id;
                         });
                       },
                     );
@@ -436,17 +432,20 @@ class _FilterDialogState extends State<FilterDialog> {
                   }
                 },
               ),
+
               const SizedBox(height: 12),
               buildDateField(" Stage Date (Start)", _oldStageStartDate, (
                 picked,
               ) {
-                setState(() => _oldStageStartDate = picked);
+                _oldStageStartDate = picked;
+                setState(() {});
               }),
               const SizedBox(height: 14),
               buildDateField(" Stage Date (End)", _oldStageEndDate, (picked) {
-                setState(() => _oldStageEndDate = picked);
+                _oldStageEndDate = picked;
+                setState(() {});
               }),
-              const SizedBox(height: 12),
+              // Added By / Assigned From / Assigned To
               BlocBuilder<SalesCubit, SalesState>(
                 builder: (context, state) {
                   if (state is SalesLoaded) {
@@ -458,8 +457,16 @@ class _FilterDialogState extends State<FilterDialog> {
                           items:
                               users.map((e) => e.userlog?.name ?? '').toList(),
                           value: _selectedAddedBy,
-                          onChanged:
-                              (val) => setState(() => _selectedAddedBy = val),
+                          onChanged: (val) {
+                            final user = users.firstWhere(
+                              (e) => e.userlog?.name == val,
+                            );
+                            setState(() {
+                              _selectedAddedBy = val;
+                              _selectedAddedById =
+                                  user.userlog?.id; // نخزن ال id هنا
+                            });
+                          },
                         ),
                         const SizedBox(height: 12),
                         CustomDropdownField(
@@ -467,18 +474,28 @@ class _FilterDialogState extends State<FilterDialog> {
                           items:
                               users.map((e) => e.userlog?.name ?? '').toList(),
                           value: _selectedAssignedFrom,
-                          onChanged:
-                              (val) =>
-                                  setState(() => _selectedAssignedFrom = val),
+                          onChanged: (val) {
+                            final user = users.firstWhere(
+                              (e) => e.userlog?.name == val,
+                            );
+                            setState(() {
+                              _selectedAssignedFrom = val;
+                              _selectedAssignedFromId = user.userlog?.id;
+                            });
+                          },
                         ),
                         const SizedBox(height: 12),
                         CustomDropdownField(
                           hint: "Choose Assigned To",
                           items: users.map((e) => e.name ?? '').toList(),
                           value: _selectedAssignedTo,
-                          onChanged:
-                              (val) =>
-                                  setState(() => _selectedAssignedTo = val),
+                          onChanged: (val) {
+                            final user = users.firstWhere((e) => e.name == val);
+                            setState(() {
+                              _selectedAssignedTo = val;
+                              _selectedAssignedToId = user.id;
+                            });
+                          },
                         ),
                       ],
                     );
@@ -486,42 +503,50 @@ class _FilterDialogState extends State<FilterDialog> {
                   return const SizedBox();
                 },
               ),
+
               const SizedBox(height: 14),
               buildDateField("creation Date (start)", _startDate, (picked) {
-                setState(() => _startDate = picked);
+                _startDate = picked;
+                setState(() {});
               }),
               const SizedBox(height: 12),
               buildDateField(" creation Date (end)", _endDate, (picked) {
-                setState(() => _endDate = picked);
+                _endDate = picked;
+                setState(() {});
               }),
               const SizedBox(height: 14),
               buildDateField(
                 "Last Stage Update (Start)",
                 _lastStageUpdateStart,
                 (picked) {
-                  setState(() => _lastStageUpdateStart = picked);
+                  _lastStageUpdateStart = picked;
+                  setState(() {});
                 },
               ),
               const SizedBox(height: 14),
               buildDateField("Last Stage Update (End)", _lastStageUpdateEnd, (
                 picked,
               ) {
-                setState(() => _lastStageUpdateEnd = picked);
+                _lastStageUpdateEnd = picked;
+                setState(() {});
               }),
               const SizedBox(height: 14),
               buildDateField(
                 "Last Comment Date (Start)",
                 _lastCommentDateStart,
                 (picked) {
-                  setState(() => _lastCommentDateStart = picked);
+                  _lastCommentDateStart = picked;
+                  setState(() {});
                 },
               ),
               const SizedBox(height: 14),
               buildDateField("Last Comment Date (End)", _lastCommentDateEnd, (
                 picked,
               ) {
-                setState(() => _lastCommentDateEnd = picked);
+                _lastCommentDateEnd = picked;
+                setState(() {});
               }),
+
               const SizedBox(height: 20),
               Row(
                 children: [
@@ -542,44 +567,66 @@ class _FilterDialogState extends State<FilterDialog> {
                       ),
                       onPressed: () {
                         setState(() {
+                          // تنظيف كل الفلاتر
                           _nameController.clear();
                           _selectedCountry = null;
-                          _selectedDeveloper = null;
-                          _selectedProject = null;
-                          _selectedStage = null;
-                          _selectedChannel = null;
-                          _selectedSales = null;
-                          _selectedCommunicationWay = null;
-                          _selectedCampaign = null;
+                          _selectedDeveloperId = null;
+                          _selectedDeveloperName = null;
+                          _selectedProjectId = null;
+                          _selectedProjectName = null;
+                          _selectedStageId = null;
+                          _selectedStageName = null;
+                          _selectedChannelId = null;
+                          _selectedChannelName = null;
+                          _selectedCommunicationWayId = null;
+                          _selectedCommunicationWayName = null;
+                          _selectedCampaignId = null;
+                          _selectedCampaignName = null;
+                          _selectedSalesId = null;
+                          _selectedSalesName = null;
+                          _selectedAddedBy = null;
+                          _selectedAssignedFrom = null;
+                          _selectedAssignedTo = null;
+                          _selectedAddedById = null;
+                          _selectedAssignedFromId = null;
+                          _selectedAssignedToId = null;
+                          _selectedOldStage = null;
+
+                          _startDate = null;
+                          _endDate = null;
+                          _lastStageUpdateStart = null;
+                          _lastStageUpdateEnd = null;
+                          _lastCommentDateStart = null;
+                          _lastCommentDateEnd = null;
+                          _oldStageStartDate = null;
+                          _oldStageEndDate = null;
                         });
-                        // 🟡 عند الـ Reset، نرجع قيم فارغة (أو null) للشاشة الرئيسية ونقفل الـ Dialog
+
                         Navigator.pop(context, {
-                          'name':
-                              _nameController.text.trim().isEmpty
-                                  ? null
-                                  : _nameController.text.trim(),
-                          'country': _selectedCountry,
-                          'developer': _selectedDeveloper,
-                          'project': _selectedProject,
-                          'stage': _selectedStage,
-                          'channel': _selectedChannel,
-                          'sales': _selectedSales,
-                          'communicationWay': _selectedCommunicationWay,
-                          'campaign': _selectedCampaign,
-                          'addedBy': _selectedAddedBy,
-                          'assignedFrom': _selectedAssignedFrom,
-                          'assignedTo': _selectedAssignedTo,
-                          'startDate': _startDate,
-                          'endDate': _endDate,
-                          'lastStageUpdateStart': _lastStageUpdateStart,
-                          'lastStageUpdateEnd': _lastStageUpdateEnd,
-                          'lastCommentDateStart': _lastCommentDateStart,
-                          'lastCommentDateEnd': _lastCommentDateEnd,
-                          'oldStageName': _selectedOldStage,
-                          'oldStageDateStart': _oldStageStartDate,
-                          'oldStageDateEnd': _oldStageEndDate,
+                          'name': null,
+                          'country': null,
+                          'developerId': null,
+                          'projectId': null,
+                          'stageId': null,
+                          'channelId': null,
+                          'salesId': null,
+                          'campaignId': null,
+                          'communicationWayId': null,
+                          'addedBy': null,
+                          'assignedFrom': null,
+                          'assignedTo': null,
+                          'oldStageName': null,
+                          'startDate': null,
+                          'endDate': null,
+                          'lastStageUpdateStart': null,
+                          'lastStageUpdateEnd': null,
+                          'lastCommentDateStart': null,
+                          'lastCommentDateEnd': null,
+                          'oldStageDateStart': null,
+                          'oldStageDateEnd': null,
                         });
                       },
+
                       child: const Text(
                         "Reset",
                         style: TextStyle(
@@ -663,16 +710,17 @@ class _FilterDialogState extends State<FilterDialog> {
                                   ? null
                                   : _nameController.text.trim(),
                           'country': _selectedCountry,
-                          'developer': _selectedDeveloper,
-                          'project': _selectedProject,
-                          'stage': _selectedStage,
-                          'channel': _selectedChannel,
-                          'sales': _selectedSales,
-                          'communicationWay': _selectedCommunicationWay,
-                          'campaign': _selectedCampaign,
-                          'addedBy': _selectedAddedBy,
-                          'assignedFrom': _selectedAssignedFrom,
-                          'assignedTo': _selectedAssignedTo,
+                          'developerId': _selectedDeveloperId,
+                          'projectId': _selectedProjectId,
+                          'stageId': _selectedStageId,
+                          'channelId': _selectedChannelId,
+                          'salesId': _selectedSalesId,
+                          'campaignId': _selectedCampaignId,
+                          'communicationWayId': _selectedCommunicationWayId,
+
+                          'addedBy': _selectedAddedById,
+                          'assignedFrom': _selectedAssignedFromId,
+                          'assignedTo': _selectedAssignedToId,
                           'oldStageName': _selectedOldStage,
                           'startDate': _startDate,
                           'endDate': _endDate,
