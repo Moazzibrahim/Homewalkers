@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 import 'dart:developer';
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -39,6 +40,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   final _phoneController = TextEditingController();
   final _notesController = TextEditingController();
   final _budgetController = TextEditingController();
+  final TextEditingController _salesSearchController = TextEditingController();
   String? selectedProjectId;
   String? selectedStageId;
   String? selectedStageName; // 👈 -- الخطوة 1: إضافة متغير جديد لاسم المرحلة
@@ -295,7 +297,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       //   },
                       // ),
                       const SizedBox(height: 12),
-                      // ... other dropdowns ...
                       if (role != "Sales")
                         BlocBuilder<SalesCubit, SalesState>(
                           builder: (context, state) {
@@ -308,55 +309,113 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                     return (role == 'sales' ||
                                             role == 'team leader' ||
                                             role == 'manager') &&
-                                        name?.toLowerCase() !=
-                                            'default m'; // منع "default m"
+                                        name?.toLowerCase() != 'default m';
                                   }).toList() ??
                                   [];
 
-                              // ترتيب بحيث "No Sales" يظهر أول واحد
                               filteredSales.sort((a, b) {
-                                if ((a.name ?? '').toLowerCase() == 'no sales') {
+                                if ((a.name ?? '').toLowerCase() ==
+                                    'no sales') {
                                   return -1;
                                 }
-                                if ((b.name ?? '').toLowerCase() == 'no sales') {
+                                if ((b.name ?? '').toLowerCase() ==
+                                    'no sales') {
                                   return 1;
                                 }
-                                return 0; // الباقي على نفس الترتيب
+                                return 0;
                               });
 
-                              return _buildDropdown<String>(
-                                hint: "Choose Sales",
-                                value:
-                                    _selectedSalesId, // خليها null لحد ما المستخدم يختار
-                                items:
-                                    filteredSales.map((sale) {
-                                      return DropdownMenuItem<String>(
-                                        value: sale.id,
-                                        child: Text(sale.name ?? 'Unnamed'),
-                                      );
-                                    }).toList(),
-                                onChanged: (val) {
-                                  setState(() {
-                                    _selectedSalesId = val;
-                                    _selectedSalesFcmToken =
-                                        filteredSales
-                                            .firstWhere(
-                                              (sale) => sale.id == val,
-                                            )
-                                            .userlog!
-                                            .fcmtoken;
-                                    log(
-                                      "Selected Sales FCM Token: $_selectedSalesFcmToken",
-                                    );
-                                  });
-                                },
+                              return DropdownButtonHideUnderline(
+                                child: DropdownButton2<String>(
+                                  isExpanded: true,
+                                  hint: const Text("Choose Sales"),
+                                  value: _selectedSalesId,
+                                  items:
+                                      filteredSales.map((sale) {
+                                        return DropdownMenuItem<String>(
+                                          value: sale.id,
+
+                                          child: Text(
+                                            sale.name ?? 'Unnamed',
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        );
+                                      }).toList(),
+
+                                  /// ✅ Search
+                                  dropdownSearchData: DropdownSearchData(
+                                    
+                                    searchController: _salesSearchController,
+                                    searchInnerWidgetHeight: 60, // 👈 REQUIRED
+
+                                    searchInnerWidget: Padding(
+                                      padding: const EdgeInsets.all(8),
+                                      child: TextField(
+                                        controller: _salesSearchController,
+                                        decoration: InputDecoration(
+                                          hintText: 'Search sales...',
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    searchMatchFn: (item, searchValue) {
+                                      return item.child
+                                          .toString()
+                                          .toLowerCase()
+                                          .contains(searchValue.toLowerCase());
+                                    },
+                                  ),
+
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _selectedSalesId = val;
+                                      _selectedSalesFcmToken =
+                                          filteredSales
+                                              .firstWhere(
+                                                (sale) => sale.id == val,
+                                              )
+                                              .userlog
+                                              ?.fcmtoken;
+                                    });
+                                  },
+
+                                  onMenuStateChange: (isOpen) {
+                                    if (!isOpen) {
+                                      _salesSearchController.clear();
+                                    }
+                                  },
+
+                                  buttonStyleData: ButtonStyleData(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                       // color: Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  ),
+
+                                  dropdownStyleData: DropdownStyleData(
+                                    maxHeight: 300,
+                                    // borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
                               );
                             }
+
                             return const Center(
                               child: CircularProgressIndicator(),
                             );
                           },
                         ),
+
                       const SizedBox(height: 12),
                       BlocBuilder<ChannelCubit, ChannelState>(
                         builder: (context, state) {

@@ -355,7 +355,7 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
               children: [
                 SizedBox(height: 12.h),
                 CustomTextField(
-                  hint: "Unit Price",
+                  hint: "Unit Price *",
                   controller: unitPriceController,
                   validator: (value) {
                     if (selectedStageName == "Done Deal") {
@@ -371,7 +371,7 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
                 ),
                 SizedBox(height: 12.h),
                 CustomTextField(
-                  hint: "Unit number",
+                  hint: "Unit number *",
                   controller: unitnumberController,
                   validator: (value) {
                     if (selectedStageName == "Done Deal") {
@@ -387,7 +387,7 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
                 ),
                 SizedBox(height: 12.h),
                 CustomTextField(
-                  hint: "Commission Ratio (%)",
+                  hint: "Commission Ratio (%)*",
                   controller: commissionRatioController,
                   validator: (value) {
                     if (selectedStageName == "Done Deal") {
@@ -414,7 +414,7 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
                 ),
                 SizedBox(height: 12.h),
                 CustomTextField(
-                  hint: "Cashback Ratio (%)",
+                  hint: "Cashback Ratio (%)*",
                   controller: cashbackRatioController,
                   validator: (value) {
                     if (selectedStageName == "Done Deal") {
@@ -439,6 +439,34 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
                     ),
                   ),
                 ),
+                if (selectedStageName == "Done Deal")
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.h),
+                    child: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning, color: Colors.red, size: 16.w),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              "Please fill all required fields with valid numbers",
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
 

@@ -583,7 +583,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 initialCountry: _selectedCountryFilter,
                                 initialDeveloper: _selectedDeveloperFilter,
                                 initialProject: _selectedProjectFilter,
-                                initialStage: _selectedStageNameFilter,
+                                initialStage: widget.stageId,
                                 initialChannel: _selectedChannelFilter,
                                 initialSales: _selectedSalesFilter,
                                 initialCommunicationWay:
@@ -601,7 +601,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             _selectedCountryFilter = filters['country'];
                             _selectedDeveloperFilter = filters['developerId'];
                             _selectedProjectFilter = filters['projectId'];
-                            _selectedStageNameFilter = filters['stageId'];
+                            _selectedStageFilter = filters['stageId'];
                             _selectedChannelFilter = filters['channelId'];
                             _selectedSalesFilter = filters['salesId'];
                             _selectedCommunicationWayFilter =
