@@ -230,7 +230,7 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
                       !recordDateOnly.isBefore(startDateOnly)) &&
                   (endDateOnly == null ||
                       !recordDateOnly.isAfter(endDateOnly)));
-          final lastStageUpdated = parseNullableDate(lead.lastStageDateUpdated);
+          final lastStageUpdated = parseNullableDate(lead.stagedateupdated);
           final lastStageUpdatedOnly =
               lastStageUpdated != null ? getDateOnly(lastStageUpdated) : null;
           final lastStageUpdateStartOnly =
