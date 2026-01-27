@@ -11,6 +11,8 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+enum StageDateQuickOption { oneHour, twoHours, tomorrow }
+
 class CustomChangeStageWidget extends StatefulWidget {
   final String? leadStage;
   final String leedId;
@@ -60,6 +62,7 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
 
   bool isAnswered = true;
   bool areListenersSetup = false;
+  StageDateQuickOption? selectedQuickOption;
 
   String? _savedSalesId;
   String? _role;
@@ -98,6 +101,48 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setupListeners();
     });
+  }
+
+  void _applyQuickDateOption(StageDateQuickOption option) async {
+    final formatter = DateFormat("yyyy-MM-dd hh:mm a");
+
+    /// اقرأ التاريخ من الـ TextField بنفس الفورمات
+    DateTime baseDate;
+
+    try {
+      baseDate =
+          selectedStageUpdatedDateTime ??
+          formatter.parse(stageUpdatedController.text);
+    } catch (_) {
+      baseDate = DateTime.now(); // fallback نادر
+    }
+
+    DateTime newDate;
+
+    switch (option) {
+      case StageDateQuickOption.oneHour:
+        newDate = baseDate.add(const Duration(hours: 1));
+        break;
+      case StageDateQuickOption.twoHours:
+        newDate = baseDate.add(const Duration(hours: 2));
+        break;
+      case StageDateQuickOption.tomorrow:
+        newDate = baseDate.add(const Duration(hours: 24));
+        break;
+    }
+
+    setState(() {
+      selectedQuickOption = option;
+      selectedStageUpdatedDateTime = newDate;
+      stageUpdatedController.text = formatter.format(newDate);
+    });
+
+    /// ابعت التاريخ للـ Parent
+    widget.onStageDateChanged?.call(newDate);
+
+    /// خزنه لو محتاج
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('pickedDateTime', newDate.toIso8601String());
   }
 
   Future<void> _loadSharedPreferences() async {
@@ -486,6 +531,52 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
 
           /// New Field: Stage Updated Date
           SizedBox(height: 12.h),
+
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final bool isTablet = constraints.maxWidth >= 600;
+
+              return Row(
+                children: [
+                  _QuickChip(
+                    label: "After 1 hour",
+                    icon: Icons.access_time,
+                    isSelected:
+                        selectedQuickOption == StageDateQuickOption.oneHour,
+                    onTap:
+                        () =>
+                            _applyQuickDateOption(StageDateQuickOption.oneHour),
+                    isTablet: isTablet,
+                  ),
+                  SizedBox(width: 8.w),
+                  _QuickChip(
+                    label: "After 2 hours",
+                    icon: Icons.schedule,
+                    isSelected:
+                        selectedQuickOption == StageDateQuickOption.twoHours,
+                    onTap:
+                        () => _applyQuickDateOption(
+                          StageDateQuickOption.twoHours,
+                        ),
+                    isTablet: isTablet,
+                  ),
+                  SizedBox(width: 8.w),
+                  _QuickChip(
+                    label: "Tomorrow",
+                    icon: Icons.calendar_today,
+                    isSelected:
+                        selectedQuickOption == StageDateQuickOption.tomorrow,
+                    onTap:
+                        () => _applyQuickDateOption(
+                          StageDateQuickOption.tomorrow,
+                        ),
+                    isTablet: isTablet,
+                  ),
+                ],
+              );
+            },
+          ),
+          SizedBox(height: 12.h),
           CustomTextField(
             hint: "Stage Date Updated",
             controller: stageUpdatedController,
@@ -495,6 +586,76 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final bool isTablet;
+
+  const _QuickChip({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+    required this.isTablet,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12.r),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(
+            vertical: isTablet ? 14.h : 12.h,
+            horizontal: 8.w,
+          ),
+          decoration: BoxDecoration(
+            color: isSelected ? Constants.maincolor : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(
+              color: isSelected ? Constants.maincolor : Colors.grey.shade300,
+            ),
+            boxShadow:
+                isSelected
+                    ? [
+                      BoxShadow(
+                        color: Constants.maincolor.withOpacity(0.25),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                    : [],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: isTablet ? 22.sp : 18.sp,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+              ),
+              SizedBox(height: 6.h),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: isTablet ? 13.sp : 11.sp,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.white : Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

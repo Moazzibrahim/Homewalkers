@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/core/utils/dialog_utils.dart';
 import 'package:homewalkers_app/data/data_sources/get_sales_dashboard_count_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
@@ -69,6 +70,9 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isLargeTablet = ResponsiveHelper.isLargeTablet(context);
+    final isTablet = ResponsiveHelper.isTablet(context);
+
     return BlocProvider.value(
       // 👈 نستخدم .value عشان نمرر نفس الـ cubit اللي أنشأناه في initState
       value: _dashboardCubit,
@@ -93,14 +97,11 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                   Text(
                     _userName,
                     style: TextStyle(
-                      color:
-                          Theme.of(context).brightness == Brightness.light
-                              ? const Color(0xff080719)
-                              : Colors.white,
-                      fontSize: 12,
+                      fontSize: isTablet ? 16 : 12,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
+
                   const Text(
                     'Sales',
                     style: TextStyle(
@@ -127,27 +128,26 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
           onRefresh: () async {
             await _dashboardCubit.fetchDashboard();
           },
-          child: ListView(
+          child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveHelper.isTablet(context) ? 32 : 20,
+                  vertical: 20,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
                     Row(
                       children: [
                         Text(
-                          'Hello $_userName', // استخدام اسم المستخدم هنا أيضاً
+                          'Hello $_userName',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: isTablet ? 18 : 14,
                             fontWeight: FontWeight.w400,
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? const Color(0xff080719)
-                                    : Colors.white,
                           ),
                         ),
+
                         const SizedBox(width: 8),
                         const Text('👋', style: TextStyle(fontSize: 20)),
                       ],
@@ -211,11 +211,16 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                               const SizedBox(height: 18),
 
                               GridView.count(
-                                crossAxisCount: 2,
+                                crossAxisCount:
+                                    isLargeTablet
+                                        ? 4 // تابلت كبير 10 inch
+                                        : isTablet
+                                        ? 3 // تابلت 7–8 inch
+                                        : 2, // موبايل
                                 shrinkWrap: true,
-                                crossAxisSpacing: 8,
-                                mainAxisSpacing: 8,
-                                childAspectRatio: 1.5,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: isTablet ? 1.8 : 1.3,
                                 physics: const NeverScrollableScrollPhysics(),
                                 children:
                                     stages.map((stage) {
@@ -264,7 +269,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                       },
                     ),
                     const SizedBox(height: 25),
-                  ],
+                  ]),
                 ),
               ),
             ],
@@ -307,10 +312,13 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
     BuildContext context, {
     void Function()? onTap,
   }) {
+    final isTablet = ResponsiveHelper.isTablet(context);
+
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 100,
+        height: isTablet ? 140 : 120,
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color:
               Theme.of(context).brightness == Brightness.light
@@ -321,30 +329,30 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Constants.maincolor, size: 30),
+            Icon(icon, color: Constants.maincolor, size: isTablet ? 36 : 28),
             const SizedBox(height: 8),
             Text(
               title,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: isTablet ? 16 : 14,
+                fontWeight: FontWeight.w400,
                 color:
                     Theme.of(context).brightness == Brightness.light
                         ? const Color(0xff080719)
                         : Colors.white,
-                fontWeight: FontWeight.w400,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               number,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: isTablet ? 26 : 20,
+                fontWeight: FontWeight.bold,
                 color:
                     Theme.of(context).brightness == Brightness.light
                         ? const Color(0xff080719)
                         : Colors.white,
-                fontWeight: FontWeight.bold,
               ),
             ),
           ],

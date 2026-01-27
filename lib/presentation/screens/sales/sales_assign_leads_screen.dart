@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/core/utils/dialog_utils.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
@@ -26,6 +27,11 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
   @override
   Widget build(BuildContext context) {
     final nameController = TextEditingController();
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final isLargeTablet = ResponsiveHelper.isLargeTablet(context);
+
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
@@ -43,7 +49,16 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: EdgeInsets.symmetric(
+              horizontal:
+                  isLargeTablet
+                      ? 32
+                      : isTablet
+                      ? 24
+                      : 12,
+              vertical: isLargeTablet ? 20 : 12,
+            ),
+
             child: Row(
               children: [
                 Expanded(
@@ -57,9 +72,10 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
                     decoration: InputDecoration(
                       hintText: 'Search',
                       contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 0,
+                        horizontal: isTablet ? 24 : 16,
+                        vertical: isTablet ? 18 : 12,
                       ),
+
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
@@ -131,18 +147,41 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
                     selected = List.generate(_leads.length, (index) => false);
                   }
 
-                  return ListView.builder(
-                    itemCount: _leads.length,
-                    itemBuilder: (context, index) {
-                      final lead = _leads[index];
-                      leadIdd = lead.id.toString();
-                      return buildUserTile(
-                        lead.name ?? 'No Name',
-                        lead.stage?.name ?? 'No Status',
-                        index,
+                  return isTablet
+                      ? GridView.builder(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isLargeTablet ? 32 : 24,
+                          vertical: 16,
+                        ),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isLargeTablet ? 2 : 1,
+                          childAspectRatio: isLargeTablet ? 4.5 : 4,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 12,
+                        ),
+                        itemCount: _leads.length,
+                        itemBuilder: (context, index) {
+                          final lead = _leads[index];
+                          leadIdd = lead.id.toString();
+                          return buildUserTile(
+                            lead.name ?? 'No Name',
+                            lead.stage?.name ?? 'No Status',
+                            index,
+                          );
+                        },
+                      )
+                      : ListView.builder(
+                        itemCount: _leads.length,
+                        itemBuilder: (context, index) {
+                          final lead = _leads[index];
+                          leadIdd = lead.id.toString();
+                          return buildUserTile(
+                            lead.name ?? 'No Name',
+                            lead.stage?.name ?? 'No Status',
+                            index,
+                          );
+                        },
                       );
-                    },
-                  );
                 } else if (state is GetLeadsError) {
                   return Center(child: Text(" ${state.message}"));
                 } else {
@@ -157,59 +196,62 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
   }
 
   void _showAssignDialog() async {
-  final selectedIndices =
-      selected
-          .asMap()
-          .entries
-          .where((entry) => entry.value)
-          .map((entry) => entry.key)
-          .toList();
+    final selectedIndices =
+        selected
+            .asMap()
+            .entries
+            .where((entry) => entry.value)
+            .map((entry) => entry.key)
+            .toList();
 
-  if (selectedIndices.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Please select at least one lead")),
-    );
-    return;
-  }
+    if (selectedIndices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please select at least one lead")),
+      );
+      return;
+    }
 
-  final selectedLeads = selectedIndices.map((i) => _leads[i]).toList();
+    final selectedLeads = selectedIndices.map((i) => _leads[i]).toList();
 
-  await showDialog(
-    context: context,
-    builder: (context) => BlocBuilder<GetLeadsCubit, GetLeadsState>(
-      builder: (context, state) {
-        if (state is GetLeadsLoading) {
-          return Center(child: CircularProgressIndicator());
-        } else if (state is GetLeadsSuccess) {
-          leadResponse = state.assignedModel;
-        } else if (state is GetLeadsError) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(state.message)));
-          return SizedBox.shrink();
-        }
+    await showDialog(
+      context: context,
+      builder:
+          (context) => BlocBuilder<GetLeadsCubit, GetLeadsState>(
+            builder: (context, state) {
+              if (state is GetLeadsLoading) {
+                return Center(child: CircularProgressIndicator());
+              } else if (state is GetLeadsSuccess) {
+                leadResponse = state.assignedModel;
+              } else if (state is GetLeadsError) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(state.message)));
+                return SizedBox.shrink();
+              }
 
-        return BlocProvider(
-          create: (_) => SalesCubit(GetAllSalesApiService()),
-          child: AssignDialog(
-            leadIds: selectedLeads.map((e) => e.id ?? 0).toList(),
-            leadId: leadIdd,
-            leadResponse: leadResponse,
-            mainColor:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.maincolor
-                    : Constants.mainDarkmodecolor,
-            fcmtoken: leadResponse?.data?.first.sales?.teamleader?.fcmtokenn ?? '',
-            onSuccess: () {
-              // ← هنا بعد نجاح العملية، أرسل طلب إعادة تحميل الليدز
-              context.read<GetLeadsCubit>().fetchLeads();
+              return BlocProvider(
+                create: (_) => SalesCubit(GetAllSalesApiService()),
+                child: AssignDialog(
+                  leadIds: selectedLeads.map((e) => e.id ?? 0).toList(),
+                  leadId: leadIdd,
+                  leadResponse: leadResponse,
+                  mainColor:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.maincolor
+                          : Constants.mainDarkmodecolor,
+                  fcmtoken:
+                      leadResponse?.data?.first.sales?.teamleader?.fcmtokenn ??
+                      '',
+                  onSuccess: () {
+                    // ← هنا بعد نجاح العملية، أرسل طلب إعادة تحميل الليدز
+                    context.read<GetLeadsCubit>().fetchLeads();
+                  },
+                ),
+              );
             },
           ),
-        );
-      },
-    ),
-  );
-}
-
+    );
+  }
 
   void _showAssignMenu(BuildContext context, Offset position) async {
     final RenderBox overlay =
