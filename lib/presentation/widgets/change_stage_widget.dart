@@ -171,7 +171,9 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
   }
 
   void _notifyDoneDealData() {
-    if (selectedStageName?.toLowerCase() == "done deal" &&
+    final stage = selectedStageName?.toLowerCase();
+
+    if ((stage == "done deal" || stage == "eoi") &&
         widget.onDoneDealDataChanged != null) {
       final data = {
         'unitPrice':
@@ -194,6 +196,7 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
                 : '0',
         'cashbackMoney': cashbackMoney.isNotEmpty ? cashbackMoney : '0.00',
       };
+
       widget.onDoneDealDataChanged!(data);
     }
   }
@@ -214,9 +217,6 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
         _notifyDoneDealData();
       });
       unitnumberController.addListener(() {
-        _notifyDoneDealData();
-      });
-      cashbackRatioController.addListener(() {
         _notifyDoneDealData();
       });
       areListenersSetup = true;
@@ -293,299 +293,310 @@ class _CustomChangeStageWidgetState extends State<CustomChangeStageWidget> {
         ),
         //   BlocProvider(create: (context) => ChangeStageCubit()),
       ],
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          /// Old Stage Field
-          Row(
-            children: [
-              Expanded(
-                child: CustomTextField(
-                  hint: "Old stage",
-                  controller: oldStageController,
+      child: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            /// Old Stage Field
+            Row(
+              children: [
+                Expanded(
+                  child: CustomTextField(
+                    hint: "Old stage",
+                    controller: oldStageController,
+                  ),
                 ),
-              ),
-              SizedBox(width: 12.w),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Switch(
-                    activeColor: Constants.maincolor,
-                    value: isAnswered,
+                SizedBox(width: 12.w),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Switch(
+                      activeColor: Constants.maincolor,
+                      value: isAnswered,
+                      onChanged: (value) {
+                        setState(() {
+                          isAnswered = value;
+                        });
+                        widget.onAnswerChanged?.call(value);
+                      },
+                    ),
+                    Text(
+                      isAnswered ? "Answer" : "NO Answer",
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                        color: isAnswered ? Colors.green : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+
+            /// Dropdown for Stages
+            BlocBuilder<StagesCubit, StagesState>(
+              builder: (context, state) {
+                if (state is StagesLoading) {
+                  return const CircularProgressIndicator();
+                } else if (state is StagesLoaded) {
+                  /// 👇 stages الأساسية
+                  List stages = state.stages;
+
+                  /// 🔐 لو مش Admin ولا Marketer → نخفي No stage و fresh
+                  if (_role != 'Admin' && _role != 'Marketer') {
+                    stages =
+                        stages
+                            .where(
+                              (stage) =>
+                                  stage.name?.toLowerCase() != 'no stage' &&
+                                  stage.name?.toLowerCase() != 'fresh',
+                            )
+                            .toList();
+                  }
+
+                  // الحصول على القائمة مع إزالة التكرارات
+                  final List<String> items =
+                      stages
+                          .map((e) => e.name)
+                          .whereType<String>() // يشيل أي null
+                          .toList();
+
+                  return CustomDropdownField(
+                    hint: "Choose Stage",
+                    items: items,
+                    value: selectedStageName,
                     onChanged: (value) {
                       setState(() {
-                        isAnswered = value;
+                        selectedStageName = value;
+                        selectedStageId =
+                            stages
+                                .firstWhere((stage) => stage.name == value)
+                                .id;
+
+                        /// 🔥 لو اليوزر اختار NO ANSWER → خلي السويتش OFF تلقائي
+                        if (value?.toLowerCase() == "no answer") {
+                          isAnswered = false;
+                        } else if (value != null) {
+                          isAnswered = true;
+                        }
+
+                        // إرسال البيانات فور الاختيار
+                        widget.onStageSelected(value ?? '', selectedStageId);
+                      //  _notifyDoneDealData(); // لو Stage = Done Deal
                       });
-                      widget.onAnswerChanged?.call(value);
                     },
-                  ),
-                  Text(
-                    isAnswered ? "Answer" : "NO Answer",
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      color: isAnswered ? Colors.green : Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-
-          /// Dropdown for Stages
-          BlocBuilder<StagesCubit, StagesState>(
-            builder: (context, state) {
-              if (state is StagesLoading) {
-                return const CircularProgressIndicator();
-              } else if (state is StagesLoaded) {
-                /// 👇 stages الأساسية
-                List stages = state.stages;
-
-                /// 🔐 لو مش Admin ولا Marketer → نخفي No stage و fresh
-                if (_role != 'Admin' && _role != 'Marketer') {
-                  stages =
-                      stages
-                          .where(
-                            (stage) =>
-                                stage.name?.toLowerCase() != 'no stage' &&
-                                stage.name?.toLowerCase() != 'fresh',
-                          )
-                          .toList();
+                  );
+                } else if (state is StagesError) {
+                  return Text(
+                    "error: stages did not change",
+                    style: const TextStyle(color: Colors.red),
+                  );
                 }
+                return const SizedBox.shrink();
+              },
+            ),
 
-                // الحصول على القائمة مع إزالة التكرارات
-                final List<String> items =
-                    stages
-                        .map((e) => e.name)
-                        .whereType<String>() // يشيل أي null
-                        .toList();
-
-                return CustomDropdownField(
-                  hint: "Choose Stage",
-                  items: items,
-                  value: selectedStageName,
-                  onChanged: (value) {
-                    setState(() {
-                      selectedStageName = value;
-                      selectedStageId =
-                          stages.firstWhere((stage) => stage.name == value).id;
-
-                      /// 🔥 لو اليوزر اختار NO ANSWER → خلي السويتش OFF تلقائي
-                      if (value?.toLowerCase() == "no answer") {
-                        isAnswered = false;
-                      } else if (value != null) {
-                        isAnswered = true;
+            /// Fields for "Done Deal" stage
+            if (selectedStageName == "Done Deal" || selectedStageName == "EOI")
+              Column(
+                children: [
+                  SizedBox(height: 12.h),
+                  CustomTextField(
+                    hint: "Unit Price *",
+                    controller: unitPriceController,
+                    validator: (value) {
+                      if (selectedStageName == "Done Deal" ||
+                          selectedStageName == "EOI") {
+                        if (value == null || value.trim().isEmpty) {
+                          return "Unit Price is required";
+                        }
                       }
-
-                      // إرسال البيانات فور الاختيار
-                      widget.onStageSelected(value ?? '', selectedStageId);
-                      _notifyDoneDealData(); // لو Stage = Done Deal
-                    });
-                  },
-                );
-              } else if (state is StagesError) {
-                return Text(
-                  "error: stages did not change",
-                  style: const TextStyle(color: Colors.red),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-
-          /// Fields for "Done Deal" stage
-          if (selectedStageName == "Done Deal")
-            Column(
-              children: [
-                SizedBox(height: 12.h),
-                CustomTextField(
-                  hint: "Unit Price *",
-                  controller: unitPriceController,
-                  validator: (value) {
-                    if (selectedStageName == "Done Deal") {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Unit Price is required";
-                      }
-                    }
-                    return null;
-                  },
-                  textInputType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                CustomTextField(
-                  hint: "Unit number *",
-                  controller: unitnumberController,
-                  validator: (value) {
-                    if (selectedStageName == "Done Deal") {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Unit number is required";
-                      }
-                    }
-                    return null;
-                  },
-                  textInputType: const TextInputType.numberWithOptions(
-                    decimal: false,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                CustomTextField(
-                  hint: "Commission Ratio (%)*",
-                  controller: commissionRatioController,
-                  validator: (value) {
-                    if (selectedStageName == "Done Deal") {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Commission Ratio is required";
-                      }
-                    }
-                    return null;
-                  },
-                  textInputType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Commission Money: $commissionMoney",
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
+                      return null;
+                    },
+                    textInputType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
                   ),
-                ),
-                SizedBox(height: 12.h),
-                CustomTextField(
-                  hint: "Cashback Ratio (%)*",
-                  controller: cashbackRatioController,
-                  validator: (value) {
-                    if (selectedStageName == "Done Deal") {
-                      if (value == null || value.trim().isEmpty) {
-                        return "cashback Ratio is required";
+                  SizedBox(height: 12.h),
+                  CustomTextField(
+                    hint: "Unit number *",
+                    controller: unitnumberController,
+                    validator: (value) {
+                      if (selectedStageName == "Done Deal" ||
+                          selectedStageName == "EOI") {
+                        if (value == null || value.trim().isEmpty) {
+                          return "Unit number is required";
+                        }
                       }
-                    }
-                    return null;
-                  },
-                  textInputType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Cashback Money: $cashbackMoney",
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
+                      return null;
+                    },
+                    textInputType: const TextInputType.numberWithOptions(
+                      decimal: false,
                     ),
                   ),
-                ),
-                if (selectedStageName == "Done Deal")
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.h),
-                    child: Container(
-                      padding: EdgeInsets.all(8.w),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.shade200),
+                  SizedBox(height: 12.h),
+                  CustomTextField(
+                    hint: "Commission Ratio (%)*",
+                    controller: commissionRatioController,
+                    validator: (value) {
+                      if (selectedStageName == "Done Deal" ||
+                          selectedStageName == "EOI") {
+                        if (value == null || value.trim().isEmpty) {
+                          return "Commission Ratio is required";
+                        }
+                      }
+                      return null;
+                    },
+                    textInputType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Commission Money: $commissionMoney",
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
                       ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.warning, color: Colors.red, size: 16.w),
-                          SizedBox(width: 8.w),
-                          Expanded(
-                            child: Text(
-                              "Please fill all required fields with valid numbers",
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  CustomTextField(
+                    hint: "Cashback Ratio (%)*",
+                    controller: cashbackRatioController,
+                    validator: (value) {
+                      if (selectedStageName == "Done Deal" ||
+                          selectedStageName == "EOI") {
+                        if (value == null || value.trim().isEmpty) {
+                          return "cashback Ratio is required";
+                        }
+                      }
+                      return null;
+                    },
+                    textInputType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Cashback Money: $cashbackMoney",
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (selectedStageName == "Done Deal" ||
+                      selectedStageName == "EOI")
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
+                      child: Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.warning, color: Colors.red, size: 16.w),
+                            SizedBox(width: 8.w),
+                            Expanded(
+                              child: Text(
+                                "Please fill all required fields with valid numbers",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-
-          if (selectedStageName == "EOI" || selectedStageName == "Reservation")
-            Column(
-              children: [
-                SizedBox(height: 12.h),
-                CustomTextField(
-                  hint: "Money",
-                  controller: eoiController,
-                  textInputType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-              ],
-            ),
-
-          /// New Field: Stage Updated Date
-          SizedBox(height: 12.h),
-
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final bool isTablet = constraints.maxWidth >= 600;
-
-              return Row(
-                children: [
-                  _QuickChip(
-                    label: "After 1 hour",
-                    icon: Icons.access_time,
-                    isSelected:
-                        selectedQuickOption == StageDateQuickOption.oneHour,
-                    onTap:
-                        () =>
-                            _applyQuickDateOption(StageDateQuickOption.oneHour),
-                    isTablet: isTablet,
-                  ),
-                  SizedBox(width: 8.w),
-                  _QuickChip(
-                    label: "After 2 hours",
-                    icon: Icons.schedule,
-                    isSelected:
-                        selectedQuickOption == StageDateQuickOption.twoHours,
-                    onTap:
-                        () => _applyQuickDateOption(
-                          StageDateQuickOption.twoHours,
-                        ),
-                    isTablet: isTablet,
-                  ),
-                  SizedBox(width: 8.w),
-                  _QuickChip(
-                    label: "Tomorrow",
-                    icon: Icons.calendar_today,
-                    isSelected:
-                        selectedQuickOption == StageDateQuickOption.tomorrow,
-                    onTap:
-                        () => _applyQuickDateOption(
-                          StageDateQuickOption.tomorrow,
-                        ),
-                    isTablet: isTablet,
-                  ),
                 ],
-              );
-            },
-          ),
-          SizedBox(height: 12.h),
-          CustomTextField(
-            hint: "Stage Date Updated",
-            controller: stageUpdatedController,
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.calendar_today),
-              onPressed: _pickDateTime,
+              ),
+
+            // if (selectedStageName == "EOI")
+            //   Column(
+            //     children: [
+            //       SizedBox(height: 12.h),
+            //       CustomTextField(
+            //         hint: "Money",
+            //         controller: eoiController,
+            //         textInputType: const TextInputType.numberWithOptions(
+            //           decimal: true,
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+
+            /// New Field: Stage Updated Date
+            SizedBox(height: 12.h),
+
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final bool isTablet = constraints.maxWidth >= 600;
+
+                return Row(
+                  children: [
+                    _QuickChip(
+                      label: "After 1 hour",
+                      icon: Icons.access_time,
+                      isSelected:
+                          selectedQuickOption == StageDateQuickOption.oneHour,
+                      onTap:
+                          () => _applyQuickDateOption(
+                            StageDateQuickOption.oneHour,
+                          ),
+                      isTablet: isTablet,
+                    ),
+                    SizedBox(width: 8.w),
+                    _QuickChip(
+                      label: "After 2 hours",
+                      icon: Icons.schedule,
+                      isSelected:
+                          selectedQuickOption == StageDateQuickOption.twoHours,
+                      onTap:
+                          () => _applyQuickDateOption(
+                            StageDateQuickOption.twoHours,
+                          ),
+                      isTablet: isTablet,
+                    ),
+                    SizedBox(width: 8.w),
+                    _QuickChip(
+                      label: "Tomorrow",
+                      icon: Icons.calendar_today,
+                      isSelected:
+                          selectedQuickOption == StageDateQuickOption.tomorrow,
+                      onTap:
+                          () => _applyQuickDateOption(
+                            StageDateQuickOption.tomorrow,
+                          ),
+                      isTablet: isTablet,
+                    ),
+                  ],
+                );
+              },
             ),
-          ),
-        ],
+            SizedBox(height: 12.h),
+            CustomTextField(
+              hint: "Stage Date Updated",
+              controller: stageUpdatedController,
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.calendar_today),
+                onPressed: _pickDateTime,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

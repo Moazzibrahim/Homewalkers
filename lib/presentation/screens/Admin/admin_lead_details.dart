@@ -1,4 +1,6 @@
 // ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -114,12 +116,14 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
   @override
   void initState() {
     super.initState();
+
     checkRoleName();
   }
 
   Future<void> checkRoleName() async {
     final prefs = await SharedPreferences.getInstance();
     final role = prefs.getString('role') ?? '';
+    log("lead commission ratio: ${widget.commissionratio}");
     setState(() {
       userRole = role;
     });
@@ -648,7 +652,8 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                     ),
                                   ),
                                 ),
-                                if (widget.leadStage == "Done Deal") ...[
+                                if (widget.leadStage == "Done Deal" ||
+                                    widget.leadStage == "EOI") ...[
                                   SizedBox(width: 22.w),
                                   InkWell(
                                     onTap: () {
@@ -672,7 +677,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            " Done Deal Details",
+                                                            " ${widget.leadStage} Details",
                                                             style: TextStyle(
                                                               fontSize: 18.sp,
                                                               fontWeight:

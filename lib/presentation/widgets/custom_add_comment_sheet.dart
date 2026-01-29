@@ -343,7 +343,7 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                               //  _clearNoAnswerLogic();
                             }
 
-                            await _saveStageChange();
+                            //   await _saveStageChange();
                           },
 
                           salesId: salesId,
@@ -451,6 +451,45 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                                               ),
                                         );
                                         return;
+                                      }
+                                      // ⛔ Validation قبل أي حاجة
+                                      if (_showStageSection &&
+                                          (_selectedStageName == "Done Deal" ||
+                                              _selectedStageName == "EOI")) {
+                                        if (doneDealData == null ||
+                                            doneDealData!.isEmpty ||
+                                            (doneDealData!['unitPrice'] ==
+                                                    null ||
+                                                doneDealData!['unitPrice']
+                                                    .toString()
+                                                    .isEmpty) ||
+                                            (doneDealData!['unitNumber'] ==
+                                                    null ||
+                                                doneDealData!['unitNumber']
+                                                    .toString()
+                                                    .isEmpty) ||
+                                            (doneDealData!['commissionRatio'] ==
+                                                    null ||
+                                                doneDealData!['commissionRatio']
+                                                    .toString()
+                                                    .isEmpty) ||
+                                            (doneDealData!['cashbackRatio'] ==
+                                                    null ||
+                                                doneDealData!['cashbackRatio']
+                                                    .toString()
+                                                    .isEmpty)) {
+                                          showDialog(
+                                            context: context,
+                                            builder:
+                                                (_) => AlertDialog(
+                                                  title: const Text("Warning"),
+                                                  content: Text(
+                                                    "$_selectedStageName data is required",
+                                                  ),
+                                                ),
+                                          );
+                                          return; // ⛔ هنا بيقف كل الزرار
+                                        }
                                       }
 
                                       final text1 =

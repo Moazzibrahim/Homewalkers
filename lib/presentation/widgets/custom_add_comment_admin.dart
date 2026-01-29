@@ -316,6 +316,45 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                       return;
                                     }
 
+                                    // ⛔ Validation قبل أي حاجة
+                                    if (_showStageSection &&
+                                        (_selectedStageName == "Done Deal" ||
+                                            _selectedStageName == "EOI")) {
+                                      if (doneDealData == null ||
+                                          doneDealData!.isEmpty ||
+                                          (doneDealData!['unitPrice'] == null ||
+                                              doneDealData!['unitPrice']
+                                                  .toString()
+                                                  .isEmpty) ||
+                                          (doneDealData!['unitNumber'] ==
+                                                  null ||
+                                              doneDealData!['unitNumber']
+                                                  .toString()
+                                                  .isEmpty) ||
+                                          (doneDealData!['commissionRatio'] ==
+                                                  null ||
+                                              doneDealData!['commissionRatio']
+                                                  .toString()
+                                                  .isEmpty) ||
+                                          (doneDealData!['cashbackRatio'] ==
+                                                  null ||
+                                              doneDealData!['cashbackRatio']
+                                                  .toString()
+                                                  .isEmpty)) {
+                                        showDialog(
+                                          context: context,
+                                          builder:
+                                              (_) => AlertDialog(
+                                                title: const Text("Warning"),
+                                                content: Text(
+                                                  "$_selectedStageName data is required",
+                                                ),
+                                              ),
+                                        );
+                                        return; // ⛔ هنا بيقف كل الزرار
+                                      }
+                                    }
+
                                     final text1 =
                                         _firstCommentController.text.trim();
                                     final text2 =
@@ -370,7 +409,32 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                             eoi: null,
                                             reservation: null,
                                           );
-
+                                          print(
+                                            "---- Lead Stage Request Data ----",
+                                          );
+                                          print("Stage ID: $_selectedStageId");
+                                          print(
+                                            "Unit Price: ${doneDealData?['unitPrice']}",
+                                          );
+                                          print(
+                                            "Unit Number: ${doneDealData?['unitNumber']}",
+                                          );
+                                          print(
+                                            "Commission Ratio: ${doneDealData?['commissionRatio']}",
+                                          );
+                                          print(
+                                            "Commission Money: ${doneDealData?['commissionMoney']}",
+                                          );
+                                          print(
+                                            "Cashback Ratio: ${doneDealData?['cashbackRatio']}",
+                                          );
+                                          print(
+                                            "Cashback Money: ${doneDealData?['cashbackMoney']}",
+                                          );
+                                          print(
+                                            "-------------------------------",
+                                          );
+                                          print("leadstagerequest: $leadStageRequest");
                                           final changeStageCubit =
                                               context.read<ChangeStageCubit>();
                                           await changeStageCubit.changeStage(

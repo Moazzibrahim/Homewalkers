@@ -34,7 +34,7 @@ class LeadStageRequest {
         "unit_price": unitPrice,
         "unitnumber": unitNumber,
         "review": false,
-        "commissionration": commissionRatio,
+        "commissionratio": commissionRatio,
         "commissionmoney": commissionMoney,
         "cashbackratio": cashbackRatio,
         "cashbackmoney": cashbackMoney,
