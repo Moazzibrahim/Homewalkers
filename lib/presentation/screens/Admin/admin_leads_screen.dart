@@ -69,11 +69,91 @@ class LeadsShimmer extends StatelessWidget {
   }
 }
 
+class _ChangeLeadToDataDialog extends StatelessWidget {
+  final List<String> leadIds;
+  final VoidCallback onSuccess;
+
+  const _ChangeLeadToDataDialog({
+    required this.leadIds,
+    required this.onSuccess,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<EditLeadCubit, EditLeadState>(
+      listener: (context, state) {
+        if (state is EditLeadSuccess) {
+          Navigator.pop(context);
+          onSuccess();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Leads transferred to data center successfully"),
+            ),
+          );
+        }
+
+        if (state is EditLeadFailure) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("failed to change lead to data center")),
+          );
+        }
+      },
+      builder: (context, state) {
+        final isLoading = state is EditLeadLoading;
+
+        return AlertDialog(
+          title: const Text('Transfer Leads'),
+          content: Text(
+            'Are you sure you want to transfer ${leadIds.length} lead(s) to the Data Center?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Constants.maincolor,
+              ),
+              onPressed:
+                  isLoading
+                      ? null
+                      : () {
+                        log('leadIds: $leadIds');
+                        context.read<EditLeadCubit>().changeLeadToData(
+                          leadIds: leadIds,
+                        );
+                      },
+              child:
+                  isLoading
+                      ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Text(
+                        'Confirm',
+                        style: TextStyle(color: Colors.white),
+                      ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class AdminLeadsScreen extends StatefulWidget {
   final String? stageName;
   final bool? showDuplicatesOnly;
   final bool shouldRefreshOnOpen;
   final String? stageId;
+  final bool? data;
+  final bool? transferefromdata;
 
   const AdminLeadsScreen({
     super.key,
@@ -81,6 +161,8 @@ class AdminLeadsScreen extends StatefulWidget {
     this.showDuplicatesOnly,
     this.shouldRefreshOnOpen = true,
     this.stageId,
+    this.data,
+    this.transferefromdata,
   });
 
   @override
@@ -165,6 +247,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       stageId: _selectedStageFilter,
       duplicates: _showDuplicatesOnly,
       ignoreDuplicate: _showDuplicatesOnly,
+      data: widget.data,
+      transferefromdata: widget.transferefromdata,
     );
   }
 
@@ -247,6 +331,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
           lastCommentDateFrom: _lastCommentDateStartFilter,
           lastCommentDateTo: _lastCommentDateEndFilter,
           duplicates: _showDuplicatesOnly,
+          data: widget.data,
+          transferefromdata: widget.transferefromdata,
         )
         .whenComplete(() {
           _isFetchingMore = false;
@@ -362,6 +448,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       lastCommentDateTo: _lastCommentDateEndFilter,
       duplicates: _showDuplicatesOnly,
       ignoreDuplicate: _showDuplicatesOnly,
+      data: widget.data,
+      transferefromdata: widget.transferefromdata,
     );
   }
 
@@ -858,7 +946,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               leadsCubit.fetchLeads(
                                                 stageId: widget.stageId,
                                                 duplicates: _showDuplicatesOnly,
-                                                ignoreDuplicate: _showDuplicatesOnly,
+                                                ignoreDuplicate:
+                                                    _showDuplicatesOnly,
+                                                data: widget.data,
+                                                transferefromdata:
+                                                    widget.transferefromdata,
                                               );
                                             },
                                           ),
@@ -871,6 +963,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           stageId: widget.stageId,
                                           duplicates: _showDuplicatesOnly,
                                           ignoreDuplicate: _showDuplicatesOnly,
+                                          data: widget.data,
+                                          transferefromdata:
+                                              widget.transferefromdata,
                                         );
                                     _showCheckboxes = false;
                                     _selectedLeads.clear();
@@ -880,6 +975,52 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                   icon: Icon(Icons.edit),
                                 ),
                               ),
+                              InkWell(
+                                onTap: () {
+                                  if (_selectedLeads.isEmpty) return;
+
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (_) {
+                                      return BlocProvider(
+                                        create:
+                                            (_) => EditLeadCubit(
+                                              EditLeadApiService(),
+                                            ),
+                                        child: _ChangeLeadToDataDialog(
+                                          leadIds: _selectedLeads.toList(),
+                                          onSuccess: () {
+                                            context
+                                                .read<
+                                                  AllLeadsCubitWithPagination
+                                                >()
+                                                .fetchLeads(
+                                                  stageId: widget.stageId,
+                                                  duplicates:
+                                                      _showDuplicatesOnly,
+                                                  ignoreDuplicate:
+                                                      _showDuplicatesOnly,
+                                                  data: widget.data,
+                                                  transferefromdata:
+                                                      widget.transferefromdata,
+                                                );
+
+                                            setState(() {
+                                              _showCheckboxes = false;
+                                              _selectedLeads.clear();
+                                            });
+                                          },
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                                child: const _ActionIcon(
+                                  icon: Icon(Icons.swap_horiz),
+                                ),
+                              ),
+
                               InkWell(
                                 onTap: () async {
                                   final leadsList =
@@ -1003,6 +1144,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                       stageId: widget.stageId,
                                       duplicates: _showDuplicatesOnly,
                                       ignoreDuplicate: _showDuplicatesOnly,
+                                      data: widget.data,
+                                      transferefromdata:
+                                          widget.transferefromdata,
                                     );
                                   }
                                 },
@@ -1046,7 +1190,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                         } else {
                           context
                               .read<AllLeadsCubitWithPagination>()
-                              .fetchLeads(); // غير كده هات الكل
+                              .fetchLeads(
+                                data: widget.data,
+                                transferefromdata: widget.transferefromdata,
+                              ); // غير كده هات الكل
                         }
                       },
                       child: Column(
@@ -1258,12 +1405,19 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                         : null,
                                 duplicates: _showDuplicatesOnly,
                                 ignoreDuplicate: _showDuplicatesOnly,
+                                data: widget.data,
+                                transferefromdata: widget.transferefromdata,
                               )
                               .then((_) {
                                 log("✅ Leads fetched successfully");
                                 // ✅ بعد ما الداتا ترجع، فعّل الفلاتر (stage وغيره)
                                 if (_showDuplicatesOnly) {
-                                  cubit.fetchLeads(duplicates: true,ignoreDuplicate: true,);
+                                  cubit.fetchLeads(
+                                    duplicates: true,
+                                    ignoreDuplicate: true,
+                                    data: widget.data,
+                                    transferefromdata: widget.transferefromdata,
+                                  );
                                 } else {}
                               });
                         } else {
@@ -1440,8 +1594,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           commissionratio: lead.commissionratio,
                                           unitPrice: lead.unit_price,
                                           unitnumber: lead.unitnumber,
-                                          lastcommentFirst: lead.lastComment?.firstcomment,
-                                          lastcommentNext: lead.lastComment?.secondcomment,
+                                          lastcommentFirst:
+                                              lead.lastComment?.firstcomment,
+                                          lastcommentNext:
+                                              lead.lastComment?.secondcomment,
                                         ),
                                   ),
                                 ).then((_) {
@@ -1924,69 +2080,114 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                       ),
 
                                                       // 🗨️ Last Comment
-InkWell(
-  onTap: () {
-    showDialog(
-      context: context,
-      builder: (_) {
-        final lastComment = lead.lastComment;
-        final firstCommentText =
-            lastComment?.firstcomment?.text ?? 'No comments available.';
-        final secondCommentText =
-            lastComment?.secondcomment?.text ?? 'No action available.';
+                                                      InkWell(
+                                                        onTap: () {
+                                                          showDialog(
+                                                            context: context,
+                                                            builder: (_) {
+                                                              final lastComment =
+                                                                  lead.lastComment;
+                                                              final firstCommentText =
+                                                                  lastComment
+                                                                      ?.firstcomment
+                                                                      ?.text ??
+                                                                  'No comments available.';
+                                                              final secondCommentText =
+                                                                  lastComment
+                                                                      ?.secondcomment
+                                                                      ?.text ??
+                                                                  'No action available.';
 
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Last Comment",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(firstCommentText), // كل النص يظهر بالكامل
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Action (Plan)",
-                    style: TextStyle(
-                      color: Constants.maincolor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(secondCommentText), // كل النص يظهر بالكامل
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  },
-  borderRadius: BorderRadius.circular(30),
-  child: Container(
-    padding: const EdgeInsets.all(8),
-    margin: const EdgeInsets.symmetric(horizontal: 4),
-    decoration: BoxDecoration(
-      color: Constants.maincolor,
-      shape: BoxShape.circle,
-    ),
-    child: const Icon(
-      Icons.chat_bubble_outline,
-      color: Colors.white,
-      size: 18,
-    ),
-  ),
-),
-
+                                                              return Dialog(
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        12,
+                                                                      ),
+                                                                ),
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets.all(
+                                                                        16.0,
+                                                                      ),
+                                                                  child: SingleChildScrollView(
+                                                                    child: Column(
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment
+                                                                              .start,
+                                                                      children: [
+                                                                        const Text(
+                                                                          "Last Comment",
+                                                                          style: TextStyle(
+                                                                            fontWeight:
+                                                                                FontWeight.w600,
+                                                                          ),
+                                                                        ),
+                                                                        const SizedBox(
+                                                                          height:
+                                                                              5,
+                                                                        ),
+                                                                        Text(
+                                                                          firstCommentText,
+                                                                        ), // كل النص يظهر بالكامل
+                                                                        const SizedBox(
+                                                                          height:
+                                                                              10,
+                                                                        ),
+                                                                        const Text(
+                                                                          "Action (Plan)",
+                                                                          style: TextStyle(
+                                                                            color:
+                                                                                Constants.maincolor,
+                                                                            fontWeight:
+                                                                                FontWeight.w600,
+                                                                          ),
+                                                                        ),
+                                                                        const SizedBox(
+                                                                          height:
+                                                                              5,
+                                                                        ),
+                                                                        Text(
+                                                                          secondCommentText,
+                                                                        ), // كل النص يظهر بالكامل
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            },
+                                                          );
+                                                        },
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              30,
+                                                            ),
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                8,
+                                                              ),
+                                                          margin:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 4,
+                                                              ),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                                color:
+                                                                    Constants
+                                                                        .maincolor,
+                                                                shape:
+                                                                    BoxShape
+                                                                        .circle,
+                                                              ),
+                                                          child: const Icon(
+                                                            Icons
+                                                                .chat_bubble_outline,
+                                                            color: Colors.white,
+                                                            size: 18,
+                                                          ),
+                                                        ),
+                                                      ),
                                                     ],
                                                   ),
                                                 ],

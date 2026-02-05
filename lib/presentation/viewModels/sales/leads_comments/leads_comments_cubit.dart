@@ -57,4 +57,22 @@ class LeadCommentsCubit extends Cubit<LeadCommentsState> {
       emit(LeadCommentsError(e.toString()));
     }
   }
+
+    Future<void> fetchNewComments({
+    required String leadId,
+    int? page,
+    int? limit,
+  }) async {
+    emit(LeadCommentsLoading());
+    try {
+      final newComments = await apiService.fetchNewComments(
+        leadId: leadId,
+        page: page,
+        limit: limit,
+      );
+      emit(NewCommentsLoaded(newComments));
+    } catch (e) {
+      emit(LeadCommentsError('Failed to fetch new comments: $e'));
+    }
+  }
 }

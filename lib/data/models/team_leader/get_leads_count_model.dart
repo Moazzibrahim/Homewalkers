@@ -3,8 +3,8 @@
 class TeamLeaderResponse {
   final bool? success;
   final User? teamLeader;
-  final int? totalSales;
-  final int? totalReviewerLeads;
+  final num? totalSales;
+  final num? totalReviewerLeads;
   final List<SalesData>? data;
 
   TeamLeaderResponse({
@@ -50,7 +50,7 @@ class User {
 class SalesData {
   final String? salesID;
   final String? salesName;
-  final int? totalLeads;
+  final num? totalLeads;
   final bool? isReviewer;
   final List<Stage>? stages;
 
@@ -76,7 +76,7 @@ class SalesData {
 
 class Stage {
   final String? stageName;
-  final int? count;
+  final num? count;
   final List<Lead>? leads;
 
   Stage({this.stageName, this.count, this.leads});
@@ -109,9 +109,9 @@ class Lead {
   final Chanel? chanel;
   final CommunicationWay? communicationway;
   final String? leedtype;
-  final int? budget;
-  final int? revenue;
-  final int? unitPrice;
+  final num? budget;
+  final num? revenue;
+  final num? unitPrice;
   final bool? review;
   final String? dayonly;
   final String? lastStageDateUpdated;
@@ -120,15 +120,15 @@ class Lead {
   final User? addby;
   final User? updatedby;
   final Campaign? campaign;
-  final int? duplicateCount;
-  final int? relatedLeadsCount;
+  final num? duplicateCount;
+  final num? relatedLeadsCount;
   final List<LeadVersion>? allVersions;
-  final int? totalSubmissions;
+  final num? totalSubmissions;
   final String? stagedateupdated;
   final List? mergeHistory;
   final String? createdAt;
   final String? updatedAt;
-  final int? v;
+  final num? v;
 
   Lead({
     this.whatsappnumber,
@@ -343,7 +343,7 @@ class Campaign {
   final String? id;
   final String? name;
   final String? date;
-  final int? cost;
+  final num? cost;
   final bool? isactivate;
   final User? addby;
   final User? updatedby;
@@ -378,13 +378,13 @@ class LeadVersion {
   final Chanel? chanel;
   final Campaign? campaign;
   final String? notes;
-  final int? budget;
-  final int? unitPrice;
+  final num? budget;
+  final num? unitPrice;
   final String? leedtype;
   final CommunicationWay? communicationway;
   final User? addby;
   final String? recordedAt;
-  final int? versionNumber;
+  final num? versionNumber;
 
   LeadVersion({
     this.name,

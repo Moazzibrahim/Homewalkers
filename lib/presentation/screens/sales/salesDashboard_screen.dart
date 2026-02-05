@@ -176,7 +176,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                             ],
                           );
                         } else if (state is SalesDashboardError) {
-                          return Center(child: Text(state.message));
+                          return Center(child: Text("No Data Found"));
                         } else if (state is SalesDashboardSuccess) {
                           final cubit = context.read<SalesDashboardCubit>();
                           final stages = cubit.getVisibleStages(state.response);

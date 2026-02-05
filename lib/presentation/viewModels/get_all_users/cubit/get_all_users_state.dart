@@ -74,3 +74,23 @@ class AllLeadsLoaded extends GetAllUsersState {
   const AllLeadsLoaded();
 }
 
+// 🔹 Lead Stages Summary States
+class LeadStagesSummaryLoading extends GetAllUsersState {}
+
+class LeadStagesSummarySuccess extends GetAllUsersState {
+  final LeadStagesSummaryResponse data;
+
+  const LeadStagesSummarySuccess(this.data);
+
+  @override
+  List<Object?> get props => [data];
+}
+
+class LeadStagesSummaryFailure extends GetAllUsersState {
+  final String message;
+
+  const LeadStagesSummaryFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

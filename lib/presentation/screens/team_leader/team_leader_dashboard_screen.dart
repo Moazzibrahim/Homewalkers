@@ -190,7 +190,7 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                 }
 
                 if (state is TeamleaderDashboardError) {
-                  return Center(child: Text(state.message));
+                  return Center(child: Text("No Data Found"));
                 }
 
                 if (state is TeamleaderDashboardSuccess) {

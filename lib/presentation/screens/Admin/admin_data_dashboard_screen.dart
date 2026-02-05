@@ -6,10 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/Admin_with_pagination/fetch_data_with_pagination.dart';
-import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
-import 'package:homewalkers_app/presentation/screens/Admin/admin_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
-import 'package:homewalkers_app/presentation/screens/Admin/admin_sales_sceen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
@@ -78,11 +75,11 @@ class AdminDashboardShimmer extends StatelessWidget {
   }
 }
 
-class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+class AdminDataDashboardScreen extends StatefulWidget {
+  const AdminDataDashboardScreen({super.key});
 
   @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+  State<AdminDataDashboardScreen> createState() => _AdminDashboardScreenState();
 
   /// A styled container for icons, like the notification icon.
   static Widget _iconBox(
@@ -262,7 +259,7 @@ class AdminDashboardScreen extends StatefulWidget {
   }
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen>
+class _AdminDashboardScreenState extends State<AdminDataDashboardScreen>
     with WidgetsBindingObserver {
   String _userName = 'User';
   Timer? _autoRefreshTimer;
@@ -271,7 +268,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    context.read<GetAllUsersCubit>().fetchStagesStats();
+    context.read<GetAllUsersCubit>().fetchLeadStagesSummary();
     _loadUserName();
   }
 
@@ -295,7 +292,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     // 👇 لما التطبيق يرجع من الخلفية
     if (state == AppLifecycleState.resumed) {
       print("App resumed — refreshing admin dashboard data...");
-      context.read<GetAllUsersCubit>().fetchStagesStats();
+      context.read<GetAllUsersCubit>().fetchLeadStagesSummary();
       // تحديث بيانات المستخدمين
     }
   }
@@ -341,7 +338,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ],
             ),
             const Spacer(),
-            AdminDashboardScreen._iconBox(Icons.notifications_none, () {
+            AdminDataDashboardScreen._iconBox(Icons.notifications_none, () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -354,7 +351,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await context.read<GetAllUsersCubit>().fetchStagesStats();
+          await context.read<GetAllUsersCubit>().fetchLeadStagesSummary();
         },
         child: SingleChildScrollView(
           child: Padding(
@@ -367,39 +364,46 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 Row(
                   children: [
                     Text(
-                      'Hello $_userName',
+                      'Data Centre Dashboard',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w700,
                         color: Theme.of(
                           context,
                         ).textTheme.bodyMedium?.color?.withOpacity(0.7),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text('👋', style: TextStyle(fontSize: 24)),
+                    //   const Text('👋', style: TextStyle(fontSize: 24)),
                   ],
                 ),
                 const SizedBox(height: 20),
                 BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
-                  builder: (context, usersState) {
-                    if (usersState is StagesStatsLoading) {
+                  builder: (context, state) {
+                    if (state is LeadStagesSummaryLoading) {
                       return const AdminDashboardShimmer();
                     }
 
-                    if (usersState is StagesStatsSuccess) {
-                      final allUsers = usersState.data.totalLeads ?? 0;
-                      final allSales = usersState.data.activeSales ?? 0;
-                      // ✅ ترتيب الـ stages: اللي فيها Leads الأول واللي Zero في الآخر
+                    if (state is LeadStagesSummarySuccess) {
+                      final totalLeads = state.data.totalLeads ?? 0;
+
+                      final stages =
+                          (state.data.data ?? [])
+                            // ترتيب: اللي فيها leads الأول
+                            ..sort(
+                              (a, b) => (b.leadCount ?? 0).compareTo(
+                                a.leadCount ?? 0,
+                              ),
+                            );
 
                       final List<Widget> statCards = [
-                        // Leads Card
-                        AdminDashboardScreen._dashboardCard(
+                        /// 🔹 Leads Card
+                        AdminDataDashboardScreen._dashboardCard(
                           'Leads',
-                          '$allUsers',
+                          totalLeads.toString(),
                           Icons.group,
-                          totalCount: allUsers,
                           context,
+                          totalCount: totalLeads,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -412,113 +416,69 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                           ),
                                       child: const AdminLeadsScreen(
                                         data: false,
-                                        transferefromdata: true,
+                                        transferefromdata: false,
                                       ),
-                                    ),
-                              ),
-                            );
-                          },
-                        ),
-                        // Sales Card
-                        AdminDashboardScreen._dashboardCard(
-                          'Sales',
-                          '$allSales',
-                          Icons.person,
-                          totalCount: allSales,
-                          context,
-                          onTap:
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const AdminSalesSceen(),
-                                ),
-                              ),
-                        ),
-                        // ✅ DATA Card
-                        AdminDashboardScreen._dashboardCard(
-                          'Data Centre',
-                          '', // مفيش رقم
-                          Icons.dashboard_customize_rounded,
-                          context,
-                          totalCount: 1, // عشان progress bar ما يكسرش
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => BlocProvider(
-                                      create:
-                                          (context) => GetAllUsersCubit(
-                                            GetAllUsersApiService(),
-                                          )..fetchLeadStagesSummary(),
-                                      child: const AdminDataDashboardScreen(),
                                     ),
                               ),
                             );
                           },
                         ),
 
-                        // ✅ Cards لكل المراحل من API مع الـ count الصحيح
-                        ...usersState.data.stages!
-                            .where(
-                              (entry) => entry.stage?.toLowerCase() != 'follow',
-                            )
-                            .map(
-                              (entry) => AdminDashboardScreen._dashboardCard(
-                                entry.stage!,
-                                entry.leadsCount.toString(),
-                                Icons.timeline,
-                                totalCount: allUsers,
-                                context,
-                                onTap: () {
-                                  if (entry.stage?.toLowerCase() ==
-                                      "duplicate") {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (_) => BlocProvider(
-                                              create:
-                                                  (
-                                                    _,
-                                                  ) => AllLeadsCubitWithPagination(
+                        /// 🔹 Cards لكل Stage
+                        ...stages.map(
+                          (stage) => AdminDataDashboardScreen._dashboardCard(
+                            stage.stageName ?? 'Unknown',
+                            (stage.leadCount ?? 0).toString(),
+                            Icons.timeline,
+                            context,
+                            totalCount: totalLeads,
+                            onTap: () {
+                              if (stage.stageName?.toLowerCase() ==
+                                  'duplicate') {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => BlocProvider(
+                                          create:
+                                              (_) =>
+                                                  AllLeadsCubitWithPagination(
                                                     LeadsApiServiceWithQuery(),
                                                   ),
-                                              child: AdminLeadsScreen(
-                                                // stageName: entry.stage,
-                                                showDuplicatesOnly: true,
-                                                data: false,
-                                                transferefromdata: true,
-                                              ),
-                                            ),
-                                      ),
-                                    );
-                                  } else {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (_) => BlocProvider(
-                                              create:
-                                                  (
-                                                    _,
-                                                  ) => AllLeadsCubitWithPagination(
+                                          child: const AdminLeadsScreen(
+                                            showDuplicatesOnly: true,
+                                            data: false,
+                                            transferefromdata: false,
+                                          ),
+                                        ),
+                                  ),
+                                );
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => BlocProvider(
+                                          create:
+                                              (_) =>
+                                                  AllLeadsCubitWithPagination(
                                                     LeadsApiServiceWithQuery(),
                                                   ),
-                                              child: AdminLeadsScreen(
-                                                stageName: entry.stage,
-                                                stageId: entry.stageId,
-                                                data: false,
-                                                transferefromdata: true,
-                                              ),
-                                            ),
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ),
+                                          child: AdminLeadsScreen(
+                                            stageName: stage.stageName,
+                                            stageId: stage.stageId,
+                                            data: false,
+                                            transferefromdata: false,
+                                          ),
+                                        ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
                       ];
+
                       return GridView.builder(
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
@@ -533,7 +493,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         itemBuilder: (_, i) => statCards[i],
                       );
                     }
-                    return const Center(child: Text("Couldn't load data."));
+
+                    if (state is LeadStagesSummaryFailure) {
+                      return Center(child: Text("No Data found"));
+                    }
+
+                    return const SizedBox.shrink();
                   },
                 ),
                 const SizedBox(height: 20),

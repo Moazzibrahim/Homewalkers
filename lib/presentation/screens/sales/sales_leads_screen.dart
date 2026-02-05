@@ -10,7 +10,6 @@ import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
-import 'package:homewalkers_app/data/models/lead_comments_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_details_screen.dart';
@@ -1156,10 +1155,15 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                                                   (
                                                                     _,
                                                                   ) => LeadCommentsCubit(
-                                                                    GetAllLeadCommentsApiService(),
-                                                                  )..fetchLeadComments(
-                                                                    lead.id!,
-                                                                  ),
+                                                                      GetAllLeadCommentsApiService(),
+                                                                    )
+                                                                    // استخدام الدالة الجديدة بدلاً من fetchLeadComments
+                                                                    ..fetchNewComments(
+                                                                      leadId:
+                                                                          lead.id!,
+                                                                      page: 1,
+                                                                      limit: 10,
+                                                                    ),
                                                               child: Padding(
                                                                 padding:
                                                                     const EdgeInsets.all(
@@ -1221,59 +1225,47 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                                                             100,
                                                                         child: Center(
                                                                           child: Text(
-                                                                            "No comments available: ${commentState.message}",
+                                                                            "No comments available",
                                                                           ),
                                                                         ),
                                                                       );
                                                                     } else if (commentState
-                                                                        is LeadCommentsLoaded) {
-                                                                      final commentsData =
+                                                                        is NewCommentsLoaded) {
+                                                                      // استخدام NewCommentsModel بدلاً من LeadCommentsModel
+                                                                      final newCommentsData =
                                                                           commentState
-                                                                              .leadComments
-                                                                              .data;
-                                                                      if (commentsData ==
+                                                                              .newComments;
+
+                                                                      if (newCommentsData.comments ==
                                                                               null ||
-                                                                          commentsData
+                                                                          newCommentsData
+                                                                              .comments!
                                                                               .isEmpty) {
                                                                         return const Text(
                                                                           'No comments available.',
                                                                         );
                                                                       }
 
-                                                                      final commentsList =
-                                                                          commentsData
-                                                                              .first
-                                                                              .comments ??
-                                                                          [];
-                                                                      final validComments =
-                                                                          commentsList
-                                                                              .where(
-                                                                                (
-                                                                                  c,
-                                                                                ) =>
-                                                                                    (c.firstcomment?.text?.isNotEmpty ??
-                                                                                        false) ||
-                                                                                    (c.secondcomment?.text?.isNotEmpty ??
-                                                                                        false),
-                                                                              )
-                                                                              .toList();
+                                                                      // الحصول على أول تعليق في القائمة (البيانات ستعتمد على هيكل NewCommentsModel)
+                                                                      // قد تحتاج لتعديل هذا الجزء حسب هيكل NewCommentsModel
+                                                                      final firstComment =
+                                                                          newCommentsData
+                                                                              .comments!
+                                                                              .first;
 
-                                                                      final Comment?
-                                                                      firstCommentEntry =
-                                                                          validComments.isNotEmpty
-                                                                              ? validComments.first
-                                                                              : null;
-
+                                                                      // إذا كان NewCommentsModel يحتوي على structure مشابه لـ LeadCommentsModel
+                                                                      // اضبط هذه الأسماء حسب الحقول الفعلية في NewCommentsModel
                                                                       final String
                                                                       firstCommentText =
-                                                                          firstCommentEntry
-                                                                              ?.firstcomment
+                                                                          firstComment
+                                                                              .firstcomment
                                                                               ?.text ??
-                                                                          'No comments available.';
+                                                                          "No comment available.";
+
                                                                       final String
                                                                       secondCommentText =
-                                                                          firstCommentEntry
-                                                                              ?.secondcomment
+                                                                          firstComment
+                                                                              .secondcomment
                                                                               ?.text ??
                                                                           'No action available.';
 
@@ -1331,8 +1323,10 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                                                       return const SizedBox(
                                                                         height:
                                                                             100,
-                                                                        child: Text(
-                                                                          "No comments",
+                                                                        child: Center(
+                                                                          child: Text(
+                                                                            "No comments",
+                                                                          ),
                                                                         ),
                                                                       );
                                                                     }

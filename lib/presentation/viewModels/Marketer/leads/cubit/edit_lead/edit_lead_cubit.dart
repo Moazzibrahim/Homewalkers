@@ -56,17 +56,25 @@ class EditLeadCubit extends Cubit<EditLeadState> {
     }
   }
 
-    Future<void> editLeadAssignvalue({
+  Future<void> editLeadAssignvalue({
     required String userId,
     bool? assign,
   }) async {
     emit(EditLeadLoading());
 
     try {
-      await apiService.editLeadAssignValue(
-        userId: userId,
-        assign: assign
-      );
+      await apiService.editLeadAssignValue(userId: userId, assign: assign);
+      emit(EditLeadSuccess());
+    } catch (e) {
+      emit(EditLeadFailure(error: e.toString()));
+    }
+  }
+
+  Future<void> changeLeadToData({List<String>? leadIds}) async {
+    emit(EditLeadLoading());
+
+    try {
+      await apiService.changeLeadToData(leadIds: leadIds);
       emit(EditLeadSuccess());
     } catch (e) {
       emit(EditLeadFailure(error: e.toString()));

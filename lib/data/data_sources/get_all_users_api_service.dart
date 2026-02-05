@@ -1,8 +1,10 @@
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/models/Data/admin_data_dashboard_count_model.dart';
 import 'package:homewalkers_app/data/models/lead_stats_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
@@ -41,7 +43,7 @@ class GetAllUsersApiService {
     ).replace(
       queryParameters: {
         'leadisactive': 'true',
-        'sort':'-date',
+        'sort': '-date',
         'page': page.toString(),
         'limit': limit.toString(),
         if (stageName != null && stageName.isNotEmpty) 'stage': stageName,
@@ -167,5 +169,36 @@ class GetAllUsersApiService {
     }
 
     return null;
+  }
+
+  Future<LeadStagesSummaryResponse?> fetchLeadStagesSummary() async {
+    final token = await _getToken();
+    if (token == null) return null;
+    try {
+      final response = await http.get(
+        Uri.parse("${Constants.baseUrl}/users/stage-statistics-CRM-DATA"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      log('Lead Stages Summary Status Code: ${response.statusCode}');
+      log('Lead Stages Summary Response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData =
+            json.decode(response.body) as Map<String, dynamic>;
+
+        return LeadStagesSummaryResponse.fromJson(jsonData);
+      } else {
+        // backend error but still safe
+        return LeadStagesSummaryResponse();
+      }
+    } catch (e, s) {
+      log('fetchLeadStagesSummary error', error: e, stackTrace: s);
+      return LeadStagesSummaryResponse();
+    }
   }
 }

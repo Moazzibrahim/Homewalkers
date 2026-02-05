@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
 import 'package:homewalkers_app/data/models/leads_assigned_model.dart';
+import 'package:homewalkers_app/data/models/newCommentsModel.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -77,5 +78,52 @@ class GetAllLeadCommentsApiService {
     } catch (e) {
       throw Exception('Failed to send reply: $e');
     }
+  }
+
+  Future<NewCommentsModel> fetchNewComments({
+    required String leadId,
+    int? page,
+    int? limit,
+  }) async {
+    try {
+      // بناء URL مع معاملات التصفية الاختيارية
+      final queryParameters = <String, String>{};
+      if (page != null) queryParameters['page'] = page.toString();
+      if (limit != null) queryParameters['limit'] = limit.toString();
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('salesId');
+
+      final uri = Uri.parse(
+        '${Constants.baseUrl}/Action/actions/$leadId/user/$userId/comments',
+      ).replace(queryParameters: queryParameters);
+
+      // إرسال الطلب
+      final response = await http.get(uri, headers: _getHeaders());
+
+      // التحقق من حالة الاستجابة
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        return NewCommentsModel.fromJson(jsonData);
+      } else {
+        throw Exception(
+          'Failed to fetch comments. Status code: ${response.statusCode}',
+        );
+      }
+    } on http.ClientException catch (e) {
+      throw Exception('Network error: ${e.message}');
+    } on FormatException catch (e) {
+      throw Exception('Invalid JSON response: ${e.message}');
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  Map<String, String> _getHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      // يمكن إضافة رأسيات إضافية مثل التوثيق
+      // 'Authorization': 'Bearer $token',
+    };
   }
 }

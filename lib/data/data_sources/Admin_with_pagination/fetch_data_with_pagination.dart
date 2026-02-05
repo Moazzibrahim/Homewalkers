@@ -34,6 +34,8 @@ class LeadsApiServiceWithQuery {
     DateTime? lastCommentDateTo,
     bool? duplicates,
     bool? ignoreDuplicate,
+    bool? data,
+    bool? transferefromdata,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -96,6 +98,12 @@ class LeadsApiServiceWithQuery {
       if (ignoreDuplicate != null) {
         queryParams["ignoreduplicate"] = ignoreDuplicate.toString();
         queryParams["duplicates"] = ignoreDuplicate.toString();
+      }
+      if (data != null) {
+        queryParams["data"] = data.toString();
+      }
+      if (transferefromdata != null) {
+        queryParams["transferefromdata"] = transferefromdata.toString();
       }
 
       // تحويل التواريخ لبداية اليوم ونهاية اليوم

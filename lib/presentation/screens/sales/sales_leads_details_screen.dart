@@ -207,9 +207,8 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
         BlocProvider(create: (context) => StagesCubit(StagesApiService())),
         BlocProvider(
           create:
-              (context) =>
-                  LeadCommentsCubit(GetAllLeadCommentsApiService())
-                    ..fetchLeadComments(widget.leedId),
+              (context) => LeadCommentsCubit(GetAllLeadCommentsApiService())
+                ..fetchNewComments(leadId: widget.leedId, page: 1, limit: 10),
         ),
       ],
       child: Builder(
@@ -483,28 +482,26 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                               return Center(
                                 child: Text('Error: ${state.message}'),
                               );
-                            } else if (state is LeadCommentsLoaded) {
-                              final leadComments = state.leadComments;
+                            } else if (state is NewCommentsLoaded) {
+                              // استخدام NewCommentsModel بدلاً من LeadCommentsModel
+                              final newCommentsData = state.newComments;
 
-                              if (leadComments.data == null ||
-                                  leadComments.data!.isEmpty) {
+                              if (newCommentsData.comments == null ||
+                                  newCommentsData.comments!.isEmpty) {
                                 return const Center(
-                                  child: Text('No comments found'),
+                                  child: Text('No comments available'),
                                 );
                               }
 
-                              final lastItem =
-                                  leadComments.data!.first; // آخر كومنت
-                              final lastComment = lastItem.comments?.first;
+                              final lastComment =
+                                  newCommentsData.comments!.first; // آخر كومنت
 
                               // تحويل التواريخ لتوقيت دبي (UTC+4)
-
                               final firstCommentDate = DateTime.tryParse(
-                                lastComment?.firstcomment?.date.toString() ??
-                                    '',
+                                lastComment.firstcomment?.date.toString() ?? '',
                               )?.toUtc().add(const Duration(hours: 4));
                               final secondCommentDate = DateTime.tryParse(
-                                lastComment?.secondcomment?.date.toString() ??
+                                lastComment.secondcomment?.date.toString() ??
                                     '',
                               )?.toUtc().add(const Duration(hours: 4));
 
@@ -515,84 +512,84 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                 'secondCommentDate Dubai: $secondCommentDate',
                               );
                               print('clearHistoryDubai: $clearHistoryTimee');
-                              // استخدام دالة isValidComment على آخر تعليق
-                              final showLastComment = isValidComment(
-                                isClearHistory: widget.isleadAssigned == true,
 
-                                firstDate: firstCommentDate,
+                              // التحقق مما إذا كان هناك أي محتوى في التعليق الأول أو الثاني
+                              final bool hasFirstComment =
+                                  lastComment.firstcomment?.text?.isNotEmpty ??
+                                  false;
+                              final bool hasSecondComment =
+                                  lastComment.secondcomment?.text?.isNotEmpty ??
+                                  false;
 
-                                firstText: lastComment?.firstcomment?.text,
-                              );
-
-                              if (showLastComment) {
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Last Comment",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14.sp,
-                                        color: Color(0xff6A6A75),
-                                      ),
-                                    ),
-                                    SizedBox(height: 10.h),
-                                    if (lastComment
-                                            ?.firstcomment
-                                            ?.text
-                                            ?.isNotEmpty ??
-                                        false) ...[
-                                      Text(
-                                        "Comment",
-                                        style: TextStyle(
-                                          color: Constants.maincolor,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(height: 7.h),
-                                      SelectableText(
-                                        lastComment?.firstcomment?.text ??
-                                            'No comment available.',
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                      SizedBox(height: 7.h),
-                                    ],
-                                    if (lastComment
-                                            ?.secondcomment
-                                            ?.text
-                                            ?.isNotEmpty ??
-                                        false) ...[
-                                      Text(
-                                        "Action (Plan)",
-                                        style: TextStyle(
-                                          color: Constants.maincolor,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(height: 7.h),
-                                      SelectableText(
-                                        lastComment?.secondcomment?.text ??
-                                            'No comment available.',
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                );
-                              } else {
+                              // إذا لم يكن هناك أي تعليق أو خطة عمل
+                              if (!hasFirstComment && !hasSecondComment) {
                                 return const Center(
-                                  child: Text('No comments found'),
+                                  child: Text('No comments available'),
                                 );
                               }
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Last Comment",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14.sp,
+                                      color: Color(0xff6A6A75),
+                                    ),
+                                  ),
+                                  SizedBox(height: 10.h),
+
+                                  // عرض Comment فقط إذا كان يحتوي على نص
+                                  if (hasFirstComment) ...[
+                                    Text(
+                                      "Comment",
+                                      style: TextStyle(
+                                        color: Constants.maincolor,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    SizedBox(height: 7.h),
+                                    SelectableText(
+                                      lastComment.firstcomment?.text ??
+                                          'No comment available.',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    SizedBox(height: 7.h),
+                                  ],
+
+                                  // عرض Action (Plan) فقط إذا كان يحتوي على نص
+                                  if (hasSecondComment) ...[
+                                    Text(
+                                      "Action (Plan)",
+                                      style: TextStyle(
+                                        color: Constants.maincolor,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    SizedBox(height: 7.h),
+                                    SelectableText(
+                                      lastComment.secondcomment?.text ??
+                                          'No action available.',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              );
                             } else {
-                              return const SizedBox(); // أو Placeholder
+                              // حالة عدم وجود بيانات - يمكن عرض رسالة مختلفة هنا
+                              return const Center(
+                                child: Text('No comments available'),
+                              );
                             }
                           },
                         ),

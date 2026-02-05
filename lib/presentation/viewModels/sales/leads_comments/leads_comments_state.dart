@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
 import 'package:homewalkers_app/data/models/leads_assigned_model.dart';
+import 'package:homewalkers_app/data/models/newCommentsModel.dart';
 
 // --- States ---
 abstract class LeadCommentsState extends Equatable {
@@ -55,4 +56,14 @@ class LeadCommentsFullLoaded extends LeadCommentsState {
 
   @override
   List<Object?> get props => [comments, assigned];
+}
+
+// ✅ New state for paginated/commented data
+class NewCommentsLoaded extends LeadCommentsState {
+  final NewCommentsModel newComments;
+
+  const NewCommentsLoaded(this.newComments);
+
+  @override
+  List<Object?> get props => [newComments];
 }

@@ -41,6 +41,8 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
     DateTime? lastCommentDateTo,
     bool? duplicates,
     bool? ignoreDuplicate,
+    bool? transferefromdata,
+    bool? data,
   }) async {
     /// ✅ لو أول صفحة + الفلاتر اتغيرت → reset حقيقي
 
@@ -73,6 +75,8 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
         lastCommentDateTo: lastCommentDateTo,
         duplicates: duplicates,
         ignoreDuplicate: ignoreDuplicate,
+        data: data,
+        transferefromdata: transferefromdata,
       );
 
       if (response != null) {
@@ -90,7 +94,6 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
       emit(AllLeadsError("Error: $e"));
     }
   }
-  
 
   /// =======================
   /// 🗑️ Trash Leads

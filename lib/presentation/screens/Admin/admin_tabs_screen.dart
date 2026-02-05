@@ -82,7 +82,10 @@ class _TabsScreenState extends State<AdminTabsScreen> {
                         (_) => AllLeadsCubitWithPagination(
                           LeadsApiServiceWithQuery(),
                         ),
-                    child: const AdminLeadsScreen(),
+                    child: const AdminLeadsScreen(
+                      data: false,
+                      transferefromdata: true,
+                    ),
                   ),
                   AdminSalesSceen(),
                   BlocProvider(

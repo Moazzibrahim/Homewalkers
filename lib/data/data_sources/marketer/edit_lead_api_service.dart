@@ -139,4 +139,31 @@ class EditLeadApiService {
       print('❌ Error: $e');
     }
   }
+
+  Future<void> changeLeadToData({List<String>? leadIds}) async {
+    final url = Uri.parse('${Constants.baseUrl}/users/transfer-to-data-center');
+    Map<String, dynamic> body = {};
+    final prefs = await SharedPreferences.getInstance();
+
+    if (leadIds != null && leadIds.isNotEmpty) body['leadIds'] = leadIds;
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": "Bearer ${prefs.getString('token')}",
+        },
+        body: jsonEncode(body),
+      );
+      if (response.statusCode == 200) {
+        print('✅ Leads changed to data successfully');
+      } else {
+        print('❌ Failed to change leads to data: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Error: $e');
+    }
+  }
 }

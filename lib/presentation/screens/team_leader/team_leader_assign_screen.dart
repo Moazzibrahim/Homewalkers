@@ -11,7 +11,6 @@ import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
-import 'package:homewalkers_app/data/models/lead_comments_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/leads_details_team_leader_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
@@ -699,7 +698,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
       onTap: () async {
         final bool hasDownloadIcon =
             assign == true && userlogteamleadername == teamleadname;
-            final bool isPendingStage = stage.toLowerCase() == 'pending';
+        final bool isPendingStage = stage.toLowerCase() == 'pending';
 
         if (isSelectionMode) {
           if (hasDownloadIcon) return; // منع الاختيار للكارت اللي عنده Download
@@ -826,8 +825,24 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
             assign == true && userlogteamleadername == teamleadname;
         if (hasDownloadIcon) return; // منع Long Press للكارت اللي عنده Download
         setState(() {
-          isSelectionMode = true;
           selected[index] = true;
+          isSelectionMode = selected.contains(
+            true,
+          ); // تظهر Container لو في اختيار
+          _selectedLead = lead;
+
+          // استخدام id للتحقق والإضافة/الإزالة
+          final leadIdStr = lead.id.toString();
+
+          if (selected[index] = true) {
+            // إضافة إذا مش موجود
+            if (!selectedLeadsData.any((l) => l.id.toString() == leadIdStr)) {
+              selectedLeadsData.add(lead);
+            }
+          } else {
+            // إزالة الليد المحدد
+            selectedLeadsData.removeWhere((l) => l.id.toString() == leadIdStr);
+          }
         });
       },
       child: Container(
@@ -1302,8 +1317,14 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                   child: BlocProvider(
                                     create:
                                         (_) => LeadCommentsCubit(
-                                          GetAllLeadCommentsApiService(),
-                                        )..fetchLeadComments(lead.id!),
+                                            GetAllLeadCommentsApiService(),
+                                          )
+                                          // استخدام الدالة الجديدة بدلاً من fetchLeadComments
+                                          ..fetchNewComments(
+                                            leadId: lead.id!,
+                                            page: 1,
+                                            limit: 10,
+                                          ),
                                     child: Padding(
                                       padding: const EdgeInsets.all(16.0),
                                       child: BlocBuilder<
@@ -1356,54 +1377,42 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                               height: 100,
                                               child: Center(
                                                 child: Text(
-                                                  "No comments available: ${commentState.message}",
+                                                  "No comments available",
                                                 ),
                                               ),
                                             );
                                           } else if (commentState
-                                              is LeadCommentsLoaded) {
-                                            final commentsData =
-                                                commentState.leadComments.data;
-                                            if (commentsData == null ||
-                                                commentsData.isEmpty) {
+                                              is NewCommentsLoaded) {
+                                            // استخدام NewCommentsModel بدلاً من LeadCommentsModel
+                                            final newCommentsData =
+                                                commentState.newComments;
+
+                                            if (newCommentsData.comments ==
+                                                    null ||
+                                                newCommentsData
+                                                    .comments!
+                                                    .isEmpty) {
                                               return const Text(
                                                 'No comments available.',
                                               );
                                             }
 
-                                            final commentsList =
-                                                commentsData.first.comments ??
-                                                [];
-                                            final validComments =
-                                                commentsList
-                                                    .where(
-                                                      (c) =>
-                                                          (c
-                                                                  .firstcomment
-                                                                  ?.text
-                                                                  ?.isNotEmpty ??
-                                                              false) ||
-                                                          (c
-                                                                  .secondcomment
-                                                                  ?.text
-                                                                  ?.isNotEmpty ??
-                                                              false),
-                                                    )
-                                                    .toList();
+                                            // الحصول على أول تعليق في القائمة (البيانات ستعتمد على هيكل NewCommentsModel)
+                                            // قد تحتاج لتعديل هذا الجزء حسب هيكل NewCommentsModel
+                                            final firstComment =
+                                                newCommentsData.comments!.first;
 
-                                            final Comment? firstCommentEntry =
-                                                validComments.isNotEmpty
-                                                    ? validComments.first
-                                                    : null;
-
+                                            // إذا كان NewCommentsModel يحتوي على structure مشابه لـ LeadCommentsModel
+                                            // اضبط هذه الأسماء حسب الحقول الفعلية في NewCommentsModel
                                             final String firstCommentText =
-                                                firstCommentEntry
-                                                    ?.firstcomment
+                                                firstComment
+                                                    .firstcomment
                                                     ?.text ??
-                                                'No comments available.';
+                                                "No comment available.";
+
                                             final String secondCommentText =
-                                                firstCommentEntry
-                                                    ?.secondcomment
+                                                firstComment
+                                                    .secondcomment
                                                     ?.text ??
                                                 'No action available.';
 
@@ -1445,7 +1454,9 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                           } else {
                                             return const SizedBox(
                                               height: 100,
-                                              child: Text("No comments"),
+                                              child: Center(
+                                                child: Text("No comments"),
+                                              ),
                                             );
                                           }
                                         },

@@ -2,6 +2,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
+import 'package:homewalkers_app/data/models/Data/admin_data_dashboard_count_model.dart';
 import 'package:homewalkers_app/data/models/lead_stats_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
@@ -70,36 +71,37 @@ class GetAllUsersCubit extends Cubit<GetAllUsersState> {
       );
     }
   }
-Future<void> prefetchAllLeads({bool? duplicatesOnly}) async {
-  if (_allLeads.isNotEmpty || _isAllLeadsReady) {
-    print("⚡ All leads already prefetched");
-    return;
-  }
 
-  print("🚀 PREFETCHING all leads...");
-  _isAllLeadsReady = false;
-
-  try {
-    final response = await apiService.getUsers(
-      page: 1,
-      limit: 3000,
-      duplicates: duplicatesOnly,
-      ignoreDuplicates: duplicatesOnly,
-    );
-
-    if (response?.data != null) {
-      _allLeads
-        ..clear()
-        ..addAll(response!.data!);
-
-      _isAllLeadsReady = true;
-      print("✅ PREFETCH DONE | allLeads=${_allLeads.length}");
+  Future<void> prefetchAllLeads({bool? duplicatesOnly}) async {
+    if (_allLeads.isNotEmpty || _isAllLeadsReady) {
+      print("⚡ All leads already prefetched");
+      return;
     }
-  } catch (e) {
-    print("❌ Prefetch failed: $e");
+
+    print("🚀 PREFETCHING all leads...");
     _isAllLeadsReady = false;
+
+    try {
+      final response = await apiService.getUsers(
+        page: 1,
+        limit: 3000,
+        duplicates: duplicatesOnly,
+        ignoreDuplicates: duplicatesOnly,
+      );
+
+      if (response?.data != null) {
+        _allLeads
+          ..clear()
+          ..addAll(response!.data!);
+
+        _isAllLeadsReady = true;
+        print("✅ PREFETCH DONE | allLeads=${_allLeads.length}");
+      }
+    } catch (e) {
+      print("❌ Prefetch failed: $e");
+      _isAllLeadsReady = false;
+    }
   }
-}
 
   Future<void> fetchAllUsers({
     String? stageFilter,
@@ -167,34 +169,35 @@ Future<void> prefetchAllLeads({bool? duplicatesOnly}) async {
       /// 🔹 Background load
       Future<void>? loadAllFuture;
       if (!loadMore && _allLeads.isEmpty) {
-  print("🧵 Starting BACKGROUND LOAD");
+        print("🧵 Starting BACKGROUND LOAD");
 
-  _isAllLeadsReady = false;
+        _isAllLeadsReady = false;
 
-  // loadAllFuture = Future.microtask(() async {
-  //   try {
-  //     final allResponse = await apiService.getUsers(
-  //       page: 1,
-  //       limit: 3000,
-  //       duplicates: duplicatesOnly,
-  //       ignoreDuplicates: duplicatesOnly,
-  //     );
+        // loadAllFuture = Future.microtask(() async {
+        //   try {
+        //     final allResponse = await apiService.getUsers(
+        //       page: 1,
+        //       limit: 3000,
+        //       duplicates: duplicatesOnly,
+        //       ignoreDuplicates: duplicatesOnly,
+        //     );
 
-  //     if (allResponse != null && allResponse.data != null) {
-  //       _allLeads
-  //         ..clear()
-  //         ..addAll(allResponse.data!);
+        //     if (allResponse != null && allResponse.data != null) {
+        //       _allLeads
+        //         ..clear()
+        //         ..addAll(allResponse.data!);
 
-  //       _isAllLeadsReady = true; // 🔥 مهم جداً
+        //       _isAllLeadsReady = true; // 🔥 مهم جداً
 
-  //       print("✅ All leads READY for filtering");
-  //     }
-  //   } catch (e) {
-  //     print("❌ Background load failed: $e");
-  //     _isAllLeadsReady = false;
-  //   }
-  // });
-}
+        //       print("✅ All leads READY for filtering");
+        //     }
+        //   } catch (e) {
+        //     print("❌ Background load failed: $e");
+        //     _isAllLeadsReady = false;
+        //   }
+        // });
+      }
+
       /// 🔹 Await main response
       final response = await currentPageFuture;
 
@@ -278,6 +281,24 @@ Future<void> prefetchAllLeads({bool? duplicatesOnly}) async {
     } finally {
       _isLoading = false;
       print("✅ Loading FINISHED\n");
+    }
+  }
+
+  Future<void> fetchLeadStagesSummary() async {
+    emit(LeadStagesSummaryLoading());
+
+    try {
+      final response = await apiService.fetchLeadStagesSummary();
+
+      if (response != null && response.data != null) {
+        emit(LeadStagesSummarySuccess(response));
+      } else {
+        emit(
+          const LeadStagesSummaryFailure('Failed to fetch lead stages summary'),
+        );
+      }
+    } catch (e) {
+      emit(LeadStagesSummaryFailure(e.toString()));
     }
   }
 
