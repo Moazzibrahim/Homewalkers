@@ -25,7 +25,7 @@ class AdminSalesSceen extends StatelessWidget {
       final inches = diagonal / (data.devicePixelRatio * 160);
       return inches >= 7.0;
     }();
-    
+
     // ✅ عوامل التصغير حسب الجهاز
     final double tabletScale = isTabletDevice ? 0.85 : 1.0;
     final double tabletFontScale = isTabletDevice ? 0.9 : 1.0;
@@ -47,9 +47,7 @@ class AdminSalesSceen extends StatelessWidget {
           onBack: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => const AdminTabsScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const AdminTabsScreen()),
             );
           },
         ),
@@ -293,9 +291,7 @@ class AdminSalesSceen extends StatelessWidget {
             child: Card(
               color: isDark ? Colors.grey[800] : Colors.white,
               elevation: (2 * tabletScale).r,
-              margin: EdgeInsets.symmetric(
-                vertical: (8 * tabletHeightScale).h,
-              ),
+              margin: EdgeInsets.symmetric(vertical: (8 * tabletHeightScale).h),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular((12 * tabletScale).r),
               ),
@@ -316,9 +312,7 @@ class AdminSalesSceen extends StatelessWidget {
                   height: (32 * tabletHeightScale).h,
                   decoration: BoxDecoration(
                     color: isDark ? Colors.grey[700] : Colors.white,
-                    borderRadius: BorderRadius.circular(
-                      (16 * tabletScale).r,
-                    ),
+                    borderRadius: BorderRadius.circular((16 * tabletScale).r),
                   ),
                 ),
               ),
