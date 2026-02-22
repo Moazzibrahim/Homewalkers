@@ -3,18 +3,12 @@ class TeamleaderDashboardResponse {
   final DashboardData? data;
   final Meta? meta;
 
-  TeamleaderDashboardResponse({
-    this.success,
-    this.data,
-    this.meta,
-  });
+  TeamleaderDashboardResponse({this.success, this.data, this.meta});
 
   factory TeamleaderDashboardResponse.fromJson(Map<String, dynamic> json) {
     return TeamleaderDashboardResponse(
       success: json['success'],
-      data: json['data'] != null
-          ? DashboardData.fromJson(json['data'])
-          : null,
+      data: json['data'] != null ? DashboardData.fromJson(json['data']) : null,
       meta: json['meta'] != null ? Meta.fromJson(json['meta']) : null,
     );
   }
@@ -25,7 +19,7 @@ class DashboardData {
   final List<StageDashboard>? dashboard;
   final TeamLeaderFresh? teamLeaderFresh;
   final TeamLeaderPending? teamLeaderPending; // ✅ جديد
-  final int? salesCount;
+  final num? salesCount;
   final Summary? summary;
 
   DashboardData({
@@ -39,20 +33,24 @@ class DashboardData {
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
     return DashboardData(
-      teamleaderInfo: json['teamleaderInfo'] != null
-          ? TeamLeaderInfo.fromJson(json['teamleaderInfo'])
-          : null,
-      dashboard: json['dashboard'] != null
-          ? (json['dashboard'] as List)
-              .map((e) => StageDashboard.fromJson(e))
-              .toList()
-          : null,
-      teamLeaderFresh: json['teamLeaderFresh'] != null
-          ? TeamLeaderFresh.fromJson(json['teamLeaderFresh'])
-          : null,
-      teamLeaderPending: json['teamLeaderPending'] != null
-          ? TeamLeaderPending.fromJson(json['teamLeaderPending'])
-          : null,
+      teamleaderInfo:
+          json['teamleaderInfo'] != null
+              ? TeamLeaderInfo.fromJson(json['teamleaderInfo'])
+              : null,
+      dashboard:
+          json['dashboard'] != null
+              ? (json['dashboard'] as List)
+                  .map((e) => StageDashboard.fromJson(e))
+                  .toList()
+              : null,
+      teamLeaderFresh:
+          json['teamLeaderFresh'] != null
+              ? TeamLeaderFresh.fromJson(json['teamLeaderFresh'])
+              : null,
+      teamLeaderPending:
+          json['teamLeaderPending'] != null
+              ? TeamLeaderPending.fromJson(json['teamLeaderPending'])
+              : null,
       salesCount: json['salesCount'],
       summary:
           json['summary'] != null ? Summary.fromJson(json['summary']) : null,
@@ -65,11 +63,7 @@ class TeamLeaderInfo {
   final String? name;
   final String? email;
 
-  TeamLeaderInfo({
-    this.id,
-    this.name,
-    this.email,
-  });
+  TeamLeaderInfo({this.id, this.name, this.email});
 
   factory TeamLeaderInfo.fromJson(Map<String, dynamic> json) {
     return TeamLeaderInfo(
@@ -83,13 +77,9 @@ class TeamLeaderInfo {
 class StageDashboard {
   final String? stageId;
   final String? stageName;
-  final int? leadsCount;
+  final num? leadsCount;
 
-  StageDashboard({
-    this.stageId,
-    this.stageName,
-    this.leadsCount,
-  });
+  StageDashboard({this.stageId, this.stageName, this.leadsCount});
 
   factory StageDashboard.fromJson(Map<String, dynamic> json) {
     return StageDashboard(
@@ -103,7 +93,7 @@ class StageDashboard {
 /// ✅ موديل teamLeaderFresh مع إضافة stageId
 class TeamLeaderFresh {
   final String? stageName;
-  final int? leadsCount;
+  final num? leadsCount;
   final String? description;
   final String? stageId; // ✅ جديد
 
@@ -127,7 +117,7 @@ class TeamLeaderFresh {
 /// ✅ موديل teamLeaderPending
 class TeamLeaderPending {
   final String? stageName;
-  final int? leadsCount;
+  final num? leadsCount;
   final String? description;
   final String? stageId;
   final List<String>? salesIds;
@@ -146,19 +136,18 @@ class TeamLeaderPending {
       leadsCount: json['leadsCount'],
       description: json['description'],
       stageId: json['stageId'],
-      salesIds: json['salesIds'] != null
-          ? List<String>.from(json['salesIds'])
-          : null,
+      salesIds:
+          json['salesIds'] != null ? List<String>.from(json['salesIds']) : null,
     );
   }
 }
 
 class Summary {
-  final int? totalLeads;
-  final int? teamLeaderFreshLeads;
-  final int? teamLeaderPendingLeads; // ✅ جديد
-  final int? totalStages;
-  final int? stagesWithLeads;
+  final num? totalLeads;
+  final num? teamLeaderFreshLeads;
+  final num? teamLeaderPendingLeads; // ✅ جديد
+  final num? totalStages;
+  final num? stagesWithLeads;
 
   Summary({
     this.totalLeads,
@@ -184,11 +173,7 @@ class Meta {
   final bool? fromCache;
   final String? timestamp;
 
-  Meta({
-    this.executionTime,
-    this.fromCache,
-    this.timestamp,
-  });
+  Meta({this.executionTime, this.fromCache, this.timestamp});
 
   factory Meta.fromJson(Map<String, dynamic> json) {
     return Meta(

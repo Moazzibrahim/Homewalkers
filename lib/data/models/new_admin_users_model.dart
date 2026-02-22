@@ -1,5 +1,5 @@
 class AllUsersModel {
-  int? results;
+  num? results;
   Pagination? pagination;
   List<Lead>? data;
 
@@ -21,17 +21,17 @@ class AllUsersModel {
 }
 
 class Pagination {
-  final int? currentPage;
-  final int? limit;
-  final int? numberOfPages;
-  final int? totalItems;
-  final int? totalAllLeads;
-  final int? totalLeadsActive;
-  final int? totalLeadsInactive;
-  final int? numberOfPagesInactive;
-  final int? activePercentage;
-  final int? inactivePercentage;
-  final int? next;
+  final num? currentPage;
+  final num? limit;
+  final num? numberOfPages;
+  final num? totalItems;
+  final num? totalAllLeads;
+  final num? totalLeadsActive;
+  final num? totalLeadsInactive;
+  final num? numberOfPagesInactive;
+  final num? activePercentage;
+  final num? inactivePercentage;
+  final num? next;
 
   Pagination({
     this.currentPage,
@@ -94,15 +94,15 @@ class Lead {
   UserInfo? addby;
   UserInfo? updatedby;
   Campaign? campaign;
-  int? duplicateCount;
-  int? relatedLeadsCount;
+  num? duplicateCount;
+  num? relatedLeadsCount;
   List<LeadVersionnn>? allVersions;
-  int? totalSubmissions;
+  num? totalSubmissions;
   String? date;
   List<dynamic>? mergeHistory;
   String? createdAt;
   String? updatedAt;
-  int? v;
+  num? v;
   Stage? stage;
   String? notes;
   String? dayonly;
@@ -417,7 +417,7 @@ class LeadVersionnn {
   CommunicationWay? communicationway;
   UserInfo? addby;
   String? recordedAt;
-  int? versionNumber;
+  num? versionNumber;
   String? notes;
   num? budget;
   num? unitPrice;
@@ -504,7 +504,7 @@ class LeadStage {
   String? dateselectedforstage; // <--- هذا هو الحقل الذي سألت عنه
   String? createdAt;
   String? updatedAt;
-  int? v;
+  num? v;
 
   LeadStage({
     this.id,
@@ -544,7 +544,7 @@ class LeadAssign {
   String? assignDateTime;
   String? createdAt;
   String? updatedAt;
-  int? v;
+  num? v;
 
   LeadAssign({
     this.id,

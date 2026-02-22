@@ -1,36 +1,31 @@
 class AreaResponse {
-  final int? results;
+  final num? results;
   final Pagination? pagination;
   final List<AreaData>? data;
 
-  AreaResponse({
-    this.results,
-    this.pagination,
-    this.data,
-  });
+  AreaResponse({this.results, this.pagination, this.data});
 
   factory AreaResponse.fromJson(Map<String, dynamic> json) {
     return AreaResponse(
       results: json['results'],
-      pagination: json['pagination'] != null
-          ? Pagination.fromJson(json['pagination'])
-          : null,
-      data: (json['data'] as List<dynamic>?)
-          ?.map((e) => AreaData.fromJson(e))
-          .toList(),
+      pagination:
+          json['pagination'] != null
+              ? Pagination.fromJson(json['pagination'])
+              : null,
+      data:
+          (json['data'] as List<dynamic>?)
+              ?.map((e) => AreaData.fromJson(e))
+              .toList(),
     );
   }
 }
-class Pagination {
-  final int? currentPage;
-  final int? limit;
-  final int? numberOfPages;
 
-  Pagination({
-    this.currentPage,
-    this.limit,
-    this.numberOfPages,
-  });
+class Pagination {
+  final num? currentPage;
+  final num? limit;
+  final num? numberOfPages;
+
+  Pagination({this.currentPage, this.limit, this.numberOfPages});
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
     return Pagination(
@@ -40,6 +35,7 @@ class Pagination {
     );
   }
 }
+
 class AreaData {
   final String? id;
   final String? areaName;
@@ -47,7 +43,7 @@ class AreaData {
   final Region? region;
   final String? createdAt;
   final String? updatedAt;
-  final int? v;
+  final num? v;
 
   AreaData({
     this.id,
@@ -71,19 +67,14 @@ class AreaData {
     );
   }
 }
+
 class Region {
   final String? id;
   final String? name;
 
-  Region({
-    this.id,
-    this.name,
-  });
+  Region({this.id, this.name});
 
   factory Region.fromJson(Map<String, dynamic> json) {
-    return Region(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return Region(id: json['_id'], name: json['name']);
   }
 }

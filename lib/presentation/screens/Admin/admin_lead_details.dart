@@ -65,6 +65,7 @@ class AdminLeadDetails extends StatefulWidget {
   final num? cashbackmoney;
   final CommentDetails? lastcommentFirst;
   final CommentDetails? lastcommentNext;
+  final String? linkCampaign;
 
   AdminLeadDetails({
     super.key,
@@ -106,6 +107,7 @@ class AdminLeadDetails extends StatefulWidget {
     this.cashbackmoney,
     this.lastcommentFirst,
     this.lastcommentNext,
+    this.linkCampaign,
   });
   @override
   State<AdminLeadDetails> createState() => _SalesLeadsDetailsScreenState();
@@ -906,6 +908,12 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                               icon: Icons.campaign,
                               label: 'campaign',
                               value: '${widget.leadcampaign}',
+                            ),
+                            if(widget.linkCampaign!=null)
+                            InfoRow(
+                              icon: Icons.link,
+                              label: 'campaign link',
+                              value: '${widget.linkCampaign}',
                             ),
                             InfoRow(
                               icon: Icons.calendar_today,

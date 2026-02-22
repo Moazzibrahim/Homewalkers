@@ -1,6 +1,6 @@
 class SalesTeamModel {
   bool? success;
-  int? count;
+  num? count;
   List<SalesTeamData>? data;
 
   SalesTeamModel({this.success, this.count, this.data});
@@ -9,25 +9,26 @@ class SalesTeamModel {
     return SalesTeamModel(
       success: json['success'],
       count: json['count'],
-      data: (json['data'] as List?)
-          ?.map((e) => SalesTeamData.fromJson(e))
-          .toList(),
+      data:
+          (json['data'] as List?)
+              ?.map((e) => SalesTeamData.fromJson(e))
+              .toList(),
     );
   }
 }
 
 class SalesTeamData {
-  int? assignedLeads;
+  num? assignedLeads;
   String? id;
   String? name;
   List<City>? city;
   String? notes;
   UserInfo? userlog;
   String? lastAssigned;
-  int? maxLeadsPerProject;
+  num? maxLeadsPerProject;
   String? createdAt;
   String? updatedAt;
-  int? v;
+  num? v;
   UserInfo? manager;
   UserInfo? teamleader;
   String? salesisactivate;
@@ -54,9 +55,7 @@ class SalesTeamData {
       assignedLeads: json['assignedLeads'],
       id: json['_id'],
       name: json['name'],
-      city: (json['city'] as List?)
-          ?.map((e) => City.fromJson(e))
-          .toList(),
+      city: (json['city'] as List?)?.map((e) => City.fromJson(e)).toList(),
       notes: json['notes'],
       userlog:
           json['userlog'] != null ? UserInfo.fromJson(json['userlog']) : null,
@@ -67,9 +66,10 @@ class SalesTeamData {
       v: json['__v'],
       manager:
           json['Manager'] != null ? UserInfo.fromJson(json['Manager']) : null,
-      teamleader: json['teamleader'] != null
-          ? UserInfo.fromJson(json['teamleader'])
-          : null,
+      teamleader:
+          json['teamleader'] != null
+              ? UserInfo.fromJson(json['teamleader'])
+              : null,
       salesisactivate: json['salesisactivate'],
     );
   }
@@ -82,10 +82,7 @@ class City {
   City({this.id, this.name});
 
   factory City.fromJson(Map<String, dynamic> json) {
-    return City(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return City(id: json['_id'], name: json['name']);
   }
 }
 

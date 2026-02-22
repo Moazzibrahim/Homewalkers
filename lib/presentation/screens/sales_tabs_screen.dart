@@ -70,8 +70,8 @@ class _TabsScreenState extends State<SalesTabsScreen> {
                 },
                 children: [
                   SalesdashboardScreen(),
-                  SalesLeadsScreen(),
-                  SalesAssignLeadsScreen(),
+                  SalesLeadsScreen(data: false, transferfromdata: true),
+                  SalesAssignLeadsScreen(data: false, transferfromdata: true),
                   BlocProvider(
                     create: (_) => AuthCubit(LoginApiService()),
                     child: SalesProfileScreen(),

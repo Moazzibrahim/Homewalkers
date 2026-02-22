@@ -1,38 +1,33 @@
 class CancelReasonResponse {
-  final int? results;
+  final num? results;
   final Pagination? pagination;
   final List<CancelReason>? data;
 
-  CancelReasonResponse({
-    this.results,
-    this.pagination,
-    this.data,
-  });
+  CancelReasonResponse({this.results, this.pagination, this.data});
 
   factory CancelReasonResponse.fromJson(Map<String, dynamic> json) {
     return CancelReasonResponse(
       results: json['results'],
-      pagination: json['pagination'] != null
-          ? Pagination.fromJson(json['pagination'])
-          : null,
-      data: json['data'] != null
-          ? List<CancelReason>.from(
-              json['data'].map((x) => CancelReason.fromJson(x)))
-          : [],
+      pagination:
+          json['pagination'] != null
+              ? Pagination.fromJson(json['pagination'])
+              : null,
+      data:
+          json['data'] != null
+              ? List<CancelReason>.from(
+                json['data'].map((x) => CancelReason.fromJson(x)),
+              )
+              : [],
     );
   }
 }
 
 class Pagination {
-  final int? currentPage;
-  final int? limit;
-  final int? numberOfPages;
+  final num? currentPage;
+  final num? limit;
+  final num? numberOfPages;
 
-  Pagination({
-    this.currentPage,
-    this.limit,
-    this.numberOfPages,
-  });
+  Pagination({this.currentPage, this.limit, this.numberOfPages});
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
     return Pagination(
@@ -50,7 +45,7 @@ class CancelReason {
   final String? isCancelReasonActivate;
   final String? createdAt;
   final String? updatedAt;
-  final int? v;
+  final num? v;
 
   CancelReason({
     this.id,

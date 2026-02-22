@@ -1,10 +1,11 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // ignore_for_file: deprecated_member_use
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/login_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/leads_marketier_screen.dart';
-import 'package:homewalkers_app/presentation/screens/marketier/marketer_advanced_search_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_menu_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
@@ -67,8 +68,12 @@ class _TabsScreenState extends State<MarketierTabsScreen> {
                 },
                 children: [
                   MarketerDashboardScreen(),
-                  LeadsMarketierScreen(),
-                  MarketerAdvancedSearchScreen(),
+                  LeadsMarketierScreen(
+                    showDuplicatesOnly: true,
+                    data: false,
+                    transferefromdata: true,
+                  ),
+                  //  MarketerAdvancedSearchScreen(),
                   BlocProvider(
                     create: (context) => AuthCubit(LoginApiService()),
                     child: MarketierMenuScreen(),
@@ -82,52 +87,65 @@ class _TabsScreenState extends State<MarketierTabsScreen> {
       bottomNavigationBar: BottomAppBar(
         color:
             Theme.of(context).brightness == Brightness.light
-                ? Colors
-                    .white // لون الخلفية
+                ? Colors.white
                 : Colors.black,
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
-        child: Container(
+        elevation: 12,
+        child: SizedBox(
           height: 70,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              GestureDetector(
-                onTap: () => _onTap(0),
-                child: _bottomBarItem(
-                  null,
-                  'Dashboard',
-                  _currentIndex == 0,
-                  imagePath: 'assets/images/analytics.png',
+              /// Dashboard
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _onTap(0),
+                  child: _bottomBarItem(
+                    null,
+                    'Dashboard',
+                    _currentIndex == 0,
+                    imagePath: 'assets/images/analytics.png',
+                  ),
                 ),
               ),
-              GestureDetector(
-                onTap: () => _onTap(1),
-                child: _bottomBarItem(
-                  null,
-                  'Leads',
-                  _currentIndex == 1,
-                  imagePath: 'assets/images/leads.png',
+
+              /// Leads
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _onTap(1),
+                  child: _bottomBarItem(
+                    null,
+                    'Leads',
+                    _currentIndex == 1,
+                    imagePath: 'assets/images/leads.png',
+                  ),
                 ),
               ),
-              const SizedBox(width: 40), // للمساحة الخاصة بزر الفلوتينج
-              GestureDetector(
-                onTap: () => _onTap(2),
-                child: _bottomBarItem(
-                  null,
-                  'Adv Search',
-                  _currentIndex == 2,
-                  imagePath: 'assets/images/search.png',
-                ),
-              ),
-              GestureDetector(
-                onTap: () => _onTap(3),
-                child: _bottomBarItem(
-                  null,
-                  'Menu',
-                  _currentIndex == 3,
-                  imagePath: 'assets/images/menu.png',
+
+              /// مساحة للـ Floating Button (لازم تكون Expanded)
+              const Expanded(child: SizedBox()),
+
+              // const SizedBox(width: 40), // للمساحة الخاصة بزر الفلوتينج
+              // GestureDetector(
+              //   onTap: () => _onTap(2),
+              //   child: _bottomBarItem(
+              //     null,
+              //     'Adv Search',
+              //     _currentIndex == 2,
+              //     imagePath: 'assets/images/search.png',
+              //   ),
+              // ),
+
+              /// Menu
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _onTap(2), // مهم جداً تبقى 2 مش 3
+                  child: _bottomBarItem(
+                    null,
+                    'Menu',
+                    _currentIndex == 2,
+                    imagePath: 'assets/images/menu.png',
+                  ),
                 ),
               ),
             ],

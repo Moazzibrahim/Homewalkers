@@ -82,8 +82,8 @@ class GetAllLeadCommentsApiService {
 
   Future<NewCommentsModel> fetchNewComments({
     required String leadId,
-    int? page,
-    int? limit,
+    num? page,
+    num? limit,
   }) async {
     try {
       // بناء URL مع معاملات التصفية الاختيارية

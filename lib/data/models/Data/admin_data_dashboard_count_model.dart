@@ -1,23 +1,20 @@
 class LeadStagesSummaryResponse {
   final bool? success;
-  final int? totalLeads;
+  final num? totalLeads;
   final List<LeadStageSummary>? data;
 
-  LeadStagesSummaryResponse({
-    this.success,
-    this.totalLeads,
-    this.data,
-  });
+  LeadStagesSummaryResponse({this.success, this.totalLeads, this.data});
 
   factory LeadStagesSummaryResponse.fromJson(Map<String, dynamic>? json) {
     if (json == null) return LeadStagesSummaryResponse();
 
     return LeadStagesSummaryResponse(
       success: json['success'] as bool?,
-      totalLeads: json['totalLeads'] as int?,
-      data: (json['data'] as List<dynamic>?)
-          ?.map((e) => LeadStageSummary.fromJson(e))
-          .toList(),
+      totalLeads: json['totalLeads'] as num?,
+      data:
+          (json['data'] as List<dynamic>?)
+              ?.map((e) => LeadStageSummary.fromJson(e))
+              .toList(),
     );
   }
 }
@@ -25,7 +22,7 @@ class LeadStagesSummaryResponse {
 class LeadStageSummary {
   final String? stageId;
   final String? stageName;
-  final int? leadCount;
+  final num? leadCount;
   final String? percentage;
 
   LeadStageSummary({
@@ -41,7 +38,7 @@ class LeadStageSummary {
     return LeadStageSummary(
       stageId: json['stageId'] as String?,
       stageName: json['stageName'] as String?,
-      leadCount: json['leadCount'] as int?,
+      leadCount: json['leadCount'] as num?,
       percentage: json['percentage'] as String?,
     );
   }

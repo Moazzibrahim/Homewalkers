@@ -2,9 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/dialog_utils.dart';
 import 'package:homewalkers_app/data/data_sources/get_sales_dashboard_count_api_service.dart';
+import 'package:homewalkers_app/presentation/screens/sales/sales_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/cubit/sales_dashboard_count_cubit.dart';
@@ -12,7 +14,6 @@ import 'package:homewalkers_app/presentation/viewModels/sales/cubit/sales_dashbo
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// 1. تحويل الويدجت إلى StatefulWidget
 class SalesdashboardScreen extends StatefulWidget {
   const SalesdashboardScreen({super.key});
 
@@ -33,7 +34,6 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
 
     _dashboardCubit = SalesDashboardCubit(SalesDashboardApiService());
 
-    // ⚠️ استخدم addPostFrameCallback للتأكد من بناء الشاشة أولاً
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _dashboardCubit.fetchDashboard();
     });
@@ -44,7 +44,6 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // ⚠️ إضافة تأخير للتأكد من استقرار التطبيق
       Future.delayed(const Duration(milliseconds: 300), () {
         _dashboardCubit.fetchDashboard();
       });
@@ -74,7 +73,6 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
     final isTablet = ResponsiveHelper.isTablet(context);
 
     return BlocProvider.value(
-      // 👈 نستخدم .value عشان نمرر نفس الـ cubit اللي أنشأناه في initState
       value: _dashboardCubit,
       child: Scaffold(
         backgroundColor:
@@ -101,7 +99,6 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-
                   const Text(
                     'Sales',
                     style: TextStyle(
@@ -138,21 +135,32 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                 ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
+                    // ✅ Row مدمج فيه Hello User + Data Centre Button
                     Row(
                       children: [
-                        Text(
-                          'Hello $_userName',
-                          style: TextStyle(
-                            fontSize: isTablet ? 18 : 14,
-                            fontWeight: FontWeight.w400,
-                          ),
+                        // 👤 Hello User section
+                        Row(
+                          children: [
+                            Text(
+                              'Hello $_userName',
+                              style: TextStyle(
+                                fontSize: isTablet ? 18 : 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('👋', style: TextStyle(fontSize: 20)),
+                          ],
                         ),
 
-                        const SizedBox(width: 8),
-                        const Text('👋', style: TextStyle(fontSize: 20)),
+                        const Spacer(),
+
+                        // 🗄️ Data Centre Button
+                        _dataCentreButton(context, isTablet),
                       ],
                     ),
                     const SizedBox(height: 20),
+
                     BlocBuilder<SalesDashboardCubit, SalesDashboardState>(
                       builder: (context, state) {
                         if (state is SalesDashboardLoading) {
@@ -180,13 +188,13 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                         } else if (state is SalesDashboardSuccess) {
                           final cubit = context.read<SalesDashboardCubit>();
                           final stages = cubit.getVisibleStages(state.response);
-
                           final totalLeads =
                               state.response.data?.summary?.totalLeads ?? 0;
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // 📊 Leads Card
                               Row(
                                 children: [
                                   Expanded(
@@ -200,7 +208,10 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                           context,
                                           MaterialPageRoute(
                                             builder:
-                                                (_) => const SalesLeadsScreen(),
+                                                (_) => const SalesLeadsScreen(
+                                                  data: false,
+                                                  transferfromdata: true,
+                                                ),
                                           ),
                                         );
                                       },
@@ -210,6 +221,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                               ),
                               const SizedBox(height: 18),
 
+                              // 🎯 Stages Grid (من غير Data Centre)
                               GridView.count(
                                 crossAxisCount:
                                     isLargeTablet
@@ -225,7 +237,6 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                 children:
                                     stages.map((stage) {
                                       final stageName = stage.stageName ?? '';
-
                                       return _dashboardCard(
                                         stageName == 'No Stage'
                                             ? 'Fresh'
@@ -243,6 +254,9 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                                         stageName == 'Fresh'
                                                             ? 'No Stage'
                                                             : stageName,
+                                                    stageId: stage.stageId,
+                                                    data: false,
+                                                    transferfromdata: true,
                                                   ),
                                             ),
                                           );
@@ -274,6 +288,58 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ زر Data Centre الجديد
+  Widget _dataCentreButton(BuildContext context, bool isTablet) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SalesDataDashboardScreen()),
+        );
+      },
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 16.w : 12.w,
+          vertical: isTablet ? 12.h : 8.h,
+        ),
+        decoration: BoxDecoration(
+          color: Constants.maincolor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: Constants.maincolor.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.storage_rounded,
+              color: Constants.maincolor,
+              size: isTablet ? 20 : 18,
+            ),
+            SizedBox(width: isTablet ? 8.w : 4.w),
+            Text(
+              'Data Centre',
+              style: TextStyle(
+                color: Constants.maincolor,
+                fontSize: isTablet ? 16 : 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(width: isTablet ? 4.w : 2.w),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Constants.maincolor,
+              size: isTablet ? 16 : 14,
+            ),
+          ],
         ),
       ),
     );
@@ -316,6 +382,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
 
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16.r),
       child: Container(
         height: isTablet ? 140 : 120,
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -324,7 +391,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
               Theme.of(context).brightness == Brightness.light
                   ? Colors.white
                   : const Color(0xff1e1e1e),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

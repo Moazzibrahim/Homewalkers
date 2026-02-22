@@ -22,4 +22,18 @@ class TeamleaderDashboardCubit extends Cubit<TeamleaderDashboardState> {
       );
     }
   }
+   Future<void> fetchDashboardData() async {
+    emit(TeamleaderDashboardLoading());
+
+    try {
+      final response = await apiService.fetchDashboardData();
+      emit(TeamleaderDashboardDataSuccess(response));
+    } catch (e) {
+      emit(
+        TeamleaderDashboardError(
+          "Could not fetch data. Please try again later. Contact support if issue persists.",
+        ),
+      );
+    }
+  }
 }

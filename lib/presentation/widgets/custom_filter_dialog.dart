@@ -15,7 +15,11 @@ import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
 import 'package:country_picker/country_picker.dart';
 
-void showFilterDialog(BuildContext context) {
+void showFilterDialog(
+  BuildContext context,
+  bool? data,
+  bool? transferfromdata,
+) {
   showDialog(
     context: context,
     builder:
@@ -38,13 +42,15 @@ void showFilterDialog(BuildContext context) {
                   (_) => ChannelCubit(GetChannelsApiService())..fetchChannels(),
             ),
           ],
-          child: const FilterDialog(),
+          child: FilterDialog(data: data, transferfromdata: transferfromdata),
         ),
   );
 }
 
 class FilterDialog extends StatefulWidget {
-  const FilterDialog({super.key});
+  final bool? data;
+  final bool? transferfromdata;
+  const FilterDialog({super.key, this.data, this.transferfromdata});
 
   @override
   State<FilterDialog> createState() => _FilterDialogState();
@@ -57,7 +63,6 @@ class _FilterDialogState extends State<FilterDialog> {
   String? selectedProject;
   String? selectedStage;
   String? selectedChannel;
-  List<Country> countries = [];
   DateTime? _startDate;
   DateTime? _endDate;
   DateTime? _lastStageUpdateStart;
@@ -67,6 +72,8 @@ class _FilterDialogState extends State<FilterDialog> {
     String label,
     DateTime? value,
     Function(DateTime) onDatePicked,
+    bool isTablet7,
+    bool isTablet10,
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -83,25 +90,40 @@ class _FilterDialogState extends State<FilterDialog> {
         child: InputDecorator(
           decoration: InputDecoration(
             hintText: label,
-            hintStyle: const TextStyle(
-              fontSize: 14,
-              color: Color.fromRGBO(143, 146, 146, 1),
+            hintStyle: TextStyle(
+              fontSize:
+                  isTablet10
+                      ? 16
+                      : isTablet7
+                      ? 15
+                      : 14,
+              color: const Color.fromRGBO(143, 146, 146, 1),
               fontWeight: FontWeight.w400,
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Color(0xffE1E1E1)),
             ),
-            contentPadding: const EdgeInsets.symmetric(
+            contentPadding: EdgeInsets.symmetric(
               horizontal: 12,
-              vertical: 16,
+              vertical:
+                  isTablet10
+                      ? 20
+                      : isTablet7
+                      ? 18
+                      : 16,
             ),
             suffixIcon: const Icon(Icons.calendar_today, size: 20),
           ),
           child: Text(
             value != null ? "${value.toLocal()}".split(' ')[0] : label,
             style: TextStyle(
-              fontSize: 14,
+              fontSize:
+                  isTablet10
+                      ? 16
+                      : isTablet7
+                      ? 15
+                      : 14,
               fontWeight: FontWeight.w400,
               color:
                   Theme.of(context).brightness == Brightness.light
@@ -114,13 +136,33 @@ class _FilterDialogState extends State<FilterDialog> {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
+    final bool isTablet7 = width >= 600 && width < 900;
+    final bool isTablet10 = width >= 900;
+
     return Dialog(
-      insetPadding: const EdgeInsets.all(16),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal:
+            isTablet10
+                ? 200
+                : isTablet7
+                ? 120
+                : 16,
+        vertical: 24,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(
+          isTablet10
+              ? 24
+              : isTablet7
+              ? 20
+              : 16,
+        ),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -135,9 +177,17 @@ class _FilterDialogState extends State<FilterDialog> {
                     child: const Icon(Icons.tune, color: Colors.white),
                   ),
                   const SizedBox(width: 10),
-                  const Text(
+                  Text(
                     'Filter',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize:
+                          isTablet10
+                              ? 22
+                              : isTablet7
+                              ? 19
+                              : 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const Spacer(),
                   IconButton(
@@ -166,184 +216,142 @@ class _FilterDialogState extends State<FilterDialog> {
                   child: InputDecorator(
                     decoration: InputDecoration(
                       hintText: "Select Country",
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        color: Color.fromRGBO(143, 146, 146, 1),
-                        fontWeight: FontWeight.w400,
-                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xffE1E1E1)),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
+                      contentPadding: EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 16,
+                        vertical:
+                            isTablet10
+                                ? 20
+                                : isTablet7
+                                ? 18
+                                : 16,
                       ),
                       suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
                     ),
                     child: Text(
                       selectedCountry?.name ?? "Select Country",
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? const Color(0xff080719)
-                                : const Color(0xffFFFFFF),
-                        fontFamily: 'Montserrat',
+                        fontSize:
+                            isTablet10
+                                ? 16
+                                : isTablet7
+                                ? 15
+                                : 14,
                       ),
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
-              // 👇 Developer Dropdown باستخدام BlocBuilder
+
+              /// Developers
               BlocBuilder<DevelopersCubit, DevelopersState>(
                 builder: (context, state) {
-                  if (state is DeveloperLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is DeveloperSuccess) {
-                    final items =
-                        state.developersModel.data
-                            .map((dev) => dev.name)
-                            .toList();
+                  if (state is DeveloperSuccess) {
                     return CustomDropdownField(
                       hint: "Choose Developer",
-                      items: items,
+                      items:
+                          state.developersModel.data
+                              .map((e) => e.name)
+                              .toList(),
                       value: selectedDeveloper,
                       onChanged:
                           (val) => setState(() => selectedDeveloper = val),
                     );
-                  } else if (state is DeveloperError) {
-                    return Text(
-                      "error: ${state.error}",
-                      style: const TextStyle(color: Colors.red),
-                    );
-                  } else {
-                    return const SizedBox.shrink();
                   }
+                  return const SizedBox.shrink();
                 },
               ),
               const SizedBox(height: 12),
+
+              /// Projects
               BlocBuilder<ProjectsCubit, ProjectsState>(
                 builder: (context, state) {
-                  if (state is ProjectsLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is ProjectsSuccess) {
-                    final items =
-                        state.projectsModel.data!
-                            .map((project) => project.name)
-                            .toList();
+                  if (state is ProjectsSuccess) {
                     return CustomDropdownField(
                       hint: "Choose Project",
-                      items: items,
+                      items:
+                          state.projectsModel.data!.map((e) => e.name).toList(),
                       value: selectedProject,
                       onChanged: (val) => setState(() => selectedProject = val),
                     );
-                  } else if (state is ProjectsError) {
-                    return Text(
-                      "error: ${state.error}",
-                      style: const TextStyle(color: Colors.red),
-                    );
-                  } else {
-                    return const SizedBox.shrink();
                   }
+                  return const SizedBox.shrink();
                 },
               ),
               const SizedBox(height: 12),
+
+              /// Channels
               BlocBuilder<ChannelCubit, ChannelState>(
                 builder: (context, state) {
-                  if (state is ChannelLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is ChannelLoaded) {
-                    final items =
-                        state.channelResponse.data
-                            .map((dev) => dev.name)
-                            .toList();
+                  if (state is ChannelLoaded) {
                     return CustomDropdownField(
                       hint: "Choose channel",
-                      items: items,
+                      items:
+                          state.channelResponse.data
+                              .map((e) => e.name)
+                              .toList(),
                       value: selectedChannel,
                       onChanged: (val) => setState(() => selectedChannel = val),
                     );
-                  } else if (state is ChannelError) {
-                    return Text(
-                      "error: ${state.message}",
-                      style: const TextStyle(color: Colors.red),
-                    );
-                  } else {
-                    return const SizedBox.shrink();
                   }
+                  return const SizedBox.shrink();
                 },
               ),
               const SizedBox(height: 12),
+
+              /// Stages
               BlocBuilder<StagesCubit, StagesState>(
                 builder: (context, state) {
-                  if (state is StagesLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is StagesLoaded) {
-                    final items =
-                        state.stages.map((stage) => stage.name).toList();
+                  if (state is StagesLoaded) {
                     return CustomDropdownField(
                       hint: "Choose Stage",
-                      items: items,
+                      items: state.stages.map((e) => e.name).toList(),
                       value: selectedStage,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedStage = value;
-                        });
-                      },
+                      onChanged: (val) => setState(() => selectedStage = val),
                     );
-                  } else if (state is StagesError) {
-                    return Text(
-                      "error: ${state.message}",
-                      style: const TextStyle(color: Colors.red),
-                    );
-                  } else {
-                    return const SizedBox.shrink();
                   }
+                  return const SizedBox.shrink();
                 },
               ),
+
               const SizedBox(height: 12),
               buildDateField(
                 "Last Stage Update (Start)",
                 _lastStageUpdateStart,
-                (picked) {
-                  setState(() => _lastStageUpdateStart = picked);
-                },
+                (v) => setState(() => _lastStageUpdateStart = v),
+                isTablet7,
+                isTablet10,
               ),
-              const SizedBox(height: 14),
-              buildDateField("Last Stage Update (End)", _lastStageUpdateEnd, (
-                picked,
-              ) {
-                setState(() => _lastStageUpdateEnd = picked);
-              }),
-              const SizedBox(height: 14),
-              buildDateField("creation Date (start)", _startDate, (picked) {
-                setState(() => _startDate = picked);
-              }),
-              const SizedBox(height: 12),
-              buildDateField(" creation Date (end)", _endDate, (picked) {
-                setState(() => _endDate = picked);
-              }),
+              buildDateField(
+                "Last Stage Update (End)",
+                _lastStageUpdateEnd,
+                (v) => setState(() => _lastStageUpdateEnd = v),
+                isTablet7,
+                isTablet10,
+              ),
+              buildDateField(
+                "Creation Date (Start)",
+                _startDate,
+                (v) => setState(() => _startDate = v),
+                isTablet7,
+                isTablet10,
+              ),
+              buildDateField(
+                "Creation Date (End)",
+                _endDate,
+                (v) => setState(() => _endDate = v),
+                isTablet7,
+                isTablet10,
+              ),
+
               const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        side: BorderSide(
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? Constants.maincolor
-                                  : Constants.mainDarkmodecolor,
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
                       onPressed: () {
                         setState(() {
                           nameController.clear();
@@ -358,12 +366,28 @@ class _FilterDialogState extends State<FilterDialog> {
                           _lastStageUpdateEnd = null;
                         });
                       },
-                      child: const Text(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          vertical:
+                              isTablet10
+                                  ? 16
+                                  : isTablet7
+                                  ? 14
+                                  : 10,
+                        ),
+                        side: BorderSide(color: Constants.maincolor),
+                      ),
+                      child: Text(
                         "Reset",
                         style: TextStyle(
                           color: Constants.maincolor,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontSize:
+                              isTablet10
+                                  ? 18
+                                  : isTablet7
+                                  ? 16
+                                  : 14,
                         ),
                       ),
                     ),
@@ -372,81 +396,84 @@ class _FilterDialogState extends State<FilterDialog> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        bool isValidDateRange(DateTime? start, DateTime? end) {
-                          return (start == null && end == null) ||
-                              (start != null && end != null);
-                        }
-                        // ✅ دالة إظهار التنبيه
-                        Future<void> showValidationDialog(
-                          String message,
-                        ) async {
-                          return showDialog(
-                            context: context,
-                            builder:
-                                (_) => AlertDialog(
-                                  title: const Text("Incomplete Date Range"),
-                                  content: Text(message),
-                                  actions: [
-                                    TextButton(
-                                      onPressed:
-                                          () => Navigator.of(context).pop(),
-                                      child: const Text("OK"),
-                                    ),
-                                  ],
-                                ),
-                          );
+                        final stagesState = context.read<StagesCubit>().state;
+                        final developersState =
+                            context.read<DevelopersCubit>().state;
+                        final projectsState =
+                            context.read<ProjectsCubit>().state;
+                        final channelsState =
+                            context.read<ChannelCubit>().state;
+
+                        String? developerId;
+                        String? projectId;
+                        String? stageId;
+                        String? channelId;
+
+                        if (developersState is DeveloperSuccess &&
+                            selectedDeveloper != null) {
+                          developerId =
+                              developersState.developersModel.data
+                                  .firstWhere(
+                                    (e) => e.name == selectedDeveloper,
+                                  )
+                                  .id
+                                  .toString();
                         }
 
-                        // ✅ التحقق من التواريخ
-                        if (!isValidDateRange(_startDate, _endDate)) {
-                          showValidationDialog(
-                            "Please select both start and end date for creation date.",
-                          );
-                          return;
+                        if (projectsState is ProjectsSuccess &&
+                            selectedProject != null) {
+                          projectId =
+                              projectsState.projectsModel.data!
+                                  .firstWhere((e) => e.name == selectedProject)
+                                  .id
+                                  .toString();
                         }
-                        if (!isValidDateRange(
-                          _lastStageUpdateStart,
-                          _lastStageUpdateEnd,
-                        )) {
-                          showValidationDialog(
-                            "Please select both start and end date for last stage update.",
-                          );
-                          return;
+
+                        if (channelsState is ChannelLoaded &&
+                            selectedChannel != null) {
+                          channelId =
+                              channelsState.channelResponse.data
+                                  .firstWhere((e) => e.name == selectedChannel)
+                                  .id
+                                  .toString();
                         }
-                        context.read<GetLeadsCubit>().filterLeads(
-                          name:
-                              nameController.text.trim().isEmpty
-                                  ? null
-                                  : nameController.text.trim(),
-                          country: selectedCountry?.phoneCode, // مثل: "20"
-                          developer: selectedDeveloper,
-                          project: selectedProject,
-                          stage: selectedStage,
-                          channel: selectedChannel,
-                          startDate: _startDate,
-                          endDate: _endDate,
-                          lastStageUpdateStart: _lastStageUpdateStart,
-                          lastStageUpdateEnd: _lastStageUpdateEnd,
-                        );
-                        Navigator.pop(context); // ✅ اقفل الـDialog بعد التطبيق
+
+                        if (stagesState is StagesLoaded &&
+                            selectedStage != null) {
+                          stageId =
+                              stagesState.stages
+                                  .firstWhere((e) => e.name == selectedStage)
+                                  .id
+                                  .toString();
+                        }
+
+                        context
+                            .read<GetLeadsCubit>()
+                            .fetchSalesLeadsWithPagination(
+                              search:
+                                  nameController.text.trim().isEmpty
+                                      ? null
+                                      : nameController.text.trim(),
+                              developerId: developerId,
+                              projectId: projectId,
+                              channelId: channelId,
+                              stageId: stageId,
+                              stageDateFrom: _lastStageUpdateStart,
+                              stageDateTo: _lastStageUpdateEnd,
+                              creationDateFrom: _startDate,
+                              creationDateTo: _endDate,
+                              data: widget.data,
+                              transferefromdata: widget.transferfromdata,
+                            );
+
+                        Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Constants.mainDarkmodecolor,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                        backgroundColor: Constants.maincolor,
                       ),
                       child: const Text(
                         "Apply",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ),

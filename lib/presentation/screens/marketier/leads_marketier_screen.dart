@@ -16,7 +16,7 @@ import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
-import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:homewalkers_app/data/models/new_marketer_pagination_model.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketer_lead_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
@@ -42,13 +42,17 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LeadsMarketierScreen extends StatefulWidget {
   final String? stageName;
-  final bool showDuplicatesOnly;
+  final bool? showDuplicatesOnly;
   final bool shouldRefreshOnOpen;
+  final bool? data;
+  final bool? transferefromdata;
   const LeadsMarketierScreen({
     super.key,
     this.stageName,
     this.showDuplicatesOnly = false,
     this.shouldRefreshOnOpen = true,
+    this.data,
+    this.transferefromdata,
   });
 
   @override
@@ -59,19 +63,21 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
   bool? isClearHistoryy;
   DateTime? clearHistoryTimee;
   int selectedTab = 0; // 0: Manage Leads, 1: Leads Trash
-  // 🟡 جديد: متغير لحفظ نص البحث
+  // متغير لحفظ نص البحث
   String _searchQuery = '';
-  // 🟡 جديد: TextEditingController كـ field في الـ State
+  // TextEditingController
   late TextEditingController _nameSearchController;
-  // 🟡 جديد: متغيرات لحفظ حالة الفلاتر من الـ dialog
-  String? _selectedCountryFilter;
-  String? _selectedDeveloperFilter;
-  String? _selectedProjectFilter;
-  String? _selectedStageFilter;
-  String? _selectedChannelFilter;
-  String? _selectedSalesFilter;
-  String? _selectedCommunicationWayFilter;
-  String? _selectedCampaignFilter;
+
+  // ✅ تعديل المتغيرات لتصبح Lists (Multi-Select)
+  List<String> _selectedCountryFilter = [];
+  List<String> _selectedDeveloperFilter = [];
+  List<String> _selectedProjectFilter = [];
+  List<String> _selectedStageFilter = [];
+  List<String> _selectedChannelFilter = [];
+  List<String> _selectedSalesFilter = [];
+  List<String> _selectedCommunicationWayFilter = [];
+  List<String> _selectedCampaignFilter = [];
+
   DateTime? _startDate;
   DateTime? _endDate;
   DateTime? _lastStageUpdateStart;
@@ -79,58 +85,106 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
   late bool _showDuplicatesOnly;
   final bool _isSelectAll = false;
   final Set<String> _selectedLeads = {};
-  final String selectedSalesId = ''; // انت عارف ده من مكان تاني
+  final String selectedSalesId = '';
   String? _selectedSalesFcmToken;
   final Set<String> _selectedSalesIds = {};
   final Set<String> _selectedLeadStagesIds = {};
-  bool _showCheckboxes = false; // عشان نتحكم في ظهور الـ Checkbox
+  bool _showCheckboxes = false;
   final ScrollController _scrollController = ScrollController();
-  final bool _isFetchingMore = false; // 👈 متغير داخلي يمنع التكرار
+  final bool _isFetchingMore = false;
+
+  // IDs for filters (للبحث المتقدم) - تبقى Lists
+  List<String>? _selectedSalesIdsFilter;
+  List<String>? _selectedDeveloperIdsFilter;
+  List<String>? _selectedProjectIdsFilter;
+  List<String>? _selectedChannelIdsFilter;
+  List<String>? _selectedCampaignIdsFilter;
+  List<String>? _selectedCommunicationWayIdsFilter;
+  List<String>? _selectedStageIdsFilter;
 
   @override
   void initState() {
     super.initState();
     _nameSearchController = TextEditingController();
-    _selectedStageFilter = widget.stageName;
-    _showDuplicatesOnly = widget.showDuplicatesOnly;
+    // ✅ تحويل الـ stageName الفردي إلى List
+    if (widget.stageName != null) {
+      _selectedStageFilter = [widget.stageName!];
+    }
+    _showDuplicatesOnly = widget.showDuplicatesOnly!;
     log("stage name: $_selectedStageFilter");
+
+    _scrollController.addListener(_onScroll);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final stage = widget.stageName;
-      _selectedStageFilter = stage;
-      _showDuplicatesOnly = widget.showDuplicatesOnly;
+      // ✅ تحويل الـ stageName الفردي إلى List
+      if (stage != null) {
+        _selectedStageFilter = [stage];
+      }
+      if (widget.showDuplicatesOnly != null) {
+        _showDuplicatesOnly = widget.showDuplicatesOnly!;
+        // مسح الفلتر الخاص بالمرحلة لعرض المكررة فقط
+      }
 
-      context.read<GetLeadsMarketerCubit>().getLeadsByMarketer(
-        stageFilter: stage, // ⬅️ نمرر الفلتر مباشرة
-        duplicatesOnly: _showDuplicatesOnly,
+      context.read<GetLeadsMarketerCubit>().fetchLeadsMarketerWithPagination(
+        refresh: true,
+        stageIds: stage != null ? [stage] : null,
+        ignoreDuplicate: _showDuplicatesOnly == true ? true : null,
+        data: widget.data,
+        transferefromdata: widget.transferefromdata,
       );
     });
   }
 
   @override
   void dispose() {
-    _nameSearchController.dispose(); // 🟡 مهم: التخلص من الـ controller
+    _nameSearchController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
-  // 🟡 دالة مساعدة لتطبيق الفلاتر الشاملة (البحث + الفلاتر من الـ dialog)
-  // 🟡 دالة مساعدة لتطبيق الفلاتر الشاملة (البحث + الفلاتر من الـ dialog)
-  void _applyCurrentFilters() {
-    context.read<GetLeadsMarketerCubit>().filterLeadsMarketer(
-      query: _searchQuery, // نص البحث من TextField
-      country: _selectedCountryFilter,
-      developer: _selectedDeveloperFilter,
-      project: _selectedProjectFilter,
-      stage: _selectedStageFilter,
-      channel: _selectedChannelFilter,
-      sales: _selectedSalesFilter,
-      communicationWay: _selectedCommunicationWayFilter,
-      campaign: _selectedCampaignFilter,
-      startDate: _startDate,
-      endDate: _endDate,
-      lastStageUpdateStart: _lastStageUpdateStart,
-      lastStageUpdateEnd: _lastStageUpdateEnd,
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final cubit = context.read<GetLeadsMarketerCubit>();
+      if (!cubit.isLoadingMore && cubit.hasMoreData) {
+        log("📜 Loading next page from scroll...");
+        cubit.loadNextPage();
+      }
+    }
+  }
+
+  // ✅ دالة تطبيق الفلاتر مع الـ Pagination
+  // ✅ دالة تطبيق الفلاتر مع الـ Pagination
+  void _applyCurrentFiltersWithPagination() {
+    final cubit = context.read<GetLeadsMarketerCubit>();
+
+    log("🚀 Applying filters with IDs to Cubit:");
+    log("   Sales IDs: $_selectedSalesIdsFilter");
+    log("   Developer IDs: $_selectedDeveloperIdsFilter");
+    log("   Project IDs: $_selectedProjectIdsFilter");
+    log("   Stage IDs: $_selectedStageIdsFilter");
+    log("   Channel IDs: $_selectedChannelIdsFilter");
+    log("   Campaign IDs: $_selectedCampaignIdsFilter");
+    log("   Communication Way IDs: $_selectedCommunicationWayIdsFilter");
+
+    cubit.filterLeadsMarketerWithPagination(
+      search: _searchQuery.isNotEmpty ? _searchQuery : null,
+      salesIds: _selectedSalesIdsFilter,
+      developerIds: _selectedDeveloperIdsFilter,
+      projectIds: _selectedProjectIdsFilter,
+      channelIds: _selectedChannelIdsFilter,
+      campaignIds: _selectedCampaignIdsFilter,
+      communicationWayIds: _selectedCommunicationWayIdsFilter,
+      stageIds: _selectedStageIdsFilter,
+      creationDateFrom: _startDate,
+      creationDateTo: _endDate,
+      lastStageUpdateFrom: _lastStageUpdateStart,
+      lastStageUpdateTo: _lastStageUpdateEnd,
+      ignoreDuplicate: _showDuplicatesOnly == true ? true : null,
+      data: widget.data,
+      transferefromdata: widget.transferefromdata,
     );
   }
 
@@ -144,33 +198,25 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
       final minute = dateTime.minute.toString().padLeft(2, '0');
       return '$day/$month/$year - $hour:$minute';
     } catch (e) {
-      return dateStr; // fallback في حال كان التاريخ مش صحيح
+      return dateStr;
     }
   }
 
   String formatDateTimeToDubai(String dateStr) {
     try {
-      // Parse and ensure UTC base
       final utcTime = DateTime.parse(dateStr).toUtc();
-
-      // Convert to Dubai timezone (UTC+4)
       final dubaiTime = utcTime.add(const Duration(hours: 4));
-
-      // Format the output
       final day = dubaiTime.day.toString().padLeft(2, '0');
       final month = dubaiTime.month.toString().padLeft(2, '0');
       final year = dubaiTime.year;
-
-      // Convert to 12-hour format with AM/PM
       int hour = dubaiTime.hour;
       final minute = dubaiTime.minute.toString().padLeft(2, '0');
       final ampm = hour >= 12 ? 'PM' : 'AM';
       if (hour > 12) hour -= 12;
       if (hour == 0) hour = 12;
-
       return '$day/$month/$year - ${hour.toString().padLeft(2, '0')}:$minute $ampm';
     } catch (e) {
-      return dateStr; // fallback في حال كان التاريخ مش صحيح
+      return dateStr;
     }
   }
 
@@ -185,7 +231,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool isOutdated = false; // قد تحتاج لإعادة تقييمها لكل عنصر
+    bool isOutdated = false;
     return Scaffold(
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
@@ -207,33 +253,17 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
             // Search & filter
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                // color:
-                //     Theme.of(context).brightness == Brightness.light
-                //         ? Colors.white
-                //         : Constants.backgroundDarkmode,
-              ),
+              decoration: BoxDecoration(),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
-                      controller:
-                          _nameSearchController, // 🟡 استخدام الـ controller من الـ State
+                      controller: _nameSearchController,
                       onChanged: (value) {
                         setState(() {
                           _searchQuery = value.trim();
                         });
-
-                        if (_searchQuery.isEmpty) {
-                          context
-                              .read<GetLeadsMarketerCubit>()
-                              .getLeadsByMarketer(
-                                stageFilter: _selectedStageFilter,
-                                duplicatesOnly: _showDuplicatesOnly,
-                              );
-                        } else {
-                          _applyCurrentFilters();
-                        }
+                        _applyCurrentFiltersWithPagination();
                       },
                       decoration: InputDecoration(
                         hintText: 'Search',
@@ -296,15 +326,14 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                 ? Constants.maincolor
                                 : Constants.mainDarkmodecolor,
                       ),
+
+                      // في leads_marketier_screen.dart - تعديل جزء استقبال الفلاتر من الـ Dialog
                       onPressed: () async {
-                        // 🟡 مهم: استقبل القيم الراجعة من الـ dialog
                         final Map<String, dynamic>?
                         filters = await showDialog<Map<String, dynamic>>(
                           context: context,
                           builder: (dialogContext) {
-                            // استخدام dialogContext هنا
                             return MultiBlocProvider(
-                              // هذا الجزء كان موجود في showFilterDialogMarketer
                               providers: [
                                 BlocProvider(
                                   create:
@@ -350,19 +379,39 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                 ),
                               ],
                               child: MarketerFilterDialog(
-                                // 🟡 تمرير القيم الحالية للـ dialog عشان يعرضها
-                                initialCountry: _selectedCountryFilter,
-                                initialDeveloper: _selectedDeveloperFilter,
-                                initialProject: _selectedProjectFilter,
-                                initialStage: _selectedStageFilter,
-                                initialChannel: _selectedChannelFilter,
-                                initialSales: _selectedSalesFilter,
+                                initialCountry:
+                                    _selectedCountryFilter.isNotEmpty
+                                        ? _selectedCountryFilter
+                                        : null,
+                                initialDeveloper:
+                                    _selectedDeveloperFilter.isNotEmpty
+                                        ? _selectedDeveloperFilter
+                                        : null,
+                                initialProject:
+                                    _selectedProjectFilter.isNotEmpty
+                                        ? _selectedProjectFilter
+                                        : null,
+                                initialStage:
+                                    _selectedStageFilter.isNotEmpty
+                                        ? _selectedStageFilter
+                                        : null,
+                                initialChannel:
+                                    _selectedChannelFilter.isNotEmpty
+                                        ? _selectedChannelFilter
+                                        : null,
+                                initialSales:
+                                    _selectedSalesFilter.isNotEmpty
+                                        ? _selectedSalesFilter
+                                        : null,
                                 initialCommunicationWay:
-                                    _selectedCommunicationWayFilter,
-                                initialCampaign: _selectedCampaignFilter,
-                                initialSearchName:
-                                    _nameSearchController
-                                        .text, // 🟡 تمرير نص البحث الحالي
+                                    _selectedCommunicationWayFilter.isNotEmpty
+                                        ? _selectedCommunicationWayFilter
+                                        : null,
+                                initialCampaign:
+                                    _selectedCampaignFilter.isNotEmpty
+                                        ? _selectedCampaignFilter
+                                        : null,
+                                initialSearchName: _nameSearchController.text,
                                 initialStartDate: _startDate,
                                 initialEndDate: _endDate,
                                 initialLastStageUpdateStart:
@@ -372,37 +421,87 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                             );
                           },
                         );
+
                         if (filters != null) {
-                          // 🟡 تحديث متغيرات الـ State بالفلتر الجديدة
                           setState(() {
-                            // 🟡 استخدم الـ `query` اللي رجع من الـ dialog لو مبعوت، أو احتفظ باللي موجود
                             _searchQuery = filters['name'] ?? _searchQuery;
-                            _nameSearchController.text =
-                                _searchQuery; // تحديث الـ TextField
-                            _selectedCountryFilter = filters['country'];
-                            _selectedDeveloperFilter = filters['developer'];
-                            _selectedProjectFilter = filters['project'];
-                            _selectedStageFilter = filters['stage'];
-                            _selectedChannelFilter = filters['channel'];
-                            _selectedSalesFilter = filters['sales'];
+                            _nameSearchController.text = _searchQuery;
+
+                            // ✅ تحديث قوائم الأسماء (للعرض فقط)
+                            _selectedCountryFilter = filters['country'] ?? [];
+                            _selectedDeveloperFilter =
+                                filters['developer'] ?? [];
+                            _selectedProjectFilter = filters['project'] ?? [];
+                            _selectedStageFilter = filters['stage'] ?? [];
+                            _selectedChannelFilter = filters['channel'] ?? [];
+                            _selectedSalesFilter = filters['sales'] ?? [];
                             _selectedCommunicationWayFilter =
-                                filters['communicationWay'];
-                            _selectedCampaignFilter = filters['campaign'];
+                                filters['communicationWay'] ?? [];
+                            _selectedCampaignFilter = filters['campaign'] ?? [];
+
+                            // ✅ الأهم: تحديث قوائم IDs مباشرة (لأن الـ Dialog يرجع IDs)
+                            _selectedSalesIdsFilter =
+                                filters['sales']?.isNotEmpty == true
+                                    ? List<String>.from(filters['sales'])
+                                    : null;
+                            _selectedDeveloperIdsFilter =
+                                filters['developer']?.isNotEmpty == true
+                                    ? List<String>.from(filters['developer'])
+                                    : null;
+                            _selectedProjectIdsFilter =
+                                filters['project']?.isNotEmpty == true
+                                    ? List<String>.from(filters['project'])
+                                    : null;
+                            _selectedStageIdsFilter =
+                                filters['stage']?.isNotEmpty == true
+                                    ? List<String>.from(filters['stage'])
+                                    : null;
+                            _selectedChannelIdsFilter =
+                                filters['channel']?.isNotEmpty == true
+                                    ? List<String>.from(filters['channel'])
+                                    : null;
+                            _selectedCampaignIdsFilter =
+                                filters['campaign']?.isNotEmpty == true
+                                    ? List<String>.from(filters['campaign'])
+                                    : null;
+                            _selectedCommunicationWayIdsFilter =
+                                filters['communicationWay']?.isNotEmpty == true
+                                    ? List<String>.from(
+                                      filters['communicationWay'],
+                                    )
+                                    : null;
+
                             _startDate = filters['startDate'];
                             _endDate = filters['endDate'];
                             _lastStageUpdateStart =
                                 filters['lastStageUpdateStart'];
                             _lastStageUpdateEnd = filters['lastStageUpdateEnd'];
                           });
-                          _applyCurrentFilters(); // 🟡 تطبيق الفلاتر الجديدة
+
+                          // ✅ للتصحيح - طباعة الـ IDs المرسلة
+                          print("📊 Sending filters with IDs:");
+                          print("   Sales IDs: $_selectedSalesIdsFilter");
+                          print(
+                            "   Developer IDs: $_selectedDeveloperIdsFilter",
+                          );
+                          print("   Project IDs: $_selectedProjectIdsFilter");
+                          print("   Stage IDs: $_selectedStageIdsFilter");
+                          print("   Channel IDs: $_selectedChannelIdsFilter");
+                          print("   Campaign IDs: $_selectedCampaignIdsFilter");
+                          print(
+                            "   Communication Way IDs: $_selectedCommunicationWayIdsFilter",
+                          );
+
+                          // ✅ تطبيق الفلاتر
+                          _applyCurrentFiltersWithPagination();
                         }
-                        print("sales name: $_selectedSalesFilter");
                       },
                     ),
                   ),
                 ],
               ),
             ),
+            // باقي الكود كما هو...
             if (selectedTab == 0 && _selectedLeads.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -412,8 +511,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // ✅ شيلنا الـ Checkbox بالكامل
-                    const SizedBox(), // مكان فاضي عشان المسافات تبقى مظبوطة
+                    const SizedBox(),
 
                     if (_selectedLeads.isNotEmpty)
                       Expanded(
@@ -484,9 +582,10 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                       },
                                     );
                                     if (result == true) {
+                                      // تحديث البيانات بعد الإسناد
                                       context
                                           .read<GetLeadsMarketerCubit>()
-                                          .getLeadsByMarketer();
+                                          .refreshLeadsMarketer();
                                       setState(() {
                                         _showCheckboxes = false;
                                         _selectedLeads.clear();
@@ -510,18 +609,16 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                               // ✏️ Edit Icon
                               InkWell(
                                 onTap: () async {
+                                  // نجيب الـ lead المختار من الـ cubit باستخدام leadsDatum
                                   final leadsList =
                                       context
                                           .read<GetLeadsMarketerCubit>()
-                                          .leads;
-                                  // نجيب ال lead المختار
+                                          .leadsDatum;
                                   final selectedLead = leadsList.firstWhere(
                                     (lead) =>
                                         lead.id.toString() ==
                                         _selectedLeads.first,
-                                    orElse:
-                                        () =>
-                                            LeadData(), // اسم الموديل عندك Lead مش LeadData
+                                    orElse: () => Datum(),
                                   );
                                   final result = await showDialog(
                                     context: context,
@@ -584,7 +681,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                             initialPhone:
                                                 selectedLead.phone ?? '',
                                             initialNotes:
-                                                selectedLead.notes ?? '',
+                                                selectedLead.jobdescription ??
+                                                '',
                                             initialProjectId:
                                                 selectedLead.project?.id,
                                             initialStageId:
@@ -600,13 +698,10 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                             isCold:
                                                 selectedLead.leedtype == "Cold",
                                             onSuccess: () {
-                                              final leadsCubit =
-                                                  context
-                                                      .read<
-                                                        GetLeadsMarketerCubit
-                                                      >();
-                                              // leadsCubit.resetPagination();
-                                              leadsCubit.getLeadsByMarketer();
+                                              // تحديث البيانات بعد التعديل
+                                              context
+                                                  .read<GetLeadsMarketerCubit>()
+                                                  .refreshLeadsMarketer();
                                             },
                                           ),
                                         ),
@@ -614,7 +709,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                   if (result == true) {
                                     context
                                         .read<GetLeadsMarketerCubit>()
-                                        .getLeadsByMarketer();
+                                        .refreshLeadsMarketer();
                                   }
                                 },
                                 child: const _ActionIcon(
@@ -641,24 +736,38 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                           selectedTab = 0;
                           _searchQuery = ''; // مسح البحث عند تغيير الـ tab
                           _nameSearchController.clear();
-                          // 🟡 مسح باقي الفلاتر عند تغيير الـ tab
-                          _selectedCountryFilter = null;
-                          _selectedDeveloperFilter = null;
-                          _selectedProjectFilter = null;
-                          _selectedStageFilter = null;
-                          _selectedChannelFilter = null;
-                          _selectedSalesFilter = null;
-                          _selectedCommunicationWayFilter = null;
-                          _selectedCampaignFilter = null;
+                          _selectedCountryFilter = [];
+                          _selectedDeveloperFilter = [];
+                          _selectedProjectFilter = [];
+                          _selectedStageFilter = [];
+                          _selectedChannelFilter = [];
+                          _selectedSalesFilter = [];
+                          _selectedCommunicationWayFilter = [];
+                          _selectedCampaignFilter = [];
                         });
-                        // 🟡 استدعي جلب البيانات الأصلية بعد تغيير الـ tab
+                        // استخدام دالة الـ Pagination
                         if (widget.stageName != null &&
                             widget.stageName!.isNotEmpty) {
-                          _applyCurrentFilters();
+                          context
+                              .read<GetLeadsMarketerCubit>()
+                              .fetchLeadsMarketerWithPagination(
+                                refresh: true,
+                                stageIds: [widget.stageName!],
+                                ignoreDuplicate:
+                                    _showDuplicatesOnly == true ? true : null,
+                                data: widget.data,
+                                transferefromdata: widget.transferefromdata,
+                              );
                         } else {
                           context
                               .read<GetLeadsMarketerCubit>()
-                              .getLeadsByMarketer();
+                              .fetchLeadsMarketerWithPagination(
+                                refresh: true,
+                                ignoreDuplicate:
+                                    _showDuplicatesOnly == true ? true : null,
+                                data: widget.data,
+                                transferefromdata: widget.transferefromdata,
+                              );
                         }
                       },
                       child: Column(
@@ -691,17 +800,15 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                           selectedTab = 1;
                           _searchQuery = ''; // مسح البحث عند تغيير الـ tab
                           _nameSearchController.clear();
-                          // 🟡 مسح باقي الفلاتر عند تغيير الـ tab
-                          _selectedCountryFilter = null;
-                          _selectedDeveloperFilter = null;
-                          _selectedProjectFilter = null;
-                          _selectedStageFilter = null;
-                          _selectedChannelFilter = null;
-                          _selectedSalesFilter = null;
-                          _selectedCommunicationWayFilter = null;
-                          _selectedCampaignFilter = null;
+                          _selectedCountryFilter = [];
+                          _selectedDeveloperFilter = [];
+                          _selectedProjectFilter = [];
+                          _selectedStageFilter = [];
+                          _selectedChannelFilter = [];
+                          _selectedSalesFilter = [];
+                          _selectedCommunicationWayFilter = [];
+                          _selectedCampaignFilter = [];
                         });
-                        // 🟡 استدعي جلب بيانات سلة المهملات
                         context
                             .read<GetLeadsMarketerCubit>()
                             .getLeadsByMarketerInTrash();
@@ -769,51 +876,68 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
             // Leads List Based on State
             Expanded(
               child: BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
+                buildWhen: (previous, current) {
+                  // متعيدش بناء الشاشة في حالة load more
+                  if (current is GetLeadsMarketerPaginationLoading &&
+                      current.isLoadingMore) {
+                    return false;
+                  }
+                  return true;
+                },
                 builder: (context, state) {
-                  if (state is GetLeadsMarketerLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (state is GetLeadsMarketerSuccess) {
-                    final leads = state.leadsResponse.data;
-                    print("🟢 Displaying leads count=${leads?.length}");
+                  // حالات الـ Pagination
+                  if (state is GetLeadsMarketerPaginationLoading &&
+                      !state.isLoadingMore) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (state is GetLeadsMarketerPaginationSuccess) {
+                    final cubit = context.read<GetLeadsMarketerCubit>();
+                    final leads = cubit.leadsDatum;
+                    final paginationStats = cubit.getPaginationStats();
 
-                    if (leads == null || leads.isEmpty) {
-                      // 🟡 التأكد من أن leads ليست null
+                    print("🟢 Displaying leads count=${leads.length}");
+                    print("📊 Pagination stats: $paginationStats");
+                    if (leads.isEmpty && !cubit.isLoadingMore) {
                       return const Center(child: Text('No leads found.'));
                     }
                     return RefreshIndicator(
                       onRefresh: () async {
                         setState(() {
-                          _searchQuery = ''; // مسح البحث عند التحديث
+                          _searchQuery = '';
                           _nameSearchController.clear();
-                          // 🟡 مسح باقي الفلاتر عند التحديث
-                          _selectedCountryFilter = null;
-                          _selectedDeveloperFilter = null;
-                          _selectedProjectFilter = null;
-                          _selectedChannelFilter = null;
-                          _selectedSalesFilter = null;
-                          _selectedCommunicationWayFilter = null;
-                          _selectedCampaignFilter = null;
-                          _selectedStageFilter = widget.stageName;
+                          _selectedCountryFilter = [];
+                          _selectedDeveloperFilter = [];
+                          _selectedProjectFilter = [];
+                          _selectedChannelFilter = [];
+                          _selectedSalesFilter = [];
+                          _selectedCommunicationWayFilter = [];
+                          _selectedCampaignFilter = [];
+                          _selectedStageFilter = [];
                         });
+
                         final cubit = context.read<GetLeadsMarketerCubit>();
+
                         if (selectedTab == 0) {
-                          await cubit.getLeadsByMarketer(
-                            stageFilter:
-                                _selectedStageFilter, // ✅ نحافظ على نفس الفلتر
-                            duplicatesOnly: _showDuplicatesOnly,
-                          );
+                          await cubit.refreshLeadsMarketer();
                         } else {
-                          context
-                              .read<GetLeadsMarketerCubit>()
-                              .getLeadsByMarketerInTrash();
+                          await cubit.getLeadsByMarketerInTrash();
                         }
                       },
                       child: ListView.builder(
-                        itemCount: leads.length,
+                        controller: _scrollController,
+                        itemCount: leads.length + (cubit.hasMoreData ? 1 : 0),
                         itemBuilder: (context, index) {
+                          // إذا كان هذا هو عنصر التحميل
+                          if (index >= leads.length) {
+                            return Container(
+                              padding: const EdgeInsets.all(16),
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
                           final lead = leads[index];
                           final leadassign = lead.assign;
-                          final salesfcmtoken = lead.sales?.userlog?.fcmtokenn;
+                          final salesfcmtoken = lead.sales?.userlog?.fcmToken;
                           final prefs = SharedPreferences.getInstance();
                           final fcmToken = prefs.then(
                             (prefs) => prefs.setString(
@@ -824,13 +948,12 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                           log("fcmToken of sales: $salesfcmtoken");
                           final leadstageupdated = lead.stagedateupdated;
                           final leadStagetype = lead.stage?.name ?? "";
+
                           // تحويل التاريخ من String إلى DateTime
                           DateTime? stageUpdatedDate;
                           if (leadstageupdated != null) {
                             try {
-                              stageUpdatedDate = DateTime.parse(
-                                leadstageupdated,
-                              );
+                              stageUpdatedDate = leadstageupdated;
                               log("stageUpdatedDate: $stageUpdatedDate");
                             } catch (_) {
                               stageUpdatedDate = null;
@@ -842,23 +965,15 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                             final difference =
                                 now.difference(stageUpdatedDate).inMinutes;
                             log("difference: $difference");
-                            isOutdated =
-                                difference >
-                                1; // اعتبره قديم إذا مرّ أكثر من دقيقة
+                            isOutdated = difference > 1;
                             log("isOutdated: $isOutdated");
                           }
-                          // Add other necessary imports from your project here
-                          // (for cubits, constants, different screens, etc.)
 
-                          // Assuming the context and all variables like 'lead', 'isOutdated', 'selectedTab', etc.
-                          // from your new code are available.
                           return GestureDetector(
                             onLongPress: () {
                               setState(() {
                                 _showCheckboxes = true;
-                                _selectedLeads.add(
-                                  lead.id!,
-                                ); // أول كارت تعمل عليه Long Press بيتعلّم
+                                _selectedLeads.add(lead.id!);
                                 _selectedLeadStagesIds.add(
                                   lead.stage?.id ?? '',
                                 );
@@ -880,7 +995,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                         ? lead.allVersions!.first
                                         : null;
 
-                                // Navigation and refresh logic from your new code
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -896,15 +1010,18 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                           leadCreationDate:
                                               lead.createdAt != null
                                                   ? formatDateTimeToDubai(
-                                                    lead.createdAt!,
+                                                    lead.createdAt!
+                                                        .toIso8601String(),
                                                   )
                                                   : '',
                                           leadProject: lead.project?.name ?? '',
                                           leadLastComment:
                                               lead.lastcommentdate ?? '',
                                           leadcampaign:
-                                              lead.campaign?.name ?? "campaign",
-                                          leadNotes: lead.notes ?? "no notes",
+                                              lead.campaign?.campainName ??
+                                              "campaign",
+                                          leadNotes:
+                                              lead.jobdescription ?? "no notes",
                                           leaddeveloper:
                                               lead.project?.developer?.name ??
                                               "no developer",
@@ -916,46 +1033,46 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                               lead.jobdescription ??
                                               'no job description',
                                           secondphonenumber:
-                                              lead.secondphonenumber ??
+                                              lead.phonenumber2 ??
                                               'no second phone number',
                                           laststageupdated:
-                                              lead.stagedateupdated,
+                                              lead.stagedateupdated
+                                                  ?.toIso8601String(),
                                           stageId: lead.stage?.id,
                                           totalsubmissions:
                                               lead.totalSubmissions.toString(),
                                           leadversions: lead.allVersions,
                                           leadversionscampaign:
-                                              firstVersion?.campaignName ??
+                                              firstVersion
+                                                  ?.campaign
+                                                  ?.campainName ??
                                               "No campaign",
                                           leadversionsproject:
-                                              firstVersion?.projectName ??
+                                              firstVersion?.project?.name ??
                                               "No project",
                                           leadversionsdeveloper:
-                                              firstVersion?.developerName ??
+                                              firstVersion
+                                                  ?.project
+                                                  ?.developer
+                                                  ?.name ??
                                               "No developer",
                                           leadversionschannel:
-                                              firstVersion?.channelName ??
+                                              firstVersion?.chanel?.name ??
                                               "No channel",
                                           leadversionscreationdate:
-                                              firstVersion?.versionDate ??
+                                              firstVersion?.recordedAt
+                                                  ?.toIso8601String() ??
                                               "No date",
                                           leadversionscommunicationway:
-                                              firstVersion?.communicationWay ??
+                                              firstVersion
+                                                  ?.communicationway
+                                                  ?.name ??
                                               "No communication way",
                                           leadStages: [lead.stage?.id],
                                           leadSalesName: lead.sales?.name ?? '',
                                         ),
                                   ),
                                 );
-                                // if (selectedTab == 0) {
-                                //   context
-                                //       .read<GetLeadsMarketerCubit>()
-                                //       .getLeadsByMarketer();
-                                // } else {
-                                //   context
-                                //       .read<GetLeadsMarketerCubit>()
-                                //       .getLeadsByMarketerInTrash();
-                                // }
                               }
                             },
                             child: Card(
@@ -963,18 +1080,13 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                   _selectedLeads.contains(lead.id)
                                       ? (Theme.of(context).brightness ==
                                               Brightness.light
-                                          ? Colors
-                                              .grey[300] // أغمق شوية لو Light Mode
-                                          : Colors
-                                              .grey[800]) // أغمق شوية لو Dark Mode
+                                          ? Colors.grey[300]
+                                          : Colors.grey[800])
                                       : (Theme.of(context).brightness ==
                                               Brightness.light
                                           ? Colors.white
                                           : Colors.grey[900]),
-                              margin: const EdgeInsets.symmetric(
-                                // horizontal: 16,
-                                vertical: 8,
-                              ),
+                              margin: const EdgeInsets.symmetric(vertical: 8),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -983,7 +1095,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // ---------- Row 1: Name and Status Icon ----------
+                                    // Row 1: Name and Status Icon
                                     Padding(
                                       padding: const EdgeInsets.only(
                                         left: 8,
@@ -995,7 +1107,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          // ✅ الجزء الشمال (Checkbox + Stage + SD Date)
                                           Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
@@ -1052,7 +1163,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                         });
                                                       },
                                                     ),
-                                                  // 👇 نتحقق من الشرط الخاص باللون
                                                   Builder(
                                                     builder: (_) {
                                                       final bool isFinalStage =
@@ -1071,8 +1181,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                       if (leadStagetype ==
                                                           "Not Interested") {
                                                         stageColor =
-                                                            Colors
-                                                                .black; // ✅ اللون الأسود
+                                                            Colors.black;
                                                       } else {
                                                         stageColor =
                                                             isFinalStage
@@ -1134,7 +1243,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                               ),
                                               SizedBox(height: 8.h),
                                               Text(
-                                                "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!) : "N/A"}",
+                                                "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!.toIso8601String()) : "N/A"}",
                                                 style: TextStyle(
                                                   fontSize: 12.sp,
                                                   fontWeight: FontWeight.w500,
@@ -1149,7 +1258,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                               ),
                                             ],
                                           ),
-                                          // ✅ الجزء اليمين (KSA | EVENT | Skyrise أو اسم المشروع)
                                           Expanded(
                                             child: Text(
                                               lead.project?.name ?? '',
@@ -1193,7 +1301,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                     ),
                                     SizedBox(height: 12.h),
 
-                                    // ---------- Row 2: Sales Person ----------
+                                    // Row 2: Phone
                                     InkWell(
                                       onTap: () {
                                         final phone = lead.phone ?? '';
@@ -1239,8 +1347,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
 
                                     SizedBox(height: 35.h),
 
-                                    // ---------- Row 3: Stage and Total Submissions ----------
-                                    // ---------- Row 3: Stage and Total Submissions ----------
+                                    // Row 3: Sales and Actions
                                     Column(
                                       children: [
                                         Padding(
@@ -1267,7 +1374,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                 size: 20,
                                               ),
                                               SizedBox(width: 8.w),
-                                              // 👈 الجزء الشمال (Sales name)
                                               Expanded(
                                                 child: Text(
                                                   lead.sales?.name ?? "none",
@@ -1279,8 +1385,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                       TextOverflow.ellipsis,
                                                 ),
                                               ),
-
-                                              // 👉 الجزء اليمين (الـ 3 أيقونات داخل خلفية)
                                               Row(
                                                 children: [
                                                   // 📞 Phone Call
@@ -1598,7 +1702,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                           ),
                                         ),
                                         SizedBox(height: 4.h),
-                                        // ✅ CD Date (السطر اللي تحت)
+                                        // CD Date
                                         Padding(
                                           padding: const EdgeInsets.only(
                                             left: 8,
@@ -1622,7 +1726,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                               ),
                                               SizedBox(width: 6.w),
                                               Text(
-                                                " ${lead.date != null ? formatDateTimeToDubai(lead.date!) : "N/A"}",
+                                                " ${lead.date != null ? formatDateTimeToDubai(lead.date!.toIso8601String()) : "N/A"}",
                                                 style: TextStyle(
                                                   fontSize: 12.sp,
                                                   fontWeight: FontWeight.w500,
@@ -1634,19 +1738,16 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                       ],
                                     ),
                                     SizedBox(height: 20.h),
-                                    // ---------- Row 3: Date ----------
+                                    // Status Container
                                     Container(
                                       width: double.infinity,
-                                      height:
-                                          22.h, // تم تقليل الارتفاع ليظهر البيضاوي بشكل صحيح
+                                      height: 22.h,
                                       decoration: BoxDecoration(
                                         color:
                                             (() {
                                               if (leadassign == false &&
                                                   lead.stage?.name != 'Fresh') {
-                                                return Colors
-                                                    .green
-                                                    .shade200; // قرب للون اللي في الصورة التانية
+                                                return Colors.green.shade200;
                                               } else if (lead.stage?.name ==
                                                   'Fresh') {
                                                 return Colors.grey.shade300;
@@ -1657,7 +1758,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                             })(),
                                         borderRadius: BorderRadius.circular(
                                           200.r,
-                                        ), // رقم كبير علشان يكون fully rounded
+                                        ),
                                       ),
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 12.w,
@@ -1707,6 +1808,26 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                         },
                       ),
                     );
+                  } else if (state is GetLeadsMarketerPaginationFailure) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('failed to load more leads:'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              context
+                                  .read<GetLeadsMarketerCubit>()
+                                  .refreshLeadsMarketer();
+                            },
+                            child: const Text('Try Again'),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else if (state is GetLeadsMarketerLoading) {
+                    return const Center(child: CircularProgressIndicator());
                   } else if (state is GetLeadsMarketerFailure) {
                     return Center(child: Text(' ${state.errorMessage}'));
                   } else {
@@ -1747,11 +1868,8 @@ class _ActionIcon extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color:
-            isDark
-                ? Colors.white.withOpacity(0.10)
-                : Colors.grey[100], // خلفية خفيفة شيك
-        shape: BoxShape.circle, // دائري بالكامل 👌
+        color: isDark ? Colors.white.withOpacity(0.10) : Colors.grey[100],
+        shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),

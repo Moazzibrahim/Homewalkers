@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
+import 'package:homewalkers_app/data/models/salesLeadsModelWithPagination.dart';
 import 'package:homewalkers_app/main.dart';
 import 'package:meta/meta.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
@@ -14,12 +15,17 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
   final GetLeadsService apiService;
   Timer? _timer;
   LeadResponse? _cachedLeads;
+  Salesleadsmodelwithpagination? cachedSalesLeadsWithPagination;
   int currentPage = 1;
   final int limit = 500;
   bool hasMore = true;
   bool _isDashboardMode = false; // ⚠️ لتتبع الوضع
   bool _isLoading = false;
   final List<LeadData> _allLeads = [];
+  List<LeadPagination> paginatedLeads = [];
+  bool hasMoreData = true;
+  bool isFetchingMore = false;
+
   bool get isLoading => _isLoading;
   bool get cachedLeadsHasData =>
       _cachedLeads != null &&
@@ -75,10 +81,167 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
     }
   }
 
+  Future<void> postMeetingCommentWithStage({
+    required String leadId,
+    required String stageId,
+    required String comment,
+    required String salesdeveloperName,
+    required DateTime stageDate, // ✅ جديد
+    bool refreshAfterSuccess = false,
+  }) async {
+    emit(PostMeetingCommentLoading());
+
+    try {
+      final success = await apiService.postMeetingCommentWithStage(
+        leadId: leadId,
+        stageId: stageId,
+        comment: comment,
+        stageDate: stageDate,
+        salesdeveloperName: salesdeveloperName, // ✅ نبعت التاريخ
+      );
+
+      if (success) {
+        emit(PostMeetingCommentSuccess("Comment added successfully"));
+      } else {
+        emit(PostMeetingCommentError("Failed to add comment"));
+      }
+    } catch (e) {
+      emit(PostMeetingCommentError(e.toString()));
+    }
+  }
+
+  Future<void> fetchSalesLeadsWithPagination({
+    int limit = 10, // ✅ تغيير limit إلى 10
+    bool isLoadMore = false,
+    String? search,
+    String? salesId,
+    String? developerId,
+    String? projectId,
+    String? channelId,
+    String? stageId,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    bool? data,
+    bool? transferefromdata,
+    bool resetPagination = false, // ✅ إضافة باراميتر لإعادة تعيين الصفحات
+  }) async {
+    // ✅ منع التحميل المتكرر
+    if (isFetchingMore) {
+      log("🔄 Already fetching more data...");
+      return;
+    }
+
+    // ✅ إعادة تعيين البيانات إذا طلب المستخدم ذلك (مثلاً عند تغيير الفلتر)
+    if (resetPagination) {
+      currentPage = 1;
+      hasMoreData = true;
+      paginatedLeads.clear();
+      log("🔄 Pagination reset - clearing all data");
+    }
+
+    if (!isLoadMore) {
+      // ✅ لو مش load more، يعني أول مرة أو ريفريش
+      currentPage = 1;
+      hasMoreData = true;
+      paginatedLeads.clear();
+      emit(GetSalesLeadsWithPaginationLoading());
+    } else {
+      // ✅ لو load more، شيك لو في المزيد
+      if (!hasMoreData) {
+        log("📭 No more data to load");
+        return;
+      }
+      isFetchingMore = true;
+    }
+
+    try {
+      log("📡 Fetching page $currentPage with limit $limit...");
+
+      final result = await apiService.fetchSalesLeadsWithPagination(
+        page: currentPage,
+        limit: limit,
+        search: search,
+        salesId: salesId,
+        developerId: developerId,
+        projectId: projectId,
+        channelId: channelId,
+        stageId: stageId,
+        stageDateFrom: stageDateFrom,
+        stageDateTo: stageDateTo,
+        creationDateFrom: creationDateFrom,
+        creationDateTo: creationDateTo,
+        data: data,
+        transferefromdata: transferefromdata,
+      );
+
+      if (result != null && result.data != null) {
+        final newData = result.data!;
+
+        if (newData.isEmpty) {
+          // ✅ لو البيانات اللي رجعت فاضية
+          hasMoreData = false;
+          log("📭 No more data - page $currentPage is empty");
+
+          // ✅ لو مفيش بيانات خالص
+          if (paginatedLeads.isEmpty) {
+            emit(GetSalesLeadsWithPaginationEmpty());
+          } else {
+            // ✅ لو في بيانات سابقة وخلصت
+            final updatedModel = Salesleadsmodelwithpagination(
+              data: List.from(paginatedLeads),
+            );
+            emit(GetSalesLeadsWithPaginationSuccess(updatedModel));
+          }
+        } else {
+          // ✅ إضافة البيانات الجديدة
+          paginatedLeads.addAll(newData);
+
+          // ✅ تحديث الصفحة الحالية والمزيد من البيانات
+          currentPage++;
+
+          // ✅ شيك لو في بيانات كمان بناءً على عدد البيانات المرتجعة
+          hasMoreData = newData.length >= limit;
+
+          log(
+            "✅ Added ${newData.length} leads. Total: ${paginatedLeads.length}, Next page: $currentPage, Has more: $hasMoreData",
+          );
+
+          // ✅ إنشاء الموديل المحدث
+          final updatedModel = Salesleadsmodelwithpagination(
+            data: List.from(paginatedLeads),
+          );
+
+          emit(GetSalesLeadsWithPaginationSuccess(updatedModel));
+        }
+      } else {
+        if (!isLoadMore) {
+          emit(GetSalesLeadsWithPaginationError("No leads found"));
+        } else {
+          hasMoreData = false;
+        }
+      }
+    } catch (e) {
+      log("❌ Error fetching leads: $e");
+      if (!isLoadMore) {
+        emit(
+          GetSalesLeadsWithPaginationError(
+            "Failed to load leads with pagination: ${e.toString()}",
+          ),
+        );
+      }
+    } finally {
+      isFetchingMore = false;
+    }
+  }
+
   Future<void> fetchLeads({
     bool showLoading = true,
     bool loadMore = false,
     bool forDashboard = false,
+    bool? databool,
+    bool? transferfromdata,
   }) async {
     _isDashboardMode = false;
     if (_isLoading) return;
@@ -95,6 +258,8 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
         page: currentPage,
         limit: forDashboard ? 9999 : limit,
         forDashboard: forDashboard,
+        data: databool,
+        transferfromdata: transferfromdata,
       );
 
       if (!loadMore) {

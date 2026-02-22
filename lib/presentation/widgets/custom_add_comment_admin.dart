@@ -1,7 +1,9 @@
 // ignore_for_file: must_be_immutable, use_build_context_synchronously, avoid_print, unused_field
 import 'dart:developer';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/leadStagesModel.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
@@ -52,15 +54,39 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
   Map<String, dynamic>? doneDealData;
   DateTime? _selectedStageDate;
 
+  // ✅ عوامل التصغير responsive
+  late bool isTabletDevice;
+  late double tabletScale;
+  late double tabletFontScale;
+  late double tabletWidthScale;
+  late double tabletHeightScale;
+
   @override
   void initState() {
     super.initState();
-    _loadUserData(); // تحميل بيانات المستخدم
+    _loadUserData();
 
-    // ✅ ضبط التاريخ والوقت الحالي تلقائيًا عند الفتح
     final now = DateTime.now();
     final formattedNow = DateFormat('yyyy-MM-dd hh:mm a').format(now);
     _dateController.text = formattedNow;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ✅ حساب عوامل التصغير بناءً على حجم الشاشة
+    final data = MediaQuery.of(context);
+    final physicalSize = data.size;
+    final diagonal = math.sqrt(
+      math.pow(physicalSize.width, 2) + math.pow(physicalSize.height, 2),
+    );
+    final inches = diagonal / (data.devicePixelRatio * 160);
+    isTabletDevice = inches >= 7.0;
+
+    tabletScale = isTabletDevice ? 0.85 : 1.0;
+    tabletFontScale = isTabletDevice ? 0.9 : 1.0;
+    tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
+    tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
   }
 
   void _loadUserData() async {
@@ -91,13 +117,20 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+        padding: EdgeInsets.fromLTRB(
+          (16 * tabletWidthScale).w,
+          (16 * tabletHeightScale).h,
+          (16 * tabletWidthScale).w,
+          (80 * tabletHeightScale).h,
+        ),
         decoration: BoxDecoration(
           color:
               Theme.of(context).brightness == Brightness.light
                   ? Colors.white
                   : Colors.grey[850],
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular((16 * tabletScale).r),
+          ),
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -107,17 +140,22 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
               Row(
                 children: [
                   CircleAvatar(
+                    radius: (20 * tabletFontScale).r,
                     backgroundColor:
                         Theme.of(context).brightness == Brightness.light
                             ? Constants.maincolor
                             : Constants.mainDarkmodecolor,
-                    child: const Icon(Icons.comment, color: Colors.white),
+                    child: Icon(
+                      Icons.comment,
+                      size: (20 * tabletFontScale).sp,
+                      color: Colors.white,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: (8 * tabletWidthScale).w),
                   Text(
                     ' ${widget.buttonName}',
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: (16 * tabletFontScale).sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -128,17 +166,26 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                         _showStageSection = !_showStageSection;
                       });
                     },
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: (12 * tabletWidthScale).w,
+                        vertical: (8 * tabletHeightScale).h,
+                      ),
+                    ),
                     child: Text(
                       _showStageSection ? "Hide Stage" : "Add action",
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: (16 * tabletFontScale).sp,
                         fontWeight: FontWeight.w600,
+                        color: Constants.maincolor,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+
+              SizedBox(height: (12 * tabletHeightScale).h),
+
               // First Comment
               TextFormField(
                 controller: _firstCommentController,
@@ -146,17 +193,24 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                 maxLength: null,
                 decoration: InputDecoration(
                   hintText: 'First Comment',
-                  hintStyle: const TextStyle(
-                    fontSize: 14,
-                    color: Color.fromRGBO(127, 134, 137, 0.7),
+                  hintStyle: TextStyle(
+                    fontSize: (14 * tabletFontScale).sp,
+                    color: const Color.fromRGBO(127, 134, 137, 0.7),
                     fontWeight: FontWeight.w400,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular((8 * tabletScale).r),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: (12 * tabletWidthScale).w,
+                    vertical: (16 * tabletHeightScale).h,
                   ),
                 ),
+                style: TextStyle(fontSize: (14 * tabletFontScale).sp),
               ),
-              const SizedBox(height: 8),
+
+              SizedBox(height: (8 * tabletHeightScale).h),
+
               // Second Comment
               TextFormField(
                 controller: _secondCommentController,
@@ -164,28 +218,34 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                 maxLength: null,
                 decoration: InputDecoration(
                   hintText: 'Action (plan)',
-                  hintStyle: const TextStyle(
-                    fontSize: 14,
-                    color: Color.fromRGBO(127, 134, 137, 0.7),
+                  hintStyle: TextStyle(
+                    fontSize: (14 * tabletFontScale).sp,
+                    color: const Color.fromRGBO(127, 134, 137, 0.7),
                     fontWeight: FontWeight.w400,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular((8 * tabletScale).r),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: (12 * tabletWidthScale).w,
+                    vertical: (16 * tabletHeightScale).h,
                   ),
                 ),
+                style: TextStyle(fontSize: (14 * tabletFontScale).sp),
               ),
+
               if (_showStageSection)
                 Column(
                   children: [
-                    const SizedBox(height: 10),
-                    const Text(
+                    SizedBox(height: (10 * tabletHeightScale).h),
+                    Text(
                       "Change Stage",
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: (16 * tabletFontScale).sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: (10 * tabletHeightScale).h),
 
                     CustomChangeStageWidget(
                       leadStage: widget.leadStage ?? '',
@@ -193,41 +253,35 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                       salesId: salesId,
                       stageId: widget.stageId,
                       leadstageupdated: widget.laststageupdated,
-
                       onDoneDealDataChanged: (data) {
                         doneDealData = data;
                       },
                       onStageDateChanged: (date) {
                         _selectedStageDate = date;
                       },
-
                       onAnswerChanged: (isAnswered) {
                         _isAnswered = isAnswered;
-
                         if (!isAnswered) {
                           _applyNoAnswerLogic();
                         } else {
                           _clearNoAnswerLogic();
                         }
                       },
-
                       onStageSelected: (stageName, stageId) {
                         setState(() {
                           _selectedStageName = stageName;
                           _selectedStageId = stageId;
                         });
-
                         if (stageName.toLowerCase() == "no answer") {
                           _applyNoAnswerLogic();
-                        } else {
-                          // _clearNoAnswerLogic();
                         }
                       },
                     ),
                   ],
                 ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: (16 * tabletHeightScale).h),
+
               // Buttons
               Row(
                 children: [
@@ -237,20 +291,28 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFF285E67)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(
+                            (8 * tabletScale).r,
+                          ),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: (16 * tabletWidthScale).w,
+                          vertical: (12 * tabletHeightScale).h,
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Cancel',
                         style: TextStyle(
                           color: Constants.maincolor,
-                          fontSize: 17,
+                          fontSize: (17 * tabletFontScale).sp,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+
+                  SizedBox(width: (12 * tabletWidthScale).w),
+
                   Expanded(
                     child: BlocConsumer<AddCommentCubit, AddCommentState>(
                       listener: (context, state) {
@@ -259,9 +321,22 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                             context: context,
                             builder:
                                 (context) => AlertDialog(
-                                  title: const Text("Success"),
-                                  content: const Text(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      (12 * tabletScale).r,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    "Success",
+                                    style: TextStyle(
+                                      fontSize: (18 * tabletFontScale).sp,
+                                    ),
+                                  ),
+                                  content: Text(
                                     "Comment added successfully.",
+                                    style: TextStyle(
+                                      fontSize: (14 * tabletFontScale).sp,
+                                    ),
                                   ),
                                   actions: [
                                     TextButton(
@@ -269,7 +344,12 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                         Navigator.of(context).pop();
                                         Navigator.of(context).pop(true);
                                       },
-                                      child: const Text("OK"),
+                                      child: Text(
+                                        "OK",
+                                        style: TextStyle(
+                                          fontSize: (14 * tabletFontScale).sp,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -279,13 +359,33 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                             context: context,
                             builder:
                                 (context) => AlertDialog(
-                                  title: const Text("Error"),
-                                  content: Text(state.message),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      (12 * tabletScale).r,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    "Error",
+                                    style: TextStyle(
+                                      fontSize: (18 * tabletFontScale).sp,
+                                    ),
+                                  ),
+                                  content: Text(
+                                    state.message,
+                                    style: TextStyle(
+                                      fontSize: (14 * tabletFontScale).sp,
+                                    ),
+                                  ),
                                   actions: [
                                     TextButton(
                                       onPressed:
                                           () => Navigator.of(context).pop(),
-                                      child: const Text("OK"),
+                                      child: Text(
+                                        "OK",
+                                        style: TextStyle(
+                                          fontSize: (14 * tabletFontScale).sp,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -300,23 +400,37 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                               isLoading
                                   ? null
                                   : () async {
-                                    // ❗ لو فاتح Add action لازم Stage
                                     if (_showStageSection &&
                                         _selectedStageId == null) {
                                       showDialog(
                                         context: context,
                                         builder:
-                                            (_) => const AlertDialog(
-                                              title: Text("Warning"),
+                                            (_) => AlertDialog(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      (12 * tabletScale).r,
+                                                    ),
+                                              ),
+                                              title: Text(
+                                                "Warning",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      (18 * tabletFontScale).sp,
+                                                ),
+                                              ),
                                               content: Text(
                                                 "Please choose a stage before adding action.",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      (14 * tabletFontScale).sp,
+                                                ),
                                               ),
                                             ),
                                       );
                                       return;
                                     }
 
-                                    // ⛔ Validation قبل أي حاجة
                                     if (_showStageSection &&
                                         (_selectedStageName == "Done Deal" ||
                                             _selectedStageName == "EOI")) {
@@ -345,13 +459,31 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                           context: context,
                                           builder:
                                               (_) => AlertDialog(
-                                                title: const Text("Warning"),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        (12 * tabletScale).r,
+                                                      ),
+                                                ),
+                                                title: Text(
+                                                  "Warning",
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        (18 * tabletFontScale)
+                                                            .sp,
+                                                  ),
+                                                ),
                                                 content: Text(
                                                   "$_selectedStageName data is required",
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        (14 * tabletFontScale)
+                                                            .sp,
+                                                  ),
                                                 ),
                                               ),
                                         );
-                                        return; // ⛔ هنا بيقف كل الزرار
+                                        return;
                                       }
                                     }
 
@@ -369,12 +501,10 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                               "yyyy-MM-dd hh:mm a",
                                             ).format(DateTime.now());
 
-                                    // ✅ شيلنا التحقق عن التاريخ
                                     if (salesId != null &&
                                         text1.isNotEmpty &&
                                         text2.isNotEmpty &&
                                         userlogId != null) {
-                                      // ✅ إذا تم اختيار Stage جديد
                                       if (_selectedStageId != null &&
                                           _selectedStageName != null) {
                                         try {
@@ -390,7 +520,6 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                             unitPrice:
                                                 doneDealData?['unitPrice'] ??
                                                 '',
-                                            // ضع القيم المناسبة إذا لزم الأمر
                                             unitNumber:
                                                 doneDealData?['unitNumber'] ??
                                                 '',
@@ -434,7 +563,9 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                           print(
                                             "-------------------------------",
                                           );
-                                          print("leadstagerequest: $leadStageRequest");
+                                          print(
+                                            "leadstagerequest: $leadStageRequest",
+                                          );
                                           final changeStageCubit =
                                               context.read<ChangeStageCubit>();
                                           await changeStageCubit.changeStage(
@@ -462,6 +593,11 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                               SnackBar(
                                                 content: Text(
                                                   "Stage changed to $_selectedStageName",
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        (14 * tabletFontScale)
+                                                            .sp,
+                                                  ),
                                                 ),
                                               ),
                                             );
@@ -475,10 +611,15 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                                   (changeStageCubit.state
                                                           as ChangeStageError)
                                                       .error,
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        (14 * tabletFontScale)
+                                                            .sp,
+                                                  ),
                                                 ),
                                               ),
                                             );
-                                            return; // لو فشل التغيير، لا تضيف الكومنت
+                                            return;
                                           }
                                         } catch (e) {
                                           ScaffoldMessenger.of(
@@ -487,6 +628,10 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                             SnackBar(
                                               content: Text(
                                                 "Error changing stage: $e",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      (14 * tabletFontScale).sp,
+                                                ),
                                               ),
                                             ),
                                           );
@@ -494,7 +639,6 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                         }
                                       }
 
-                                      // ✅ بعد نجاح تغيير Stage أو لو لم يتم تغييره
                                       await context
                                           .read<AddCommentCubit>()
                                           .addComment(
@@ -514,10 +658,26 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                       showDialog(
                                         context: context,
                                         builder:
-                                            (context) => const AlertDialog(
-                                              title: Text("Warning"),
+                                            (context) => AlertDialog(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      (12 * tabletScale).r,
+                                                    ),
+                                              ),
+                                              title: Text(
+                                                "Warning",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      (18 * tabletFontScale).sp,
+                                                ),
+                                              ),
                                               content: Text(
                                                 "Please fill in all the required fields.",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      (14 * tabletFontScale).sp,
+                                                ),
                                               ),
                                             ),
                                       );
@@ -529,15 +689,21 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                     ? Constants.maincolor
                                     : Constants.mainDarkmodecolor,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(
+                                (8 * tabletScale).r,
+                              ),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: (16 * tabletWidthScale).w,
+                              vertical: (12 * tabletHeightScale).h,
                             ),
                           ),
                           child:
                               isLoading
-                                  ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
+                                  ? SizedBox(
+                                    height: (20 * tabletFontScale).h,
+                                    width: (20 * tabletFontScale).w,
+                                    child: const CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
                                         Colors.white,
@@ -546,9 +712,9 @@ class _AddCommentBottomSheetState extends State<CustomAddCommentAdmin> {
                                   )
                                   : Text(
                                     '${widget.optionalName}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 14,
+                                      fontSize: (14 * tabletFontScale).sp,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),

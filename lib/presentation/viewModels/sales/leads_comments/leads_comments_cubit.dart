@@ -58,10 +58,10 @@ class LeadCommentsCubit extends Cubit<LeadCommentsState> {
     }
   }
 
-    Future<void> fetchNewComments({
+  Future<void> fetchNewComments({
     required String leadId,
-    int? page,
-    int? limit,
+    num? page,
+    num? limit,
   }) async {
     emit(LeadCommentsLoading());
     try {

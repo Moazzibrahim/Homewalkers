@@ -12,7 +12,9 @@ import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_show_assign_dialog.dart';
 
 class SalesAssignLeadsScreen extends StatefulWidget {
-  const SalesAssignLeadsScreen({super.key});
+  final bool? data;
+  final bool? transferfromdata;
+  const SalesAssignLeadsScreen({super.key, this.data, this.transferfromdata});
 
   @override
   _SalesAssignLeadsScreenState createState() => _SalesAssignLeadsScreenState();
@@ -20,9 +22,22 @@ class SalesAssignLeadsScreen extends StatefulWidget {
 
 class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
   List<bool> selected = [];
-  List<LeadData> _leads = [];
-  LeadResponse? leadResponse;
+  List _leads = [];
+  List? leadResponse;
   String? leadIdd;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<GetLeadsCubit>().fetchSalesLeadsWithPagination(
+        data: widget.data ?? false,
+        transferefromdata: widget.transferfromdata ?? false,
+        resetPagination: true,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,9 +80,13 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
                   child: TextField(
                     controller: nameController,
                     onChanged: (value) {
-                      context.read<GetLeadsCubit>().filterLeads(
-                        query: value.trim(),
-                      );
+                      context
+                          .read<GetLeadsCubit>()
+                          .fetchSalesLeadsWithPagination(
+                            search: value.trim(),
+                            data: widget.data ?? false,
+                            transferefromdata: widget.transferfromdata ?? false,
+                          );
                     },
                     decoration: InputDecoration(
                       hintText: 'Search',
@@ -137,10 +156,10 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
           Expanded(
             child: BlocBuilder<GetLeadsCubit, GetLeadsState>(
               builder: (context, state) {
-                if (state is GetLeadsLoading) {
+                if (state is GetSalesLeadsWithPaginationLoading) {
                   return Center(child: CircularProgressIndicator());
-                } else if (state is GetLeadsSuccess) {
-                  _leads = state.assignedModel.data ?? [];
+                } else if (state is GetSalesLeadsWithPaginationSuccess) {
+                  _leads = state.model.data ?? [];
 
                   // إعداد قائمة الاختيار حسب عدد البيانات
                   if (selected.length != _leads.length) {
@@ -218,11 +237,11 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
       builder:
           (context) => BlocBuilder<GetLeadsCubit, GetLeadsState>(
             builder: (context, state) {
-              if (state is GetLeadsLoading) {
+              if (state is GetSalesLeadsWithPaginationLoading) {
                 return Center(child: CircularProgressIndicator());
-              } else if (state is GetLeadsSuccess) {
-                leadResponse = state.assignedModel;
-              } else if (state is GetLeadsError) {
+              } else if (state is GetSalesLeadsWithPaginationSuccess) {
+                leadResponse = state.model.data ?? [];
+              } else if (state is GetSalesLeadsWithPaginationError) {
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(SnackBar(content: Text(state.message)));
@@ -239,12 +258,13 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
                       Theme.of(context).brightness == Brightness.light
                           ? Constants.maincolor
                           : Constants.mainDarkmodecolor,
-                  fcmtoken:
-                      leadResponse?.data?.first.sales?.teamleader?.fcmtokenn ??
-                      '',
+                  
                   onSuccess: () {
                     // ← هنا بعد نجاح العملية، أرسل طلب إعادة تحميل الليدز
-                    context.read<GetLeadsCubit>().fetchLeads();
+                    context.read<GetLeadsCubit>().fetchSalesLeadsWithPagination(
+                      data: widget.data ?? false,
+                      transferefromdata: widget.transferfromdata ?? false,
+                    );
                   },
                 ),
               );

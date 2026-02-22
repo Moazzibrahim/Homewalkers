@@ -3,20 +3,17 @@ class AdminSalesModel {
   List<SalesData>? data;
   Meta? meta;
 
-  AdminSalesModel({
-    this.success,
-    this.data,
-    this.meta,
-  });
+  AdminSalesModel({this.success, this.data, this.meta});
 
   factory AdminSalesModel.fromJson(Map<String, dynamic> json) {
     return AdminSalesModel(
       success: json['success'],
-      data: json['data'] != null
-          ? List<SalesData>.from(
-              json['data'].map((x) => SalesData.fromJson(x)),
-            )
-          : null,
+      data:
+          json['data'] != null
+              ? List<SalesData>.from(
+                json['data'].map((x) => SalesData.fromJson(x)),
+              )
+              : null,
       meta: json['meta'] != null ? Meta.fromJson(json['meta']) : null,
     );
   }
@@ -29,10 +26,11 @@ class AdminSalesModel {
     };
   }
 }
+
 class SalesData {
   String? salesId;
   String? salesName;
-  int? activeLeadsCount;
+  num? activeLeadsCount;
   String? teamleaderId;
   String? managerId;
 
@@ -64,9 +62,10 @@ class SalesData {
     };
   }
 }
+
 class Meta {
-  int? totalSales;
-  int? totalActiveLeads;
+  num? totalSales;
+  num? totalActiveLeads;
   String? executionTime;
   String? timestamp;
   bool? isFast;
@@ -88,9 +87,10 @@ class Meta {
       executionTime: json['executionTime'],
       timestamp: json['timestamp'],
       isFast: json['isFast'],
-      filtersApplied: json['filtersApplied'] != null
-          ? FiltersApplied.fromJson(json['filtersApplied'])
-          : null,
+      filtersApplied:
+          json['filtersApplied'] != null
+              ? FiltersApplied.fromJson(json['filtersApplied'])
+              : null,
     );
   }
 
@@ -105,14 +105,12 @@ class Meta {
     };
   }
 }
+
 class FiltersApplied {
   String? salesIsActivate;
   String? leadIsActive;
 
-  FiltersApplied({
-    this.salesIsActivate,
-    this.leadIsActive,
-  });
+  FiltersApplied({this.salesIsActivate, this.leadIsActive});
 
   factory FiltersApplied.fromJson(Map<String, dynamic> json) {
     return FiltersApplied(
@@ -122,9 +120,6 @@ class FiltersApplied {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'salesisactivate': salesIsActivate,
-      'leadisactive': leadIsActive,
-    };
+    return {'salesisactivate': salesIsActivate, 'leadisactive': leadIsActive};
   }
 }

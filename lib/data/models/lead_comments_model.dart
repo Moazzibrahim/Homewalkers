@@ -1,5 +1,5 @@
 class LeadCommentsModel {
-  int? results;
+  num? results;
   Pagination? pagination;
   List<DataItem>? data;
 
@@ -29,9 +29,9 @@ class LeadCommentsModel {
 }
 
 class Pagination {
-  int? currentPage;
-  int? limit;
-  int? numberOfPages;
+  num? currentPage;
+  num? limit;
+  num? numberOfPages;
 
   Pagination({this.currentPage, this.limit, this.numberOfPages});
 
@@ -54,7 +54,7 @@ class DataItem {
   Leed? leed;
   DateTime? createdAt;
   DateTime? updatedAt;
-  int? v;
+  num? v;
 
   DataItem({
     this.id,
@@ -441,7 +441,7 @@ class Campaign {
   String? id;
   String? campainName;
   String? date;
-  int? cost;
+  num? cost;
   bool? isactivate;
   AddBy? addby;
   AddBy? updatedby;

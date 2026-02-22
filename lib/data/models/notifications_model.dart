@@ -1,6 +1,6 @@
 // ignore_for_file: non_constant_identifier_names
 class NotificationModel {
-  final int? results;
+  final num? results;
   final Pagination? pagination;
   final List<NotificationItem>? data;
 
@@ -9,20 +9,22 @@ class NotificationModel {
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
       results: json['results'],
-      pagination: json['pagination'] != null
-          ? Pagination.fromJson(json['pagination'])
-          : null,
-      data: (json['data'] as List?)
-          ?.map((e) => NotificationItem.fromJson(e))
-          .toList(),
+      pagination:
+          json['pagination'] != null
+              ? Pagination.fromJson(json['pagination'])
+              : null,
+      data:
+          (json['data'] as List?)
+              ?.map((e) => NotificationItem.fromJson(e))
+              .toList(),
     );
   }
 }
 
 class Pagination {
-  final int? currentPage;
-  final int? limit;
-  final int? numberOfPages;
+  final num? currentPage;
+  final num? limit;
+  final num? numberOfPages;
 
   Pagination({this.currentPage, this.limit, this.numberOfPages});
 
@@ -45,7 +47,7 @@ class NotificationItem {
   final bool? isRead;
   final String? createdAt;
   final String? updatedAt;
-  final int? v;
+  final num? v;
 
   NotificationItem({
     this.id,
@@ -64,12 +66,14 @@ class NotificationItem {
     return NotificationItem(
       id: json['_id'],
       message: json['message'],
-      receiver: json['receiver'] != null ? User.fromJson(json['receiver']) : null,
+      receiver:
+          json['receiver'] != null ? User.fromJson(json['receiver']) : null,
       lead: json['lead'] != null ? Lead.fromJson(json['lead']) : null,
       typenotification: json['typenotification'],
-      userdoaction: json['userdoaction'] != null
-          ? User.fromJson(json['userdoaction'])
-          : null,
+      userdoaction:
+          json['userdoaction'] != null
+              ? User.fromJson(json['userdoaction'])
+              : null,
       isRead: json['isRead'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
@@ -151,17 +155,19 @@ class Lead {
       sales: json['sales'] != null ? Sales.fromJson(json['sales']) : null,
       stage: json['stage'] != null ? Stage.fromJson(json['stage']) : null,
       chanel: json['chanel'] != null ? Chanel.fromJson(json['chanel']) : null,
-      communicationway: json['communicationway'] != null
-          ? CommunicationWay.fromJson(json['communicationway'])
-          : null,
+      communicationway:
+          json['communicationway'] != null
+              ? CommunicationWay.fromJson(json['communicationway'])
+              : null,
       addby: json['addby'] != null ? User.fromJson(json['addby']) : null,
       updatedby:
           json['updatedby'] != null ? User.fromJson(json['updatedby']) : null,
       campaign:
           json['campaign'] != null ? Campaign.fromJson(json['campaign']) : null,
-      allVersions: (json['allVersions'] as List?)
-          ?.map((e) => AllVersion.fromJson(e))
-          .toList(),
+      allVersions:
+          (json['allVersions'] as List?)
+              ?.map((e) => AllVersion.fromJson(e))
+              .toList(),
       mergeHistory: json['mergeHistory'],
     );
   }
@@ -179,11 +185,11 @@ class Project {
     return Project(
       id: json['_id'],
       name: json['name'],
-      developer: json['developer'] != null
-          ? SimpleObj.fromJson(json['developer'])
-          : null,
-      city:
-          json['city'] != null ? SimpleObj.fromJson(json['city']) : null,
+      developer:
+          json['developer'] != null
+              ? SimpleObj.fromJson(json['developer'])
+              : null,
+      city: json['city'] != null ? SimpleObj.fromJson(json['city']) : null,
     );
   }
 }
@@ -195,10 +201,7 @@ class SimpleObj {
   SimpleObj({this.id, this.name});
 
   factory SimpleObj.fromJson(Map<String, dynamic> json) {
-    return SimpleObj(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return SimpleObj(id: json['_id'], name: json['name']);
   }
 }
 
@@ -210,11 +213,7 @@ class Chanel {
   Chanel({this.id, this.name, this.code});
 
   factory Chanel.fromJson(Map<String, dynamic> json) {
-    return Chanel(
-      id: json['_id'],
-      name: json['name'],
-      code: json['code'],
-    );
+    return Chanel(id: json['_id'], name: json['name'], code: json['code']);
   }
 }
 
@@ -225,10 +224,7 @@ class CommunicationWay {
   CommunicationWay({this.id, this.name});
 
   factory CommunicationWay.fromJson(Map<String, dynamic> json) {
-    return CommunicationWay(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return CommunicationWay(id: json['_id'], name: json['name']);
   }
 }
 
@@ -239,10 +235,7 @@ class StageType {
   StageType({this.id, this.name});
 
   factory StageType.fromJson(Map<String, dynamic> json) {
-    return StageType(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return StageType(id: json['_id'], name: json['name']);
   }
 }
 
@@ -257,9 +250,10 @@ class Stage {
     return Stage(
       id: json['_id'],
       name: json['name'],
-      stagetype: json['stagetype'] != null
-          ? StageType.fromJson(json['stagetype'])
-          : null,
+      stagetype:
+          json['stagetype'] != null
+              ? StageType.fromJson(json['stagetype'])
+              : null,
     );
   }
 }
@@ -268,7 +262,7 @@ class Campaign {
   final String? id;
   final String? CampainName;
   final String? Date;
-  final int? Cost;
+  final num? Cost;
   final bool? isactivate;
   final User? addby;
   final User? updatedby;
@@ -291,9 +285,8 @@ class Campaign {
       Cost: json['Cost'],
       isactivate: json['isactivate'],
       addby: json['addby'] != null ? User.fromJson(json['addby']) : null,
-      updatedby: json['updatedby'] != null
-          ? User.fromJson(json['updatedby'])
-          : null,
+      updatedby:
+          json['updatedby'] != null ? User.fromJson(json['updatedby']) : null,
     );
   }
 }
@@ -319,9 +312,7 @@ class Sales {
     return Sales(
       id: json['_id'],
       name: json['name'],
-      city: (json['city'] as List?)
-          ?.map((e) => SimpleObj.fromJson(e))
-          .toList(),
+      city: (json['city'] as List?)?.map((e) => SimpleObj.fromJson(e)).toList(),
       userlog: json['userlog'] != null ? User.fromJson(json['userlog']) : null,
       teamleader:
           json['teamleader'] != null ? User.fromJson(json['teamleader']) : null,
@@ -352,9 +343,10 @@ class AllVersion {
       chanel: json['chanel'] != null ? Chanel.fromJson(json['chanel']) : null,
       campaign:
           json['campaign'] != null ? Campaign.fromJson(json['campaign']) : null,
-      communicationway: json['communicationway'] != null
-          ? CommunicationWay.fromJson(json['communicationway'])
-          : null,
+      communicationway:
+          json['communicationway'] != null
+              ? CommunicationWay.fromJson(json['communicationway'])
+              : null,
       addby: json['addby'] != null ? User.fromJson(json['addby']) : null,
     );
   }

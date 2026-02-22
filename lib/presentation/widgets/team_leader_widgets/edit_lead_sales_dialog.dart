@@ -61,31 +61,92 @@ class _EditLeadDialogState extends State<EditLeadSalesDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final width = media.size.width;
+
+    final bool isTablet7 = width >= 600 && width < 900;
+    final bool isTablet10 = width >= 900;
+
+    final double dialogHorizontalPadding =
+        isTablet10
+            ? 220
+            : isTablet7
+            ? 120
+            : 24;
+
+    final double fieldFontSize =
+        isTablet10
+            ? 18
+            : isTablet7
+            ? 16
+            : 14;
+
+    final double verticalSpacing =
+        isTablet10
+            ? 18
+            : isTablet7
+            ? 14
+            : 10;
+
     return AlertDialog(
-      title: const Text('Edit Lead'),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: dialogHorizontalPadding,
+        vertical: 24,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        'Edit Lead',
+        style: TextStyle(
+          fontSize:
+              isTablet10
+                  ? 22
+                  : isTablet7
+                  ? 19
+                  : 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            TextField(
-              controller: phone2Controller,
-              decoration: const InputDecoration(
-                labelText: 'second Phone Number',
+              style: TextStyle(fontSize: fieldFontSize),
+              decoration: InputDecoration(
+                labelText: 'Name',
+                labelStyle: TextStyle(fontSize: fieldFontSize),
               ),
             ),
+            SizedBox(height: verticalSpacing),
+            TextField(
+              controller: phone2Controller,
+              style: TextStyle(fontSize: fieldFontSize),
+              decoration: InputDecoration(
+                labelText: 'second Phone Number',
+                labelStyle: TextStyle(fontSize: fieldFontSize),
+              ),
+            ),
+            SizedBox(height: verticalSpacing),
             TextField(
               controller: whatsappNumberController,
-              decoration: const InputDecoration(labelText: 'whatsapp Number'),
+              style: TextStyle(fontSize: fieldFontSize),
+              decoration: InputDecoration(
+                labelText: 'whatsapp Number',
+                labelStyle: TextStyle(fontSize: fieldFontSize),
+              ),
             ),
+            SizedBox(height: verticalSpacing),
             TextField(
               controller: notesController,
-              decoration: const InputDecoration(labelText: 'Notes'),
+              style: TextStyle(fontSize: fieldFontSize),
+              decoration: InputDecoration(
+                labelText: 'Notes',
+                labelStyle: TextStyle(fontSize: fieldFontSize),
+              ),
               maxLines: 2,
             ),
+            SizedBox(height: verticalSpacing),
             BlocBuilder<ProjectsCubit, ProjectsState>(
               builder: (context, state) {
                 if (state is ProjectsSuccess) {
@@ -93,8 +154,11 @@ class _EditLeadDialogState extends State<EditLeadSalesDialog> {
                     width: double.infinity,
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      value: selectedProjectId,
-                      decoration: const InputDecoration(labelText: 'Project'),
+                      initialValue: selectedProjectId,
+                      decoration: InputDecoration(
+                        labelText: 'Project',
+                        labelStyle: TextStyle(fontSize: fieldFontSize),
+                      ),
                       items:
                           state.projectsModel.data!.map((project) {
                             return DropdownMenuItem<String>(
@@ -103,6 +167,7 @@ class _EditLeadDialogState extends State<EditLeadSalesDialog> {
                                 project.name!,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: fieldFontSize),
                               ),
                             );
                           }).toList(),
@@ -114,7 +179,10 @@ class _EditLeadDialogState extends State<EditLeadSalesDialog> {
                     ),
                   );
                 } else if (state is ProjectsLoading) {
-                  return const CircularProgressIndicator();
+                  return const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: CircularProgressIndicator(),
+                  );
                 }
                 return const SizedBox();
               },
@@ -122,20 +190,25 @@ class _EditLeadDialogState extends State<EditLeadSalesDialog> {
           ],
         ),
       ),
+      actionsPadding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical:
+            isTablet10
+                ? 16
+                : isTablet7
+                ? 12
+                : 8,
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text('Cancel', style: TextStyle(fontSize: fieldFontSize)),
         ),
         BlocConsumer<EditLeadCubit, EditLeadState>(
           listener: (context, state) {
             if (state is EditLeadSuccess) {
               Navigator.pop(context);
-              if (widget.onSuccess != null) {
-                widget.onSuccess!(); // 👈 Call callback
-              }
-              // ✅ بعد ما يحصل التعديل، نعمل تحديث مباشر للداتا
-
+              widget.onSuccess?.call();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Edited Successfully')),
               );
@@ -147,15 +220,31 @@ class _EditLeadDialogState extends State<EditLeadSalesDialog> {
           },
           builder: (context, state) {
             if (state is EditLeadLoading) {
-              return const CircularProgressIndicator();
+              return const Padding(
+                padding: EdgeInsets.all(8),
+                child: CircularProgressIndicator(),
+              );
             }
 
             return ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Constants.maincolor,
+                padding: EdgeInsets.symmetric(
+                  horizontal:
+                      isTablet10
+                          ? 32
+                          : isTablet7
+                          ? 26
+                          : 20,
+                  vertical:
+                      isTablet10
+                          ? 14
+                          : isTablet7
+                          ? 12
+                          : 10,
+                ),
               ),
               onPressed: () {
-                // نجهز خريطة بالحقول اللي فيها قيم فعلًا
                 final Map<String, dynamic> updatedFields = {};
 
                 if (nameController.text.trim().isNotEmpty) {
@@ -175,7 +264,7 @@ class _EditLeadDialogState extends State<EditLeadSalesDialog> {
                     selectedProjectId!.isNotEmpty) {
                   updatedFields['project'] = selectedProjectId;
                 }
-                // نتحقق إن فيه حاجة فعلاً اتغيرت
+
                 if (updatedFields.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('No changes to update')),
@@ -183,7 +272,6 @@ class _EditLeadDialogState extends State<EditLeadSalesDialog> {
                   return;
                 }
 
-                // نرسل الداتا الفعلية
                 context.read<EditLeadCubit>().editLead(
                   userId: widget.userId,
                   name: updatedFields['name'],
@@ -194,7 +282,14 @@ class _EditLeadDialogState extends State<EditLeadSalesDialog> {
                   salesIdd: widget.salesID,
                 );
               },
-              child: const Text('Save', style: TextStyle(color: Colors.white)),
+              child: Text(
+                'Save',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: fieldFontSize,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             );
           },
         ),

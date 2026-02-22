@@ -1,5 +1,5 @@
 // class AllUsersModel {
-//   int? results;
+//   num? results;
 //   Pagination? pagination;
 //   List<Lead>? data;
 
@@ -18,9 +18,9 @@
 //   }
 // }
 // class Pagination {
-//   int? currentPage;
-//   int? limit;
-//   int? numberOfPages;
+//   num? currentPage;
+//   num? limit;
+//   num? numberOfPages;
 
 //   Pagination({this.currentPage, this.limit, this.numberOfPages});
 
@@ -59,15 +59,15 @@
 //   UserInfo? addby;
 //   UserInfo? updatedby;
 //   Campaign? campaign;
-//   int? duplicateCount;
-//   int? relatedLeadsCount;
+//   num? duplicateCount;
+//   num? relatedLeadsCount;
 //   List<LeadVersion>? allVersions;
-//   int? totalSubmissions;
+//   num? totalSubmissions;
 //   String? date;
 //   List<dynamic>? mergeHistory;
 //   String? createdAt;
 //   String? updatedAt;
-//   int? v;
+//   num? v;
 //   Stage? stage;
 
 //   Lead({
@@ -307,7 +307,7 @@
 //   CommunicationWay? communicationway;
 //   UserInfo? addby;
 //   String? recordedAt;
-//   int? versionNumber;
+//   num? versionNumber;
 
 //   LeadVersion({
 //     this.name,

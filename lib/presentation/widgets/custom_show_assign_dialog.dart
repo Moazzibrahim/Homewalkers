@@ -2,7 +2,7 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:homewalkers_app/data/models/salesLeadsModelWithPagination.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
@@ -12,12 +12,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AssignDialog extends StatefulWidget {
   final Color mainColor;
-  final LeadResponse?
+  final List?
   leadResponse; // Contains potential assignees (e.g., sales team members)
   final List? leadIds;
-  final String? leadId;
-  final String? fcmtoken; // Optional: if you want to pass a specific lead ID
-  final String? teamleaderfcmtoken;
+  final String? leadId; // Optional: if you want to pass a specific lead ID
   final String? managerfcmtoken;
   final VoidCallback? onSuccess; // ← إضافة هذا
 
@@ -27,8 +25,6 @@ class AssignDialog extends StatefulWidget {
     this.leadResponse,
     this.leadId,
     this.leadIds,
-    this.fcmtoken,
-    this.teamleaderfcmtoken,
     this.managerfcmtoken,
     this.onSuccess, // ← إضافة هذا
   });
@@ -40,14 +36,13 @@ class AssignDialog extends StatefulWidget {
 class _AssignDialogState extends State<AssignDialog> {
   bool isTeamLeaderChecked =
       false; // Simplified for the single team leader checkbox
-  LeadData? _LeadData; // To store the found team leader data
+  LeadPagination? _LeadData; // To store the found team leader data
   String? teamLeaderId;
 
   @override
   void initState() {
     super.initState();
     _initialize();
-    print('fcmtoken: ${widget.fcmtoken}');
   }
 
   void _initialize() async {
@@ -55,12 +50,18 @@ class _AssignDialogState extends State<AssignDialog> {
     salesCubit.fetchSales();
 
     final prefs = await SharedPreferences.getInstance();
-    final userlogId = prefs.getString('teamLeaderId') ?? '';
-    salesCubit.salesRepository.fetchSalesData(userlogId);
+    // final userlogId = prefs.getString('teamLeaderId') ?? '';
+    // salesCubit.salesRepository.fetchSalesData(userlogId);
 
-    teamLeaderId = prefs.getString('saved_id');
+    final leads = widget.leadResponse ?? [];
 
-    final leads = widget.leadResponse?.data ?? [];
+    if (leads.isNotEmpty) {
+      _LeadData = leads.first;
+    } else {
+      _LeadData = null;
+      log("Leads list is empty");
+    }
+
     try {
       _LeadData = leads.firstWhere((leadData) => leadData.id != null);
       if (_LeadData != null) {}
@@ -134,28 +135,25 @@ class _AssignDialogState extends State<AssignDialog> {
                             ),
                           );
 
-                          // 👇 ابعت الإشعارات هنا بعد النجاح فقط
-                          if (widget.fcmtoken != null &&
-                              widget.fcmtoken!.isNotEmpty) {
-                            context
-                                .read<NotificationCubit>()
-                                .sendNotificationToToken(
-                                  title: "Lead",
-                                  body: "Lead assigned successfully ✅",
-                                  fcmtokennnn: widget.fcmtoken!,
-                                );
-                          }
+                          context
+                              .read<NotificationCubit>()
+                              .sendNotificationToToken(
+                                title: "Lead",
+                                body: "Lead assigned successfully ✅",
+                                fcmtokennnn:
+                                    _LeadData?.sales?.teamleader?.fcmToken ??
+                                    '',
+                              );
+                          context
+                              .read<NotificationCubit>()
+                              .sendNotificationToToken(
+                                title: "Lead",
+                                body: "Lead assigned successfully ✅",
+                                fcmtokennnn:
+                                    _LeadData?.sales?.teamleader?.fcmToken ??
+                                    '',
+                              );
 
-                          if (widget.managerfcmtoken != null &&
-                              widget.managerfcmtoken!.isNotEmpty) {
-                            context
-                                .read<NotificationCubit>()
-                                .sendNotificationToToken(
-                                  title: "Lead",
-                                  body: "Lead assigned successfully ✅",
-                                  fcmtokennnn: widget.managerfcmtoken!,
-                                );
-                          }
                           // 👇 هنا استدعاء الـ callback لتحديث الصفحة
                           if (widget.onSuccess != null) {
                             widget.onSuccess!();
@@ -201,7 +199,8 @@ class _AssignDialogState extends State<AssignDialog> {
                                     widget.leadIds != null
                                         ? List<String>.from(widget.leadIds!)
                                         : [widget.leadId!];
-
+                                teamLeaderId =
+                                    _LeadData!.sales!.teamleader!.id ?? '';
                                 log("Selected Lead IDs: $leadIds");
                                 log("Team Leader ID: $teamLeaderId");
 

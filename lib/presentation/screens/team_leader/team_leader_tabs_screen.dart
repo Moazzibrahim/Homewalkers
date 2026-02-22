@@ -74,7 +74,7 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
                     child: TeamLeaderDashboardScreen(),
                   ),
                   TeamLeaderSalesScreen(),
-                  TeamLeaderAssignScreen(),
+                  TeamLeaderAssignScreen(data: false,transferfromdata: true,),
                   BlocProvider(
                     create: (context) => AuthCubit(LoginApiService()),
                     child: TeamLeaderProfileScreen(),

@@ -1,5 +1,5 @@
 class CommunicationWayResponse {
-  final int? results;
+  final num? results;
   final Pagination? pagination;
   final List<CommunicationWay>? data;
 
@@ -8,20 +8,22 @@ class CommunicationWayResponse {
   factory CommunicationWayResponse.fromJson(Map<String, dynamic> json) {
     return CommunicationWayResponse(
       results: json['results'],
-      pagination: json['pagination'] != null
-          ? Pagination.fromJson(json['pagination'])
-          : null,
-      data: (json['data'] as List<dynamic>?)
-          ?.map((e) => CommunicationWay.fromJson(e))
-          .toList(),
+      pagination:
+          json['pagination'] != null
+              ? Pagination.fromJson(json['pagination'])
+              : null,
+      data:
+          (json['data'] as List<dynamic>?)
+              ?.map((e) => CommunicationWay.fromJson(e))
+              .toList(),
     );
   }
 }
 
 class Pagination {
-  final int? currentPage;
-  final int? limit;
-  final int? numberOfPages;
+  final num? currentPage;
+  final num? limit;
+  final num? numberOfPages;
 
   Pagination({this.currentPage, this.limit, this.numberOfPages});
 
@@ -41,7 +43,7 @@ class CommunicationWay {
   final String? isCommunicationWayActivate;
   final String? createdAt;
   final String? updatedAt;
-  final int? v;
+  final num? v;
 
   CommunicationWay({
     this.id,

@@ -1,38 +1,33 @@
 class ProjectsModel {
-  final int? results;
+  final num? results;
   final Pagination? pagination;
   final List<ProjectData>? data;
 
-  ProjectsModel({
-    this.results,
-    this.pagination,
-    this.data,
-  });
+  ProjectsModel({this.results, this.pagination, this.data});
 
   factory ProjectsModel.fromJson(Map<String, dynamic> json) {
     return ProjectsModel(
       results: json['results'],
-      pagination: json['pagination'] != null
-          ? Pagination.fromJson(json['pagination'])
-          : null,
-      data: json['data'] != null
-          ? List<ProjectData>.from(
-              json['data'].map((x) => ProjectData.fromJson(x)))
-          : null,
+      pagination:
+          json['pagination'] != null
+              ? Pagination.fromJson(json['pagination'])
+              : null,
+      data:
+          json['data'] != null
+              ? List<ProjectData>.from(
+                json['data'].map((x) => ProjectData.fromJson(x)),
+              )
+              : null,
     );
   }
 }
 
 class Pagination {
-  final int? currentPage;
-  final int? limit;
-  final int? numberOfPages;
+  final num? currentPage;
+  final num? limit;
+  final num? numberOfPages;
 
-  Pagination({
-    this.currentPage,
-    this.limit,
-    this.numberOfPages,
-  });
+  Pagination({this.currentPage, this.limit, this.numberOfPages});
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
     return Pagination(
@@ -52,7 +47,7 @@ class ProjectData {
   final String? area;
   final String? createdAt;
   final String? updatedAt;
-  final int? v;
+  final num? v;
   final String? isProjectActivate;
 
   ProjectData({
@@ -73,9 +68,10 @@ class ProjectData {
       id: json['_id'],
       name: json['name'],
       startPrice: json['startprice'],
-      developer: json['developer'] != null
-          ? Developer.fromJson(json['developer'])
-          : null,
+      developer:
+          json['developer'] != null
+              ? Developer.fromJson(json['developer'])
+              : null,
       city: json['city'] != null ? City.fromJson(json['city']) : null,
       area: json['area'],
       createdAt: json['createdAt'],
@@ -90,16 +86,10 @@ class Developer {
   final String? id;
   final String? name;
 
-  Developer({
-    this.id,
-    this.name,
-  });
+  Developer({this.id, this.name});
 
   factory Developer.fromJson(Map<String, dynamic> json) {
-    return Developer(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return Developer(id: json['_id'], name: json['name']);
   }
 }
 
@@ -107,15 +97,9 @@ class City {
   final String? id;
   final String? name;
 
-  City({
-    this.id,
-    this.name,
-  });
+  City({this.id, this.name});
 
   factory City.fromJson(Map<String, dynamic> json) {
-    return City(
-      id: json['_id'],
-      name: json['name'],
-    );
+    return City(id: json['_id'], name: json['name']);
   }
 }

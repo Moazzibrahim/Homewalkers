@@ -24,3 +24,31 @@ class GetStageCountSuccess extends GetLeadsState {
 
   GetStageCountSuccess(this.stageCounts);
 }
+
+final class GetSalesLeadsWithPaginationLoading extends GetLeadsState {}
+
+final class GetSalesLeadsWithPaginationSuccess extends GetLeadsState {
+  final Salesleadsmodelwithpagination model;
+
+  GetSalesLeadsWithPaginationSuccess(this.model);
+}
+
+final class GetSalesLeadsWithPaginationError extends GetLeadsState {
+  final String message;
+
+  GetSalesLeadsWithPaginationError(this.message);
+}
+
+final class GetSalesLeadsWithPaginationEmpty extends GetLeadsState {}
+
+class PostMeetingCommentLoading extends GetLeadsState {}
+
+class PostMeetingCommentSuccess extends GetLeadsState {
+  final String message;
+  PostMeetingCommentSuccess(this.message);
+}
+
+class PostMeetingCommentError extends GetLeadsState {
+  final String error;
+  PostMeetingCommentError(this.error);
+}

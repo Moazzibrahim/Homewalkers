@@ -1,7 +1,9 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, avoid_print
 import 'dart:developer';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/data/models/all_sales_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/data/models/stages_models.dart';
@@ -55,6 +57,31 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
   bool isTeamLeaderAssign = false; // assigntype
   bool resetCreationDate = false;
 
+  // ✅ عوامل التصغير responsive
+  late bool isTabletDevice;
+  late double tabletScale;
+  late double tabletFontScale;
+  late double tabletWidthScale;
+  late double tabletHeightScale;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ✅ حساب عوامل التصغير بناءً على حجم الشاشة
+    final data = MediaQuery.of(context);
+    final physicalSize = data.size;
+    final diagonal = math.sqrt(
+      math.pow(physicalSize.width, 2) + math.pow(physicalSize.height, 2),
+    );
+    final inches = diagonal / (data.devicePixelRatio * 160);
+    isTabletDevice = inches >= 7.0;
+
+    tabletScale = isTabletDevice ? 0.85 : 1.0;
+    tabletFontScale = isTabletDevice ? 0.9 : 1.0;
+    tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
+    tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
+  }
+
   Future<void> saveClearHistoryTime() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -78,10 +105,10 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
       builder: (dialogContext) {
         return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular((16 * tabletScale).r),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all((16 * tabletScale).r),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -94,13 +121,20 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: widget.mainColor,
+                        fontSize: (16 * tabletFontScale).sp,
                       ),
                     ),
                   ),
+
                   RadioListTile<bool>(
                     value: false,
                     groupValue: isTeamLeaderAssign,
-                    title: const Text("Salesman"),
+                    title: Text(
+                      "Salesman",
+                      style: TextStyle(fontSize: (14 * tabletFontScale).sp),
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
                     onChanged: (val) {
                       setState(() {
                         isTeamLeaderAssign = val!;
@@ -110,10 +144,16 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                       });
                     },
                   ),
+
                   RadioListTile<bool>(
                     value: true,
                     groupValue: isTeamLeaderAssign,
-                    title: const Text("Team Leader"),
+                    title: Text(
+                      "Team Leader",
+                      style: TextStyle(fontSize: (14 * tabletFontScale).sp),
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
                     onChanged: (val) {
                       setState(() {
                         isTeamLeaderAssign = val!;
@@ -123,10 +163,17 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                       });
                     },
                   ),
+
                   BlocBuilder<SalesCubit, SalesState>(
                     builder: (context, state) {
                       if (state is SalesLoading) {
-                        return const Center(child: CircularProgressIndicator());
+                        return Center(
+                          child: SizedBox(
+                            height: (40 * tabletHeightScale).h,
+                            width: (40 * tabletWidthScale).w,
+                            child: const CircularProgressIndicator(),
+                          ),
+                        );
                       } else if (state is SalesLoaded) {
                         final uniqueSalesMap = <String, SalesData>{};
 
@@ -180,14 +227,31 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                   controller: searchController,
                                   decoration: InputDecoration(
                                     labelText: "Filter by name",
-                                    prefixIcon: const Icon(Icons.search),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                    labelStyle: TextStyle(
+                                      fontSize: (14 * tabletFontScale).sp,
                                     ),
+                                    prefixIcon: Icon(
+                                      Icons.search,
+                                      size: (20 * tabletFontScale).sp,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        (12 * tabletScale).r,
+                                      ),
+                                    ),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: (12 * tabletWidthScale).w,
+                                      vertical: (16 * tabletHeightScale).h,
+                                    ),
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: (14 * tabletFontScale).sp,
                                   ),
                                   onChanged: filterSales,
                                 ),
-                                const SizedBox(height: 8),
+
+                                SizedBox(height: (8 * tabletHeightScale).h),
+
                                 Align(
                                   alignment: Alignment.centerLeft,
                                   child: Text(
@@ -195,14 +259,16 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                     style: TextStyle(
                                       color: widget.mainColor,
                                       fontWeight: FontWeight.w600,
+                                      fontSize: (14 * tabletFontScale).sp,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+
+                                SizedBox(height: (8 * tabletHeightScale).h),
 
                                 ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    maxHeight: 350,
+                                  constraints: BoxConstraints(
+                                    maxHeight: (350 * tabletHeightScale).h,
                                   ),
                                   child: ListView.builder(
                                     shrinkWrap: true,
@@ -211,21 +277,32 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                       final sale = filteredSales[index];
                                       final userId = sale.id;
                                       return ListTile(
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: (8 * tabletWidthScale).w,
+                                          vertical: (4 * tabletHeightScale).h,
+                                        ),
                                         title: Text(
                                           isTeamLeaderAssign
                                               ? 'Team: ${sale.name}'
                                               : sale.name!,
+                                          style: TextStyle(
+                                            fontSize: (16 * tabletFontScale).sp,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
-
                                         subtitle: Text(
                                           sale.userlog!.role!,
                                           style: TextStyle(
                                             color: widget.mainColor,
+                                            fontSize: (14 * tabletFontScale).sp,
                                           ),
                                         ),
                                         trailing: Checkbox(
                                           activeColor: widget.mainColor,
                                           value: selectedSales[userId] ?? false,
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          visualDensity: VisualDensity.compact,
                                           onChanged: (val) {
                                             setState(() {
                                               selectedSales.clear();
@@ -250,15 +327,24 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                           },
                         );
                       } else if (state is SalesError) {
-                        return Text(state.message);
+                        return Text(
+                          state.message,
+                          style: TextStyle(fontSize: (14 * tabletFontScale).sp),
+                        );
                       } else {
-                        return const Text("No sales available for assignment.");
+                        return Text(
+                          "No sales available for assignment.",
+                          style: TextStyle(fontSize: (14 * tabletFontScale).sp),
+                        );
                       }
                     },
                   ),
 
                   CheckboxListTile(
-                    title: const Text("Clear History"),
+                    title: Text(
+                      "Clear History",
+                      style: TextStyle(fontSize: (14 * tabletFontScale).sp),
+                    ),
                     value: clearHistory,
                     onChanged: (newValue) {
                       setState(() => clearHistory = newValue ?? false);
@@ -269,7 +355,10 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                   ),
 
                   CheckboxListTile(
-                    title: const Text("Reset Creation Date"),
+                    title: Text(
+                      "Reset Creation Date",
+                      style: TextStyle(fontSize: (14 * tabletFontScale).sp),
+                    ),
                     value: resetCreationDate,
                     onChanged: (val) {
                       setState(() => resetCreationDate = val ?? false);
@@ -282,7 +371,10 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                   RadioListTile<String>(
                     value: 'same',
                     groupValue: selectedOption,
-                    title: const Text('Same Stage'),
+                    title: Text(
+                      'Same Stage',
+                      style: TextStyle(fontSize: (14 * tabletFontScale).sp),
+                    ),
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                     onChanged:
@@ -292,7 +384,10 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                   RadioListTile<String>(
                     value: 'change',
                     groupValue: selectedOption,
-                    title: const Text('Change Stage'),
+                    title: Text(
+                      'Change Stage',
+                      style: TextStyle(fontSize: (14 * tabletFontScale).sp),
+                    ),
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                     onChanged:
@@ -300,43 +395,66 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                   ),
 
                   if (selectedOption == 'change' && stageState is StagesLoaded)
-                    DropdownButton<String>(
-                      isExpanded: true,
-                      value: selectedStageId,
-                      hint: const Text('Select Stage'),
-                      items:
-                          stageState.stages
-                              .where(
-                                (stage) => stage.name?.toLowerCase() != 'fresh',
-                              )
-                              .map((stage) {
-                                final displayName =
-                                    stage.name?.toLowerCase() == 'no stage'
-                                        ? 'Fresh'
-                                        : stage.name ?? 'Unnamed';
-                                return DropdownMenuItem<String>(
-                                  value: stage.id.toString(),
-                                  child: Text(displayName),
-                                );
-                              })
-                              .toList(),
-                      onChanged: (value) {
-                        final selectedStage = stageState.stages.firstWhere(
-                          (stage) => stage.id.toString() == value,
-                          orElse: () => StageDatas(),
-                        );
-                        setState(() {
-                          selectedStageId = value;
-                          _selectedLeadStagesIds.add(selectedStageId!);
-                          selectedstagename =
-                              selectedStage.name?.toLowerCase() == 'no stage'
-                                  ? 'Fresh'
-                                  : selectedStage.name;
-                        });
-                      },
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: (8 * tabletWidthScale).w,
+                        vertical: (4 * tabletHeightScale).h,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(
+                          (8 * tabletScale).r,
+                        ),
+                      ),
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: selectedStageId,
+                        hint: Text(
+                          'Select Stage',
+                          style: TextStyle(fontSize: (14 * tabletFontScale).sp),
+                        ),
+                        underline: const SizedBox(),
+                        items:
+                            stageState.stages
+                                .where(
+                                  (stage) =>
+                                      stage.name?.toLowerCase() != 'fresh',
+                                )
+                                .map((stage) {
+                                  final displayName =
+                                      stage.name?.toLowerCase() == 'no stage'
+                                          ? 'Fresh'
+                                          : stage.name ?? 'Unnamed';
+                                  return DropdownMenuItem<String>(
+                                    value: stage.id.toString(),
+                                    child: Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        fontSize: (14 * tabletFontScale).sp,
+                                      ),
+                                    ),
+                                  );
+                                })
+                                .toList(),
+                        onChanged: (value) {
+                          final selectedStage = stageState.stages.firstWhere(
+                            (stage) => stage.id.toString() == value,
+                            orElse: () => StageDatas(),
+                          );
+                          setState(() {
+                            selectedStageId = value;
+                            _selectedLeadStagesIds.add(selectedStageId!);
+                            selectedstagename =
+                                selectedStage.name?.toLowerCase() == 'no stage'
+                                    ? 'Fresh'
+                                    : selectedStage.name;
+                          });
+                        },
+                      ),
                     ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: (12 * tabletHeightScale).h),
 
                   BlocListener<AssignleadCubit, AssignState>(
                     listener: (dialogContext, state) async {
@@ -371,8 +489,13 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                         }
 
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Lead assigned successfully! ✅"),
+                          SnackBar(
+                            content: Text(
+                              "Lead assigned successfully! ✅",
+                              style: TextStyle(
+                                fontSize: (14 * tabletFontScale).sp,
+                              ),
+                            ),
                           ),
                         );
                       } else if (state is AssignFailure) {
@@ -380,12 +503,14 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                           SnackBar(
                             content: Text(
                               "Failed to assign lead: ${state.error} ❌",
+                              style: TextStyle(
+                                fontSize: (14 * tabletFontScale).sp,
+                              ),
                             ),
                           ),
                         );
                       }
                     },
-
                     child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -434,28 +559,34 @@ class _AssignDialogState extends State<AssignLeadMarkterDialog> {
                                 },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: widget.mainColor,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: (16 * tabletWidthScale).w,
+                            vertical: (12 * tabletHeightScale).h,
+                          ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              (12 * tabletScale).r,
+                            ),
                           ),
                         ),
                         child: BlocBuilder<AssignleadCubit, AssignState>(
                           builder: (dialogContext, state) {
                             if (state is AssignLoading) {
-                              return const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
+                              return SizedBox(
+                                height: (20 * tabletFontScale).h,
+                                width: (20 * tabletFontScale).w,
+                                child: const CircularProgressIndicator(
                                   color: Colors.white,
                                   strokeWidth: 2,
                                 ),
                               );
                             }
-                            return const Text(
+                            return Text(
                               "Apply",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                                fontSize: (14 * tabletFontScale).sp,
                               ),
                             );
                           },

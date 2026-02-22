@@ -256,12 +256,12 @@ class MyApp extends StatelessWidget {
           },
         ),
         BlocProvider(
-          create: (_) => GetLeadsCubit(GetLeadsService())..fetchLeads(),
+          create: (_) => GetLeadsCubit(GetLeadsService()),
         ),
         BlocProvider<GetLeadsTeamLeaderCubit>(
           create:
               (_) => GetLeadsTeamLeaderCubit(
-                GetLeadsService()..getLeadsDataByTeamLeader(),
+                GetLeadsService(),
               ),
         ),
         BlocProvider(

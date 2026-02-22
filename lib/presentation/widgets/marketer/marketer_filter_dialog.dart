@@ -1,5 +1,4 @@
 // filter_leads_dialog.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -12,26 +11,180 @@ import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
-import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
-import 'package:country_picker/country_picker.dart'; // تأكد أن هذا المستورد موجود
+
+class SelectItem {
+  final String id;
+  final String name;
+
+  SelectItem({required this.id, required this.name});
+}
+
+// ✅ ويدجت جديد للـ Multi-Select Dropdown
+class MultiSelectDropdown extends StatefulWidget {
+  final String hint;
+  final List<SelectItem> items; // 🔥 بدل String
+  final List<String> selectedItems; // 🔥 دي IDs
+  final Function(List<String>) onChanged;
+
+  // ignore: use_super_parameters
+  const MultiSelectDropdown({
+    Key? key,
+    required this.hint,
+    required this.items,
+    required this.selectedItems,
+    required this.onChanged,
+  }) : super(key: key);
+
+  @override
+  State<MultiSelectDropdown> createState() => _MultiSelectDropdownState();
+}
+
+class _MultiSelectDropdownState extends State<MultiSelectDropdown> {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final List<String>? result = await showDialog<List<String>>(
+          context: context,
+          builder: (BuildContext context) {
+            return MultiSelectDialog(
+              title: widget.hint,
+              items: widget.items,
+              selectedItems: widget.selectedItems,
+            );
+          },
+        );
+        if (result != null) {
+          widget.onChanged(result);
+        }
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          hintStyle: const TextStyle(
+            fontSize: 14,
+            color: Color.fromRGBO(143, 146, 146, 1),
+            fontWeight: FontWeight.w400,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xffE1E1E1)),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 16,
+          ),
+          suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+        ),
+        child: Text(
+          widget.selectedItems.isEmpty
+              ? widget.hint
+              : "${widget.selectedItems.length} selected",
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color:
+                widget.selectedItems.isEmpty
+                    ? const Color.fromRGBO(143, 146, 146, 1)
+                    : Theme.of(context).brightness == Brightness.light
+                    ? const Color(0xff080719)
+                    : const Color(0xffFFFFFF),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ✅ ديالوج الـ Multi-Select
+class MultiSelectDialog extends StatefulWidget {
+  final String title;
+  final List<SelectItem> items;
+  final List<String> selectedItems;
+
+  const MultiSelectDialog({
+    Key? key,
+    required this.title,
+    required this.items,
+    required this.selectedItems,
+  }) : super(key: key);
+
+  @override
+  State<MultiSelectDialog> createState() => _MultiSelectDialogState();
+}
+
+class _MultiSelectDialogState extends State<MultiSelectDialog> {
+  late List<String> _tempSelectedItems;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelectedItems = List.from(widget.selectedItems);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Select ${widget.title}'),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400,
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: widget.items.length,
+          itemBuilder: (context, index) {
+            final item = widget.items[index];
+            final isSelected = _tempSelectedItems.contains(item.id);
+            return CheckboxListTile(
+              title: Text(item.name),
+              value: isSelected,
+              activeColor: Constants.maincolor,
+              onChanged: (bool? value) {
+                setState(() {
+                  if (value == true) {
+                    _tempSelectedItems.add(item.id);
+                  } else {
+                    _tempSelectedItems.remove(item.id);
+                  }
+                });
+              },
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context, null);
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context, _tempSelectedItems);
+          },
+          child: const Text('OK'),
+        ),
+      ],
+    );
+  }
+}
 
 class MarketerFilterDialog extends StatefulWidget {
-  // 🟡 جديد: لاستقبال القيم الأولية (الحالية) للفلاتر
-  final String? initialCountry;
-  final String? initialDeveloper;
-  final String? initialProject;
-  final String? initialStage;
-  final String? initialChannel;
-  final String? initialSales;
-  final String? initialCommunicationWay;
-  final String? initialCampaign;
-  final String? initialSearchName; // 🟡 لاستقبال نص البحث من الشاشة الرئيسية
-  final DateTime?
-  initialStartDate; // 🟡 لاستقبال التاريخ الأول من الشاشة الرئيسية
+  // تعديل الأنواع لتصبح List<String> بدلاً من String?
+  final List<String>? initialCountry;
+  final List<String>? initialDeveloper;
+  final List<String>? initialProject;
+  final List<String>? initialStage;
+  final List<String>? initialChannel;
+  final List<String>? initialSales;
+  final List<String>? initialCommunicationWay;
+  final List<String>? initialCampaign;
+  final String? initialSearchName;
+  final DateTime? initialStartDate;
   final DateTime? initialEndDate;
-  final DateTime?
-  initialLastStageUpdateStart; // 🟡 لاستقبال التاريخ الأخير من الشاشة الرئيسية
+  final DateTime? initialLastStageUpdateStart;
   final DateTime? initialLastStageUpdateEnd;
 
   const MarketerFilterDialog({
@@ -56,17 +209,17 @@ class MarketerFilterDialog extends StatefulWidget {
 }
 
 class _FilterDialogState extends State<MarketerFilterDialog> {
-  // 🟡 استخدم TextEditingController مع قيمة أولية
   late TextEditingController _nameController;
 
-  String? _selectedCountry; // 🟡 تم تغيير الاسم ليكون أوضح
-  String? _selectedDeveloper;
-  String? _selectedProject;
-  String? _selectedStage;
-  String? _selectedChannel;
-  String? _selectedCommunicationWay;
-  String? _selectedCampaign;
-  String? _selectedSales;
+  // تعديل الأنواع لتصبح List<String>
+  List<String> _selectedCountry = [];
+  List<String> _selectedDeveloper = [];
+  List<String> _selectedProject = [];
+  List<String> _selectedStage = [];
+  List<String> _selectedChannel = [];
+  List<String> _selectedCommunicationWay = [];
+  List<String> _selectedCampaign = [];
+  List<String> _selectedSales = [];
   DateTime? _startDate;
   DateTime? _endDate;
   DateTime? _lastStageUpdateStart;
@@ -75,29 +228,27 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: widget.initialSearchName,
-    ); // 🟡 تهيئة بنص البحث الحالي
-    _selectedCountry = widget.initialCountry;
-    _selectedDeveloper = widget.initialDeveloper;
-    _selectedProject = widget.initialProject;
-    _selectedStage = widget.initialStage;
-    _selectedChannel = widget.initialChannel;
-    _selectedSales = widget.initialSales;
-    _selectedCommunicationWay = widget.initialCommunicationWay;
-    _selectedCampaign = widget.initialCampaign;
+    _nameController = TextEditingController(text: widget.initialSearchName);
+
+    // تهيئة القوائم بالقيم الأولية
+    _selectedCountry = widget.initialCountry ?? [];
+    _selectedDeveloper = widget.initialDeveloper ?? [];
+    _selectedProject = widget.initialProject ?? [];
+    _selectedStage = widget.initialStage ?? [];
+    _selectedChannel = widget.initialChannel ?? [];
+    _selectedSales = widget.initialSales ?? [];
+    _selectedCommunicationWay = widget.initialCommunicationWay ?? [];
+    _selectedCampaign = widget.initialCampaign ?? [];
+
     _startDate = widget.initialStartDate;
     _endDate = widget.initialEndDate;
     _lastStageUpdateStart = widget.initialLastStageUpdateStart;
     _lastStageUpdateEnd = widget.initialLastStageUpdateEnd;
-
-    // ❌ احذف هذا الاستدعاء. الـ dialog لا يجلب بيانات Leads
-    // context.read<GetLeadsMarketerCubit>().getLeadsByMarketer();
   }
 
   @override
   void dispose() {
-    _nameController.dispose(); // 🟡 مهم: التخلص من الـ controller
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -181,70 +332,17 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
-                    onPressed:
-                        () => Navigator.pop(
-                          context,
-                          null,
-                        ), // 🟡 إرجاع null عند الإغلاق
+                    onPressed: () => Navigator.pop(context, null),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              // 🟡 الـ CustomTextField ده هيستخدم كـ 'query' للبحث عن الاسم أو الايميل أو الرقم
               CustomTextField(
                 hint: "Search Name, Email, or Phone",
                 controller: _nameController,
               ),
               const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () {
-                  showCountryPicker(
-                    context: context,
-                    showPhoneCode: true,
-                    onSelect: (Country country) {
-                      setState(() {
-                        _selectedCountry = country.name;
-                      });
-                    },
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      hintText: "Select Country",
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        color: Color.fromRGBO(143, 146, 146, 1),
-                        fontWeight: FontWeight.w400,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: Color(0xffE1E1E1)),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 16,
-                      ),
-                      suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
-                    ),
-                    child: Text(
-                      _selectedCountry ?? "Select Country",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? const Color(0xff080719)
-                                : const Color(0xffFFFFFF),
-                        fontFamily: 'Montserrat',
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // 🟡 CustomDropdownField لباقي الفلاتر
+              // ✅ Sales Multi-Select
               BlocBuilder<SalesCubit, SalesState>(
                 builder: (context, state) {
                   if (state is SalesLoaded) {
@@ -256,12 +354,19 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                               role == 'manager';
                         }).toList() ??
                         [];
-                    return CustomDropdownField(
+                    final items =
+                        filteredSales.map((e) {
+                          return SelectItem(
+                            id: e.id.toString(),
+                            name: e.name ?? '',
+                          );
+                        }).toList();
+                    return MultiSelectDropdown(
                       hint: "Choose Sales",
-                      items: filteredSales.map((e) => e.name ?? '').toList(),
-                      value: _selectedSales,
-                      onChanged: (value) {
-                        setState(() => _selectedSales = value);
+                      items: items,
+                      selectedItems: _selectedSales,
+                      onChanged: (values) {
+                        setState(() => _selectedSales = values);
                       },
                     );
                   } else if (state is SalesLoading) {
@@ -269,26 +374,32 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                   } else if (state is SalesError) {
                     return Text("Error: ${state.message}");
                   }
-                  return const SizedBox(); // Default empty widget
+                  return const SizedBox();
                 },
               ),
               const SizedBox(height: 12),
+
+              // ✅ Developer Multi-Select
               BlocBuilder<DevelopersCubit, DevelopersState>(
                 builder: (context, state) {
-                  if (state is DeveloperLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is DeveloperSuccess) {
+                  if (state is DeveloperSuccess) {
                     final items =
-                        state.developersModel.data
-                            .map((dev) => dev.name)
-                            .toList();
-                    return CustomDropdownField(
+                        state.developersModel.data.map((dev) {
+                          return SelectItem(
+                            id: dev.id.toString(),
+                            name: dev.name,
+                          );
+                        }).toList();
+                    return MultiSelectDropdown(
                       hint: "Choose Developer",
                       items: items,
-                      value: _selectedDeveloper,
-                      onChanged:
-                          (val) => setState(() => _selectedDeveloper = val),
+                      selectedItems: _selectedDeveloper,
+                      onChanged: (values) {
+                        setState(() => _selectedDeveloper = values);
+                      },
                     );
+                  } else if (state is DeveloperLoading) {
+                    return const CircularProgressIndicator();
                   } else if (state is DeveloperError) {
                     return Text(
                       "Error: ${state.error}",
@@ -300,22 +411,28 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                 },
               ),
               const SizedBox(height: 12),
+
+              // ✅ Channel Multi-Select
               BlocBuilder<ChannelCubit, ChannelState>(
                 builder: (context, state) {
-                  if (state is ChannelLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is ChannelLoaded) {
+                  if (state is ChannelLoaded) {
                     final items =
-                        state.channelResponse.data
-                            .map((dev) => dev.name)
-                            .toList();
-                    return CustomDropdownField(
+                        state.channelResponse.data.map((dev) {
+                          return SelectItem(
+                            id: dev.id.toString(),
+                            name: dev.name,
+                          );
+                        }).toList();
+                    return MultiSelectDropdown(
                       hint: "Choose channel",
                       items: items,
-                      value: _selectedChannel,
-                      onChanged:
-                          (val) => setState(() => _selectedChannel = val),
+                      selectedItems: _selectedChannel,
+                      onChanged: (values) {
+                        setState(() => _selectedChannel = values);
+                      },
                     );
+                  } else if (state is ChannelLoading) {
+                    return const CircularProgressIndicator();
                   } else if (state is ChannelError) {
                     return Text(
                       "Error: ${state.message}",
@@ -327,22 +444,28 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                 },
               ),
               const SizedBox(height: 12),
+
+              // ✅ Project Multi-Select
               BlocBuilder<ProjectsCubit, ProjectsState>(
                 builder: (context, state) {
-                  if (state is ProjectsLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is ProjectsSuccess) {
+                  if (state is ProjectsSuccess) {
                     final items =
-                        state.projectsModel.data!
-                            .map((project) => project.name)
-                            .toList();
-                    return CustomDropdownField(
+                        state.projectsModel.data!.map((project) {
+                          return SelectItem(
+                            id: project.id.toString(),
+                            name: project.name ?? '',
+                          );
+                        }).toList();
+                    return MultiSelectDropdown(
                       hint: "Choose Project",
                       items: items,
-                      value: _selectedProject,
-                      onChanged:
-                          (val) => setState(() => _selectedProject = val),
+                      selectedItems: _selectedProject,
+                      onChanged: (values) {
+                        setState(() => _selectedProject = values);
+                      },
                     );
+                  } else if (state is ProjectsLoading) {
+                    return const CircularProgressIndicator();
                   } else if (state is ProjectsError) {
                     return Text(
                       "Error: ${state.error}",
@@ -354,22 +477,28 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                 },
               ),
               const SizedBox(height: 12),
+
+              // ✅ Campaign Multi-Select
               BlocBuilder<GetCampaignsCubit, GetCampaignsState>(
                 builder: (context, state) {
-                  if (state is GetCampaignsLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is GetCampaignsSuccess) {
+                  if (state is GetCampaignsSuccess) {
                     final items =
-                        state.campaigns.data!
-                            .map((campaign) => campaign.campainName)
-                            .toList();
-                    return CustomDropdownField(
+                        state.campaigns.data!.map((campaign) {
+                          return SelectItem(
+                            id: campaign.id.toString(),
+                            name: campaign.campainName ?? '',
+                          );
+                        }).toList();
+                    return MultiSelectDropdown(
                       hint: "Choose Campaign",
                       items: items,
-                      value: _selectedCampaign,
-                      onChanged:
-                          (val) => setState(() => _selectedCampaign = val),
+                      selectedItems: _selectedCampaign,
+                      onChanged: (values) {
+                        setState(() => _selectedCampaign = values);
+                      },
                     );
+                  } else if (state is GetCampaignsLoading) {
+                    return const CircularProgressIndicator();
                   } else if (state is GetCampaignsFailure) {
                     return Text(
                       "Error: ${state.message}",
@@ -381,23 +510,28 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                 },
               ),
               const SizedBox(height: 12),
+
+              // ✅ Communication Way Multi-Select
               BlocBuilder<GetCommunicationWaysCubit, GetCommunicationWaysState>(
                 builder: (context, state) {
-                  if (state is GetCommunicationWaysLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is GetCommunicationWaysLoaded) {
+                  if (state is GetCommunicationWaysLoaded) {
                     final items =
-                        state.response.data!
-                            .map((communicationway) => communicationway.name)
-                            .toList();
-                    return CustomDropdownField(
+                        state.response.data!.map((communicationway) {
+                          return SelectItem(
+                            id: communicationway.id.toString(),
+                            name: communicationway.name ?? '',
+                          );
+                        }).toList();
+                    return MultiSelectDropdown(
                       hint: "Choose communication way",
                       items: items,
-                      value: _selectedCommunicationWay,
-                      onChanged:
-                          (val) =>
-                              setState(() => _selectedCommunicationWay = val),
+                      selectedItems: _selectedCommunicationWay,
+                      onChanged: (values) {
+                        setState(() => _selectedCommunicationWay = values);
+                      },
                     );
+                  } else if (state is GetCommunicationWaysLoading) {
+                    return const CircularProgressIndicator();
                   } else if (state is GetCommunicationWaysError) {
                     return Text(
                       "Error: ${state.message}",
@@ -409,23 +543,30 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                 },
               ),
               const SizedBox(height: 12),
+
+              // ✅ Stage Multi-Select
               BlocBuilder<StagesCubit, StagesState>(
                 builder: (context, state) {
-                  if (state is StagesLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is StagesLoaded) {
+                  if (state is StagesLoaded) {
                     final items =
-                        state.stages.map((stage) => stage.name).toList();
-                    return CustomDropdownField(
+                        state.stages.map((stage) {
+                          return SelectItem(
+                            id: stage.id.toString(),
+                            name: stage.name ?? '',
+                          );
+                        }).toList();
+                    return MultiSelectDropdown(
                       hint: "Choose Stage",
                       items: items,
-                      value: _selectedStage,
-                      onChanged: (value) {
+                      selectedItems: _selectedStage,
+                      onChanged: (values) {
                         setState(() {
-                          _selectedStage = value;
+                          _selectedStage = values;
                         });
                       },
                     );
+                  } else if (state is StagesLoading) {
+                    return const CircularProgressIndicator();
                   } else if (state is StagesError) {
                     return Text(
                       "Error: ${state.message}",
@@ -479,30 +620,30 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                       onPressed: () {
                         setState(() {
                           _nameController.clear();
-                          _selectedCountry = null;
-                          _selectedDeveloper = null;
-                          _selectedProject = null;
-                          _selectedStage = null;
-                          _selectedChannel = null;
-                          _selectedSales = null;
-                          _selectedCommunicationWay = null;
-                          _selectedCampaign = null;
+                          _selectedCountry = [];
+                          _selectedDeveloper = [];
+                          _selectedProject = [];
+                          _selectedStage = [];
+                          _selectedChannel = [];
+                          _selectedSales = [];
+                          _selectedCommunicationWay = [];
+                          _selectedCampaign = [];
                           _startDate = null;
                           _endDate = null;
                           _lastStageUpdateStart = null;
                           _lastStageUpdateEnd = null;
                         });
-                        // Return all filters as null
+                        // Return all filters as null or empty lists
                         Navigator.pop(context, {
                           'name': null,
-                          'country': null,
-                          'developer': null,
-                          'project': null,
-                          'stage': null,
-                          'channel': null,
-                          'sales': null,
-                          'communicationWay': null,
-                          'campaign': null,
+                          'country': [],
+                          'developer': [],
+                          'project': [],
+                          'stage': [],
+                          'channel': [],
+                          'sales': [],
+                          'communicationWay': [],
+                          'campaign': [],
                           'startDate': null,
                           'endDate': null,
                           'lastStageUpdateStart': null,
@@ -527,7 +668,7 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                           return (start == null && end == null) ||
                               (start != null && end != null);
                         }
-                        // ✅ دالة إظهار التنبيه
+
                         Future<void> showValidationDialog(
                           String message,
                         ) async {
@@ -547,7 +688,7 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                                 ),
                           );
                         }
-                        // ✅ التحقق من التواريخ
+
                         if (!isValidDateRange(_startDate, _endDate)) {
                           showValidationDialog(
                             "Please select both start and end date for creation date.",
@@ -563,7 +704,8 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                           );
                           return;
                         }
-                        // 🟡 عند الـ Apply، نرجع كل قيم الفلاتر المختارة
+
+                        // Return all filters with Lists
                         Navigator.pop(context, {
                           'name':
                               _nameController.text.trim().isEmpty
@@ -582,8 +724,6 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                           'lastStageUpdateStart': _lastStageUpdateStart,
                           'lastStageUpdateEnd': _lastStageUpdateEnd,
                         });
-                        // ❌ لا تستدعي filterLeadsMarketer هنا. الشاشة الرئيسية هي اللي هتستدعيها.
-                        // context.read<GetLeadsMarketerCubit>().filterLeadsMarketer(...)
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor:

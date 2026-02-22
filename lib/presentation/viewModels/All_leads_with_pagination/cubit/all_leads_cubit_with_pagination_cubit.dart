@@ -12,7 +12,8 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
   /// 🗑️ Trash leads
   final List<LeadDataWithPagination> trashLeads = [];
 
-  AllLeadsCubitWithPagination(this.apiService) : super(AllLeadsInitial());
+  AllLeadsCubitWithPagination(this.apiService)
+      : super(AllLeadsInitial());
 
   /// =======================
   /// ✅ Active Leads
@@ -21,52 +22,58 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
     int page = 1,
     int limit = 10,
     String? search,
-    String? salesId,
-    String? developerId,
-    String? projectId,
-    String? channelId,
-    String? campaignId,
-    String? communicationWayId,
-    String? stageId,
+    List<String>? salesIds,
+    List<String>? developerIds,
+    List<String>? projectIds,
+    List<String>? channelIds,
+    List<String>? campaignIds,
+    List<String>? communicationWayIds,
+    List<String>? stageIds,
+    List<String>? addedByIds,
+    List<String>? assignedFromIds,
+    List<String>? assignedToIds,
+
     DateTime? stageDateFrom,
     DateTime? stageDateTo,
-    String? addedById,
-    String? assignedFromId,
-    String? assignedToId,
     DateTime? creationDateFrom,
     DateTime? creationDateTo,
     DateTime? lastStageUpdateFrom,
     DateTime? lastStageUpdateTo,
     DateTime? lastCommentDateFrom,
     DateTime? lastCommentDateTo,
+
     bool? duplicates,
     bool? ignoreDuplicate,
     bool? transferefromdata,
     bool? data,
   }) async {
-    /// ✅ لو أول صفحة + الفلاتر اتغيرت → reset حقيقي
 
+    /// ✅ لو أول صفحة → reset حقيقي
     if (page == 1) {
       leads.clear();
       emit(AllLeadsLoading());
     }
+
     try {
       final response = await apiService.fetchLeads(
         page: page,
         limit: limit,
         search: search,
-        salesId: salesId,
-        developerId: developerId,
-        projectId: projectId,
-        channelId: channelId,
-        campaignId: campaignId,
-        communicationWayId: communicationWayId,
-        stageId: stageId,
+
+        /// ✅ مرر الليستات زي ما هي
+        salesIds: salesIds,
+        developerIds: developerIds,
+        projectIds: projectIds,
+        channelIds: channelIds,
+        campaignIds: campaignIds,
+        communicationWayIds: communicationWayIds,
+        stageIds: stageIds,
+        addedByIds: addedByIds,
+        assignedFromIds: assignedFromIds,
+        assignedToIds: assignedToIds,
+
         stageDateFrom: stageDateFrom,
         stageDateTo: stageDateTo,
-        addedById: addedById,
-        assignedFromId: assignedFromId,
-        assignedToId: assignedToId,
         creationDateFrom: creationDateFrom,
         creationDateTo: creationDateTo,
         lastStageUpdateFrom: lastStageUpdateFrom,
@@ -81,9 +88,10 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
 
       if (response != null) {
         final newData = response.data ?? [];
+
+        /// ⭐ pagination accumulation
         leads.addAll(newData);
 
-        /// ⭐ pagination
         final bool hasMore = newData.length == limit;
 
         emit(AllLeadsLoaded(response, hasMore));

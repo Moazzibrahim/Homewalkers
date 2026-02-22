@@ -2,6 +2,7 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, unused_field, use_super_parameters, unnecessary_null_comparison
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -173,15 +174,18 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   int selectedTab = 0; // 0: Manage Leads, 1: Leads Trash
   String _searchQuery = '';
   late TextEditingController _nameSearchController;
+
+  // ✅ تعديل المتغيرات لتصبح Lists
   String? _selectedCountryFilter;
   String? _selectedStageNameFilter;
-  String? _selectedDeveloperFilter;
-  String? _selectedProjectFilter;
-  String? _selectedStageFilter;
-  String? _selectedChannelFilter;
-  String? _selectedSalesFilter;
-  String? _selectedCommunicationWayFilter;
-  String? _selectedCampaignFilter;
+  List<String> _selectedDeveloperFilter = []; // 👈 تغيير
+  List<String> _selectedProjectFilter = []; // 👈 تغيير
+  List<String> _selectedStageFilter = []; // 👈 تغيير
+  List<String> _selectedChannelFilter = []; // 👈 تغيير
+  List<String> _selectedSalesFilter = []; // 👈 تغيير
+  List<String> _selectedCommunicationWayFilter = []; // 👈 تغيير
+  List<String> _selectedCampaignFilter = []; // 👈 تغيير
+
   String? _addedByFilter;
   String? _assignedFromFilter;
   String? _assignedToFilter;
@@ -194,6 +198,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   String? _oldStageNameFilter;
   DateTime? _oldStageDateStartFilter;
   DateTime? _oldStageDateEndFilter;
+
   late bool _showDuplicatesOnly;
   final bool _isSelectAll = false;
   final Set<String> _selectedLeads = {};
@@ -216,7 +221,12 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     super.initState();
 
     _nameSearchController = TextEditingController();
-    _selectedStageFilter = widget.stageId;
+
+    // ✅ تعديل: تحويل stageId الفردي إلى List
+    if (widget.stageId != null && widget.stageId!.isNotEmpty) {
+      _selectedStageFilter = [widget.stageId!];
+    }
+
     _showDuplicatesOnly = widget.showDuplicatesOnly ?? false;
     log("stage id: $_selectedStageFilter");
     log("stage name: ${widget.stageName}");
@@ -225,15 +235,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     // ✅ إعداد الـ Scroll Listener
     _setupScrollListener();
 
-    // 🔹 استماع لكل state من الكيوبت
-    //  final cubit = context.read<GetAllUsersCubit>();
-    // cubit.stream.listen((state) {
-    //   log("📦 Cubit State changed: ${state.toString()}");
-    // });
     _cubit = context.read<AllLeadsCubitWithPagination>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // _handleInitialFetch();
       _fetchInitial();
     });
   }
@@ -244,29 +248,16 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     _cubit.fetchLeads(
       page: _currentPage,
       limit: 10,
-      stageId: _selectedStageFilter,
+      stageIds:
+          _selectedStageFilter.isNotEmpty
+              ? _selectedStageFilter
+              : null, // 👈 تعديل
       duplicates: _showDuplicatesOnly,
       ignoreDuplicate: _showDuplicatesOnly,
       data: widget.data,
       transferefromdata: widget.transferefromdata,
     );
   }
-
-  // void _handleInitialFetch() {
-  //   if (_didInitialFetch) return;
-  //   _didInitialFetch = true;
-
-  //   final cubit = context.read<GetAllUsersCubit>();
-  //   log("🚀 Initial fetch triggered");
-  //   cubit.fetchAllUsers(
-  //     reset: true,
-  //     stageFilter:
-  //         (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty)
-  //             ? _selectedStageFilter
-  //             : null,
-  //     duplicatesOnly: _showDuplicatesOnly,
-  //   );
-  // }
 
   // ✅ دالة إعداد الـ Scroll Listener
   void _setupScrollListener() {
@@ -278,12 +269,12 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
         if (_searchQuery.isNotEmpty ||
             _selectedCountryFilter != null ||
             _selectedStageNameFilter != null ||
-            _selectedDeveloperFilter != null ||
-            _selectedProjectFilter != null ||
-            _selectedChannelFilter != null ||
-            _selectedSalesFilter != null ||
-            _selectedCommunicationWayFilter != null ||
-            _selectedCampaignFilter != null ||
+            _selectedDeveloperFilter.isNotEmpty || // 👈 تعديل
+            _selectedProjectFilter.isNotEmpty || // 👈 تعديل
+            _selectedChannelFilter.isNotEmpty || // 👈 تعديل
+            _selectedSalesFilter.isNotEmpty || // 👈 تعديل
+            _selectedCommunicationWayFilter.isNotEmpty || // 👈 تعديل
+            _selectedCampaignFilter.isNotEmpty || // 👈 تعديل
             _addedByFilter != null ||
             _assignedFromFilter != null ||
             _assignedToFilter != null ||
@@ -314,16 +305,44 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
           limit: 10,
           ignoreDuplicate: _showDuplicatesOnly,
           search: _searchQuery.isNotEmpty ? _searchQuery : null,
-          stageId: _selectedStageFilter,
-          developerId: _selectedDeveloperFilter,
-          projectId: _selectedProjectFilter,
-          channelId: _selectedChannelFilter,
-          salesId: _selectedSalesFilter,
-          communicationWayId: _selectedCommunicationWayFilter,
-          campaignId: _selectedCampaignFilter,
-          addedById: _addedByFilter,
-          assignedFromId: _assignedFromFilter,
-          assignedToId: _assignedToFilter,
+          stageIds:
+              _selectedStageFilter.isNotEmpty
+                  ? _selectedStageFilter
+                  : null, // 👈 تعديل
+          developerIds:
+              _selectedDeveloperFilter.isNotEmpty
+                  ? _selectedDeveloperFilter
+                  : null, // 👈 تعديل
+          projectIds:
+              _selectedProjectFilter.isNotEmpty
+                  ? _selectedProjectFilter
+                  : null, // 👈 تعديل
+          channelIds:
+              _selectedChannelFilter.isNotEmpty
+                  ? _selectedChannelFilter
+                  : null, // 👈 تعديل
+          salesIds:
+              _selectedSalesFilter.isNotEmpty
+                  ? _selectedSalesFilter
+                  : null, // 👈 تعديل
+          communicationWayIds:
+              _selectedCommunicationWayFilter.isNotEmpty
+                  ? _selectedCommunicationWayFilter
+                  : null, // 👈 تعديل
+          campaignIds:
+              _selectedCampaignFilter.isNotEmpty
+                  ? _selectedCampaignFilter
+                  : null, // 👈 تعديل
+          addedByIds:
+              _addedByFilter != null ? [_addedByFilter!] : null, // 👈 تعديل
+          assignedFromIds:
+              _assignedFromFilter != null
+                  ? [_assignedFromFilter!]
+                  : null, // 👈 تعديل
+          assignedToIds:
+              _assignedToFilter != null
+                  ? [_assignedToFilter!]
+                  : null, // 👈 تعديل
           creationDateFrom: _startDateFilter,
           creationDateTo: _endDateFilter,
           lastStageUpdateFrom: _lastStageUpdateStartFilter,
@@ -346,82 +365,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     super.dispose();
   }
 
-  // void _applyCurrentFilters() {
-  //   final cubit = context.read<GetAllUsersCubit>();
-
-  //   // لو لسه بيحمل أو الداتا فاضية — متعملش فلترة
-  //   if (cubit.state is GetAllUsersLoading ||
-  //       cubit.originalLeadsResponse?.data == null ||
-  //       cubit.originalLeadsResponse!.data!.isEmpty) {
-  //     log("⏳ لسه البيانات مجتش، مش هنعمل فلترة دلوقتي");
-  //     return;
-  //   }
-
-  //   if (selectedTab == 1) return;
-
-  //   // لو مفيش سيرش ولا أي فلتر
-  //   if (_searchQuery.isEmpty &&
-  //       _selectedCountryFilter == null &&
-  //       _selectedDeveloperFilter == null &&
-  //       _selectedProjectFilter == null &&
-  //       _selectedStageNameFilter == null &&
-  //       _selectedChannelFilter == null &&
-  //       _selectedSalesFilter == null &&
-  //       _selectedCommunicationWayFilter == null &&
-  //       _selectedCampaignFilter == null &&
-  //       _addedByFilter == null &&
-  //       _assignedFromFilter == null &&
-  //       _assignedToFilter == null &&
-  //       _startDateFilter == null &&
-  //       _endDateFilter == null &&
-  //       _lastStageUpdateStartFilter == null &&
-  //       _lastStageUpdateEndFilter == null &&
-  //       _oldStageNameFilter == null) {
-  //     _hasMoreData = true; // ✅ مهم عشان يسمح بالتحميل التالي
-  //     _isFetchingMore = false; // ✅ مهم عشان يسمح للـ Scroll Loader بالعمل
-
-  //     // ✅ رجع كل الـ leads من الكيوبت
-  //     cubit.fetchAllUsers(
-  //       reset: true,
-  //       stageFilter:
-  //           (_selectedStageFilter != null && _selectedStageFilter!.isNotEmpty)
-  //               ? _selectedStageFilter
-  //               : null, // ممكن تحافظ على stage لو عايز
-  //       duplicatesOnly: _showDuplicatesOnly,
-  //     );
-  //     return;
-  //   }
-
-  //   // لو فيه سيرش أو فلتر، طبق الفلترة
-  //   cubit.filterLeadsAdmin(
-  //     query: _searchQuery,
-  //     country: _selectedCountryFilter,
-  //     developer: _selectedDeveloperFilter,
-  //     project: _selectedProjectFilter,
-  //     stage: _selectedStageNameFilter,
-  //     channel: _selectedChannelFilter,
-  //     sales: _selectedSalesFilter,
-  //     communicationWay: _selectedCommunicationWayFilter,
-  //     campaign: _selectedCampaignFilter,
-  //     addedBy: _addedByFilter,
-  //     assignedFrom: _assignedFromFilter,
-  //     assignedTo: _assignedToFilter,
-  //     startDate: _startDateFilter,
-  //     endDate: _endDateFilter,
-  //     lastStageUpdateStart: _lastStageUpdateStartFilter,
-  //     lastStageUpdateEnd: _lastStageUpdateEndFilter,
-  //     lastCommentDateStart: _lastCommentDateStartFilter,
-  //     lastCommentDateEnd: _lastCommentDateEndFilter,
-  //     oldStageName: _oldStageNameFilter,
-  //     oldStageDateStart: _oldStageDateStartFilter,
-  //     oldStageDateEnd: _oldStageDateEndFilter,
-  //   );
-  //   setState(() {
-  //     _hasMoreData = false; // وقف اللود مور
-  //     _isFetchingMore = false;
-  //   });
-  // }
-
   void _applyCurrentFilters() {
     _currentPage = 1;
     _hasMoreData = true;
@@ -430,16 +373,41 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       page: _currentPage,
       limit: 10,
       search: _searchQuery.isNotEmpty ? _searchQuery : null,
-      stageId: _selectedStageFilter,
-      developerId: _selectedDeveloperFilter,
-      projectId: _selectedProjectFilter,
-      channelId: _selectedChannelFilter,
-      salesId: _selectedSalesFilter,
-      communicationWayId: _selectedCommunicationWayFilter,
-      campaignId: _selectedCampaignFilter,
-      addedById: _addedByFilter,
-      assignedFromId: _assignedFromFilter,
-      assignedToId: _assignedToFilter,
+      stageIds:
+          _selectedStageFilter.isNotEmpty
+              ? _selectedStageFilter
+              : null, // 👈 تعديل
+      developerIds:
+          _selectedDeveloperFilter.isNotEmpty
+              ? _selectedDeveloperFilter
+              : null, // 👈 تعديل
+      projectIds:
+          _selectedProjectFilter.isNotEmpty
+              ? _selectedProjectFilter
+              : null, // 👈 تعديل
+      channelIds:
+          _selectedChannelFilter.isNotEmpty
+              ? _selectedChannelFilter
+              : null, // 👈 تعديل
+      salesIds:
+          _selectedSalesFilter.isNotEmpty
+              ? _selectedSalesFilter
+              : null, // 👈 تعديل
+      communicationWayIds:
+          _selectedCommunicationWayFilter.isNotEmpty
+              ? _selectedCommunicationWayFilter
+              : null, // 👈 تعديل
+      campaignIds:
+          _selectedCampaignFilter.isNotEmpty
+              ? _selectedCampaignFilter
+              : null, // 👈 تعديل
+      addedByIds: _addedByFilter != null ? [_addedByFilter!] : null, // 👈 تعديل
+      assignedFromIds:
+          _assignedFromFilter != null
+              ? [_assignedFromFilter!]
+              : null, // 👈 تعديل
+      assignedToIds:
+          _assignedToFilter != null ? [_assignedToFilter!] : null, // 👈 تعديل
       creationDateFrom: _startDateFilter,
       creationDateTo: _endDateFilter,
       lastStageUpdateFrom: _lastStageUpdateStartFilter,
@@ -504,6 +472,21 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTabletDevice = () {
+      final data = MediaQuery.of(context);
+      final physicalSize = data.size;
+      final diagonal = math.sqrt(
+        math.pow(physicalSize.width, 2) + math.pow(physicalSize.height, 2),
+      );
+      final inches = diagonal / (data.devicePixelRatio * 160);
+      return inches >= 7.0;
+    }();
+
+    // ✅ عوامل التصغير حسب الجهاز
+    final double tabletScale = isTabletDevice ? 0.85 : 1.0;
+    final double tabletFontScale = isTabletDevice ? 0.9 : 1.0;
+    final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
+    final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
     bool isOutdated = false;
     return Scaffold(
       backgroundColor:
@@ -520,7 +503,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
         },
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: EdgeInsets.symmetric(
+          horizontal: (16 * tabletWidthScale).w,
+          vertical: (10 * tabletHeightScale).h,
+        ),
         child: Column(
           children: [
             Container(
@@ -530,7 +516,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                 //         ? Colors.white
                 //         : Constants.backgroundDarkmode,
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: (16 * tabletWidthScale).w,
+                vertical: (12 * tabletHeightScale).h,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -550,11 +539,12 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                         hintText: 'Search',
                         hintStyle: TextStyle(
                           color: const Color(0xff969696),
-                          fontSize: 12,
+                          fontSize: (12 * tabletFontScale).sp,
                           fontWeight: FontWeight.w500,
                         ),
                         prefixIcon: Icon(
                           Icons.search,
+                          size: (20 * tabletFontScale).sp,
                           color:
                               Theme.of(context).brightness == Brightness.light
                                   ? Constants.maincolor
@@ -566,8 +556,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 Theme.of(context).brightness == Brightness.light
                                     ? Constants.maincolor
                                     : Constants.mainDarkmodecolor,
+                            width: (1.5 * tabletScale).w,
                           ),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(
+                            (8 * tabletScale).r,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(
@@ -575,20 +568,23 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 Theme.of(context).brightness == Brightness.light
                                     ? Constants.maincolor
                                     : Constants.mainDarkmodecolor,
+                            width: (2 * tabletScale).w,
                           ),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(
+                            (8 * tabletScale).r,
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
+                        contentPadding: EdgeInsets.symmetric(
                           vertical: 0,
-                          horizontal: 12,
+                          horizontal: (12 * tabletWidthScale).w,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: (10 * tabletWidthScale).w),
                   Container(
-                    height: 50.h,
-                    width: 50.w,
+                    height: (50 * tabletHeightScale).h,
+                    width: (50 * tabletWidthScale).w,
                     decoration: BoxDecoration(
                       color: const Color(0xFFE8F1F2),
                       border: Border.all(
@@ -596,23 +592,33 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             Theme.of(context).brightness == Brightness.light
                                 ? Constants.maincolor
                                 : Constants.mainDarkmodecolor,
+                        width: (1.5 * tabletScale).w,
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular((8 * tabletScale).r),
                     ),
                     child: IconButton(
                       icon: Icon(
                         Icons.filter_list,
+                        size: (24 * tabletFontScale).sp,
                         color:
                             Theme.of(context).brightness == Brightness.light
                                 ? Constants.maincolor
                                 : Constants.mainDarkmodecolor,
                       ),
+                      padding: EdgeInsets.all((8 * tabletScale).r),
+                      constraints: BoxConstraints(
+                        minWidth: (50 * tabletWidthScale).w,
+                        minHeight: (50 * tabletHeightScale).h,
+                      ),
                       onPressed: () async {
                         if (selectedTab == 1) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text(
                                 "Filtering is not available for the trash.",
+                                style: TextStyle(
+                                  fontSize: (14 * tabletFontScale).sp,
+                                ),
                               ),
                             ),
                           );
@@ -668,16 +674,28 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 ),
                               ],
                               child: FilterDialog(
-                                initialCountry: _selectedCountryFilter,
-                                initialDeveloper: _selectedDeveloperFilter,
-                                initialProject: _selectedProjectFilter,
-                                initialStage: widget.stageId,
-                                initialChannel: _selectedChannelFilter,
-                                initialSales: _selectedSalesFilter,
-                                initialCommunicationWay:
-                                    _selectedCommunicationWayFilter,
-                                initialCampaign: _selectedCampaignFilter,
-                                initialSearchName: _nameSearchController.text,
+                                // ✅ تمرير null أو قوائم فارغة لفتح الـ Dialog بدون تحديدات سابقة
+                                initialDeveloperIds: null, // أو [] إذا كنت تفضل
+                                initialProjectIds: null,
+                                initialStageIds: null,
+                                initialChannelIds: null,
+                                initialSalesIds: null,
+                                initialCommunicationWayIds: null,
+                                initialCampaignIds: null,
+                                initialSearchName:
+                                    null, // أو _nameSearchController.text إذا كنت تريد الاحتفاظ بالبحث
+                                // ✅ إضافة null للقيم الأخرى
+                                initialAddedBy: null,
+                                initialAssignedFrom: null,
+                                initialAssignedTo: null,
+                                initialStartDate: null,
+                                initialEndDate: null,
+                                initialLastStageUpdateStart: null,
+                                initialLastStageUpdateEnd: null,
+                                initialLastCommentDateStart: null,
+                                initialLastCommentDateEnd: null,
+                                initialOldStageStartDate: null,
+                                initialOldStageEndDate: null,
                               ),
                             );
                           },
@@ -687,15 +705,31 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             _searchQuery = filters['name'] ?? _searchQuery;
                             _nameSearchController.text = _searchQuery;
                             _selectedCountryFilter = filters['country'];
-                            _selectedDeveloperFilter = filters['developerId'];
-                            _selectedProjectFilter = filters['projectId'];
-                            _selectedStageFilter = filters['stageId'];
-                            _selectedChannelFilter = filters['channelId'];
-                            _selectedSalesFilter = filters['salesId'];
-                            _selectedCommunicationWayFilter =
-                                filters['communicationWayId'];
-                            _selectedCampaignFilter = filters['campaignId'];
 
+                            // ✅ استقبال القوائم من الفلتر للـ Multi Select
+                            _selectedDeveloperFilter = List<String>.from(
+                              filters['developerIds'] ?? [],
+                            );
+                            _selectedProjectFilter = List<String>.from(
+                              filters['projectIds'] ?? [],
+                            );
+                            _selectedStageFilter = List<String>.from(
+                              filters['stageIds'] ?? [],
+                            );
+                            _selectedChannelFilter = List<String>.from(
+                              filters['channelIds'] ?? [],
+                            );
+                            _selectedSalesFilter = List<String>.from(
+                              filters['salesIds'] ?? [],
+                            );
+                            _selectedCommunicationWayFilter = List<String>.from(
+                              filters['communicationWayIds'] ?? [],
+                            );
+                            _selectedCampaignFilter = List<String>.from(
+                              filters['campaignIds'] ?? [],
+                            );
+
+                            // ✅ استقبال القيم الجديدة للـ Single Select والتواريخ
                             _addedByFilter = filters['addedBy'];
                             _assignedFromFilter = filters['assignedFrom'];
                             _assignedToFilter = filters['assignedTo'];
@@ -709,7 +743,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 filters['lastCommentDateStart'];
                             _lastCommentDateEndFilter =
                                 filters['lastCommentDateEnd'];
-                            // ✅✅ أضف هذا الجزء هنا لحل المشكلة ✅✅
                             _oldStageNameFilter = filters['oldStageName'];
                             _oldStageDateStartFilter =
                                 filters['oldStageDateStart'];
@@ -725,29 +758,31 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
             ),
             if (selectedTab == 0 && _selectedLeads.isNotEmpty)
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                padding: EdgeInsets.symmetric(
+                  horizontal: (16 * tabletWidthScale).w,
+                  vertical: (8 * tabletHeightScale).h,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // ✅ شيلنا الـ Checkbox بالكامل
-                    const SizedBox(), // مكان فاضي عشان المسافات تبقى مظبوطة
+                    // ✅ مكان فاضي عشان المسافات تبقى مظبوطة
+                    SizedBox(width: (0 * tabletWidthScale).w),
 
                     if (_selectedLeads.isNotEmpty)
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: (12 * tabletWidthScale).w,
+                            vertical: (10 * tabletHeightScale).h,
                           ),
                           decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.light
                                     ? Constants.maincolor
                                     : Constants.mainDarkmodecolor,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                              (12 * tabletScale).r,
+                            ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -824,13 +859,14 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 child: _ActionIcon(
                                   icon: Image.asset(
                                     "assets/images/right.png",
-                                    width: 20,
-                                    height: 20,
+                                    width: (20 * tabletFontScale).w,
+                                    height: (20 * tabletFontScale).h,
                                     fit: BoxFit.cover,
                                     color: Constants.maincolor,
                                   ),
                                 ),
                               ),
+
                               // ✏️ Edit Icon
                               InkWell(
                                 onTap: () async {
@@ -839,14 +875,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           .read<AllLeadsCubitWithPagination>()
                                           .leads;
 
-                                  // نجيب ال lead المختار
                                   final selectedLead = leadsList.firstWhere(
                                     (lead) =>
                                         lead.id.toString() ==
                                         _selectedLeads.first,
-                                    orElse:
-                                        () =>
-                                            LeadDataWithPagination(), // اسم الموديل عندك Lead مش LeadData
+                                    orElse: () => LeadDataWithPagination(),
                                   );
                                   print('_selectedLeads: $_selectedLeads');
                                   print('found lead: $selectedLead');
@@ -909,8 +942,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                 selectedLead.email ?? '',
                                             initialPhone:
                                                 selectedLead.phone ?? '',
-                                            // initialNotes:
-                                            //     selectedLead. ?? '',
                                             initialProjectId:
                                                 selectedLead.project?.id
                                                     ?.toString(),
@@ -930,7 +961,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                     ?.toString(),
                                             isCold:
                                                 selectedLead.leedtype == "Cold",
-
                                             onSuccess: () {
                                               setState(() {
                                                 _showCheckboxes = false;
@@ -942,9 +972,12 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                       .read<
                                                         AllLeadsCubitWithPagination
                                                       >();
-                                              //   leadsCubit.resetPagination();
                                               leadsCubit.fetchLeads(
-                                                stageId: widget.stageId,
+                                                stageIds:
+                                                    _selectedStageFilter
+                                                            .isNotEmpty
+                                                        ? _selectedStageFilter
+                                                        : null,
                                                 duplicates: _showDuplicatesOnly,
                                                 ignoreDuplicate:
                                                     _showDuplicatesOnly,
@@ -960,7 +993,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                     context
                                         .read<AllLeadsCubitWithPagination>()
                                         .fetchLeads(
-                                          stageId: widget.stageId,
+                                          stageIds:
+                                              _selectedStageFilter.isNotEmpty
+                                                  ? _selectedStageFilter
+                                                  : null,
                                           duplicates: _showDuplicatesOnly,
                                           ignoreDuplicate: _showDuplicatesOnly,
                                           data: widget.data,
@@ -975,51 +1011,57 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                   icon: Icon(Icons.edit),
                                 ),
                               ),
-                              InkWell(
-                                onTap: () {
-                                  if (_selectedLeads.isEmpty) return;
 
-                                  showDialog(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (_) {
-                                      return BlocProvider(
-                                        create:
-                                            (_) => EditLeadCubit(
-                                              EditLeadApiService(),
-                                            ),
-                                        child: _ChangeLeadToDataDialog(
-                                          leadIds: _selectedLeads.toList(),
-                                          onSuccess: () {
-                                            context
-                                                .read<
-                                                  AllLeadsCubitWithPagination
-                                                >()
-                                                .fetchLeads(
-                                                  stageId: widget.stageId,
-                                                  duplicates:
-                                                      _showDuplicatesOnly,
-                                                  ignoreDuplicate:
-                                                      _showDuplicatesOnly,
-                                                  data: widget.data,
-                                                  transferefromdata:
-                                                      widget.transferefromdata,
-                                                );
+                              if (widget.transferefromdata == true)
+                                InkWell(
+                                  onTap: () {
+                                    if (_selectedLeads.isEmpty) return;
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (_) {
+                                        return BlocProvider(
+                                          create:
+                                              (_) => EditLeadCubit(
+                                                EditLeadApiService(),
+                                              ),
+                                          child: _ChangeLeadToDataDialog(
+                                            leadIds: _selectedLeads.toList(),
+                                            onSuccess: () {
+                                              context
+                                                  .read<
+                                                    AllLeadsCubitWithPagination
+                                                  >()
+                                                  .fetchLeads(
+                                                    stageIds:
+                                                        _selectedStageFilter
+                                                                .isNotEmpty
+                                                            ? _selectedStageFilter
+                                                            : null,
+                                                    duplicates:
+                                                        _showDuplicatesOnly,
+                                                    ignoreDuplicate:
+                                                        _showDuplicatesOnly,
+                                                    data: widget.data,
+                                                    transferefromdata:
+                                                        widget
+                                                            .transferefromdata,
+                                                  );
 
-                                            setState(() {
-                                              _showCheckboxes = false;
-                                              _selectedLeads.clear();
-                                            });
-                                          },
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                                child: const _ActionIcon(
-                                  icon: Icon(Icons.swap_horiz),
+                                              setState(() {
+                                                _showCheckboxes = false;
+                                                _selectedLeads.clear();
+                                              });
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: const _ActionIcon(
+                                    icon: Icon(Icons.swap_horiz),
+                                  ),
                                 ),
-                              ),
 
                               InkWell(
                                 onTap: () async {
@@ -1044,16 +1086,32 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               EditLeadApiService(),
                                             ),
                                         child: AlertDialog(
-                                          title: const Text("Delete Lead"),
-                                          content: const Text(
+                                          title: Text(
+                                            "Delete Lead",
+                                            style: TextStyle(
+                                              fontSize:
+                                                  (18 * tabletFontScale).sp,
+                                            ),
+                                          ),
+                                          content: Text(
                                             "Are you sure you want to delete this lead?",
+                                            style: TextStyle(
+                                              fontSize:
+                                                  (14 * tabletFontScale).sp,
+                                            ),
                                           ),
                                           actions: [
                                             TextButton(
                                               onPressed: () {
                                                 Navigator.pop(context, false);
                                               },
-                                              child: const Text("Cancel"),
+                                              child: Text(
+                                                "Cancel",
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      (14 * tabletFontScale).sp,
+                                                ),
+                                              ),
                                             ),
                                             BlocConsumer<
                                               EditLeadCubit,
@@ -1068,9 +1126,14 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   ScaffoldMessenger.of(
                                                     context,
                                                   ).showSnackBar(
-                                                    const SnackBar(
+                                                    SnackBar(
                                                       content: Text(
                                                         "Failed to delete the lead. Please try again.",
+                                                        style: TextStyle(
+                                                          fontSize:
+                                                              (14 * tabletFontScale)
+                                                                  .sp,
+                                                        ),
                                                       ),
                                                       backgroundColor:
                                                           Colors.red,
@@ -1109,19 +1172,27 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                           },
                                                   child:
                                                       state is EditLeadLoading
-                                                          ? const SizedBox(
-                                                            height: 18,
-                                                            width: 18,
-                                                            child:
-                                                                CircularProgressIndicator(
-                                                                  strokeWidth:
-                                                                      2,
-                                                                ),
+                                                          ? SizedBox(
+                                                            height:
+                                                                (18 * tabletFontScale)
+                                                                    .h,
+                                                            width:
+                                                                (18 * tabletFontScale)
+                                                                    .w,
+                                                            child: CircularProgressIndicator(
+                                                              strokeWidth:
+                                                                  (2 * tabletScale)
+                                                                      .w,
+                                                            ),
                                                           )
-                                                          : const Text(
+                                                          : Text(
                                                             "Delete",
                                                             style: TextStyle(
                                                               color: Colors.red,
+                                                              fontSize:
+                                                                  (14 *
+                                                                          tabletFontScale)
+                                                                      .sp,
                                                             ),
                                                           ),
                                                 );
@@ -1139,9 +1210,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             .read<
                                               AllLeadsCubitWithPagination
                                             >();
-                                    //  cubit.resetPagination();
                                     cubit.fetchLeads(
-                                      stageId: widget.stageId,
+                                      stageIds:
+                                          _selectedStageFilter.isNotEmpty
+                                              ? _selectedStageFilter
+                                              : null,
                                       duplicates: _showDuplicatesOnly,
                                       ignoreDuplicate: _showDuplicatesOnly,
                                       data: widget.data,
@@ -1164,6 +1237,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // قسم التبويبات
                 Row(
                   children: [
                     GestureDetector(
@@ -1173,27 +1247,25 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           _searchQuery = '';
                           _nameSearchController.clear();
                           _selectedCountryFilter = null;
-                          _selectedDeveloperFilter = null;
-                          _selectedProjectFilter = null;
-                          _selectedStageFilter =
-                              widget
-                                  .stageName; // أرجع stage لو كانت جاية من فوق
-                          _selectedChannelFilter = null;
-                          _selectedSalesFilter = null;
-                          _selectedCommunicationWayFilter = null;
-                          _selectedCampaignFilter = null;
+                          _selectedDeveloperFilter = [];
+                          _selectedProjectFilter = [];
+                          _selectedStageFilter = [];
+                          _selectedChannelFilter = [];
+                          _selectedSalesFilter = [];
+                          _selectedCommunicationWayFilter = [];
+                          _selectedCampaignFilter = [];
                         });
 
                         if (widget.stageName != null &&
                             widget.stageName!.isNotEmpty) {
-                          _applyCurrentFilters(); // لو جاية من الـ Widget نفذ فلترة
+                          _applyCurrentFilters();
                         } else {
                           context
                               .read<AllLeadsCubitWithPagination>()
                               .fetchLeads(
                                 data: widget.data,
                                 transferefromdata: widget.transferefromdata,
-                              ); // غير كده هات الكل
+                              );
                         }
                       },
                       child: Column(
@@ -1201,7 +1273,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           Text(
                             'Manage Leads',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: (14 * tabletFontScale).sp,
                               fontWeight: FontWeight.w600,
                               color:
                                   selectedTab == 0
@@ -1209,17 +1281,19 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                       : Colors.grey,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: (4 * tabletHeightScale).h),
                           if (selectedTab == 0)
                             Container(
-                              height: 2,
-                              width: 50,
+                              height: (2 * tabletHeightScale).h,
+                              width: (50 * tabletWidthScale).w,
                               color: Constants.maincolor,
                             ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 20),
+
+                    SizedBox(width: (20 * tabletWidthScale).w),
+
                     GestureDetector(
                       onTap: () {
                         setState(() {
@@ -1236,7 +1310,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           Text(
                             'Leads Trash',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: (14 * tabletFontScale).sp,
                               fontWeight: FontWeight.w600,
                               color:
                                   selectedTab == 1
@@ -1244,11 +1318,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                       : Colors.grey,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: (4 * tabletHeightScale).h),
                           if (selectedTab == 1)
                             Container(
-                              height: 2,
-                              width: 50,
+                              height: (2 * tabletHeightScale).h,
+                              width: (50 * tabletWidthScale).w,
                               color: Constants.maincolor,
                             ),
                         ],
@@ -1256,7 +1330,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(width: 2),
+
+                // المسافة الفاصلة
+                SizedBox(width: (2 * tabletWidthScale).w),
+
+                // زر Create Lead
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
@@ -1264,11 +1342,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             ? Constants.maincolor
                             : Constants.mainDarkmodecolor,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular((8 * tabletScale).r),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 10,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: (10 * tabletWidthScale).w,
+                      vertical: (10 * tabletHeightScale).h,
                     ),
                   ),
                   onPressed: () {
@@ -1279,11 +1357,15 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.add, size: 11, color: Colors.white),
+                  icon: Icon(
+                    Icons.add,
+                    size: (11 * tabletFontScale).sp,
+                    color: Colors.white,
+                  ),
                   label: Text(
                     'Create Lead',
                     style: TextStyle(
-                      fontSize: 11.sp,
+                      fontSize: (11 * tabletFontScale).sp,
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1381,14 +1463,14 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           _searchQuery = '';
                           _nameSearchController.clear();
                           _selectedCountryFilter = null;
-                          _selectedDeveloperFilter = null;
-                          _selectedProjectFilter = null;
-                          _selectedChannelFilter = null;
-                          _selectedSalesFilter = null;
-                          _selectedCommunicationWayFilter = null;
-                          _selectedCampaignFilter = null;
+                          _selectedDeveloperFilter = [];
+                          _selectedProjectFilter = [];
+                          _selectedChannelFilter = [];
+                          _selectedSalesFilter = [];
+                          _selectedCommunicationWayFilter = [];
+                          _selectedCampaignFilter = [];
                           // ✅ خليك دايمًا ماسك الـ stage اللي دخل بيها المستخدم
-                          _selectedStageFilter = widget.stageId;
+                          _selectedStageFilter = [];
                         });
 
                         if (selectedTab == 0) {
@@ -1398,9 +1480,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
 
                           await cubit
                               .fetchLeads(
-                                stageId:
-                                    (_selectedStageFilter != null &&
-                                            _selectedStageFilter!.isNotEmpty)
+                                stageIds:
+                                    _selectedStageFilter.isNotEmpty
                                         ? _selectedStageFilter
                                         : null,
                                 duplicates: _showDuplicatesOnly,
@@ -1498,8 +1579,15 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                 setState(() {
                                   if (_selectedLeads.contains(lead.id)) {
                                     _selectedLeads.remove(lead.id);
+                                    // ✅ لو فاضية خلي الـ showCheckboxes false
+                                    if (_selectedLeads.isEmpty) {
+                                      _showCheckboxes = false;
+                                    }
                                   } else {
                                     _selectedLeads.add(lead.id!);
+                                    _selectedLeadStagesIds.add(
+                                      lead.stage?.id ?? '',
+                                    );
                                   }
                                 });
                               } else {
@@ -1598,6 +1686,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               lead.lastComment?.firstcomment,
                                           lastcommentNext:
                                               lead.lastComment?.secondcomment,
+                                          linkCampaign:
+                                              lead.campaign?.redirectLink,
                                         ),
                                   ),
                                 ).then((_) {
@@ -1624,24 +1714,27 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   Brightness.light
                                               ? Colors.white
                                               : Colors.grey[900]),
-                                  margin: const EdgeInsets.symmetric(
-                                    // horizontal: 16,
-                                    vertical: 8,
+                                  margin: EdgeInsets.symmetric(
+                                    vertical: (8 * tabletHeightScale).h,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(
+                                      (12 * tabletScale).r,
+                                    ),
                                   ),
                                   child: Padding(
-                                    padding: const EdgeInsets.only(top: 16.0),
+                                    padding: EdgeInsets.only(
+                                      top: (16 * tabletHeightScale).h,
+                                    ),
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         // ---------- Row 1: Name and Status Icon ----------
                                         Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 8,
-                                            right: 8,
+                                          padding: EdgeInsets.only(
+                                            left: (8 * tabletWidthScale).w,
+                                            right: (8 * tabletWidthScale).w,
                                           ),
                                           child: Row(
                                             mainAxisAlignment:
@@ -1704,6 +1797,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                       lead.stage?.id ??
                                                                           '',
                                                                     );
+                                                                _showCheckboxes =
+                                                                    false;
                                                               }
                                                             });
                                                           },
@@ -1741,12 +1836,16 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                         .green;
                                                           }
                                                           return Container(
-                                                            padding:
-                                                                EdgeInsets.symmetric(
-                                                                  horizontal:
-                                                                      8.w,
-                                                                  vertical: 4.h,
-                                                                ),
+                                                            padding: EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  (8 *
+                                                                          tabletWidthScale)
+                                                                      .w,
+                                                              vertical:
+                                                                  (4 *
+                                                                          tabletHeightScale)
+                                                                      .h,
+                                                            ),
                                                             decoration: BoxDecoration(
                                                               color: stageColor
                                                                   .withOpacity(
@@ -1755,10 +1854,15 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                               border: Border.all(
                                                                 color:
                                                                     stageColor,
+                                                                width:
+                                                                    (1 * tabletScale)
+                                                                        .w,
                                                               ),
                                                               borderRadius:
                                                                   BorderRadius.circular(
-                                                                    20.r,
+                                                                    (20 *
+                                                                            tabletScale)
+                                                                        .r,
                                                                   ),
                                                             ),
                                                             child: Row(
@@ -1770,10 +1874,16 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                   Icons.circle,
                                                                   color:
                                                                       stageColor,
-                                                                  size: 10,
+                                                                  size:
+                                                                      (10 *
+                                                                              tabletFontScale)
+                                                                          .sp,
                                                                 ),
                                                                 SizedBox(
-                                                                  width: 6.w,
+                                                                  width:
+                                                                      (6 *
+                                                                              tabletWidthScale)
+                                                                          .w,
                                                                 ),
                                                                 Text(
                                                                   lead
@@ -1782,7 +1892,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                       "No Stage",
                                                                   style: TextStyle(
                                                                     fontSize:
-                                                                        13.sp,
+                                                                        (13 *
+                                                                                tabletFontScale)
+                                                                            .sp,
                                                                     fontWeight:
                                                                         FontWeight
                                                                             .bold,
@@ -1797,11 +1909,17 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                       ),
                                                     ],
                                                   ),
-                                                  SizedBox(height: 8.h),
+                                                  SizedBox(
+                                                    height:
+                                                        (8 * tabletHeightScale)
+                                                            .h,
+                                                  ),
                                                   Text(
                                                     "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!.toString()) : "N/A"}",
                                                     style: TextStyle(
-                                                      fontSize: 12.sp,
+                                                      fontSize:
+                                                          (12 * tabletFontScale)
+                                                              .sp,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                       color:
@@ -1821,7 +1939,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                 child: Text(
                                                   lead.project?.name ?? '',
                                                   style: TextStyle(
-                                                    fontSize: 12.sp,
+                                                    fontSize:
+                                                        (12 * tabletFontScale)
+                                                            .sp,
                                                     fontWeight: FontWeight.w500,
                                                   ),
                                                   textAlign: TextAlign.right,
@@ -1833,16 +1953,24 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             ],
                                           ),
                                         ),
-                                        SizedBox(height: 8.h),
-                                        const Divider(
-                                          height: 3,
-                                          thickness: 1.5,
+
+                                        SizedBox(
+                                          height: (8 * tabletHeightScale).h,
                                         ),
-                                        SizedBox(height: 20.h),
+
+                                        Divider(
+                                          height: (3 * tabletHeightScale).h,
+                                          thickness: (1.5 * tabletScale).w,
+                                        ),
+
+                                        SizedBox(
+                                          height: (20 * tabletHeightScale).h,
+                                        ),
+
                                         Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 8,
-                                            right: 8,
+                                          padding: EdgeInsets.only(
+                                            left: (8 * tabletWidthScale).w,
+                                            right: (8 * tabletWidthScale).w,
                                           ),
                                           child: Row(
                                             mainAxisAlignment:
@@ -1852,7 +1980,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                 child: Text(
                                                   lead.name ?? "No Name",
                                                   style: TextStyle(
-                                                    fontSize: 19.sp,
+                                                    fontSize:
+                                                        (19 * tabletFontScale)
+                                                            .sp,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                   maxLines: 1,
@@ -1863,7 +1993,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             ],
                                           ),
                                         ),
-                                        SizedBox(height: 12.h),
+
+                                        SizedBox(
+                                          height: (12 * tabletHeightScale).h,
+                                        ),
+
                                         // ---------- Row 2: phone | Person ----------
                                         InkWell(
                                           onTap: () {
@@ -1875,9 +2009,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             makePhoneCall(formattedPhone);
                                           },
                                           child: Padding(
-                                            padding: const EdgeInsets.only(
-                                              left: 8,
-                                              right: 8,
+                                            padding: EdgeInsets.only(
+                                              left: (8 * tabletWidthScale).w,
+                                              right: (8 * tabletWidthScale).w,
                                             ),
                                             child: Row(
                                               children: [
@@ -1891,14 +2025,20 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                           ? Colors.grey
                                                           : Constants
                                                               .mainDarkmodecolor,
-                                                  size: 20,
+                                                  size:
+                                                      (20 * tabletFontScale).sp,
                                                 ),
-                                                const SizedBox(width: 8),
+                                                SizedBox(
+                                                  width:
+                                                      (8 * tabletWidthScale).w,
+                                                ),
                                                 Expanded(
                                                   child: Text(
                                                     lead.phone ?? 'N/A',
                                                     style: TextStyle(
-                                                      fontSize: 13.sp,
+                                                      fontSize:
+                                                          (13 * tabletFontScale)
+                                                              .sp,
                                                       fontWeight:
                                                           FontWeight.w600,
                                                     ),
@@ -1909,14 +2049,17 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           ),
                                         ),
 
-                                        SizedBox(height: 35.h),
+                                        SizedBox(
+                                          height: (35 * tabletHeightScale).h,
+                                        ),
+
                                         // ---------- Row 3: Sales Name, CD Date, and Action Icons ----------
                                         Column(
                                           children: [
                                             Padding(
-                                              padding: const EdgeInsets.only(
-                                                left: 8,
-                                                right: 8,
+                                              padding: EdgeInsets.only(
+                                                left: (8 * tabletWidthScale).w,
+                                                right: (8 * tabletWidthScale).w,
                                               ),
                                               child: Row(
                                                 mainAxisAlignment:
@@ -1935,9 +2078,15 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                             ? Colors.grey
                                                             : Constants
                                                                 .mainDarkmodecolor,
-                                                    size: 20,
+                                                    size:
+                                                        (20 * tabletFontScale)
+                                                            .sp,
                                                   ),
-                                                  SizedBox(width: 8.w),
+                                                  SizedBox(
+                                                    width:
+                                                        (8 * tabletWidthScale)
+                                                            .w,
+                                                  ),
                                                   // 👈 الجزء الشمال (Sales name)
                                                   Expanded(
                                                     child: Text(
@@ -1946,7 +2095,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                           : lead.sales?.name ??
                                                               'N/A',
                                                       style: TextStyle(
-                                                        fontSize: 16.sp,
+                                                        fontSize:
+                                                            (16 * tabletFontScale)
+                                                                .sp,
                                                         fontWeight:
                                                             FontWeight.w500,
                                                       ),
@@ -1975,17 +2126,20 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                         },
                                                         borderRadius:
                                                             BorderRadius.circular(
-                                                              30,
+                                                              (30 * tabletScale)
+                                                                  .r,
                                                             ),
                                                         child: Container(
                                                           padding:
-                                                              const EdgeInsets.all(
-                                                                8,
+                                                              EdgeInsets.all(
+                                                                (8 * tabletScale)
+                                                                    .r,
                                                               ),
-                                                          margin:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 4,
-                                                              ),
+                                                          margin: EdgeInsets.symmetric(
+                                                            horizontal:
+                                                                (4 * tabletWidthScale)
+                                                                    .w,
+                                                          ),
                                                           decoration:
                                                               BoxDecoration(
                                                                 color:
@@ -1995,10 +2149,12 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                     BoxShape
                                                                         .circle,
                                                               ),
-                                                          child: const Icon(
+                                                          child: Icon(
                                                             Icons.phone,
                                                             color: Colors.white,
-                                                            size: 18,
+                                                            size:
+                                                                (18 * tabletFontScale)
+                                                                    .sp,
                                                           ),
                                                         ),
                                                       ),
@@ -2050,17 +2206,20 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                         },
                                                         borderRadius:
                                                             BorderRadius.circular(
-                                                              30,
+                                                              (30 * tabletScale)
+                                                                  .r,
                                                             ),
                                                         child: Container(
                                                           padding:
-                                                              const EdgeInsets.all(
-                                                                8,
+                                                              EdgeInsets.all(
+                                                                (8 * tabletScale)
+                                                                    .r,
                                                               ),
-                                                          margin:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 4,
-                                                              ),
+                                                          margin: EdgeInsets.symmetric(
+                                                            horizontal:
+                                                                (4 * tabletWidthScale)
+                                                                    .w,
+                                                          ),
                                                           decoration:
                                                               BoxDecoration(
                                                                 color:
@@ -2070,11 +2229,13 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                     BoxShape
                                                                         .circle,
                                                               ),
-                                                          child: const FaIcon(
+                                                          child: FaIcon(
                                                             FontAwesomeIcons
                                                                 .whatsapp,
                                                             color: Colors.white,
-                                                            size: 18,
+                                                            size:
+                                                                (18 * tabletFontScale)
+                                                                    .sp,
                                                           ),
                                                         ),
                                                       ),
@@ -2102,13 +2263,17 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                 shape: RoundedRectangleBorder(
                                                                   borderRadius:
                                                                       BorderRadius.circular(
-                                                                        12,
+                                                                        (12 *
+                                                                                tabletScale)
+                                                                            .r,
                                                                       ),
                                                                 ),
                                                                 child: Padding(
                                                                   padding:
-                                                                      const EdgeInsets.all(
-                                                                        16.0,
+                                                                      EdgeInsets.all(
+                                                                        (16 *
+                                                                                tabletScale)
+                                                                            .r,
                                                                       ),
                                                                   child: SingleChildScrollView(
                                                                     child: Column(
@@ -2116,40 +2281,66 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                           CrossAxisAlignment
                                                                               .start,
                                                                       children: [
-                                                                        const Text(
+                                                                        Text(
                                                                           "Last Comment",
                                                                           style: TextStyle(
                                                                             fontWeight:
                                                                                 FontWeight.w600,
+                                                                            fontSize:
+                                                                                (16 *
+                                                                                        tabletFontScale)
+                                                                                    .sp,
                                                                           ),
                                                                         ),
-                                                                        const SizedBox(
+                                                                        SizedBox(
                                                                           height:
-                                                                              5,
+                                                                              (5 *
+                                                                                      tabletHeightScale)
+                                                                                  .h,
                                                                         ),
                                                                         Text(
                                                                           firstCommentText,
-                                                                        ), // كل النص يظهر بالكامل
-                                                                        const SizedBox(
-                                                                          height:
-                                                                              10,
+                                                                          style: TextStyle(
+                                                                            fontSize:
+                                                                                (14 *
+                                                                                        tabletFontScale)
+                                                                                    .sp,
+                                                                          ),
                                                                         ),
-                                                                        const Text(
+                                                                        SizedBox(
+                                                                          height:
+                                                                              (10 *
+                                                                                      tabletHeightScale)
+                                                                                  .h,
+                                                                        ),
+                                                                        Text(
                                                                           "Action (Plan)",
                                                                           style: TextStyle(
                                                                             color:
                                                                                 Constants.maincolor,
                                                                             fontWeight:
                                                                                 FontWeight.w600,
+                                                                            fontSize:
+                                                                                (14 *
+                                                                                        tabletFontScale)
+                                                                                    .sp,
                                                                           ),
                                                                         ),
-                                                                        const SizedBox(
+                                                                        SizedBox(
                                                                           height:
-                                                                              5,
+                                                                              (5 *
+                                                                                      tabletHeightScale)
+                                                                                  .h,
                                                                         ),
                                                                         Text(
                                                                           secondCommentText,
-                                                                        ), // كل النص يظهر بالكامل
+                                                                          style: TextStyle(
+                                                                            fontSize:
+                                                                                (14 *
+                                                                                        tabletFontScale)
+                                                                                    .sp,
+                                                                          ),
+                                                                        ),
                                                                       ],
                                                                     ),
                                                                   ),
@@ -2160,17 +2351,20 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                         },
                                                         borderRadius:
                                                             BorderRadius.circular(
-                                                              30,
+                                                              (30 * tabletScale)
+                                                                  .r,
                                                             ),
                                                         child: Container(
                                                           padding:
-                                                              const EdgeInsets.all(
-                                                                8,
+                                                              EdgeInsets.all(
+                                                                (8 * tabletScale)
+                                                                    .r,
                                                               ),
-                                                          margin:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 4,
-                                                              ),
+                                                          margin: EdgeInsets.symmetric(
+                                                            horizontal:
+                                                                (4 * tabletWidthScale)
+                                                                    .w,
+                                                          ),
                                                           decoration:
                                                               BoxDecoration(
                                                                 color:
@@ -2180,11 +2374,13 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                     BoxShape
                                                                         .circle,
                                                               ),
-                                                          child: const Icon(
+                                                          child: Icon(
                                                             Icons
                                                                 .chat_bubble_outline,
                                                             color: Colors.white,
-                                                            size: 18,
+                                                            size:
+                                                                (18 * tabletFontScale)
+                                                                    .sp,
                                                           ),
                                                         ),
                                                       ),
@@ -2193,12 +2389,16 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                 ],
                                               ),
                                             ),
-                                            SizedBox(height: 4.h),
+
+                                            SizedBox(
+                                              height: (4 * tabletHeightScale).h,
+                                            ),
+
                                             // ✅ CD Date (السطر اللي تحت)
                                             Padding(
-                                              padding: const EdgeInsets.only(
-                                                left: 8,
-                                                right: 8,
+                                              padding: EdgeInsets.only(
+                                                left: (8 * tabletWidthScale).w,
+                                                right: (8 * tabletWidthScale).w,
                                               ),
                                               child: Row(
                                                 mainAxisAlignment:
@@ -2214,13 +2414,21 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                             ? Colors.grey
                                                             : Constants
                                                                 .mainDarkmodecolor,
-                                                    size: 20,
+                                                    size:
+                                                        (20 * tabletFontScale)
+                                                            .sp,
                                                   ),
-                                                  SizedBox(width: 6.w),
+                                                  SizedBox(
+                                                    width:
+                                                        (6 * tabletWidthScale)
+                                                            .w,
+                                                  ),
                                                   Text(
                                                     " ${lead.date != null ? formatDateTimeToDubai(lead.date!.toString()) : "N/A"}",
                                                     style: TextStyle(
-                                                      fontSize: 12.sp,
+                                                      fontSize:
+                                                          (12 * tabletFontScale)
+                                                              .sp,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
@@ -2230,11 +2438,14 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                             ),
                                           ],
                                         ),
-                                        SizedBox(height: 20.h),
+
+                                        SizedBox(
+                                          height: (20 * tabletHeightScale).h,
+                                        ),
+
                                         Container(
                                           width: double.infinity,
-                                          height:
-                                              22.h, // تم تقليل الارتفاع ليظهر البيضاوي بشكل صحيح
+                                          height: (22 * tabletHeightScale).h,
                                           decoration: BoxDecoration(
                                             color:
                                                 (() {
@@ -2243,7 +2454,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                           'Fresh') {
                                                     return Colors
                                                         .green
-                                                        .shade200; // قرب للون اللي في الصورة التانية
+                                                        .shade200;
                                                   } else if (lead.stage?.name ==
                                                       'Fresh') {
                                                     return Colors.grey.shade300;
@@ -2253,11 +2464,12 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   }
                                                 })(),
                                             borderRadius: BorderRadius.circular(
-                                              200.r,
-                                            ), // رقم كبير علشان يكون fully rounded
+                                              (200 * tabletScale).r,
+                                            ),
                                           ),
                                           padding: EdgeInsets.symmetric(
-                                            horizontal: 12.w,
+                                            horizontal:
+                                                (12 * tabletWidthScale).w,
                                           ),
                                           child: Row(
                                             mainAxisAlignment:
@@ -2288,7 +2500,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   return Text(
                                                     statusText,
                                                     style: TextStyle(
-                                                      fontSize: 11.sp,
+                                                      fontSize:
+                                                          (11 * tabletFontScale)
+                                                              .sp,
                                                       fontWeight:
                                                           FontWeight.w700,
                                                       color: textColor,

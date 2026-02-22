@@ -4,10 +4,15 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:homewalkers_app/data/models/marketer_dashboard_model.dart';
+import 'package:homewalkers_app/data/models/new_marketer_pagination_model.dart';
+import 'package:homewalkers_app/data/models/salesLeadsModelWithPagination.dart';
+import 'package:homewalkers_app/data/models/teamleader_pagination_leads_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GetLeadsService {
+  final String baseUrl = "${Constants.baseUrl}/users/filter-by-email-advanced";
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
@@ -17,6 +22,8 @@ class GetLeadsService {
     int page = 1,
     int limit = 500,
     bool forDashboard = false,
+    bool? data,
+    bool? transferfromdata,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -27,19 +34,34 @@ class GetLeadsService {
         throw Exception("Missing email or token.");
       }
 
-      final url = Uri.parse(
-        '${Constants.baseUrl}/users/filter-by-email?email=$savedEmail&leadisactive=true',
-      );
+      /// ✅ نبني الـ query parameters بدون تغيير الأسماء
+      final queryParams = <String, String>{
+        'email': savedEmail,
+        'leadisactive': 'true',
+      };
 
+      if (data != null) {
+        queryParams['data'] = data.toString();
+      }
+
+      if (transferfromdata != null) {
+        queryParams['transferefromdata'] = transferfromdata.toString();
+        // 👆 نفس الاسم بالظبط زي ما عندك
+      }
+
+      final url = Uri.parse(
+        '${Constants.baseUrl}/users/filter-by-email',
+      ).replace(queryParameters: queryParams);
+      print(" Constructed URL: $url");
       // ⏱️ Start measuring request time
       final stopwatch = Stopwatch()..start();
+      print("Request URL: $url");
 
       final response = await http.get(
         url,
         headers: {'Authorization': 'Bearer $token'},
       );
 
-      // ⏱️ Stop measuring
       stopwatch.stop();
       final seconds = stopwatch.elapsedMilliseconds / 1000;
       print("Request loading time: ${seconds.toStringAsFixed(2)} seconds");
@@ -63,11 +85,12 @@ class GetLeadsService {
           print("Dashboard mode: Returning ${allData.length} items");
           return LeadResponse(count: allData.length, data: allData);
         } else {
-          // Pagination عادي
           final start = (page - 1) * limit;
+
           if (start >= allData.length) {
             return LeadResponse(count: allData.length, data: []);
           }
+
           final end = start + limit;
           final safeEnd = end > allData.length ? allData.length : end;
           final paginatedData = allData.sublist(start, safeEnd);
@@ -87,7 +110,287 @@ class GetLeadsService {
     }
   }
 
-  Future<LeadResponse> getLeadsDataByTeamLeader() async {
+  Future<Salesleadsmodelwithpagination?> fetchSalesLeadsWithPagination({
+    int page = 1,
+    int limit = 10,
+    String? search, // الاسم، الايميل، واتساب، تليفون
+    String? salesId,
+    String? developerId,
+    String? projectId,
+    String? channelId,
+    String? stageId,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    bool? data,
+    bool? transferefromdata,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final savedEmail = prefs.getString('email') ?? '';
+
+      if (token.isEmpty) {
+        print("Token not found!");
+        return null;
+      }
+
+      // تجهيز query parameters
+      // تجهيز query parameters
+      Map<String, String> queryParams = {
+        "page": page.toString(),
+        "leadisactive": "true",
+        "email": savedEmail,
+        "limit": limit.toString(), // ✅ دائماً أضف الـ limit
+      };
+
+      // لو مفيش فلترة خالص، خلي limit موجود عشان pagination
+      bool hasFilter =
+          search != null ||
+          salesId != null ||
+          developerId != null ||
+          projectId != null ||
+          channelId != null ||
+          stageId != null ||
+          creationDateFrom != null ||
+          creationDateTo != null ||
+          stageDateFrom != null ||
+          stageDateTo != null;
+
+      if (search != null && search.isNotEmpty) {
+        queryParams["keyword"] = search;
+      }
+
+      if (salesId != null) queryParams["sales"] = salesId;
+      if (developerId != null) queryParams["developer"] = developerId;
+      if (projectId != null) queryParams["project"] = projectId;
+      if (channelId != null) queryParams["channel"] = channelId;
+      if (stageId != null) queryParams["stage"] = stageId;
+      if (data != null) {
+        queryParams["data"] = data.toString();
+      }
+      if (transferefromdata != null) {
+        queryParams["transferefromdata"] = transferefromdata.toString();
+      }
+
+      // تحويل التواريخ لبداية اليوم ونهاية اليوم
+      DateTime startOfDay(DateTime date) =>
+          DateTime.utc(date.year, date.month, date.day, 0, 0, 0);
+
+      DateTime endOfDay(DateTime date) =>
+          DateTime.utc(date.year, date.month, date.day, 23, 59, 59);
+
+      if (creationDateFrom != null) {
+        queryParams["createdFrom"] =
+            startOfDay(creationDateFrom).toIso8601String();
+      }
+      if (creationDateTo != null) {
+        queryParams["createdTo"] = endOfDay(creationDateTo).toIso8601String();
+      }
+      if (stageDateFrom != null) {
+        queryParams["stageDateFrom"] =
+            startOfDay(stageDateFrom).toIso8601String();
+      }
+      if (stageDateTo != null) {
+        queryParams["stageDateTo"] = endOfDay(stageDateTo).toIso8601String();
+      }
+
+      // بناء URL مع query parameters
+      final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
+      print("Request URL: $uri");
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        return Salesleadsmodelwithpagination.fromJson(jsonData);
+      } else {
+        print("Failed to load leads: ${response.statusCode}");
+        print(response.body);
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching leads: $e");
+      return null;
+    }
+  }
+
+  Future<TeamleaderPaginationLeadsModel?> fetchTeamLeaderLeadsWithPagination({
+    int page = 1,
+    int limit = 1000,
+    String? search, // الاسم، الايميل، واتساب، تليفون
+    String? salesId,
+    String? developerId,
+    String? projectId,
+    String? channelId,
+    String? stageId,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    bool? data,
+    bool? transferefromdata,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final savedEmail = prefs.getString('email') ?? '';
+
+      if (token.isEmpty) {
+        print("Token not found!");
+        return null;
+      }
+
+      // تجهيز query parameters
+      // تجهيز query parameters
+      Map<String, String> queryParams = {
+        "page": page.toString(),
+        "leadisactive": "true",
+        "email": savedEmail,
+        "limit": limit.toString(), // ✅ دائماً أضف الـ limit
+      };
+
+      // لو مفيش فلترة خالص، خلي limit موجود عشان pagination
+      bool hasFilter =
+          search != null ||
+          salesId != null ||
+          developerId != null ||
+          projectId != null ||
+          channelId != null ||
+          stageId != null ||
+          creationDateFrom != null ||
+          creationDateTo != null ||
+          stageDateFrom != null ||
+          stageDateTo != null;
+
+      if (search != null && search.isNotEmpty) {
+        queryParams["keyword"] = search;
+      }
+
+      if (salesId != null) queryParams["sales"] = salesId;
+      if (developerId != null) queryParams["developer"] = developerId;
+      if (projectId != null) queryParams["project"] = projectId;
+      if (channelId != null) queryParams["channel"] = channelId;
+      if (stageId != null) queryParams["stage"] = stageId;
+      if (data != null) {
+        queryParams["data"] = data.toString();
+      }
+      if (transferefromdata != null) {
+        queryParams["transferefromdata"] = transferefromdata.toString();
+      }
+
+      // تحويل التواريخ لبداية اليوم ونهاية اليوم
+      DateTime startOfDay(DateTime date) =>
+          DateTime.utc(date.year, date.month, date.day, 0, 0, 0);
+
+      DateTime endOfDay(DateTime date) =>
+          DateTime.utc(date.year, date.month, date.day, 23, 59, 59);
+
+      if (creationDateFrom != null) {
+        queryParams["createdFrom"] =
+            startOfDay(creationDateFrom).toIso8601String();
+      }
+      if (creationDateTo != null) {
+        queryParams["createdTo"] = endOfDay(creationDateTo).toIso8601String();
+      }
+      if (stageDateFrom != null) {
+        queryParams["stageDateFrom"] =
+            startOfDay(stageDateFrom).toIso8601String();
+      }
+      if (stageDateTo != null) {
+        queryParams["stageDateTo"] = endOfDay(stageDateTo).toIso8601String();
+      }
+
+      // بناء URL مع query parameters
+      final uri = Uri.parse(
+        "${Constants.baseUrl}/users/teamleader-leads-withpagination",
+      ).replace(queryParameters: queryParams);
+      print("Request URL: $uri");
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        final leadsResponse = TeamleaderPaginationLeadsModel.fromJson(jsonData);
+
+        return leadsResponse;
+      } else {
+        print("Failed to load leads: ${response.statusCode}");
+        print(response.body);
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching leads: $e");
+      return null;
+    }
+  }
+
+  Future<bool> postMeetingCommentWithStage({
+    required String leadId,
+    required String stageId,
+    required String comment,
+    required String salesdeveloperName,
+    required DateTime stageDate, // ✅ جديد
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null || token.isEmpty) {
+        throw Exception("Token not found");
+      }
+
+      final url = Uri.parse(
+        "${Constants.baseUrl}/Meetingcomments/$leadId/stage/$stageId",
+      );
+
+      print("POST URL: $url");
+
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          "comment": comment,
+          "stageDate": stageDate.toUtc().toIso8601String(),
+          "commentBy": prefs.getString('salesId'),
+          "salesdeveloperName": salesdeveloperName,
+        }),
+      );
+
+      print("Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        throw Exception(
+          "Failed to post meeting comment: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      print("Error posting meeting comment: $e");
+      rethrow;
+    }
+  }
+
+  Future<LeadResponse> getLeadsDataByTeamLeader({
+    bool? data,
+    bool? transferfromdata,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       String? savedEmail = prefs.getString('email');
@@ -97,9 +400,21 @@ class GetLeadsService {
         throw Exception("Missing email or token.");
       }
 
+      final queryParams = {'email': savedEmail, 'leadisactive': 'true'};
+
+      if (data != null) {
+        queryParams['data'] = data.toString();
+      }
+
+      if (transferfromdata != null) {
+        queryParams['transferefromdata'] = transferfromdata.toString();
+      }
+
       final url = Uri.parse(
-        '${Constants.baseUrl}/users/teamleader-leads?email=$savedEmail&leadisactive=true',
-      );
+        '${Constants.baseUrl}/users/teamleader-leads',
+      ).replace(queryParameters: queryParams);
+
+      print("Request URL: $url");
 
       final response = await http.get(
         url,
@@ -110,43 +425,39 @@ class GetLeadsService {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
 
+        // ترتيب حسب التاريخ (الأحدث أولاً)
         leadsResponse.data?.sort((a, b) {
           final dateA = DateTime.tryParse(a.date ?? '') ?? DateTime(0);
           final dateB = DateTime.tryParse(b.date ?? '') ?? DateTime(0);
-          return dateB.compareTo(dateA); // الأحدث أولاً
+          return dateB.compareTo(dateA);
         });
 
-        // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
-        // leadsResponse.data?.take(5).forEach((lead) {
-        //   print('${lead.name} - date: ${lead.date}');
-        // });
-        // // 🖨️ طباعة أول 5 عناصر للتأكد من الترتيب
-        // leadsResponse.data?.take(5).forEach((lead) {
-        //   print(
-        //     '${lead.name} - date: ${lead.date} | last_stage_date_updated: ${lead.lastStageDateUpdated}',
-        //   );
-        // });
-
-        // 🧠 حفظ بيانات إضافية
         if (leadsResponse.data != null && leadsResponse.data!.isNotEmpty) {
-          await prefs.setString(
-            'userlog',
-            leadsResponse.data!.first.sales?.userlog?.id ?? '',
-          );
-          await prefs.setString(
-            'teamLeaderIddspecific',
-            leadsResponse.data!.first.sales?.teamleader?.id ?? '',
-          );
+          Set<String> salesIds = {};
+          Set<String> userLogs = {};
+
+          for (var lead in leadsResponse.data!) {
+            if (lead.sales?.id != null && lead.sales!.id!.isNotEmpty) {
+              salesIds.add(lead.sales!.id!);
+            }
+
+            if (lead.sales?.userlog?.id != null &&
+                lead.sales!.userlog!.id!.isNotEmpty) {
+              userLogs.add(lead.sales!.userlog!.id!);
+            }
+          }
+
+          await prefs.setStringList('teamLeaderSalesIds', salesIds.toList());
+
+          await prefs.setStringList('teamLeaderUserLogs', userLogs.toList());
         }
 
         return leadsResponse;
       } else {
-        throw Exception(
-          '❌ Failed to load assigned data: ${response.statusCode}',
-        );
+        throw Exception('Failed to load assigned data: ${response.statusCode}');
       }
     } catch (e) {
-      log('❌ Error in getLeadsDataByTeamLeader: $e');
+      log('Error in getLeadsDataByTeamLeader: $e');
       rethrow;
     }
   }
@@ -199,6 +510,10 @@ class GetLeadsService {
 
       final url = Uri.parse(
         '${Constants.baseUrl}/users/managers-leads?email=$savedEmail&leadisactive=true',
+      );
+
+      final urlmarketerDashboard = Uri.parse(
+        '${Constants.baseUrl}/users/marketer-leads?email=$savedEmail&leadisactive=true',
       );
 
       final response = await http.get(
@@ -269,6 +584,287 @@ class GetLeadsService {
     } catch (e) {
       log("❌ Error while counting leads per stage (Manager): $e");
       return {};
+    }
+  }
+
+  static const String _baseUrl =
+      "${Constants.baseUrl}/users/stages-with-duplicate-by-addedby/";
+
+  static const String _leadsBaseUrl =
+      "${Constants.baseUrl}/users/stages-crm-data-with-duplicate-by-addedby/";
+
+  Future<MarketerDashboardModel> fetchMarketerDashboard() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final String? userId = prefs.getString("salesId");
+      final String? token = prefs.getString("token");
+
+      if (userId == null || token == null) {
+        throw Exception("User ID or Token not found in SharedPreferences");
+      }
+
+      final url = Uri.parse("$_baseUrl$userId");
+
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        return MarketerDashboardModel.fromJson(decoded);
+      } else {
+        throw Exception(
+          "Failed to load dashboard data: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      throw Exception("Error fetching dashboard data: $e");
+    }
+  }
+
+  Future<MarketerDashboardModel> fetchMarketerDataDashboard() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final String? userId = prefs.getString("salesId");
+      final String? token = prefs.getString("token");
+
+      if (userId == null || token == null) {
+        throw Exception("User ID or Token not found in SharedPreferences");
+      }
+
+      final url = Uri.parse("$_leadsBaseUrl$userId");
+
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        return MarketerDashboardModel.fromJson(decoded);
+      } else {
+        throw Exception(
+          "Failed to load dashboard data: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      throw Exception("Error fetching dashboard data: $e");
+    }
+  }
+
+  Future<NewMarketerPaginationModel> fetchleadsMarketerWithPagination({
+    int page = 1,
+    int limit = 10,
+    String? search,
+    List<String>? salesIds,
+    List<String>? developerIds,
+    List<String>? projectIds,
+    List<String>? channelIds,
+    List<String>? campaignIds,
+    List<String>? communicationWayIds,
+    List<String>? stageIds,
+    List<String>? addedByIds,
+    List<String>? assignedFromIds,
+    List<String>? assignedToIds,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    DateTime? lastStageUpdateFrom,
+    DateTime? lastStageUpdateTo,
+    DateTime? lastCommentDateFrom,
+    DateTime? lastCommentDateTo,
+    bool? duplicates,
+    bool? ignoreDuplicate,
+    bool? data,
+    bool? transferefromdata,
+  }) async {
+    try {
+      // Get email and token from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final String? email = prefs.getString('email');
+      final String? token = prefs.getString('token');
+      final String urll;
+
+      // Check if email and token exist
+      if (email == null || email.isEmpty) {
+        throw Exception('Email not found in SharedPreferences');
+      }
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Token not found in SharedPreferences');
+      }
+
+      // Build query parameters
+      Map<String, String> queryParameters = {
+        'email': email,
+        'leadisactive': 'true',
+        'page': page.toString(),
+        'limit': limit.toString(),
+      };
+
+      // Check if there are any filters
+      bool hasFilter =
+          search != null ||
+          (salesIds != null && salesIds.isNotEmpty) ||
+          (developerIds != null && developerIds.isNotEmpty) ||
+          (projectIds != null && projectIds.isNotEmpty) ||
+          (channelIds != null && channelIds.isNotEmpty) ||
+          (campaignIds != null && campaignIds.isNotEmpty) ||
+          (communicationWayIds != null && communicationWayIds.isNotEmpty) ||
+          (stageIds != null && stageIds.isNotEmpty) ||
+          (addedByIds != null && addedByIds.isNotEmpty) ||
+          (assignedFromIds != null && assignedFromIds.isNotEmpty) ||
+          (assignedToIds != null && assignedToIds.isNotEmpty) ||
+          creationDateFrom != null ||
+          creationDateTo != null ||
+          lastStageUpdateFrom != null ||
+          lastStageUpdateTo != null ||
+          lastCommentDateFrom != null ||
+          lastCommentDateTo != null ||
+          stageDateFrom != null ||
+          stageDateTo != null;
+
+      // Add search parameter
+      if (search != null && search.isNotEmpty) {
+        queryParameters["keyword"] = search;
+      }
+
+      /// ✅ Join arrays with comma
+      if (salesIds != null && salesIds.isNotEmpty) {
+        queryParameters["sales"] = salesIds.join(",");
+      }
+
+      if (developerIds != null && developerIds.isNotEmpty) {
+        queryParameters["developer"] = developerIds.join(",");
+      }
+
+      if (projectIds != null && projectIds.isNotEmpty) {
+        queryParameters["project"] = projectIds.join(",");
+      }
+
+      if (channelIds != null && channelIds.isNotEmpty) {
+        queryParameters["chanel"] = channelIds.join(",");
+      }
+
+      if (campaignIds != null && campaignIds.isNotEmpty) {
+        queryParameters["campaign"] = campaignIds.join(",");
+      }
+
+      if (communicationWayIds != null && communicationWayIds.isNotEmpty) {
+        queryParameters["communicationway"] = communicationWayIds.join(",");
+      }
+
+      if (stageIds != null && stageIds.isNotEmpty) {
+        queryParameters["stage"] = stageIds.join(",");
+      }
+
+      if (ignoreDuplicate != null) {
+        queryParameters["ignoredublicate"] = ignoreDuplicate.toString();
+      }
+      // if (data != null) {
+      //   queryParameters["data"] = data.toString();
+      // }
+      // if (transferefromdata != null) {
+      //   queryParameters["transferefromdata"] = transferefromdata.toString();
+      // }
+
+      /// 🔥 Date helpers
+      DateTime startOfDay(DateTime date) =>
+          DateTime(date.year, date.month, date.day, 0, 0, 0);
+
+      DateTime endOfDay(DateTime date) =>
+          DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+      // Add date filters
+      if (creationDateFrom != null) {
+        queryParameters["createdAt[gte]"] =
+            startOfDay(creationDateFrom).toIso8601String();
+      }
+
+      if (creationDateTo != null) {
+        queryParameters["createdAt[lte]"] =
+            endOfDay(creationDateTo).toIso8601String();
+      }
+
+      if (lastStageUpdateFrom != null) {
+        queryParameters["last_stage_date_updated[gte]"] =
+            startOfDay(lastStageUpdateFrom).toIso8601String();
+      }
+
+      if (lastStageUpdateTo != null) {
+        queryParameters["last_stage_date_updated[lte]"] =
+            endOfDay(lastStageUpdateTo).toIso8601String();
+      }
+
+      if (lastCommentDateFrom != null) {
+        queryParameters["lastcommentdate[gte]"] =
+            startOfDay(lastCommentDateFrom).toIso8601String();
+      }
+
+      if (lastCommentDateTo != null) {
+        queryParameters["lastcommentdate[lte]"] =
+            endOfDay(lastCommentDateTo).toIso8601String();
+      }
+
+      if (stageDateFrom != null) {
+        queryParameters["stagedateupdated[gte]"] =
+            startOfDay(stageDateFrom).toIso8601String();
+      }
+
+      if (stageDateTo != null) {
+        queryParameters["stagedateupdated[lte]"] =
+            endOfDay(stageDateTo).toIso8601String();
+      }
+      if (transferefromdata == true) {
+        urll = "users/GetAllLeadsAddedByUser-advanced";
+      } else {
+        urll = "users/GetAllLeadsAddedByUser-crmdata-advanced";
+      }
+      // Build the URL with all query parameters
+      final Uri url = Uri.parse(
+        '${Constants.baseUrl}/$urll',
+      ).replace(queryParameters: queryParameters);
+
+      // For debugging - print the URL
+      print('Fetching leads from: $url');
+
+      // Make the API request with authorization header
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      // Check if request was successful
+      if (response.statusCode == 200) {
+        // Parse the response body to JSON
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+        // Convert JSON to model
+        return NewMarketerPaginationModel.fromJson(jsonResponse);
+      } else {
+        // Handle error response
+        throw Exception(
+          'Failed to load leads: ${response.statusCode} - ${response.reasonPhrase}',
+        );
+      }
+    } catch (e) {
+      // Handle any errors
+      print('Error fetching leads: $e');
+      throw Exception('Error fetching leads: $e');
     }
   }
 
@@ -352,7 +948,7 @@ class GetLeadsService {
       if (response.statusCode == 200) {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
-        log("✅ Get leads successfully by marketer (Trash)");
+        log("✅ Get leads successfully by marketer (Trash)}");
         return leadsResponse;
       } else {
         throw Exception(

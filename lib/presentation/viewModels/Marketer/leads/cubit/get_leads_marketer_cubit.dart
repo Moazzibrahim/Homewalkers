@@ -1,24 +1,424 @@
 // get_leads_marketer_cubit.dart
-// ignore_for_file: unused_field, unused_local_variable, avoid_print
+// ignore_for_file: unused_field, unused_local_variable, avoid_print, prefer_final_fields
 import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:homewalkers_app/data/models/marketer_dashboard_model.dart';
+import 'package:homewalkers_app/data/models/new_marketer_pagination_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 part 'get_leads_marketer_state.dart';
 
 class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
   final GetLeadsService _getLeadsService;
-  LeadResponse? _originalLeadsResponse; // 🟡 حفظ البيانات الأصلية
+  LeadResponse? _originalLeadsResponse;
   final Map<String, int> _salesLeadCount = {};
+  List<LeadData>? _currentFilteredLeads;
+
+  // ✅ Pagination variables
+  NewMarketerPaginationModel? _paginationResponse;
+  int _currentPage = 1;
+  int _totalPages = 1;
+  int _totalItems = 0;
+  int _limit = 10;
+  bool _hasMoreData = true;
+  bool _isLoadingMore = false;
+
+  // ✅ Store leads in the correct type (List<Datum>)
+  List<Datum> leadsDatum = [];
+
+  // ✅ Store current filters for pagination
+  Map<String, dynamic> _currentFilters = {};
+
+  // Getters
+  int get currentPage => _currentPage;
+  int get totalPages => _totalPages;
+  int get totalItems => _totalItems;
+  bool get hasMoreData => _hasMoreData;
+  bool get isLoadingMore => _isLoadingMore;
   Map<String, int> get salesLeadCount => _salesLeadCount;
+
   List<String> salesNames = [];
   List<String> teamLeaderNames = [];
-  List<LeadData> leads = []; // 🟢 الليست الجديدة اللي طلبتها
+  List<LeadData> leads = []; // Leave this for backward compatibility
 
   GetLeadsMarketerCubit(this._getLeadsService)
     : super(GetLeadsMarketerInitial());
+
+  Future<void> fetchMarketerDashboard() async {
+    emit(GetMarketerDashboardLoading());
+
+    try {
+      final dashboardModel = await _getLeadsService.fetchMarketerDashboard();
+      log("✅ Marketer dashboard loaded successfully");
+      log("Total Leads: ${dashboardModel.totalLeads}");
+      emit(GetMarketerDashboardSuccess(dashboardModel));
+    } catch (e) {
+      log("❌ Error loading marketer dashboard: $e");
+      emit(GetMarketerDashboardFailure("Failed to load dashboard data"));
+    }
+  }
+
+  Future<void> fetchMarketerDataDashboard() async {
+    emit(GetMarketerDashboardLoading());
+
+    try {
+      final dashboardModel =
+          await _getLeadsService.fetchMarketerDataDashboard();
+      log("✅ Marketer data dashboard loaded successfully");
+      log("Total Leads: ${dashboardModel.totalLeads}");
+      emit(GetMarketerDashboardSuccess(dashboardModel));
+    } catch (e) {
+      log("❌ Error loading marketer data dashboard: $e");
+      emit(GetMarketerDashboardFailure("Failed to load dashboard data"));
+    }
+  }
+  // أضف هذه الدالة في نهاية class GetLeadsMarketerCubit
+
+  Future<void> fetchLeadsMarketerWithPagination({
+    bool refresh = false,
+    String? search,
+    List<String>? salesIds,
+    List<String>? developerIds,
+    List<String>? projectIds,
+    List<String>? channelIds,
+    List<String>? campaignIds,
+    List<String>? communicationWayIds,
+    List<String>? stageIds,
+    List<String>? addedByIds,
+    List<String>? assignedFromIds,
+    List<String>? assignedToIds,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    DateTime? lastStageUpdateFrom,
+    DateTime? lastStageUpdateTo,
+    DateTime? lastCommentDateFrom,
+    DateTime? lastCommentDateTo,
+    bool? duplicates,
+    bool? ignoreDuplicate,
+    bool? data,
+    bool? transferefromdata,
+  }) async {
+    // إذا كان refresh = true، نعيد تعيين الصفحة إلى 1 ونمسح البيانات القديمة
+    if (refresh) {
+      _currentPage = 1;
+      leadsDatum.clear();
+      _hasMoreData = true;
+      _paginationResponse = null;
+
+      // حفظ الفلاتر الحالية للاستخدام في التحميلات اللاحقة
+      _currentFilters = {
+        'search': search,
+        'salesIds': salesIds,
+        'developerIds': developerIds,
+        'projectIds': projectIds,
+        'channelIds': channelIds,
+        'campaignIds': campaignIds,
+        'communicationWayIds': communicationWayIds,
+        'stageIds': stageIds,
+        'addedByIds': addedByIds,
+        'assignedFromIds': assignedFromIds,
+        'assignedToIds': assignedToIds,
+        'stageDateFrom': stageDateFrom,
+        'stageDateTo': stageDateTo,
+        'creationDateFrom': creationDateFrom,
+        'creationDateTo': creationDateTo,
+        'lastStageUpdateFrom': lastStageUpdateFrom,
+        'lastStageUpdateTo': lastStageUpdateTo,
+        'lastCommentDateFrom': lastCommentDateFrom,
+        'lastCommentDateTo': lastCommentDateTo,
+        'duplicates': duplicates,
+        'ignoreDuplicate': ignoreDuplicate,
+        'data': data,
+        'transferefromdata': transferefromdata,
+      };
+    }
+
+    // التحقق من وجود المزيد من البيانات
+    if (!_hasMoreData && !refresh) {
+      log("📌 No more data to load");
+      return;
+    }
+
+    // منع التحميل المتزامن
+    if (_isLoadingMore && !refresh) {
+      log("⏳ Already loading more data...");
+      return;
+    }
+
+    _isLoadingMore = !refresh; // إذا كان refresh، لا نعتبره تحميل للمزيد
+    emit(
+      GetLeadsMarketerPaginationLoading(
+        isLoadingMore: !refresh,
+        currentPage: _currentPage,
+      ),
+    );
+
+    try {
+      log(
+        "📥 Fetching page $_currentPage ${refresh ? '(refresh)' : '(load more)'}",
+      );
+
+      final response = await _getLeadsService.fetchleadsMarketerWithPagination(
+        page: _currentPage,
+        limit: _limit,
+        search: search,
+        salesIds: salesIds,
+        developerIds: developerIds,
+        projectIds: projectIds,
+        channelIds: channelIds,
+        campaignIds: campaignIds,
+        communicationWayIds: communicationWayIds,
+        stageIds: stageIds,
+        addedByIds: addedByIds,
+        assignedFromIds: assignedFromIds,
+        assignedToIds: assignedToIds,
+        stageDateFrom: stageDateFrom,
+        stageDateTo: stageDateTo,
+        creationDateFrom: creationDateFrom,
+        creationDateTo: creationDateTo,
+        lastStageUpdateFrom: lastStageUpdateFrom,
+        lastStageUpdateTo: lastStageUpdateTo,
+        lastCommentDateFrom: lastCommentDateFrom,
+        lastCommentDateTo: lastCommentDateTo,
+        duplicates: duplicates,
+        ignoreDuplicate: ignoreDuplicate,
+        data: data,
+        transferefromdata: transferefromdata,
+      );
+
+      // تحديث معلومات الباجينيشن
+      _paginationResponse = response;
+      _totalItems = (response.pagination?.totalItems ?? 0).toInt();
+      _totalPages = (response.pagination?.numberOfPages ?? 1).toInt();
+
+      // التحقق من وجود المزيد من الصفحات
+      if (_currentPage >= _totalPages) {
+        _hasMoreData = false;
+        log("📌 No more pages. Current: $_currentPage, Total: $_totalPages");
+      } else {
+        _hasMoreData = true;
+      }
+
+      // إضافة البيانات الجديدة إلى القائمة
+      if (response.data != null && response.data!.isNotEmpty) {
+        if (refresh) {
+          // في حالة التحديث، نستبدل البيانات بالكامل
+          leadsDatum = response.data!;
+          log("🔄 Refreshed data: ${leadsDatum.length} leads");
+        } else {
+          // في حالة التحميل للمزيد، نضيف البيانات الجديدة
+          leadsDatum.addAll(response.data!);
+          log(
+            "➕ Added ${response.data!.length} leads. Total: ${leadsDatum.length}",
+          );
+        }
+
+        // زيادة رقم الصفحة للطلب القادم
+        _currentPage++;
+      } else {
+        _hasMoreData = false;
+        log("📌 Reached last page. No more data.");
+      }
+
+      _isLoadingMore = false;
+      emit(GetLeadsMarketerPaginationSuccess(paginationModel: response));
+    } catch (e) {
+      _isLoadingMore = false;
+      log('❌ Error in fetchLeadsMarketerWithPagination: $e');
+      emit(
+        GetLeadsMarketerPaginationFailure(
+          'Failed to load leads: $e',
+          isLoadingMore: !refresh,
+        ),
+      );
+    }
+  }
+
+  // دالة مساعدة لإعادة تحميل الصفحة الأولى (للسحب للتحديث)
+  Future<void> refreshLeadsMarketer() async {
+    log("🔄 Refreshing leads with current filters...");
+
+    // استخدام الفلاتر المحفوظة أو قيم افتراضية
+    await fetchLeadsMarketerWithPagination(
+      refresh: true,
+      search: _currentFilters['search'] as String?,
+      salesIds: _currentFilters['salesIds'] as List<String>?,
+      developerIds: _currentFilters['developerIds'] as List<String>?,
+      projectIds: _currentFilters['projectIds'] as List<String>?,
+      channelIds: _currentFilters['channelIds'] as List<String>?,
+      campaignIds: _currentFilters['campaignIds'] as List<String>?,
+      communicationWayIds:
+          _currentFilters['communicationWayIds'] as List<String>?,
+      stageIds: _currentFilters['stageIds'] as List<String>?,
+      addedByIds: _currentFilters['addedByIds'] as List<String>?,
+      assignedFromIds: _currentFilters['assignedFromIds'] as List<String>?,
+      assignedToIds: _currentFilters['assignedToIds'] as List<String>?,
+      stageDateFrom: _currentFilters['stageDateFrom'] as DateTime?,
+      stageDateTo: _currentFilters['stageDateTo'] as DateTime?,
+      creationDateFrom: _currentFilters['creationDateFrom'] as DateTime?,
+      creationDateTo: _currentFilters['creationDateTo'] as DateTime?,
+      lastStageUpdateFrom: _currentFilters['lastStageUpdateFrom'] as DateTime?,
+      lastStageUpdateTo: _currentFilters['lastStageUpdateTo'] as DateTime?,
+      lastCommentDateFrom: _currentFilters['lastCommentDateFrom'] as DateTime?,
+      lastCommentDateTo: _currentFilters['lastCommentDateTo'] as DateTime?,
+      duplicates: _currentFilters['duplicates'] as bool?,
+      ignoreDuplicate: _currentFilters['ignoreDuplicate'] as bool?,
+      data: _currentFilters['data'] as bool?,
+      transferefromdata: _currentFilters['transferefromdata'] as bool?,
+    );
+  }
+
+  // دالة لتحميل الصفحة التالية (للسكرول)
+  Future<void> loadNextPage() async {
+    if (!_hasMoreData || _isLoadingMore) {
+      log(
+        "📌 Cannot load more: hasMoreData=$_hasMoreData, isLoadingMore=$_isLoadingMore",
+      );
+      return;
+    }
+
+    log("➡️ Loading next page $_currentPage...");
+
+    await fetchLeadsMarketerWithPagination(
+      refresh: false,
+      search: _currentFilters['search'] as String?,
+      salesIds: _currentFilters['salesIds'] as List<String>?,
+      developerIds: _currentFilters['developerIds'] as List<String>?,
+      projectIds: _currentFilters['projectIds'] as List<String>?,
+      channelIds: _currentFilters['channelIds'] as List<String>?,
+      campaignIds: _currentFilters['campaignIds'] as List<String>?,
+      communicationWayIds:
+          _currentFilters['communicationWayIds'] as List<String>?,
+      stageIds: _currentFilters['stageIds'] as List<String>?,
+      addedByIds: _currentFilters['addedByIds'] as List<String>?,
+      assignedFromIds: _currentFilters['assignedFromIds'] as List<String>?,
+      assignedToIds: _currentFilters['assignedToIds'] as List<String>?,
+      stageDateFrom: _currentFilters['stageDateFrom'] as DateTime?,
+      stageDateTo: _currentFilters['stageDateTo'] as DateTime?,
+      creationDateFrom: _currentFilters['creationDateFrom'] as DateTime?,
+      creationDateTo: _currentFilters['creationDateTo'] as DateTime?,
+      lastStageUpdateFrom: _currentFilters['lastStageUpdateFrom'] as DateTime?,
+      lastStageUpdateTo: _currentFilters['lastStageUpdateTo'] as DateTime?,
+      lastCommentDateFrom: _currentFilters['lastCommentDateFrom'] as DateTime?,
+      lastCommentDateTo: _currentFilters['lastCommentDateTo'] as DateTime?,
+      duplicates: _currentFilters['duplicates'] as bool?,
+      ignoreDuplicate: _currentFilters['ignoreDuplicate'] as bool?,
+      data: _currentFilters['data'] as bool?,
+      transferefromdata: _currentFilters['transferefromdata'] as bool?,
+    );
+  }
+
+  // دالة لتطبيق الفلاتر مع الـ Pagination
+  // في get_leads_marketer_cubit.dart - دالة filterLeadsMarketerWithPagination
+  Future<void> filterLeadsMarketerWithPagination({
+    String? search,
+    List<String>? salesIds,
+    List<String>? developerIds,
+    List<String>? projectIds,
+    List<String>? channelIds,
+    List<String>? campaignIds,
+    List<String>? communicationWayIds,
+    List<String>? stageIds,
+    List<String>? addedByIds,
+    List<String>? assignedFromIds,
+    List<String>? assignedToIds,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    DateTime? lastStageUpdateFrom,
+    DateTime? lastStageUpdateTo,
+    DateTime? lastCommentDateFrom,
+    DateTime? lastCommentDateTo,
+    bool? duplicates,
+    bool? ignoreDuplicate,
+    bool? data,
+    bool? transferefromdata,
+  }) async {
+    log("🔍 Applying filters with pagination...");
+    log("📋 Filters received - salesIds: $salesIds");
+    log("📋 Filters received - developerIds: $developerIds");
+    log("📋 Filters received - projectIds: $projectIds");
+    log("📋 Filters received - stageIds: $stageIds");
+
+    // حفظ الفلاتر الجديدة
+    _currentFilters = {
+      'search': search,
+      'salesIds': salesIds,
+      'developerIds': developerIds,
+      'projectIds': projectIds,
+      'channelIds': channelIds,
+      'campaignIds': campaignIds,
+      'communicationWayIds': communicationWayIds,
+      'stageIds': stageIds,
+      'addedByIds': addedByIds,
+      'assignedFromIds': assignedFromIds,
+      'assignedToIds': assignedToIds,
+      'stageDateFrom': stageDateFrom,
+      'stageDateTo': stageDateTo,
+      'creationDateFrom': creationDateFrom,
+      'creationDateTo': creationDateTo,
+      'lastStageUpdateFrom': lastStageUpdateFrom,
+      'lastStageUpdateTo': lastStageUpdateTo,
+      'lastCommentDateFrom': lastCommentDateFrom,
+      'lastCommentDateTo': lastCommentDateTo,
+      'duplicates': duplicates,
+      'ignoreDuplicate': ignoreDuplicate,
+      'data': data,
+      'transferefromdata': transferefromdata,
+    };
+
+    // إعادة تعيين الصفحة وتحميل البيانات الجديدة
+    await fetchLeadsMarketerWithPagination(
+      refresh: true,
+      search: search,
+      salesIds: salesIds,
+      developerIds: developerIds,
+      projectIds: projectIds,
+      channelIds: channelIds,
+      campaignIds: campaignIds,
+      communicationWayIds: communicationWayIds,
+      stageIds: stageIds,
+      addedByIds: addedByIds,
+      assignedFromIds: assignedFromIds,
+      assignedToIds: assignedToIds,
+      stageDateFrom: stageDateFrom,
+      stageDateTo: stageDateTo,
+      creationDateFrom: creationDateFrom,
+      creationDateTo: creationDateTo,
+      lastStageUpdateFrom: lastStageUpdateFrom,
+      lastStageUpdateTo: lastStageUpdateTo,
+      lastCommentDateFrom: lastCommentDateFrom,
+      lastCommentDateTo: lastCommentDateTo,
+      duplicates: duplicates,
+      ignoreDuplicate: ignoreDuplicate,
+      data: data,
+      transferefromdata: transferefromdata,
+    );
+  }
+
+  // دالة مساعدة لمسح الفلاتر
+  Future<void> clearFilters() async {
+    log("🧹 Clearing all filters...");
+    _currentFilters.clear();
+    await refreshLeadsMarketer();
+  }
+
+  // دالة للحصول على إحصائيات الصفحات الحالية
+  Map<String, dynamic> getPaginationStats() {
+    return {
+      'currentPage': _currentPage - 1, // لأننا نزيدها بعد التحميل الناجح
+      'totalPages': _totalPages,
+      'totalItems': _totalItems,
+      'hasMoreData': _hasMoreData,
+      'loadedItemsCount': leadsDatum.length,
+      'limit': _limit,
+    };
+  }
 
   Future<void> getLeadsByMarketer({
     String? stageFilter,
@@ -101,7 +501,9 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
         "✅ البيانات الأولية تم جلبها وفلترتها بنجاح. عدد النتائج: ${filteredData?.length ?? 0}",
       );
       log("✅ تم جلب البيانات بنجاح.");
-      emit(GetLeadsMarketerSuccess(LeadResponse(data: filteredData)));
+      _currentFilteredLeads = null; // ✅ أضف هذا السطر
+
+      emit(GetLeadsMarketerSuccess(leadsResponse));
     } catch (e) {
       log('❌ خطأ في getLeadsByMarketer: $e');
       emit(const GetLeadsMarketerFailure("No leads found"));
@@ -135,6 +537,8 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
       salesNames = salesSet.toList();
       teamLeaderNames = teamLeaderSet.toList();
       log("✅ تم جلب بيانات سلة المهملات بنجاح.");
+      _currentFilteredLeads = null; // ✅ أضف هذا السطر
+
       emit(GetLeadsMarketerSuccess(leadsResponse));
     } catch (e) {
       log('❌ خطأ في getLeadsByMarketerInTrash: $e');
@@ -185,17 +589,23 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
     }
 
     print("=== FILTER START ===");
-    print("Sales param: '$sales'");
-    print("Sales length: ${sales?.length}");
+    print("Original leads count: ${_originalLeadsResponse!.data!.length}");
 
-    // البداية من البيانات الأصلية
+    // ✅ نبدأ دائماً من البيانات الأصلية
     List<LeadData> filteredLeads = List.from(_originalLeadsResponse!.data!);
-    print("Initial leads count: ${filteredLeads.length}");
-    print("filtered list: ${filteredLeads}");
 
-    // 1️⃣ فلترة query
+    // ✅ تطبيق فلتر duplicates أولاً إذا كان مطلوباً
+    if (duplicatesOnly) {
+      filteredLeads =
+          filteredLeads
+              .where((lead) => (lead.allVersions?.length ?? 0) > 1)
+              .toList();
+      print("After duplicates filter: ${filteredLeads.length}");
+    }
+
+    // ✅ فلترة query (بحث عام)
     if (query != null && query.isNotEmpty) {
-      final q = query.toLowerCase();
+      final q = query.toLowerCase().trim();
       filteredLeads =
           filteredLeads.where((lead) {
             final matchName = lead.name?.toLowerCase().contains(q) ?? false;
@@ -210,100 +620,153 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
                 });
             return matchName || matchEmail || matchPhone || matchInVersions;
           }).toList();
+      print("After query filter: ${filteredLeads.length}");
     }
 
-    // 2️⃣ فلترة name
+    // ✅ فلترة name
     if (name != null && name.isNotEmpty) {
-      final n = name.toLowerCase();
+      final n = name.toLowerCase().trim();
       filteredLeads =
           filteredLeads
               .where((lead) => lead.name?.toLowerCase().contains(n) ?? false)
               .toList();
+      print("After name filter: ${filteredLeads.length}");
     }
 
-    // 3️⃣ باقي الفلاتر
+    // ✅ فلترة email
+    if (email != null && email.isNotEmpty) {
+      final e = email.toLowerCase().trim();
+      filteredLeads =
+          filteredLeads
+              .where((lead) => lead.email?.toLowerCase().contains(e) ?? false)
+              .toList();
+      print("After email filter: ${filteredLeads.length}");
+    }
+
+    // ✅ فلترة phone
+    if (phone != null && phone.isNotEmpty) {
+      filteredLeads =
+          filteredLeads
+              .where((lead) => lead.phone?.contains(phone) ?? false)
+              .toList();
+      print("After phone filter: ${filteredLeads.length}");
+    }
+
+    // ✅ باقي الفلاتر
     filteredLeads =
         filteredLeads.where((lead) {
-          final leadPhoneCode =
-              lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
-          final matchCountry =
-              country == null ||
-              (leadPhoneCode != null && leadPhoneCode.startsWith(country));
-          final matchDev =
-              developer == null ||
-              (lead.project?.developer?.name?.toLowerCase() ==
-                  developer.toLowerCase());
-          final matchProject =
-              project == null ||
-              (lead.project?.name?.toLowerCase() == project.toLowerCase());
-          final matchChannel =
-              channel == null ||
-              (lead.chanel?.name?.toLowerCase() == channel.toLowerCase());
-          final matchStage =
-              stage == null ||
-              (lead.stage?.name?.toLowerCase() == stage.toLowerCase());
-
-          // ✅ فلترة الـ sales مع trim و lowerCase
-          final matchSales =
-              sales == null
-                  ? true
-                  : (lead.sales != null &&
-                      lead.sales!.name != null &&
-                      lead.sales!.name!.trim().toLowerCase() ==
-                          sales.trim().toLowerCase());
-
-          if (!matchSales) {
-            print(
-              "❌ Lead '${lead.name}' failed sales filter. Lead sales: '${lead.sales?.name}' | Filter sales: '$sales'",
-            );
-          } else {
-            print(
-              "✅ Lead '${lead.name}' passed sales filter. Lead sales: '${lead.sales?.name}'",
-            );
+          // فلترة country
+          bool matchCountry = true;
+          if (country != null && country.isNotEmpty) {
+            final leadPhoneCode =
+                lead.phone != null ? getPhoneCodeFromPhone(lead.phone!) : null;
+            matchCountry =
+                leadPhoneCode != null && leadPhoneCode.startsWith(country);
           }
 
-          final matchCommunicationWay =
-              communicationWay == null ||
-              (lead.communicationway?.name?.toLowerCase() ==
-                  communicationWay.toLowerCase());
-          final matchCampaign =
-              campaign == null ||
-              (lead.campaign?.name?.toLowerCase() == campaign.toLowerCase());
+          // فلترة developer
+          bool matchDev = true;
+          if (developer != null && developer.isNotEmpty) {
+            matchDev =
+                lead.project?.developer?.name?.toLowerCase() ==
+                developer.toLowerCase();
+          }
 
-          final recordDate = parseNullableDate(lead.date);
-          final recordDateOnly =
-              recordDate != null ? getDateOnly(recordDate) : null;
-          final startDateOnly =
-              startDate != null ? getDateOnly(startDate) : null;
-          final endDateOnly = endDate != null ? getDateOnly(endDate) : null;
-          final matchDateRange =
-              (startDate == null && endDate == null) ||
-              (recordDateOnly != null &&
-                  (startDateOnly == null ||
-                      !recordDateOnly.isBefore(startDateOnly)) &&
-                  (endDateOnly == null ||
-                      !recordDateOnly.isAfter(endDateOnly)));
+          // فلترة project
+          bool matchProject = true;
+          if (project != null && project.isNotEmpty) {
+            matchProject =
+                lead.project?.name?.toLowerCase() == project.toLowerCase();
+          }
 
-          final lastStageUpdated = parseNullableDate(lead.lastStageDateUpdated);
-          final lastStageUpdatedOnly =
-              lastStageUpdated != null ? getDateOnly(lastStageUpdated) : null;
-          final lastStageUpdateStartOnly =
-              lastStageUpdateStart != null
-                  ? getDateOnly(lastStageUpdateStart)
-                  : null;
-          final lastStageUpdateEndOnly =
-              lastStageUpdateEnd != null
-                  ? getDateOnly(lastStageUpdateEnd)
-                  : null;
-          final matchLastStageUpdated =
-              (lastStageUpdateStart == null && lastStageUpdateEnd == null) ||
-              (lastStageUpdatedOnly != null &&
-                  (lastStageUpdateStartOnly == null ||
-                      !lastStageUpdatedOnly.isBefore(
-                        lastStageUpdateStartOnly,
-                      )) &&
-                  (lastStageUpdateEndOnly == null ||
-                      !lastStageUpdatedOnly.isAfter(lastStageUpdateEndOnly)));
+          // فلترة channel
+          bool matchChannel = true;
+          if (channel != null && channel.isNotEmpty) {
+            matchChannel =
+                lead.chanel?.name?.toLowerCase() == channel.toLowerCase();
+          }
+
+          // فلترة stage
+          bool matchStage = true;
+          if (stage != null && stage.isNotEmpty) {
+            matchStage = lead.stage?.name?.toLowerCase() == stage.toLowerCase();
+          }
+
+          // فلترة sales
+          bool matchSales = true;
+          if (sales != null && sales.isNotEmpty) {
+            final salesName = lead.sales?.name;
+            matchSales =
+                salesName != null &&
+                salesName.trim().toLowerCase() == sales.trim().toLowerCase();
+          }
+
+          // فلترة communicationWay
+          bool matchCommunicationWay = true;
+          if (communicationWay != null && communicationWay.isNotEmpty) {
+            matchCommunicationWay =
+                lead.communicationway?.name?.toLowerCase() ==
+                communicationWay.toLowerCase();
+          }
+
+          // فلترة campaign
+          bool matchCampaign = true;
+          if (campaign != null && campaign.isNotEmpty) {
+            matchCampaign =
+                lead.campaign?.name?.toLowerCase() == campaign.toLowerCase();
+          }
+
+          // فلترة التاريخ
+          bool matchDateRange = true;
+          if (startDate != null || endDate != null) {
+            final recordDate = parseNullableDate(lead.date);
+            if (recordDate != null) {
+              final recordDateOnly = getDateOnly(recordDate);
+
+              if (startDate != null) {
+                final startDateOnly = getDateOnly(startDate);
+                matchDateRange =
+                    matchDateRange && !recordDateOnly.isBefore(startDateOnly);
+              }
+
+              if (endDate != null) {
+                final endDateOnly = getDateOnly(endDate);
+                matchDateRange =
+                    matchDateRange && !recordDateOnly.isAfter(endDateOnly);
+              }
+            } else {
+              matchDateRange = false;
+            }
+          }
+
+          // فلترة lastStageUpdate
+          bool matchLastStageUpdated = true;
+          if (lastStageUpdateStart != null || lastStageUpdateEnd != null) {
+            final lastStageUpdated = parseNullableDate(
+              lead.lastStageDateUpdated,
+            );
+            if (lastStageUpdated != null) {
+              final lastStageUpdatedOnly = getDateOnly(lastStageUpdated);
+
+              if (lastStageUpdateStart != null) {
+                final lastStageUpdateStartOnly = getDateOnly(
+                  lastStageUpdateStart,
+                );
+                matchLastStageUpdated =
+                    matchLastStageUpdated &&
+                    !lastStageUpdatedOnly.isBefore(lastStageUpdateStartOnly);
+              }
+
+              if (lastStageUpdateEnd != null) {
+                final lastStageUpdateEndOnly = getDateOnly(lastStageUpdateEnd);
+                matchLastStageUpdated =
+                    matchLastStageUpdated &&
+                    !lastStageUpdatedOnly.isAfter(lastStageUpdateEndOnly);
+              }
+            } else {
+              matchLastStageUpdated = false;
+            }
+          }
 
           return matchCountry &&
               matchDev &&
@@ -317,18 +780,28 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
               matchCampaign;
         }).toList();
 
-    print("Filtered leads count after all filters: ${filteredLeads.length}");
-    if (filteredLeads.isNotEmpty) {
-      print("=== FILTER END ===  : ${filteredLeads.first.name}");
-    } else {
-      print("=== FILTER END ===  : No leads found");
-    }
+    print("=== FILTER RESULTS ===");
+    print("Final filtered count: ${filteredLeads.length}");
 
     if (filteredLeads.isEmpty) {
+      print("⚠️ No leads match the filters");
       emit(GetLeadsMarketerFailure("No leads found matching your criteria."));
     } else {
-      emit(GetLeadsMarketerSuccess(LeadResponse(data: filteredLeads)));
-      print("🟢 Emit leads count=${filteredLeads.length}");
+      print("✅ Found ${filteredLeads.length} leads");
+      filteredLeads.take(3).forEach((lead) {
+        print(
+          "Lead: ${lead.name}, Sales: ${lead.sales?.name}, Stage: ${lead.stage?.name}",
+        );
+      });
+
+      // ✅ هنا التعديل المهم - نقوم بإنشاء LeadResponse جديد بالبيانات المفلترة
+      final filteredResponse = LeadResponse(data: filteredLeads);
+
+      // ✅ تحديث المتغير leads
+      leads = filteredLeads;
+
+      // ✅ إرسال الـ state الجديد مع البيانات المفلترة
+      emit(GetLeadsMarketerSuccess(filteredResponse));
     }
   }
 

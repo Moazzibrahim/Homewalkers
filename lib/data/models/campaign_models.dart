@@ -1,5 +1,5 @@
 class CampaignResponse {
-  final int? results;
+  final num? results;
   final Pagination? pagination;
   final List<CampaignData>? data;
 
@@ -8,19 +8,22 @@ class CampaignResponse {
   factory CampaignResponse.fromJson(Map<String, dynamic> json) {
     return CampaignResponse(
       results: json['results'],
-      pagination: json['pagination'] != null
-          ? Pagination.fromJson(json['pagination'])
-          : null,
-      data: (json['data'] as List?)
-          ?.map((item) => CampaignData.fromJson(item))
-          .toList(),
+      pagination:
+          json['pagination'] != null
+              ? Pagination.fromJson(json['pagination'])
+              : null,
+      data:
+          (json['data'] as List?)
+              ?.map((item) => CampaignData.fromJson(item))
+              .toList(),
     );
   }
 }
+
 class Pagination {
-  final int? currentPage;
-  final int? limit;
-  final int? numberOfPages;
+  final num? currentPage;
+  final num? limit;
+  final num? numberOfPages;
 
   Pagination({this.currentPage, this.limit, this.numberOfPages});
 
@@ -32,11 +35,13 @@ class Pagination {
     );
   }
 }
+
 class CampaignData {
   final String? id;
   final String? campainName;
+  final String? redirectLink;
   final String? date;
-  final int? cost;
+  final num? cost;
   final bool? isActivate;
   final UserInfo? addBy;
   final UserInfo? updatedBy;
@@ -44,11 +49,12 @@ class CampaignData {
   final String? endDate;
   final String? createdAt;
   final String? updatedAt;
-  final int? v;
+  final num? v;
 
   CampaignData({
     this.id,
     this.campainName,
+    this.redirectLink,
     this.date,
     this.cost,
     this.isActivate,
@@ -65,14 +71,15 @@ class CampaignData {
     return CampaignData(
       id: json['_id'],
       campainName: json['CampainName'],
+      redirectLink: json['redirectLink'],
       date: json['Date'],
       cost: json['Cost'],
       isActivate: json['isactivate'],
-      addBy:
-          json['addby'] != null ? UserInfo.fromJson(json['addby']) : null,
-      updatedBy: json['updatedby'] != null
-          ? UserInfo.fromJson(json['updatedby'])
-          : null,
+      addBy: json['addby'] != null ? UserInfo.fromJson(json['addby']) : null,
+      updatedBy:
+          json['updatedby'] != null
+              ? UserInfo.fromJson(json['updatedby'])
+              : null,
       campaignIsActivateDelete: json['campaignisactivatedelete'],
       endDate: json['endDate'],
       createdAt: json['createdAt'],
@@ -81,6 +88,7 @@ class CampaignData {
     );
   }
 }
+
 class UserInfo {
   final String? id;
   final String? name;

@@ -7,8 +7,8 @@ class NewCommentsModel {
   FilterInfo? filter;
   AssignmentInfo? assignmentInfo;
   DebugInfo? debug;
-  int? totalComments;
-  int? showing;
+  num? totalComments;
+  num? showing;
   Pagination? pagination;
   Performance? performance;
 
@@ -29,7 +29,9 @@ class NewCommentsModel {
     return NewCommentsModel(
       success: json['success'],
       comments:
-          (json['comments'] as List?)?.map((e) => Commentt.fromJson(e)).toList(),
+          (json['comments'] as List?)
+              ?.map((e) => Commentt.fromJson(e))
+              .toList(),
       userInfo:
           json['userInfo'] != null ? UserInfo.fromJson(json['userInfo']) : null,
       filter:
@@ -184,9 +186,9 @@ class DebugInfo {
 }
 
 class Pagination {
-  int? page;
-  int? limit;
-  int? totalPages;
+  num? page;
+  num? limit;
+  num? totalPages;
   bool? hasNext;
   bool? hasPrev;
 
@@ -210,7 +212,7 @@ class Pagination {
 }
 
 class Performance {
-  int? totalQueries;
+  num? totalQueries;
   bool? optimized;
 
   Performance({this.totalQueries, this.optimized});

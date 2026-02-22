@@ -1,10 +1,14 @@
-// ignore_for_file: file_names, camel_case_types, deprecated_member_use
-import 'package:fl_chart/fl_chart.dart';
+// ignore_for_file: file_names, camel_case_types, deprecated_member_use, avoid_print, unnecessary_brace_in_string_interps, unused_local_variable
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
+import 'package:homewalkers_app/data/models/marketer_dashboard_model.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/leads_marketier_screen.dart';
+import 'package:homewalkers_app/presentation/screens/marketier/marketer_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
@@ -98,7 +102,7 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
 
     // إنشاء Cubit مرة واحدة فقط
     _marketerCubit = GetLeadsMarketerCubit(GetLeadsService())
-      ..getLeadsByMarketer();
+      ..fetchMarketerDashboard();
 
     // تهيئة الإشعارات
     context.read<NotificationCubit>().initNotifications();
@@ -114,9 +118,94 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      print("App resumed — refreshing marketer leads...");
-      _marketerCubit.getLeadsByMarketer(); // 👈 تحديث البيانات عند الرجوع
+      print("App resumed — refreshing marketer dashboard...");
+      _marketerCubit.fetchMarketerDashboard(); // 👈 تحديث البيانات عند الرجوع
     }
+  }
+
+  // ✅ زر Data Centre الجديد
+  Widget _dataCentreButton({
+    required bool isTabletDevice,
+    required double tabletScale,
+    required double tabletFontScale,
+    required double tabletWidthScale,
+    required double tabletHeightScale,
+  }) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const MarketerDataDashboardScreen(),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular((12 * tabletScale).r),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal:
+              isTabletDevice
+                  ? (16 * tabletWidthScale).w
+                  : (12 * tabletWidthScale).w,
+          vertical:
+              isTabletDevice
+                  ? (12 * tabletHeightScale).h
+                  : (8 * tabletHeightScale).h,
+        ),
+        decoration: BoxDecoration(
+          color: Constants.maincolor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular((12 * tabletScale).r),
+          border: Border.all(
+            color: Constants.maincolor.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.dashboard_customize_rounded,
+              color: Constants.maincolor,
+              size:
+                  isTabletDevice
+                      ? (20 * tabletFontScale).sp
+                      : (18 * tabletFontScale).sp,
+            ),
+            SizedBox(
+              width:
+                  isTabletDevice
+                      ? (8 * tabletWidthScale).w
+                      : (4 * tabletWidthScale).w,
+            ),
+            Text(
+              'Data Centre',
+              style: TextStyle(
+                color: Constants.maincolor,
+                fontSize:
+                    isTabletDevice
+                        ? (16 * tabletFontScale).sp
+                        : (14 * tabletFontScale).sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(
+              width:
+                  isTabletDevice
+                      ? (4 * tabletWidthScale).w
+                      : (2 * tabletWidthScale).w,
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Constants.maincolor,
+              size:
+                  isTabletDevice
+                      ? (16 * tabletFontScale).sp
+                      : (14 * tabletFontScale).sp,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -126,151 +215,28 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
     super.dispose();
   }
 
-  BarChartData _buildBarChartData(
-    Map<String, int> stageCounts,
-    List<int> values,
-    List<String> stages,
-    BuildContext context,
-  ) {
-    // 1. حساب أعلى قيمة في البيانات لتحديد مدى المحاور
-    final double maxValue =
-        (values.isNotEmpty ? values.reduce((a, b) => a > b ? a : b) : 1)
-            .toDouble();
-
-    // 2. حساب الفاصل الزمني (Interval) للمحور الرأسي بشكل ديناميكي
-    final double interval = (maxValue / 5).ceilToDouble();
-    final double roundedMaxY = (maxValue / interval).ceil() * interval;
-
-    final primaryColor = Constants.maincolor;
-    final secondaryColor = Constants.maincolor;
-
-    return BarChartData(
-      extraLinesData: ExtraLinesData(
-        horizontalLines: [
-          HorizontalLine(y: roundedMaxY, color: Colors.transparent),
-        ],
-      ),
-      maxY: roundedMaxY,
-      barTouchData: BarTouchData(
-        touchTooltipData: BarTouchTooltipData(
-          getTooltipColor: (_) => Colors.blueGrey,
-          getTooltipItem: (group, groupIndex, rod, rodIndex) {
-            return BarTooltipItem(
-              '${stages[group.x]}\n',
-              const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-              children: <TextSpan>[
-                TextSpan(
-                  text: rod.toY.toInt().toString(),
-                  style: const TextStyle(
-                    color: Colors.yellow,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-      titlesData: FlTitlesData(
-        leftTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 40,
-            interval: interval > 0 ? interval : 1,
-            getTitlesWidget: (value, meta) {
-              if (value % interval == 0 || value == 0) {
-                return Text(
-                  value.toInt().toString(),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(
-                      context,
-                    ).textTheme.bodyLarge?.color?.withOpacity(0.6),
-                  ),
-                  textAlign: TextAlign.left,
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ),
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 40,
-            getTitlesWidget: (value, meta) {
-              int i = value.toInt();
-              if (i >= 0 && i < stages.length) {
-                // The correction is here: 'axisSide' is removed.
-                return SideTitleWidget(
-                  meta: meta,
-                  space: 8.0,
-                  angle: -0.785,
-                  child: Text(
-                    stages[i],
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(
-                        context,
-                      ).textTheme.bodyLarge?.color?.withOpacity(0.8),
-                    ),
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ),
-        rightTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
-        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      gridData: FlGridData(
-        show: true,
-        drawVerticalLine: false,
-        horizontalInterval: interval,
-        getDrawingHorizontalLine: (value) {
-          return FlLine(
-            color: Colors.grey.withOpacity(0.2),
-            strokeWidth: 1,
-            dashArray: [5, 5],
-          );
-        },
-      ),
-      borderData: FlBorderData(show: false),
-      barGroups: List.generate(stageCounts.length, (index) {
-        return BarChartGroupData(
-          x: index,
-          barRods: [
-            BarChartRodData(
-              toY: values[index].toDouble(),
-              width: 22,
-              gradient: LinearGradient(
-                colors: [primaryColor, secondaryColor],
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(6),
-                topRight: Radius.circular(6),
-              ),
-            ),
-          ],
-        );
-      }),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final bool isTabletDevice = () {
+      final data = MediaQuery.of(context);
+      final physicalSize = data.size;
+      final diagonal = math.sqrt(
+        math.pow(physicalSize.width, 2) + math.pow(physicalSize.height, 2),
+      );
+      final inches = diagonal / (data.devicePixelRatio * 160);
+      return inches >= 7.0;
+    }();
+
+    // ✅ عوامل التصغير حسب الجهاز
+    final double tabletScale = isTabletDevice ? 0.85 : 1.0;
+    final double tabletFontScale = isTabletDevice ? 0.9 : 1.0;
+    final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
+    final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
+
+    // ✅ عدد الأعمدة في GridView
+    final int crossAxisCount = isTabletDevice ? 3 : 2;
+    // ✅ نسبة العرض إلى الارتفاع
+    final double childAspectRatio = isTabletDevice ? 1.6 : 1.4;
     return BlocProvider.value(
       // 👈 نستخدم value عشان نمرر نفس نسخة الكيوبت اللي أنشأناها في initState
       value: _marketerCubit,
@@ -337,7 +303,7 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
         ),
         body: RefreshIndicator(
           onRefresh: () async {
-            _marketerCubit.getLeadsByMarketer(); // 👈 هنا التحديث
+            _marketerCubit.fetchMarketerDashboard(); // 👈 هنا التحديث
             await Future.delayed(Duration(milliseconds: 500));
           },
           child: SingleChildScrollView(
@@ -376,8 +342,15 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                           }
                         },
                       ),
-                      const SizedBox(width: 8),
-                      const Text('👋', style: TextStyle(fontSize: 20)),
+                      const Spacer(),
+                      // 🗄️ Data Centre Button
+                      _dataCentreButton(
+                        isTabletDevice: isTabletDevice,
+                        tabletScale: tabletScale,
+                        tabletFontScale: tabletFontScale,
+                        tabletWidthScale: tabletWidthScale,
+                        tabletHeightScale: tabletHeightScale,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -385,7 +358,7 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                   // ... (نفس الكود السابق حتى BlocBuilder)
                   BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
                     builder: (context, state) {
-                      if (state is GetLeadsMarketerLoading) {
+                      if (state is GetMarketerDashboardLoading) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -414,26 +387,25 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                             Center(child: CircularProgressIndicator()),
                           ],
                         );
-                      } else if (state is GetLeadsMarketerSuccess) {
-                        final allLeads = state.leadsResponse.data ?? [];
+                      } else if (state is GetMarketerDashboardSuccess) {
+                        final allLeads = state.dashboardModel.data ?? [];
+                        final totalLeads = state.dashboardModel.totalLeads ?? 0;
                         final duplicatesCount =
                             allLeads
-                                .where(
-                                  (user) => (user.allVersions?.length ?? 0) > 1,
+                                .firstWhere(
+                                  (e) => e.stageName == "Duplicate",
+                                  orElse: () => StageData(),
                                 )
-                                .length;
-                        // final doneDeals =
-                        //     allLeads
-                        //         .where((lead) => lead.stage?.name == "Done Deal")
-                        //         .toList();
-                        final Map<String, int> stageCounts = {};
-                        for (var lead in allLeads) {
-                          final stageName = lead.stage?.name ?? 'Unknown';
-                          stageCounts[stageName] =
-                              (stageCounts[stageName] ?? 0) + 1;
-                        }
-                        final stages = stageCounts.keys.toList();
-                        final values = stageCounts.values.toList();
+                                .leadCount ??
+                            0;
+                        final Map<String, StageData> stageMap = {
+                          for (var stage in allLeads)
+                            if ((stage.stageName ?? '').isNotEmpty &&
+                                stage.stageName != "Duplicate")
+                              stage.stageName!:
+                                  stage, // بدل ما نخزن بس العدد نخزن StageData كاملة
+                        };
+
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -442,7 +414,7 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                                 Expanded(
                                   child: MarketerDashboardScreen._dashboardCard(
                                     'Leads',
-                                    '${allLeads.length}',
+                                    '${totalLeads}',
                                     Icons.group,
                                     context,
                                     onTap: () {
@@ -451,7 +423,10 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                                         MaterialPageRoute(
                                           builder:
                                               (context) =>
-                                                  const LeadsMarketierScreen(),
+                                                  const LeadsMarketierScreen(
+                                                    data: false,
+                                                    transferefromdata: true,
+                                                  ),
                                         ),
                                       );
                                     },
@@ -482,16 +457,19 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                                           builder:
                                               (context) =>
                                                   const LeadsMarketierScreen(
-                                                    showDuplicatesOnly: true,
+                                                    showDuplicatesOnly: false,
+                                                    data: false,
+                                                    transferefromdata: true,
                                                   ),
                                         ),
                                       );
                                     },
                                   ),
-                                ...stageCounts.entries.map((entry) {
+                                ...stageMap.entries.map((entry) {
+                                  final stageData = entry.value;
                                   return MarketerDashboardScreen._dashboardCard(
-                                    entry.key,
-                                    entry.value.toString(),
+                                    entry.key, // هنا الاسم يفضل للعرض
+                                    (stageData.leadCount ?? 0).toString(),
                                     Icons.timeline,
                                     context,
                                     onTap: () {
@@ -500,7 +478,12 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                                         MaterialPageRoute(
                                           builder:
                                               (context) => LeadsMarketierScreen(
-                                                stageName: entry.key,
+                                                stageName:
+                                                    stageData
+                                                        .stageId, // هنا تبعت الـ stageId
+                                                showDuplicatesOnly: true,
+                                                data: false,
+                                                transferefromdata: true,
                                               ),
                                         ),
                                       );
@@ -508,41 +491,6 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                                   );
                                 }),
                               ],
-                            ),
-
-                            SizedBox(height: 24),
-                            Text(
-                              'Leads by Stage',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Color(0xff080719)
-                                        : Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            Container(
-                              height: 300,
-                              padding: EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Color(0xffF5F8F9)
-                                        : Color(0xff1e1e1e),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: BarChart(
-                                _buildBarChartData(
-                                  stageCounts,
-                                  values,
-                                  stages,
-                                  context,
-                                ),
-                              ),
                             ),
                           ],
                         );

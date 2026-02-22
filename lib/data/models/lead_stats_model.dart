@@ -1,8 +1,8 @@
 class LeadsStatsModel {
   final bool? success;
-  final int? totalLeads;
-  final int? totalDuplicates;
-  final int? activeSales;
+  final num? totalLeads;
+  final num? totalDuplicates;
+  final num? activeSales;
   final List<StageStats>? stages;
 
   LeadsStatsModel({
@@ -40,7 +40,7 @@ class LeadsStatsModel {
 class StageStats {
   final String? stage;
   final String? stageId; // ← added
-  final int? leadsCount;
+  final num? leadsCount;
 
   StageStats({this.stage, this.stageId, this.leadsCount});
 

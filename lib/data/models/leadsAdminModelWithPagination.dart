@@ -16,7 +16,7 @@ DateTime? parseServerDate(String? value) {
 
 class Leadsadminmodelwithpagination {
   bool? success;
-  int? results;
+  num? results;
   Pagination? pagination;
   List<LeadDataWithPagination>? data;
 
@@ -30,7 +30,7 @@ class Leadsadminmodelwithpagination {
   factory Leadsadminmodelwithpagination.fromJson(Map<String, dynamic> json) =>
       Leadsadminmodelwithpagination(
         success: json['success'] as bool?,
-        results: json['results'] as int?,
+        results: json['results'] as num?,
         pagination:
             json['pagination'] != null
                 ? Pagination.fromJson(json['pagination'])
@@ -54,17 +54,17 @@ class Leadsadminmodelwithpagination {
 }
 
 class Pagination {
-  int? currentPage;
-  int? limit;
-  int? numberOfPages;
-  int? totalItems;
-  int? totalAllLeads;
-  int? totalLeadsActive;
-  int? totalLeadsInactive;
-  int? numberOfPagesInactive;
-  int? activePercentage;
-  int? inactivePercentage;
-  int? next;
+  num? currentPage;
+  num? limit;
+  num? numberOfPages;
+  num? totalItems;
+  num? totalAllLeads;
+  num? totalLeadsActive;
+  num? totalLeadsInactive;
+  num? numberOfPagesInactive;
+  num? activePercentage;
+  num? inactivePercentage;
+  num? next;
 
   Pagination({
     this.currentPage,
@@ -81,17 +81,17 @@ class Pagination {
   });
 
   factory Pagination.fromJson(Map<String, dynamic> json) => Pagination(
-    currentPage: json['currentPage'] as int?,
-    limit: json['limit'] as int?,
-    numberOfPages: json['NumberOfPages'] as int?,
-    totalItems: json['totalItems'] as int?,
-    totalAllLeads: json['totalAllLeads'] as int?,
-    totalLeadsActive: json['totalLeadsActive'] as int?,
-    totalLeadsInactive: json['totalLeadsInactive'] as int?,
-    numberOfPagesInactive: json['NumberOfPagesInactive'] as int?,
-    activePercentage: json['activePercentage'] as int?,
-    inactivePercentage: json['inactivePercentage'] as int?,
-    next: json['next'] as int?,
+    currentPage: json['currentPage'] as num?,
+    limit: json['limit'] as num?,
+    numberOfPages: json['NumberOfPages'] as num?,
+    totalItems: json['totalItems'] as num?,
+    totalAllLeads: json['totalAllLeads'] as num?,
+    totalLeadsActive: json['totalLeadsActive'] as num?,
+    totalLeadsInactive: json['totalLeadsInactive'] as num?,
+    numberOfPagesInactive: json['NumberOfPagesInactive'] as num?,
+    activePercentage: json['activePercentage'] as num?,
+    inactivePercentage: json['inactivePercentage'] as num?,
+    next: json['next'] as num?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -144,10 +144,10 @@ class LeadDataWithPagination {
   User? addby;
   User? updatedby;
   Campaign? campaign;
-  int? duplicateCount;
-  int? relatedLeadsCount;
+  num? duplicateCount;
+  num? relatedLeadsCount;
   List<AllVersion>? allVersions;
-  int? totalSubmissions;
+  num? totalSubmissions;
   DateTime? date;
   List<dynamic>? mergeHistory;
   DateTime? createdAt;
@@ -246,15 +246,15 @@ class LeadDataWithPagination {
         json['updatedby'] != null ? User.fromJson(json['updatedby']) : null,
     campaign:
         json['campaign'] != null ? Campaign.fromJson(json['campaign']) : null,
-    duplicateCount: json['duplicateCount'] as int?,
-    relatedLeadsCount: json['relatedLeadsCount'] as int?,
+    duplicateCount: json['duplicateCount'] as num?,
+    relatedLeadsCount: json['relatedLeadsCount'] as num?,
     allVersions:
         json['allVersions'] != null
             ? List<AllVersion>.from(
               (json['allVersions'] as List).map((x) => AllVersion.fromJson(x)),
             )
             : null,
-    totalSubmissions: json['totalSubmissions'] as int?,
+    totalSubmissions: json['totalSubmissions'] as num?,
     date: parseServerDate(json['date']),
     mergeHistory: json['mergeHistory'] as List<dynamic>?,
     createdAt: parseServerDate(json['createdAt']),
@@ -493,6 +493,7 @@ class CommunicationWay {
 class Campaign {
   String? id;
   String? CampainName;
+  String? redirectLink;
   String? Date;
   num? Cost;
   bool? isactivate;
@@ -502,6 +503,7 @@ class Campaign {
   Campaign({
     this.id,
     this.CampainName,
+    this.redirectLink,
     this.Date,
     this.Cost,
     this.isactivate,
@@ -512,6 +514,7 @@ class Campaign {
   factory Campaign.fromJson(Map<String, dynamic> json) => Campaign(
     id: json['_id'] as String?,
     CampainName: json['CampainName'] as String?,
+    redirectLink: json['redirectLink'] as String?,
     Date: json['Date'] as String?,
     Cost: json['Cost'] as num?,
     isactivate: json['isactivate'] as bool?,
@@ -523,6 +526,7 @@ class Campaign {
   Map<String, dynamic> toJson() => {
     '_id': id,
     'CampainName': CampainName,
+    'redirectLink': redirectLink,
     'Date': Date,
     'Cost': Cost,
     'isactivate': isactivate,
@@ -542,7 +546,7 @@ class AllVersion {
   CommunicationWay? communicationway;
   User? addby;
   DateTime? recordedAt;
-  int? versionNumber;
+  num? versionNumber;
 
   AllVersion({
     this.name,
@@ -573,7 +577,7 @@ class AllVersion {
             : null,
     addby: json['addby'] != null ? User.fromJson(json['addby']) : null,
     recordedAt: parseServerDate(json['recordedAt']),
-    versionNumber: json['versionNumber'] as int?,
+    versionNumber: json['versionNumber'] as num?,
   );
 
   Map<String, dynamic> toJson() => {

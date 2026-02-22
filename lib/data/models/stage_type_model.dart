@@ -1,45 +1,41 @@
 class StageTypeResponse {
-  final int? results;
+  final num? results;
   final Pagination? pagination;
   final List<StageDatam>? data;
 
-  StageTypeResponse({
-    this.results,
-    this.pagination,
-    this.data,
-  });
+  StageTypeResponse({this.results, this.pagination, this.data});
 
   factory StageTypeResponse.fromJson(Map<String, dynamic> json) {
     return StageTypeResponse(
-      results: json['results'] as int?,
-      pagination: json['pagination'] != null
-          ? Pagination.fromJson(json['pagination'])
-          : null,
-      data: (json['data'] as List<dynamic>?)
-          ?.map((item) => StageDatam.fromJson(item))
-          .toList(),
+      results: json['results'] as num?,
+      pagination:
+          json['pagination'] != null
+              ? Pagination.fromJson(json['pagination'])
+              : null,
+      data:
+          (json['data'] as List<dynamic>?)
+              ?.map((item) => StageDatam.fromJson(item))
+              .toList(),
     );
   }
 }
-class Pagination {
-  final int? currentPage;
-  final int? limit;
-  final int? numberOfPages;
 
-  Pagination({
-    this.currentPage,
-    this.limit,
-    this.numberOfPages,
-  });
+class Pagination {
+  final num? currentPage;
+  final num? limit;
+  final num? numberOfPages;
+
+  Pagination({this.currentPage, this.limit, this.numberOfPages});
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
     return Pagination(
-      currentPage: json['currentPage'] as int?,
-      limit: json['limit'] as int?,
-      numberOfPages: json['NumberOfPages'] as int?,
+      currentPage: json['currentPage'] as num?,
+      limit: json['limit'] as num?,
+      numberOfPages: json['NumberOfPages'] as num?,
     );
   }
 }
+
 class StageDatam {
   final String? id;
   final String? name;
@@ -48,7 +44,7 @@ class StageDatam {
   final String? isStageTypeActivate;
   final String? createdAt;
   final String? updatedAt;
-  final int? v;
+  final num? v;
 
   StageDatam({
     this.id,
@@ -70,7 +66,7 @@ class StageDatam {
       isStageTypeActivate: json['isstagetypeactivate'] as String?,
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
-      v: json['__v'] as int?,
+      v: json['__v'] as num?,
     );
   }
 }

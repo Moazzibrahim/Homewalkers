@@ -2,9 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/team_leader/get_dashboard_leads_count.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
+import 'package:homewalkers_app/presentation/screens/team_leader/teamleader_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/cubit/teamleader_dashboard_cubit.dart';
@@ -22,10 +25,10 @@ class TeamLeaderDashboardScreen extends StatefulWidget {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFE8F1F2),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
       ),
       child: IconButton(
-        icon: Icon(icon, color: Constants.maincolor),
+        icon: Icon(icon, color: Constants.maincolor, size: 24.sp),
         onPressed: onPressed,
       ),
     );
@@ -40,24 +43,25 @@ class TeamLeaderDashboardScreen extends StatefulWidget {
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16.r),
       child: Container(
-        height: 100,
+        height: 100.h,
         decoration: BoxDecoration(
           color:
               Theme.of(context).brightness == Brightness.light
                   ? Colors.white
                   : const Color(0xff1e1e1e),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Constants.maincolor, size: 30),
-            const SizedBox(height: 8),
+            Icon(icon, color: Constants.maincolor, size: 30.sp),
+            SizedBox(height: 8.h),
             Text(
               title,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 color:
                     Theme.of(context).brightness == Brightness.light
                         ? const Color(0xff080719)
@@ -65,11 +69,11 @@ class TeamLeaderDashboardScreen extends StatefulWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text(
               number,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 20.sp,
                 color:
                     Theme.of(context).brightness == Brightness.light
                         ? const Color(0xff080719)
@@ -112,8 +116,73 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
     super.dispose();
   }
 
+  // ✅ زر Data Centre الجديد
+  Widget _dataCentreButton(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => BlocProvider(
+                  create:
+                      (context) => TeamleaderDashboardCubit(
+                        TeamleaderDashboardApiService(),
+                      ),
+                  child: const TeamleaderDataDashboardScreen(),
+                ),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 16.w : 12.w,
+          vertical: isTablet ? 12.h : 8.h,
+        ),
+        decoration: BoxDecoration(
+          color: Constants.maincolor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: Constants.maincolor.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.storage_rounded,
+              color: Constants.maincolor,
+              size: isTablet ? 20.sp : 18.sp,
+            ),
+            SizedBox(width: isTablet ? 8.w : 4.w),
+            Text(
+              'Data Centre',
+              style: TextStyle(
+                color: Constants.maincolor,
+                fontSize: isTablet ? 16.sp : 14.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(width: isTablet ? 4.w : 2.w),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Constants.maincolor,
+              size: isTablet ? 16.sp : 14.sp,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
+
     return Scaffold(
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
@@ -125,7 +194,7 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                 ? Colors.white
                 : Constants.backgroundDarkmode,
         elevation: 0,
-        toolbarHeight: 100,
+        toolbarHeight: 100.h,
         automaticallyImplyLeading: false,
         title: Row(
           children: [
@@ -143,12 +212,12 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                             Theme.of(context).brightness == Brightness.light
                                 ? const Color(0xff080719)
                                 : Colors.white,
-                        fontSize: 12,
+                        fontSize: 12.sp,
                       ),
                     ),
-                    const Text(
+                    Text(
                       'Team Leader',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                      style: TextStyle(color: Colors.grey, fontSize: 14.sp),
                     ),
                   ],
                 );
@@ -173,14 +242,29 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20.w),
           children: [
+            // ✅ Row مدمج فيه Hello و Data Centre Button
             Row(
-              children: const [
-                Text('Hello 👋', style: TextStyle(fontSize: 14)),
+              children: [
+                // 👋 Hello section
+                Row(
+                  children: [
+                    Text(
+                      'Hello 👋',
+                      style: TextStyle(
+                        fontSize: isTablet ? 18.sp : 14.sp,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                // 🗄️ Data Centre Button
+                _dataCentreButton(context),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
 
             /// 🔥 Dashboard Data
             BlocBuilder<TeamleaderDashboardCubit, TeamleaderDashboardState>(
@@ -188,13 +272,18 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                 if (state is TeamleaderDashboardLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
-
                 if (state is TeamleaderDashboardError) {
                   return Center(child: Text("No Data Found"));
                 }
-
                 if (state is TeamleaderDashboardSuccess) {
                   final dashboard = state.response.data?.dashboard ?? [];
+                  final teamleaderInfooFresh =
+                      state.response.data?.teamLeaderPending?.salesIds ?? [];
+                  final String firstSalesIdFresh =
+                      teamleaderInfooFresh.isNotEmpty
+                          ? teamleaderInfooFresh.first
+                          : '';
+
                   final totalLeads =
                       state.response.data?.summary?.totalLeads ?? 0;
                   final teamLeaderFresh = state.response.data?.teamLeaderFresh;
@@ -210,11 +299,10 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                           .where((e) => (e.leadsCount ?? 0) > 0)
                           .where((e) => e.stageName?.toLowerCase() != 'fresh')
                           .toList();
-
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Leads
+                      // 📊 Leads Card
                       Row(
                         children: [
                           Expanded(
@@ -228,7 +316,10 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                                   context,
                                   MaterialPageRoute(
                                     builder:
-                                        (_) => const TeamLeaderAssignScreen(),
+                                        (_) => const TeamLeaderAssignScreen(
+                                          data: false,
+                                          transferfromdata: true,
+                                        ),
                                   ),
                                 );
                               },
@@ -236,10 +327,10 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 18),
-
-                      // Fresh
-                      if (teamLeaderFresh != null && teamleaderfreshcount > 0)
+                      SizedBox(height: 18.h),
+                      //      🌱 Fresh Card (إذا كان موجوداً)
+                      if (teamLeaderFresh != null &&
+                          teamleaderfreshcount > 0) ...[
                         Row(
                           children: [
                             Expanded(
@@ -248,13 +339,17 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                                 '$teamleaderfreshcount',
                                 Icons.timeline,
                                 context,
-                                onTap: () {
+                                onTap: () async {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder:
                                           (_) => TeamLeaderAssignScreen(
                                             stageName: "fresh",
+                                            data: false,
+                                            transferfromdata: true,
+                                            stageId: teamLeaderFresh.stageId,
+                                            salesName: firstSalesIdFresh,
                                           ),
                                     ),
                                   );
@@ -263,12 +358,11 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                             ),
                           ],
                         ),
-                      if (teamLeaderFresh != null && teamleaderfreshcount > 0)
-                        const SizedBox(height: 18),
-
-                      // Pending
+                        SizedBox(height: 18.h),
+                      ],
+                      //  ⏳ Pending Card (إذا كان موجوداً)
                       if (teamLeaderPending != null &&
-                          teamleaderpendingcount > 0)
+                          teamleaderpendingcount > 0) ...[
                         Row(
                           children: [
                             Expanded(
@@ -277,13 +371,17 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                                 '$teamleaderpendingcount',
                                 Icons.pending_actions,
                                 context,
-                                onTap: () {
+                                onTap: () async {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder:
                                           (_) => TeamLeaderAssignScreen(
                                             stageName: "Team Leader Pending",
+                                            data: false,
+                                            transferfromdata: true,
+                                            stageId: teamLeaderPending.stageId,
+                                            salesName: firstSalesIdFresh,
                                           ),
                                     ),
                                   );
@@ -292,18 +390,16 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                             ),
                           ],
                         ),
-                      if (teamLeaderPending != null &&
-                          teamleaderpendingcount > 0)
-                        const SizedBox(height: 18),
-
-                      // باقي الـ stages
+                        SizedBox(height: 20.h),
+                      ],
+                      // 🎯 باقي الـ stages Grid (من غير Data Centre)
                       GridView.count(
-                        crossAxisCount: 2,
+                        crossAxisCount: isTablet ? 3 : 2,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                        childAspectRatio: 1.5,
+                        crossAxisSpacing: 8.w,
+                        mainAxisSpacing: 8.h,
+                        childAspectRatio: isTablet ? 2.5 : 1.5,
                         children:
                             visibleStages.map((item) {
                               return TeamLeaderDashboardScreen._dashboardCard(
@@ -318,6 +414,9 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                                       builder:
                                           (_) => TeamLeaderAssignScreen(
                                             stageName: item.stageName,
+                                            data: false,
+                                            transferfromdata: true,
+                                            stageId: item.stageId,
                                           ),
                                     ),
                                   );
@@ -328,7 +427,6 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                     ],
                   );
                 }
-
                 return const SizedBox();
               },
             ),

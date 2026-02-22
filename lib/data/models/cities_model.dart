@@ -1,5 +1,5 @@
 class CityResponse {
-  final int? results;
+  final num? results;
   final Pagination? pagination;
   final List<Cityy>? data;
 
@@ -8,19 +8,22 @@ class CityResponse {
   factory CityResponse.fromJson(Map<String, dynamic> json) {
     return CityResponse(
       results: json['results'],
-      pagination: json['pagination'] != null
-          ? Pagination.fromJson(json['pagination'])
-          : null,
-      data: (json['data'] as List<dynamic>?)
-          ?.map((e) => Cityy.fromJson(e))
-          .toList(),
+      pagination:
+          json['pagination'] != null
+              ? Pagination.fromJson(json['pagination'])
+              : null,
+      data:
+          (json['data'] as List<dynamic>?)
+              ?.map((e) => Cityy.fromJson(e))
+              .toList(),
     );
   }
 }
+
 class Pagination {
-  final int? currentPage;
-  final int? limit;
-  final int? numberOfPages;
+  final num? currentPage;
+  final num? limit;
+  final num? numberOfPages;
 
   Pagination({this.currentPage, this.limit, this.numberOfPages});
 
@@ -32,13 +35,14 @@ class Pagination {
     );
   }
 }
+
 class Cityy {
   final String? id;
   final String? name;
   final String? slug;
   final String? createdAt;
   final String? updatedAt;
-  final int? v;
+  final num? v;
 
   Cityy({
     this.id,

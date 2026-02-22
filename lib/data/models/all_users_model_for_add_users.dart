@@ -1,37 +1,31 @@
 class AllUsersModelForAddUsers {
-  final int? results;
+  final num? results;
   final Pagination? pagination;
   final List<UserData>? data;
 
-  AllUsersModelForAddUsers({
-    this.results,
-    this.pagination,
-    this.data,
-  });
+  AllUsersModelForAddUsers({this.results, this.pagination, this.data});
 
   factory AllUsersModelForAddUsers.fromJson(Map<String, dynamic> json) {
     return AllUsersModelForAddUsers(
       results: json['results'],
-      pagination: json['pagination'] != null
-          ? Pagination.fromJson(json['pagination'])
-          : null,
-      data: (json['data'] as List<dynamic>?)
-          ?.map((item) => UserData.fromJson(item))
-          .toList(),
+      pagination:
+          json['pagination'] != null
+              ? Pagination.fromJson(json['pagination'])
+              : null,
+      data:
+          (json['data'] as List<dynamic>?)
+              ?.map((item) => UserData.fromJson(item))
+              .toList(),
     );
   }
 }
 
 class Pagination {
-  final int? currentPage;
-  final int? limit;
-  final int? numberOfPages;
+  final num? currentPage;
+  final num? limit;
+  final num? numberOfPages;
 
-  Pagination({
-    this.currentPage,
-    this.limit,
-    this.numberOfPages,
-  });
+  Pagination({this.currentPage, this.limit, this.numberOfPages});
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
     return Pagination(
@@ -53,13 +47,13 @@ class UserData {
   final bool? active;
   final bool? opencomments;
   final bool? closeDoneDealcomments;
-  final int? tokenVersion;
+  final num? tokenVersion;
   final String? fcmToken;
   final String? profileImg;
   final String? createdAt;
   final String? updatedAt;
   final String? passwordChangedAt;
-  final int? v;
+  final num? v;
 
   UserData({
     this.id,
