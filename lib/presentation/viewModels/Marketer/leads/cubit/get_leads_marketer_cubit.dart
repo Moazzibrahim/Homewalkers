@@ -238,6 +238,29 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
     }
   }
 
+  // أضف هذه الدالة في نهاية class GetLeadsMarketerCubit
+  void resetState() {
+    log("🔄 Resetting Cubit state...");
+
+    // إعادة تعيين المتغيرات
+    _paginationResponse = null;
+    _currentPage = 1;
+    _totalPages = 1;
+    _totalItems = 0;
+    _limit = 10;
+    _hasMoreData = true;
+    _isLoadingMore = false;
+
+    // مسح البيانات
+    leadsDatum.clear();
+
+    // مسح الفلاتر
+    _currentFilters = {};
+
+    // إصدار حالة Initial
+    emit(GetLeadsMarketerInitial());
+  }
+
   // دالة مساعدة لإعادة تحميل الصفحة الأولى (للسحب للتحديث)
   Future<void> refreshLeadsMarketer() async {
     log("🔄 Refreshing leads with current filters...");

@@ -12,8 +12,7 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
   /// 🗑️ Trash leads
   final List<LeadDataWithPagination> trashLeads = [];
 
-  AllLeadsCubitWithPagination(this.apiService)
-      : super(AllLeadsInitial());
+  AllLeadsCubitWithPagination(this.apiService) : super(AllLeadsInitial());
 
   /// =======================
   /// ✅ Active Leads
@@ -47,7 +46,6 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
     bool? transferefromdata,
     bool? data,
   }) async {
-
     /// ✅ لو أول صفحة → reset حقيقي
     if (page == 1) {
       leads.clear();
@@ -106,7 +104,11 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
   /// =======================
   /// 🗑️ Trash Leads
   /// =======================
-  Future<void> fetchLeadsInTrash({int page = 1, int limit = 10}) async {
+  Future<void> fetchLeadsInTrash({
+    int page = 1,
+    int limit = 10,
+    String? search, // ✅ أضفنا السيرش
+  }) async {
     if (page == 1) {
       emit(AllLeadsTrashLoading());
     }
@@ -115,11 +117,12 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
       final response = await apiService.fetchLeadsInTrash(
         page: page,
         limit: limit,
+        search: search, // ✅ نبعته هنا
       );
 
       if (response != null) {
         if (page == 1) {
-          trashLeads.clear();
+          trashLeads.clear(); // ✅ يمسح القديم عند بداية السيرش
         }
 
         final newData = response.data ?? [];

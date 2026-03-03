@@ -220,9 +220,14 @@ class NotificationCubit extends Cubit<NotificationState> {
   }) async {
     try {
       final url = Uri.parse('${Constants.baseUrl}/Notification/send-fcm');
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? 'unknown_sender';
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode({
           "fcmToken": fcmtokennnn,
           "title": title,

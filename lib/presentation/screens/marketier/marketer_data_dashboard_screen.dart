@@ -160,6 +160,15 @@ class _MarketerDashboardScreenState extends State<MarketerDataDashboardScreen>
                 ? Constants.backgroundlightmode
                 : Constants.backgroundDarkmode,
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios, // سهم رجوع iOS
+              color: Colors.black, // تقدر تغيّره حسب الثيم
+            ),
+            onPressed: () {
+              Navigator.pop(context); // ترجع للشاشة السابقة
+            },
+          ),
           backgroundColor:
               Theme.of(context).brightness == Brightness.light
                   ? Colors.white
@@ -323,27 +332,32 @@ class _MarketerDashboardScreenState extends State<MarketerDataDashboardScreen>
                             Row(
                               children: [
                                 Expanded(
-                                  child:
-                                      MarketerDataDashboardScreen._dashboardCard(
-                                        'Leads',
-                                        '${totalLeads}',
-                                        Icons.group,
+                                  child: MarketerDataDashboardScreen._dashboardCard(
+                                    'Leads',
+                                    '${totalLeads}',
+                                    Icons.group,
+                                    context,
+                                    onTap: () {
+                                      Navigator.push(
                                         context,
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (context) =>
-                                                      const LeadsMarketierScreen(
-                                                        data: false,
-                                                        transferefromdata:
-                                                            false,
-                                                      ),
-                                            ),
-                                          );
-                                        },
-                                      ),
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) => BlocProvider(
+                                                create:
+                                                    (_) =>
+                                                        GetLeadsMarketerCubit(
+                                                          GetLeadsService(),
+                                                        ),
+                                                child:
+                                                    const LeadsMarketierScreen(
+                                                      data: false,
+                                                      transferefromdata: false,
+                                                    ),
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
                               ],
                             ),
@@ -390,13 +404,20 @@ class _MarketerDashboardScreenState extends State<MarketerDataDashboardScreen>
                                         context,
                                         MaterialPageRoute(
                                           builder:
-                                              (context) => LeadsMarketierScreen(
-                                                stageName:
-                                                    stageData
-                                                        .stageId, // هنا تبعت الـ stageId
-                                                showDuplicatesOnly: true,
-                                                data: false,
-                                                transferefromdata: false,
+                                              (context) => BlocProvider(
+                                                create:
+                                                    (_) =>
+                                                        GetLeadsMarketerCubit(
+                                                          GetLeadsService(),
+                                                        ),
+                                                child: LeadsMarketierScreen(
+                                                  stageName:
+                                                      stageData
+                                                          .stageId, // هنا تبعت الـ stageId
+                                                  showDuplicatesOnly: true,
+                                                  data: false,
+                                                  transferefromdata: false,
+                                                ),
                                               ),
                                         ),
                                       );

@@ -528,6 +528,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               tabletWidthScale: tabletWidthScale,
               tabletHeightScale: tabletHeightScale,
             ),
+            SizedBox(width: (12 * tabletWidthScale).w),
             AdminDashboardScreen._iconBox(
               Icons.notifications_none,
               () {

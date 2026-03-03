@@ -137,11 +137,11 @@ class ResponsiveSalesValues {
         isLandscape: isLandscape,
         screenWidth: width,
         screenHeight: height,
-        horizontalPadding: 16.0,
-        verticalPadding: 12.0,
-        cardMarginHorizontal: 12.0,
+        horizontalPadding: 13.0,
+        verticalPadding: 10.0,
+        cardMarginHorizontal: 3.0,
         cardMarginVertical: 4.0,
-        cardPadding: 16.0,
+        cardPadding: 19.0,
         fontSizeSmall: 12.0,
         fontSizeMedium: 13.0,
         fontSizeLarge: 14.0,
@@ -1260,7 +1260,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildStageContainer(lead, isOutdated),
-                        SizedBox(height: _responsive.verticalPadding.h * 0.5),
+                        SizedBox(height: _responsive.verticalPadding.h * 1.2),
                         Text(
                           "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!) : "N/A"}",
                           style: TextStyle(
@@ -1371,7 +1371,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                 ),
               ),
 
-              SizedBox(height: _responsive.verticalPadding.h),
+              SizedBox(height: _responsive.verticalPadding.h * 2.5),
 
               // Sales Person and Actions
               Column(

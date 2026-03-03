@@ -37,13 +37,15 @@ class User {
   final String? id;
   final String? name;
   final String? email;
+  final String? fcmToken;
 
-  User({this.id, this.name, this.email});
+  User({this.id, this.name, this.email, this.fcmToken});
 
   factory User.fromJson(Map<String, dynamic> json) => User(
     id: json['_id'] ?? json['id'],
     name: json['name'],
     email: json['email'],
+    fcmToken: json['fcmToken'],
   );
 }
 

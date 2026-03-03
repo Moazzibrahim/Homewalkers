@@ -26,68 +26,39 @@ class AssignleadCubit extends Cubit<AssignState> {
     );
 
     final prefs = await SharedPreferences.getInstance();
-    final salesId = prefs.getString('salesId');
     final token = prefs.getString('token');
 
-    if (salesId == null) {
-      emit(AssignFailure('Missing salesId from SharedPreferences'));
-      return;
-    }
-
     try {
-      await Future.wait(
-        leadIds.map((leadId) async {
-          // ===== PUT =====
-          final putUrl = '${Constants.baseUrl}/users/$leadId';
-          final putBody = {
-            "assign": "true",
-            "lastdateassign": lastDateAssign,
-            "sales": teamleadersId,
-          };
+      final postUrl = '${Constants.baseUrl}/Sales/sales-by-email';
 
-          log("🚀 Sending PUT for $leadId");
-          final putResponse = await dio.put(
-            putUrl,
-            data: putBody,
-            options: Options(
-              headers: {
-                'Authorization': 'Bearer $token',
-                'Content-Type': 'application/json',
-              },
-            ),
-          );
-          log("✅ PUT done for $leadId");
+      final postBody = {"leadIds": leadIds, "clearHistory": false};
 
-          if (putResponse.statusCode != 200 && putResponse.statusCode != 201) {
-            throw Exception('Failed to assign lead in PUT: $leadId');
-          }
+      log("📤 POST URL: $postUrl");
+      log("📦 POST BODY: $postBody");
 
-          // ===== POST ===== (Fire & Forget – من غير await)
-          final postUrl = '${Constants.baseUrl}/LeadAssigned';
-          final postBody = {
-            "LeadId": leadId,
-            "date_Assigned": dateAssigned,
-            "Assigned_From": salesId,
-            "Assigned_to": teamleadersId,
-          };
-          unawaited(
-            dio.post(
-              postUrl,
-              data: postBody,
-              options: Options(headers: {'Content-Type': 'application/json'}),
-            ),
-          );
-          log("📤 POST triggered for $leadId");
-        }),
+      final postResponse = await dio.put(
+        postUrl,
+        data: postBody,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            "Authorization": 'Bearer $token', // مهم جدا
+          },
+        ),
       );
 
-      // ✅ كله نجح
-      log('🎉 All leads assigned successfully');
-      log("teamleadersId: $teamleadersId");
-      log("salesId: $salesId");
+      log("✅ POST STATUS CODE: ${postResponse.statusCode}");
+      log("📥 POST RESPONSE DATA: ${postResponse.data}");
+
       emit(AssignSuccess());
+    } on DioException catch (e) {
+      log("❌ DIO ERROR");
+      log("🔴 STATUS CODE: ${e.response?.statusCode}");
+      log("🔴 RESPONSE DATA: ${e.response?.data}");
+
+      emit(AssignFailure('❌ Dio Error: ${e.response?.data ?? e.message}'));
     } catch (e) {
-      emit(AssignFailure('❌ Error during combined assignment: $e'));
+      emit(AssignFailure('❌ Error during assignment: $e'));
     }
   }
 

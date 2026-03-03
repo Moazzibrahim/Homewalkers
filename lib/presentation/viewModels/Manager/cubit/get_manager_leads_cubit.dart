@@ -5,6 +5,8 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:homewalkers_app/data/models/manager_new/manager_dashboard_pagination_model.dart'
+    show ManagerDashboardPaginationModel;
 import 'package:shared_preferences/shared_preferences.dart';
 part 'get_manager_leads_state.dart';
 
@@ -18,6 +20,47 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
   List<LeadData> leads = [];
 
   GetManagerLeadsCubit(this._getLeadsService) : super(GetManagerLeadsInitial());
+
+  Future<void> getManagerDashboardCounts() async {
+    emit(GetManagerLeadsLoading());
+
+    try {
+      log("📊 Fetching Manager Dashboard...");
+
+      final dashboardResponse = await _getLeadsService.fetchManagerDashboard();
+
+      if (dashboardResponse == null || dashboardResponse.data == null) {
+        emit(const GetManagerLeadsFailure("No dashboard data"));
+        return;
+      }
+
+      emit(GetManagerDashboardSuccess(dashboardResponse));
+    } catch (e) {
+      log("❌ Error in getManagerDashboardCounts: $e");
+      emit(const GetManagerLeadsFailure("Dashboard error"));
+    }
+  }
+
+  Future<void> getManagerDashboardDataCounts() async {
+    emit(GetManagerLeadsLoading());
+
+    try {
+      log("📊 Fetching Manager Dashboard...");
+
+      final dashboardResponse =
+          await _getLeadsService.fetchManagerDashboardData();
+
+      if (dashboardResponse == null || dashboardResponse.data == null) {
+        emit(const GetManagerLeadsFailure("No dashboard data"));
+        return;
+      }
+
+      emit(GetManagerDashboardSuccess(dashboardResponse));
+    } catch (e) {
+      log("❌ Error in getManagerDashboardCounts: $e");
+      emit(const GetManagerLeadsFailure("Dashboard error"));
+    }
+  }
 
   Future<void> getLeadsByManager() async {
     emit(GetManagerLeadsLoading());

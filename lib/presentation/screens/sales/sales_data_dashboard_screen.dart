@@ -89,7 +89,16 @@ class _SalesDataDashboardScreenState extends State<SalesDataDashboardScreen>
                   : Constants.backgroundDarkmode,
           elevation: 0,
           toolbarHeight: 100,
-          automaticallyImplyLeading: false,
+          automaticallyImplyLeading: false, // هنخلي الزرار بنفسنا
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios, // سهم رجوع iOS
+              color: Colors.black, // تقدر تغيّره حسب الثيم
+            ),
+            onPressed: () {
+              Navigator.pop(context); // ترجع للشاشة السابقة
+            },
+          ),
           title: Row(
             children: [
               Column(
@@ -102,7 +111,6 @@ class _SalesDataDashboardScreenState extends State<SalesDataDashboardScreen>
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-
                   const Text(
                     'Sales',
                     style: TextStyle(

@@ -52,6 +52,7 @@ class CustomAssignDialogTeamLeaderWidget extends StatefulWidget {
 class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
   bool isTeamLeaderChecked = false;
   String? savedIdassignedfrom;
+  String? selectedSalesFcm;
   String? selectedSalesId;
   Map<String, bool> selectedSales = {};
   bool clearHistory = false;
@@ -310,6 +311,35 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                                               val == true
                                                   ? sale.salesID.toString()
                                                   : null;
+                                          if (val == true) {
+                                            selectedSalesId = sale.salesID;
+
+                                            // ✅ نجيب أول lead ونطلع منه fcmToken
+                                            if (sale.stages != null &&
+                                                sale.stages!.isNotEmpty &&
+                                                sale.stages!.first.leads !=
+                                                    null &&
+                                                sale
+                                                    .stages!
+                                                    .first
+                                                    .leads!
+                                                    .isNotEmpty) {
+                                              selectedSalesFcm =
+                                                  sale
+                                                      .stages!
+                                                      .first
+                                                      .leads!
+                                                      .first
+                                                      .sales
+                                                      ?.userlog
+                                                      ?.fcmToken;
+                                            } else {
+                                              selectedSalesFcm = null;
+                                            }
+                                          } else {
+                                            selectedSalesId = null;
+                                            selectedSalesFcm = null;
+                                          }
                                         });
                                       },
                                     ),
@@ -498,18 +528,14 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                   BlocListener<AssignleadCubit, AssignState>(
                     listener: (context, state) async {
                       if (state is AssignSuccess) {
-                        if (Navigator.canPop(dialogContext)) {
-                          Navigator.pop(dialogContext, true);
-                        }
-                        if (widget.onAssignSuccess != null) {
-                          widget.onAssignSuccess!();
-                        }
-                        final cubit = context.read<GetLeadsTeamLeaderCubit>();
-                        await cubit.fetchTeamLeaderLeadsWithPagination(
-                          data: widget.data,
-                          transferefromdata: widget.transferfromdata,
-                        );
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        // ✅ خد الـ cubits قبل أي pop
+                        final leadsCubit =
+                            context.read<GetLeadsTeamLeaderCubit>();
+                        final notificationCubit =
+                            context.read<NotificationCubit>();
+
+                        // ✅ اعرض SnackBar
+                        ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
                               "Lead assigned successfully! ✅",
@@ -519,24 +545,42 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                             ),
                           ),
                         );
-                        context
-                            .read<NotificationCubit>()
-                            .sendNotificationToToken(
-                              title: "Lead",
-                              body: "Lead assigned successfully ✅",
-                              fcmtokennnn: widget.fcmyoken,
-                            );
+
+                        // ✅ نفّذ refresh قبل ما تقفل الـ dialog
+                        await leadsCubit.fetchTeamLeaderLeadsWithPagination(
+                          data: widget.data,
+                          transferefromdata: widget.transferfromdata,
+                        );
+
+                        // ✅ ابعت notifications
+                        notificationCubit.sendNotificationToToken(
+                          title: "Lead",
+                          body: "Lead assigned successfully ✅",
+                          fcmtokennnn: selectedSalesFcm ?? widget.fcmyoken,
+                        );
+
                         if (widget.managerfcm != null) {
-                          context
-                              .read<NotificationCubit>()
-                              .sendNotificationToToken(
-                                title: "Lead",
-                                body: "Lead assigned successfully ✅",
-                                fcmtokennnn: widget.managerfcm!,
-                              );
+                          notificationCubit.sendNotificationToToken(
+                            title: "Lead",
+                            body: "Lead assigned successfully ✅",
+                            fcmtokennnn: widget.managerfcm!,
+                          );
+                        }
+
+                        // ✅ نفّذ callback لو موجود
+                        if (widget.onAssignSuccess != null) {
+                          widget.onAssignSuccess!();
+                        }
+
+                        // ✅ اقفل الـ dialog في الآخر
+                        if (mounted && Navigator.canPop(context)) {
+                          Navigator.pop(context, true);
                         }
                       } else if (state is AssignFailure) {
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        // ❌ حالة الفشل
+                        if (!mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
                               "Failed to assign lead: ${state.error} ❌",

@@ -153,18 +153,18 @@ class _AssignDialogState extends State<AssignDialog> {
                                     _LeadData?.sales?.teamleader?.fcmToken ??
                                     '',
                               );
+                          log(
+                            "Notification sent to token: ${_LeadData?.sales?.teamleader?.fcmToken}",
+                          );
 
                           // 👇 هنا استدعاء الـ callback لتحديث الصفحة
                           if (widget.onSuccess != null) {
                             widget.onSuccess!();
                           }
                         } else if (state is AssignFailure) {
+                          log("Assign Error: ${state.error}");
                           ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Failed to assign lead: ${state.error} ❌",
-                              ),
-                            ),
+                            SnackBar(content: Text("Failed to assign lead ❌")),
                           );
                         }
                       },
@@ -175,6 +175,7 @@ class _AssignDialogState extends State<AssignDialog> {
                             onPressed: () {
                               Navigator.pop(dialogContext);
                               log("Team Leader ID: $teamLeaderId");
+                              log("Selected Lead IDs: ${widget.leadIds}");
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
@@ -199,10 +200,30 @@ class _AssignDialogState extends State<AssignDialog> {
                                     widget.leadIds != null
                                         ? List<String>.from(widget.leadIds!)
                                         : [widget.leadId!];
-                                teamLeaderId =
-                                    _LeadData!.sales!.teamleader!.id ?? '';
+                                teamLeaderId = _LeadData?.sales?.teamleader?.id;
+                                if (teamLeaderId == null ||
+                                    teamLeaderId!.isEmpty) {
+                                  log("❌ TeamLeader ID is NULL or EMPTY");
+                                  ScaffoldMessenger.of(
+                                    dialogContext,
+                                  ).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "⚠️ No Team Leader ID found.",
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
                                 log("Selected Lead IDs: $leadIds");
                                 log("Team Leader ID: $teamLeaderId");
+                                log("Full Sales Object: ${_LeadData!.sales}");
+                                log(
+                                  "TeamLeader Object: ${_LeadData!.sales?.teamleader}",
+                                );
+                                log(
+                                  "TeamLeader ID: ${_LeadData?.sales?.teamleader?.id}",
+                                );
 
                                 final String lastDateAssign =
                                     DateTime.now().toUtc().toIso8601String();

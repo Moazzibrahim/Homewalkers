@@ -2,8 +2,10 @@
 
 import 'dart:convert';
 import 'dart:developer';
+import 'package:dio/dio.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:homewalkers_app/data/models/manager_new/manager_dashboard_pagination_model.dart';
 import 'package:homewalkers_app/data/models/marketer_dashboard_model.dart';
 import 'package:homewalkers_app/data/models/new_marketer_pagination_model.dart';
 import 'package:homewalkers_app/data/models/salesLeadsModelWithPagination.dart';
@@ -498,6 +500,103 @@ class GetLeadsService {
     }
   }
 
+  final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 15),
+    ),
+  );
+
+  Future<ManagerDashboardPaginationModel?> fetchManagerDashboard() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final email = prefs.getString('email');
+
+      if (token == null || token.isEmpty) {
+        log("❌ Token not found");
+        return null;
+      }
+
+      final url = "${Constants.baseUrl}/users/stage-Dashboard-Manager/$email";
+
+      log("📤 GET URL: $url");
+
+      final response = await _dio.get(
+        url,
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          },
+        ),
+      );
+
+      log("✅ STATUS CODE: ${response.statusCode}");
+      log("📦 RESPONSE: ${response.data}");
+
+      if (response.statusCode == 200) {
+        return ManagerDashboardPaginationModel.fromJson(response.data);
+      } else {
+        log("❌ Unexpected status code: ${response.statusCode}");
+        return null;
+      }
+    } on DioException catch (e) {
+      log("❌ DIO ERROR");
+      log("🔴 STATUS CODE: ${e.response?.statusCode}");
+      log("🔴 RESPONSE: ${e.response?.data}");
+      return null;
+    } catch (e) {
+      log("❌ GENERAL ERROR: $e");
+      return null;
+    }
+  }
+
+  Future<ManagerDashboardPaginationModel?> fetchManagerDashboardData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final email = prefs.getString('email');
+
+      if (token == null || token.isEmpty) {
+        log("❌ Token not found");
+        return null;
+      }
+
+      final url = "${Constants.baseUrl}/users/stage-Dashboard-Manager-crmdata/$email";
+
+      log("📤 GET URL: $url");
+
+      final response = await _dio.get(
+        url,
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          },
+        ),
+      );
+
+      log("✅ STATUS CODE: ${response.statusCode}");
+      log("📦 RESPONSE: ${response.data}");
+
+      if (response.statusCode == 200) {
+        return ManagerDashboardPaginationModel.fromJson(response.data);
+      } else {
+        log("❌ Unexpected status code: ${response.statusCode}");
+        return null;
+      }
+    } on DioException catch (e) {
+      log("❌ DIO ERROR");
+      log("🔴 STATUS CODE: ${e.response?.statusCode}");
+      log("🔴 RESPONSE: ${e.response?.data}");
+      return null;
+    } catch (e) {
+      log("❌ GENERAL ERROR: $e");
+      return null;
+    }
+  }
+
   Future<LeadResponse> getLeadsDataByManager() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -933,12 +1032,16 @@ class GetLeadsService {
   Future<LeadResponse> getLeadsDataByMarketerInTrash() async {
     try {
       final String? token = await _getToken();
+      final prefs = await SharedPreferences.getInstance();
+      final String? email = prefs.getString('email');
 
       if (token == null) {
         throw Exception("Missing token.");
       }
 
-      final url = Uri.parse('${Constants.baseUrl}/users?leadisactive=false');
+      final url = Uri.parse(
+        '${Constants.baseUrl}/users/GetAllLeadsAddedByUser-advanced?leadisactive=false&email=$email',
+      );
 
       final response = await http.get(
         url,
@@ -949,6 +1052,7 @@ class GetLeadsService {
         final jsonBody = json.decode(response.body);
         final leadsResponse = LeadResponse.fromJson(jsonBody);
         log("✅ Get leads successfully by marketer (Trash)}");
+        print("url: $url");
         return leadsResponse;
       } else {
         throw Exception(

@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, unintended_html_in_doc_comment
 
 import 'dart:convert';
 import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
@@ -7,8 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class LeadsApiServiceWithQuery {
-  final String baseUrl =
-      "${Constants.baseUrl}/users/admin/allleadspagination";
+  final String baseUrl = "${Constants.baseUrl}/users/admin/allleadspagination";
 
   /// fetch leads with query params (search + filters + pagination)
   Future<Leadsadminmodelwithpagination?> fetchLeads({
@@ -64,12 +63,10 @@ class LeadsApiServiceWithQuery {
           (projectIds != null && projectIds.isNotEmpty) ||
           (channelIds != null && channelIds.isNotEmpty) ||
           (campaignIds != null && campaignIds.isNotEmpty) ||
-          (communicationWayIds != null &&
-              communicationWayIds.isNotEmpty) ||
+          (communicationWayIds != null && communicationWayIds.isNotEmpty) ||
           (stageIds != null && stageIds.isNotEmpty) ||
           (addedByIds != null && addedByIds.isNotEmpty) ||
-          (assignedFromIds != null &&
-              assignedFromIds.isNotEmpty) ||
+          (assignedFromIds != null && assignedFromIds.isNotEmpty) ||
           (assignedToIds != null && assignedToIds.isNotEmpty) ||
           creationDateFrom != null ||
           creationDateTo != null ||
@@ -109,10 +106,8 @@ class LeadsApiServiceWithQuery {
         queryParams["campaign"] = campaignIds.join(",");
       }
 
-      if (communicationWayIds != null &&
-          communicationWayIds.isNotEmpty) {
-        queryParams["communicationway"] =
-            communicationWayIds.join(",");
+      if (communicationWayIds != null && communicationWayIds.isNotEmpty) {
+        queryParams["communicationway"] = communicationWayIds.join(",");
       }
 
       if (stageIds != null && stageIds.isNotEmpty) {
@@ -123,23 +118,17 @@ class LeadsApiServiceWithQuery {
         queryParams["addedBy"] = addedByIds.join(",");
       }
 
-      if (assignedFromIds != null &&
-          assignedFromIds.isNotEmpty) {
-        queryParams["assignedFrom"] =
-            assignedFromIds.join(",");
+      if (assignedFromIds != null && assignedFromIds.isNotEmpty) {
+        queryParams["assignedFrom"] = assignedFromIds.join(",");
       }
 
-      if (assignedToIds != null &&
-          assignedToIds.isNotEmpty) {
-        queryParams["assignedTo"] =
-            assignedToIds.join(",");
+      if (assignedToIds != null && assignedToIds.isNotEmpty) {
+        queryParams["assignedTo"] = assignedToIds.join(",");
       }
 
       if (ignoreDuplicate != null) {
-        queryParams["ignoreduplicate"] =
-            ignoreDuplicate.toString();
-        queryParams["duplicates"] =
-            ignoreDuplicate.toString();
+        queryParams["ignoreduplicate"] = ignoreDuplicate.toString();
+        queryParams["duplicates"] = ignoreDuplicate.toString();
       }
 
       if (data != null) {
@@ -147,8 +136,7 @@ class LeadsApiServiceWithQuery {
       }
 
       if (transferefromdata != null) {
-        queryParams["transferefromdata"] =
-            transferefromdata.toString();
+        queryParams["transferefromdata"] = transferefromdata.toString();
       }
 
       /// 🔥 تواريخ
@@ -198,8 +186,7 @@ class LeadsApiServiceWithQuery {
             endOfDay(stageDateTo).toIso8601String();
       }
 
-      final uri =
-          Uri.parse(baseUrl).replace(queryParameters: queryParams);
+      final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
 
       print("Final URL: ${uri.toString()}");
 
@@ -212,10 +199,8 @@ class LeadsApiServiceWithQuery {
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData =
-            json.decode(response.body);
-        return Leadsadminmodelwithpagination.fromJson(
-            jsonData);
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        return Leadsadminmodelwithpagination.fromJson(jsonData);
       } else {
         print("Failed: ${response.statusCode}");
         print(response.body);
@@ -230,6 +215,7 @@ class LeadsApiServiceWithQuery {
   Future<Leadsadminmodelwithpagination?> fetchLeadsInTrash({
     int page = 1,
     int limit = 10,
+    String? search, // ✅ أضفنا السيرش
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -240,16 +226,22 @@ class LeadsApiServiceWithQuery {
         return null;
       }
 
-      // 🗑️ route بتاع الـ trash
+      Map<String, String> queryParams = {
+        "page": page.toString(),
+        "leadisactive": "false", // 🗑️ التراش
+       // "limit": limit.toString(),
+      };
+
+      // ✅ إضافة keyword لو موجود
+      if (search != null && search.isNotEmpty) {
+        queryParams["keyword"] = search;
+      }
+
       final uri = Uri.parse(
         "${Constants.baseUrl}/users/admin/allleadspagination",
-      ).replace(
-        queryParameters: {
-          "page": page.toString(),
-          "limit": limit.toString(),
-          "leadisactive": "false",
-        },
-      );
+      ).replace(queryParameters: queryParams);
+
+      print("Trash URL: ${uri.toString()}");
 
       final response = await http.get(
         uri,

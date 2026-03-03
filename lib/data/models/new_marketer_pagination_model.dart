@@ -6,6 +6,8 @@
 
 import 'dart:convert';
 
+import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
+
 NewMarketerPaginationModel NewMarketerPaginationModelFromJson(String str) =>
     NewMarketerPaginationModel.fromJson(json.decode(str));
 
@@ -174,7 +176,7 @@ class Datum {
   Stage? stage;
   List<LeadStage>? leadStages;
   List<LeadAssign>? leadAssigns;
-  dynamic lastComment;
+  LastComment? lastComment;
 
   Datum({
     this.id,
@@ -299,7 +301,10 @@ class Datum {
             : List<LeadAssign>.from(
               json["leadAssigns"]!.map((x) => LeadAssign.fromJson(x)),
             ),
-    lastComment: json["lastComment"],
+    lastComment:
+        json["lastComment"] == null
+            ? null
+            : LastComment.fromJson(json["lastComment"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -362,7 +367,66 @@ class Datum {
         leadAssigns == null
             ? []
             : List<dynamic>.from(leadAssigns!.map((x) => x.toJson())),
-    "lastComment": lastComment,
+    "lastComment": lastComment?.toJson(),
+  };
+}
+
+class LastComment {
+  CommentDetails? firstcomment;
+  CommentDetails? secondcomment;
+  User? sales;
+  DateTime? stageDate;
+  DateTime? actionCreatedAt;
+  DateTime? actionUpdatedAt;
+
+  LastComment({
+    this.firstcomment,
+    this.secondcomment,
+    this.sales,
+    this.stageDate,
+    this.actionCreatedAt,
+    this.actionUpdatedAt,
+  });
+
+  factory LastComment.fromJson(Map<String, dynamic> json) => LastComment(
+    firstcomment:
+        json['firstcomment'] != null
+            ? CommentDetails.fromJson(json['firstcomment'])
+            : null,
+    secondcomment:
+        json['secondcomment'] != null
+            ? CommentDetails.fromJson(json['secondcomment'])
+            : null,
+    sales: json['sales'] != null ? User.fromJson(json['sales']) : null,
+    stageDate: parseServerDate(json['stageDate']),
+    actionCreatedAt: parseServerDate(json['actionCreatedAt']),
+    actionUpdatedAt: parseServerDate(json['actionUpdatedAt']),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'firstcomment': firstcomment?.toJson(),
+    'secondcomment': secondcomment?.toJson(),
+    'sales': sales?.toJson(),
+    'stageDate': stageDate?.toIso8601String(),
+    'actionCreatedAt': actionCreatedAt?.toIso8601String(),
+    'actionUpdatedAt': actionUpdatedAt?.toIso8601String(),
+  };
+}
+
+class CommentDetails {
+  String? text;
+  DateTime? date;
+
+  CommentDetails({this.text, this.date});
+
+  factory CommentDetails.fromJson(Map<String, dynamic> json) => CommentDetails(
+    text: json['text'] as String?,
+    date: parseServerDate(json['date']),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'text': text,
+    'date': date?.toIso8601String(),
   };
 }
 

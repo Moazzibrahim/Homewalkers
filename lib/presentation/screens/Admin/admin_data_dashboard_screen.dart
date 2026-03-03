@@ -373,6 +373,15 @@ class _AdminDashboardScreenState extends State<AdminDataDashboardScreen>
               : Constants.backgroundDarkmode,
       appBar: AppBar(
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios, // سهم رجوع iOS
+            color: Colors.black, // تقدر تغيّره حسب الثيم
+          ),
+          onPressed: () {
+            Navigator.pop(context); // ترجع للشاشة السابقة
+          },
+        ),
         toolbarHeight: isTabletDevice ? (120 * tabletHeightScale).h : 100.h,
         backgroundColor:
             Theme.of(context).brightness == Brightness.light

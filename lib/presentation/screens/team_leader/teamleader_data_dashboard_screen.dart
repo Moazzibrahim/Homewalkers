@@ -123,6 +123,15 @@ class _TeamLeaderDashboardScreenState
               ? Constants.backgroundlightmode
               : Constants.backgroundDarkmode,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios, // سهم رجوع iOS
+            color: Colors.black, // تقدر تغيّره حسب الثيم
+          ),
+          onPressed: () {
+            Navigator.pop(context); // ترجع للشاشة السابقة
+          },
+        ),
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
                 ? Colors.white
@@ -201,7 +210,7 @@ class _TeamLeaderDashboardScreenState
 
                 if (state is TeamleaderDashboardDataSuccess) {
                   // <-- هنا استخدمنا state الصح
-                  final dashboard = state.data.data?.dashboard ?? []; 
+                  final dashboard = state.data.data?.dashboard ?? [];
                   final teamleaderInfopending =
                       state.data.data?.teamLeaderPending?.salesIds ?? [];
                   final String firstSalesIdPending =

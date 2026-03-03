@@ -1,21 +1,20 @@
 // ignore_for_file: file_names, camel_case_types, deprecated_member_use, avoid_print, unused_field
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
-import 'package:homewalkers_app/presentation/screens/manager/manager_dashboard_data_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/manager_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ManagerDashboardScreen extends StatefulWidget {
-  const ManagerDashboardScreen({super.key});
+class ManagerDashboardDataScreen extends StatefulWidget {
+  const ManagerDashboardDataScreen({super.key});
 
   @override
-  State<ManagerDashboardScreen> createState() => _ManagerDashboardScreenState();
+  State<ManagerDashboardDataScreen> createState() =>
+      _ManagerDashboardScreenState();
 
   static Widget _iconBox(IconData icon, void Function() onPressed) {
     return Container(
@@ -84,7 +83,7 @@ class ManagerDashboardScreen extends StatefulWidget {
   }
 }
 
-class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
+class _ManagerDashboardScreenState extends State<ManagerDashboardDataScreen>
     with WidgetsBindingObserver {
   late GetManagerLeadsCubit _managerCubit;
   final String _userName = 'User';
@@ -97,7 +96,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
 
     // إنشاء Cubit مرة واحدة فقط
     _managerCubit = GetManagerLeadsCubit(GetLeadsService())
-      ..getManagerDashboardCounts();
+      ..getManagerDashboardDataCounts();
 
     // تهيئة الإشعارات
     context.read<NotificationCubit>().initNotifications();
@@ -113,9 +112,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      print("App resumed — refreshing manager dashboard counts...");
+      print("App resumed — refreshing manager dashboard data counts...");
       _managerCubit
-          .getManagerDashboardCounts(); // 👈 تحديث البيانات لما المستخدم يرجع
+          .getManagerDashboardDataCounts(); // 👈 تحديث البيانات لما المستخدم يرجع
     }
   }
 
@@ -124,57 +123,6 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
     WidgetsBinding.instance.removeObserver(this);
     _managerCubit.close(); // 👈 إغلاق Cubit لتفادي memory leaks
     super.dispose();
-  }
-
-  Widget _dataCentreButton(BuildContext context, bool isTablet) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ManagerDashboardDataScreen()),
-        );
-      },
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 16.w : 12.w,
-          vertical: isTablet ? 12.h : 8.h,
-        ),
-        decoration: BoxDecoration(
-          color: Constants.maincolor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: Constants.maincolor.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.storage_rounded,
-              color: Constants.maincolor,
-              size: isTablet ? 20 : 18,
-            ),
-            SizedBox(width: isTablet ? 8.w : 4.w),
-            Text(
-              'Data Centre',
-              style: TextStyle(
-                color: Constants.maincolor,
-                fontSize: isTablet ? 16 : 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            SizedBox(width: isTablet ? 4.w : 2.w),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Constants.maincolor,
-              size: isTablet ? 16 : 14,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -232,7 +180,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                 },
               ),
               const Spacer(),
-              ManagerDashboardScreen._iconBox(Icons.notifications_none, () {
+              ManagerDashboardDataScreen._iconBox(Icons.notifications_none, () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -267,7 +215,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
 
             return RefreshIndicator(
               onRefresh: () async {
-                await _managerCubit.getManagerDashboardCounts();
+                await _managerCubit.getManagerDashboardDataCounts();
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -295,18 +243,14 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                           Row(
                             children: [
                               Text(
-                                "Dashboard",
+                                "Data Centre",
                                 style: TextStyle(
                                   fontSize: isTablet ? 22 : 18,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const Spacer(),
-                              // 🗄️ Data Centre Button
-                              _dataCentreButton(context, isTablet),
                             ],
                           ),
-
                           const SizedBox(height: 20),
 
                           /// 🔹 كل الكروت في Grid واحدة مرنة
@@ -322,7 +266,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                 ),
                             children: [
                               /// Total Leads
-                              ManagerDashboardScreen._dashboardCard(
+                              ManagerDashboardDataScreen._dashboardCard(
                                 "Total Leads",
                                 "${summary?.totalLeads ?? 0}",
                                 Icons.group,
@@ -330,14 +274,13 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                               ),
 
                               /// Team Leaders
-                              ManagerDashboardScreen._dashboardCard(
+                              ManagerDashboardDataScreen._dashboardCard(
                                 "Team Leaders",
                                 "${summary?.totalTeamLeaders ?? 0}",
                                 Icons.supervisor_account,
                                 context,
                               ),
-
-                              ManagerDashboardScreen._dashboardCard(
+                              ManagerDashboardDataScreen._dashboardCard(
                                 "Total Sales",
                                 "${summary?.totalSales ?? 0}",
                                 Icons.supervisor_account,
@@ -345,7 +288,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                               ),
 
                               /// Fresh
-                              ManagerDashboardScreen._dashboardCard(
+                              ManagerDashboardDataScreen._dashboardCard(
                                 managerFresh?.stageName ?? "Fresh",
                                 "${managerFresh?.leadsCount ?? 0}",
                                 Icons.fiber_new,
@@ -364,7 +307,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                               ),
 
                               /// Pending
-                              ManagerDashboardScreen._dashboardCard(
+                              ManagerDashboardDataScreen._dashboardCard(
                                 managerPending?.stageName ?? "Pending",
                                 "${managerPending?.leadsCount ?? 0}",
                                 Icons.hourglass_bottom,
@@ -385,7 +328,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
 
                               /// باقي الـ stages
                               ...stages.map((stage) {
-                                return ManagerDashboardScreen._dashboardCard(
+                                return ManagerDashboardDataScreen._dashboardCard(
                                   stage.stageName ?? "Unknown",
                                   "${stage.leadsCount ?? 0}",
                                   Icons.timeline,
@@ -402,7 +345,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                     );
                                   },
                                 );
-                              }).toList(),
+                              }),
                             ],
                           ),
                         ],

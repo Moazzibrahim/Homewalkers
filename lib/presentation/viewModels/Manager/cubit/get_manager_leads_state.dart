@@ -28,5 +28,12 @@ final class GetManagerLeadsFailure extends GetManagerLeadsState {
   @override
   List<Object> get props => [message];
 }
+class GetManagerDashboardSuccess extends GetManagerLeadsState {
+  final ManagerDashboardPaginationModel dashboard;
 
+  const GetManagerDashboardSuccess(this.dashboard);
+
+  @override
+  List<Object> get props => [dashboard];
+}
 

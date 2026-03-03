@@ -526,15 +526,28 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                     child: TextField(
                       controller: _nameSearchController,
                       onChanged: (value) {
-                        _searchDebounce?.cancel();
-                        _searchDebounce = Timer(
-                          const Duration(milliseconds: 500),
-                          () {
-                            _searchQuery = value.trim();
-                            _applyCurrentFilters();
-                          },
-                        );
-                      },
+  _searchDebounce?.cancel();
+  _searchDebounce = Timer(
+    const Duration(milliseconds: 500),
+    () {
+      _searchQuery = value.trim();
+
+      if (selectedTab == 0) {
+        // ✅ Leads العادية
+        _applyCurrentFilters();
+      } else {
+        // 🗑️ Leads Trash
+        _currentPage = 1;
+
+        context.read<AllLeadsCubitWithPagination>()
+            .fetchLeadsInTrash(
+          page: 1,
+          search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        );
+      }
+    },
+  );
+},
                       decoration: InputDecoration(
                         hintText: 'Search',
                         hintStyle: TextStyle(
