@@ -22,7 +22,7 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
   void initState() {
     super.initState();
     // طلب البيانات عند بدء الشاشة
-    context.read<GetManagerLeadsCubit>().getLeadsByManager();
+    context.read<GetManagerLeadsCubit>().getManagerLeadsPagination(data: true);
   }
 
   @override

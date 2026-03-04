@@ -1,13 +1,12 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, prefer_final_fields
 
 import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
-import 'package:homewalkers_app/data/models/manager_new/manager_dashboard_pagination_model.dart'
-    show ManagerDashboardPaginationModel;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:homewalkers_app/data/models/manager_new/manager_dashboard_pagination_model.dart';
+import 'package:homewalkers_app/data/models/manager_new/manager_leads_pagiantion_model.dart';
 part 'get_manager_leads_state.dart';
 
 class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
@@ -18,6 +17,17 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
   List<String> salesNames = [];
   List<String> teamLeaderNames = [];
   List<LeadData> leads = [];
+  CrmLeadsResponse? _crmLeadsResponse;
+  CrmLeadsResponse? get crmLeadsResponse => _crmLeadsResponse;
+  int _currentPage = 1;
+  bool _hasNextPage = true;
+  bool _isFetching = false;
+  List<LeadManager> _allLeads = [];
+  List<LeadManager> get allLeads => _allLeads;
+  bool _isFetchingMore = false; // ✅ جديد
+  bool get isFetchingMore => _isFetchingMore;
+  ManagerDashboardPaginationModel? dashboardData; // ✅ متغير جديد
+  ManagerDashboardPaginationModel? get dashboardDataS => dashboardData;
 
   GetManagerLeadsCubit(this._getLeadsService) : super(GetManagerLeadsInitial());
 
@@ -33,7 +43,7 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
         emit(const GetManagerLeadsFailure("No dashboard data"));
         return;
       }
-
+      dashboardData = dashboardResponse;
       emit(GetManagerDashboardSuccess(dashboardResponse));
     } catch (e) {
       log("❌ Error in getManagerDashboardCounts: $e");
@@ -62,43 +72,114 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
     }
   }
 
-  Future<void> getLeadsByManager() async {
-    emit(GetManagerLeadsLoading());
+  Future<void> getManagerLeadsPagination({
+    bool? data,
+    int page = 1,
+    int limit = 10,
+    String? search,
+    List<String>? salesIds,
+    List<String>? developerIds,
+    List<String>? projectIds,
+    List<String>? channelIds,
+    List<String>? campaignIds,
+    List<String>? communicationWayIds,
+    List<String>? stageIds,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    DateTime? lastStageUpdateFrom,
+    DateTime? lastStageUpdateTo,
+    DateTime? lastCommentDateFrom,
+    DateTime? lastCommentDateTo,
+    bool? ignoreDuplicate,
+    bool? transferefromdata,
+  }) async {
+    // ✅ منع التكرار أثناء الجلب
+    if (_isFetching) return;
+
+    // ✅ لو صفحة جديدة بنشغل الـ isFetchingMore
+    if (page > 1) {
+      _isFetchingMore = true;
+      // ✅ تحديث UI فوراً لإظهار علامة التحميل
+      if (_crmLeadsResponse != null) {
+        emit(GetManagerCrmLeadsSuccess(_crmLeadsResponse!));
+      }
+    }
+
+    _isFetching = true;
+
+    // ✅ لو أول صفحة، ننظف البيانات ونظهر الـ Loading
+    if (page == 1) {
+      emit(GetManagerLeadsLoading());
+      _allLeads.clear();
+    }
 
     try {
-      final leadsResponse = await _getLeadsService.getLeadsDataByManager();
-      _originalLeadsResponse = leadsResponse; // 🟡 حفظ البيانات الأصلية
-      leads = leadsResponse.data ?? [];
+      log("📊 Fetching Manager Leads | page=$page | data=$data");
 
-      // تحميل عدد الـ leads لكل مرحلة
-      _salesLeadCount = await _getLeadsService.getLeadCountPerStageInManager();
-      final prefs = await SharedPreferences.getInstance();
-      final managerName = prefs.getString("managerName");
-      // ⬇️ استخراج الأسماء الحقيقية
-      final salesSet = <String>{};
-      final teamLeaderSet = <String>{};
+      final response = await _getLeadsService.fetchManagerLeads(
+        data: data,
+        page: page,
+        limit: limit,
+        search: search,
+        salesIds: salesIds,
+        developerIds: developerIds,
+        projectIds: projectIds,
+        channelIds: channelIds,
+        campaignIds: campaignIds,
+        communicationWayIds: communicationWayIds,
+        stageIds: stageIds,
+        stageDateFrom: stageDateFrom,
+        stageDateTo: stageDateTo,
+        creationDateFrom: creationDateFrom,
+        creationDateTo: creationDateTo,
+        lastStageUpdateFrom: lastStageUpdateFrom,
+        lastStageUpdateTo: lastStageUpdateTo,
+        lastCommentDateFrom: lastCommentDateFrom,
+        lastCommentDateTo: lastCommentDateTo,
+        ignoreDuplicate: ignoreDuplicate,
+        transferefromdata: transferefromdata,
+      );
 
-      for (var lead in leadsResponse.data ?? []) {
-        if (lead.sales?.manager?.name == managerName) {
-          final salesName = lead.sales?.name;
-          final teamLeaderName = lead.sales?.teamleader?.name;
-
-          if (salesName != null && salesName.isNotEmpty) {
-            salesSet.add(salesName);
-          }
-          if (teamLeaderName != null && teamLeaderName.isNotEmpty) {
-            teamLeaderSet.add(teamLeaderName);
-          }
-        }
+      if (response.data == null) {
+        emit(const GetManagerLeadsFailure("No leads data found"));
+        return;
       }
-      salesNames = salesSet.toList();
-      teamLeaderNames = teamLeaderSet.toList();
-      log("✅ تم جلب البيانات بنجاح.");
-      emit(GetManagerLeadsSuccess(leadsResponse));
+
+      final newLeads = response.data!.leads ?? [];
+
+      _currentPage = response.data!.pagination?.currentPage?.toInt() ?? page;
+      _hasNextPage = response.data!.pagination?.hasNextPage ?? false;
+
+      _allLeads.addAll(newLeads);
+      _crmLeadsResponse = response;
+
+      log("✅ Total Loaded Leads: ${_allLeads.length}");
+
+      // ✅ نبعت الـ state مع تحديث الـ data
+      emit(GetManagerCrmLeadsSuccess(_crmLeadsResponse!));
     } catch (e) {
-      log('❌ خطأ في getLeadsByManager: $e');
-      emit(const GetManagerLeadsFailure(" No leads found"));
+      log("❌ Error in getManagerLeadsPagination: $e");
+      emit(const GetManagerLeadsFailure("Leads error"));
+    } finally {
+      // ✅ في النهاية نوقف الجلب
+      _isFetching = false;
+      _isFetchingMore = false;
+
+      // ✅ تحديث UI مرة أخيرة لإخفاء علامة التحميل
+      if (_crmLeadsResponse != null) {
+        emit(GetManagerCrmLeadsSuccess(_crmLeadsResponse!));
+      }
     }
+  }
+
+  // ✅ دالة تحميل المزيد
+  Future<void> loadMoreManagerLeads({required bool data}) async {
+    // ✅ منع التكرار لو مفيش صفحات تاني أو بنجلب دلوقتي
+    if (!_hasNextPage || _isFetching || _isFetchingMore) return;
+
+    await getManagerLeadsPagination(data: data, page: _currentPage + 1);
   }
 
   void filterLeadsByNameInManager(String query) {

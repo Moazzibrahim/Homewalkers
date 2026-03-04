@@ -67,7 +67,7 @@ class _TabsScreenState extends State<TabsScreenManager> {
                 },
                 children: [
                   ManagerDashboardScreen(),
-                  ManagerLeadsScreen(),
+                  ManagerLeadsScreen(data: true),
                   ManagerTeamLeaderScreen(),
                   BlocProvider(
                     create: (context) => AuthCubit(LoginApiService()),

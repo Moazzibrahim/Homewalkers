@@ -8,9 +8,7 @@ class ManagerDashboardPaginationModel {
   factory ManagerDashboardPaginationModel.fromJson(Map<String, dynamic> json) {
     return ManagerDashboardPaginationModel(
       success: json['success'],
-      data: json['data'] != null
-          ? DashboardData.fromJson(json['data'])
-          : null,
+      data: json['data'] != null ? DashboardData.fromJson(json['data']) : null,
       meta: json['meta'] != null ? Meta.fromJson(json['meta']) : null,
     );
   }
@@ -41,32 +39,40 @@ class DashboardData {
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
     return DashboardData(
-      managerInfo: json['managerInfo'] != null
-          ? ManagerInfo.fromJson(json['managerInfo'])
-          : null,
-      dashboard: json['dashboard'] != null
-          ? List<StageDashboard>.from(
-              json['dashboard'].map((x) => StageDashboard.fromJson(x)))
-          : [],
-      managerFresh: json['managerFresh'] != null
-          ? ManagerStage.fromJson(json['managerFresh'])
-          : null,
-      managerPending: json['managerPending'] != null
-          ? ManagerStage.fromJson(json['managerPending'])
-          : null,
-      teamLeaders: json['teamLeaders'] != null
-          ? List<TeamLeader>.from(
-              json['teamLeaders'].map((x) => TeamLeader.fromJson(x)))
-          : [],
-      directManagerSales: json['directManagerSales'] != null
-          ? List<Sales>.from(
-              json['directManagerSales'].map((x) => Sales.fromJson(x)))
-          : [],
+      managerInfo:
+          json['managerInfo'] != null
+              ? ManagerInfo.fromJson(json['managerInfo'])
+              : null,
+      dashboard:
+          json['dashboard'] != null
+              ? List<StageDashboard>.from(
+                json['dashboard'].map((x) => StageDashboard.fromJson(x)),
+              )
+              : [],
+      managerFresh:
+          json['managerFresh'] != null
+              ? ManagerStage.fromJson(json['managerFresh'])
+              : null,
+      managerPending:
+          json['managerPending'] != null
+              ? ManagerStage.fromJson(json['managerPending'])
+              : null,
+      teamLeaders:
+          json['teamLeaders'] != null
+              ? List<TeamLeader>.from(
+                json['teamLeaders'].map((x) => TeamLeader.fromJson(x)),
+              )
+              : [],
+      directManagerSales:
+          json['directManagerSales'] != null
+              ? List<Sales>.from(
+                json['directManagerSales'].map((x) => Sales.fromJson(x)),
+              )
+              : [],
       directManagerSalesCount: json['directManagerSalesCount'],
       salesCount: json['salesCount'],
-      summary: json['summary'] != null
-          ? Summary.fromJson(json['summary'])
-          : null,
+      summary:
+          json['summary'] != null ? Summary.fromJson(json['summary']) : null,
     );
   }
 }
@@ -124,9 +130,8 @@ class ManagerStage {
       leadsCount: json['leadsCount'],
       description: json['description'],
       stageId: json['stageId'],
-      salesIds: json['salesIds'] != null
-          ? List<String>.from(json['salesIds'])
-          : [],
+      salesIds:
+          json['salesIds'] != null ? List<String>.from(json['salesIds']) : [],
     );
   }
 }
@@ -137,26 +142,20 @@ class TeamLeader {
   int? salesCount;
   LeadsStats? leads;
 
-  TeamLeader({
-    this.teamLeaderInfo,
-    this.sales,
-    this.salesCount,
-    this.leads,
-  });
+  TeamLeader({this.teamLeaderInfo, this.sales, this.salesCount, this.leads});
 
   factory TeamLeader.fromJson(Map<String, dynamic> json) {
     return TeamLeader(
-      teamLeaderInfo: json['teamLeaderInfo'] != null
-          ? TeamLeaderInfo.fromJson(json['teamLeaderInfo'])
-          : null,
-      sales: json['sales'] != null
-          ? List<Sales>.from(
-              json['sales'].map((x) => Sales.fromJson(x)))
-          : [],
+      teamLeaderInfo:
+          json['teamLeaderInfo'] != null
+              ? TeamLeaderInfo.fromJson(json['teamLeaderInfo'])
+              : null,
+      sales:
+          json['sales'] != null
+              ? List<Sales>.from(json['sales'].map((x) => Sales.fromJson(x)))
+              : [],
       salesCount: json['salesCount'],
-      leads: json['leads'] != null
-          ? LeadsStats.fromJson(json['leads'])
-          : null,
+      leads: json['leads'] != null ? LeadsStats.fromJson(json['leads']) : null,
     );
   }
 }
@@ -166,8 +165,9 @@ class TeamLeaderInfo {
   String? name;
   String? email;
   String? role;
+  String? fcmToken;
 
-  TeamLeaderInfo({this.id, this.name, this.email, this.role});
+  TeamLeaderInfo({this.id, this.name, this.email, this.role, this.fcmToken});
 
   factory TeamLeaderInfo.fromJson(Map<String, dynamic> json) {
     return TeamLeaderInfo(
@@ -175,6 +175,7 @@ class TeamLeaderInfo {
       name: json['name'],
       email: json['email'],
       role: json['role'],
+      fcmToken: json['fcmToken'],
     );
   }
 }
@@ -190,9 +191,8 @@ class Sales {
     return Sales(
       id: json['id'],
       name: json['name'],
-      userlog: json['userlog'] != null
-          ? UserLog.fromJson(json['userlog'])
-          : null,
+      userlog:
+          json['userlog'] != null ? UserLog.fromJson(json['userlog']) : null,
     );
   }
 }
@@ -201,14 +201,18 @@ class UserLog {
   String? id;
   String? name;
   String? email;
+  String? role;
+  String? fcmToken;
 
-  UserLog({this.id, this.name, this.email});
+  UserLog({this.id, this.name, this.email, this.role, this.fcmToken});
 
   factory UserLog.fromJson(Map<String, dynamic> json) {
     return UserLog(
       id: json['id'],
       name: json['name'],
       email: json['email'],
+      role: json['role'],
+      fcmToken: json['fcmToken'],
     );
   }
 }

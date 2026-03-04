@@ -327,8 +327,16 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                 "${summary?.totalLeads ?? 0}",
                                 Icons.group,
                                 context,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => ManagerLeadsScreen(data: true),
+                                    ),
+                                  );
+                                },
                               ),
-
                               /// Team Leaders
                               ManagerDashboardScreen._dashboardCard(
                                 "Team Leaders",
@@ -356,7 +364,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                     MaterialPageRoute(
                                       builder:
                                           (_) => ManagerLeadsScreen(
-                                            stageName: managerFresh?.stageName,
+                                            stageName: managerFresh?.stageId,
+                                            data:
+                                                true, // ✅ نمرر data: true عشان نجيب بيانات الـ Fresh لما نضغط
                                           ),
                                     ),
                                   );
@@ -375,8 +385,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                     MaterialPageRoute(
                                       builder:
                                           (_) => ManagerLeadsScreen(
-                                            stageName:
-                                                managerPending?.stageName,
+                                            stageName: managerPending?.stageId,
+                                            data:
+                                                true, // ✅ نمرر data: true عشان نجيب بيانات الـ Pending لما نضغط
                                           ),
                                     ),
                                   );
@@ -396,13 +407,15 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                       MaterialPageRoute(
                                         builder:
                                             (_) => ManagerLeadsScreen(
-                                              stageName: stage.stageName,
+                                              stageName: stage.stageId,
+                                              data:
+                                                  true, // ✅ نمرر data: true عشان نجيب بيانات الـ stage لما نضغط
                                             ),
                                       ),
                                     );
                                   },
                                 );
-                              }).toList(),
+                              }),
                             ],
                           ),
                         ],

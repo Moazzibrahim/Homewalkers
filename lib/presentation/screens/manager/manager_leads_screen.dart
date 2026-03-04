@@ -34,6 +34,7 @@ import 'package:homewalkers_app/presentation/widgets/manager/assign_lead_dialog_
 import 'package:homewalkers_app/presentation/widgets/manager/manager_custom_filter_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/edit_lead_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -41,11 +42,13 @@ class ManagerLeadsScreen extends StatefulWidget {
   final String? stageName;
   final bool showDuplicatesOnly;
   final bool shouldRefreshOnOpen;
+  final bool? data;
   const ManagerLeadsScreen({
     super.key,
     this.stageName,
     this.showDuplicatesOnly = false,
     this.shouldRefreshOnOpen = false,
+    this.data,
   });
 
   @override
@@ -70,6 +73,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
   final Set<String> _selectedLeads = {};
   Set<int> selectedLeadIds = {};
   late GetManagerLeadsCubit _cubit;
+  final ScrollController _scrollController = ScrollController(); // ✅ جديد
 
   @override
   void initState() {
@@ -77,6 +81,36 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
     checkClearHistoryTime();
     checkIsClearHistory();
     init();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _cubit = context.read<GetManagerLeadsCubit>();
+      _cubit.getManagerLeadsPagination(
+        data: widget.data ?? false,
+        stageIds: [widget.stageName ?? ''],
+        ignoreDuplicate: widget.showDuplicatesOnly,
+      );
+    });
+
+    // ✅ إضافة listener للـ scroll
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  // ✅ دالة الـ scroll listener
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      // ✅ استخدم context.read هنا بردو
+      context.read<GetManagerLeadsCubit>().loadMoreManagerLeads(
+        data: widget.data ?? false,
+      );
+    }
   }
 
   void init() async {
@@ -208,15 +242,11 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                               selectedLeadsData.clear();
                               isSelectionMode = false;
                             });
-
-                            await _cubit.getLeadsByManager();
-                            if (widget.stageName != null &&
-                                widget.stageName!.isNotEmpty) {
-                              _cubit.filterLeadsByStageInManager(
-                                widget.stageName!,
-                              );
-                            }
-
+                            await _cubit.getManagerLeadsPagination(
+                              data: widget.data ?? false,
+                              stageIds: [widget.stageName ?? ''],
+                              ignoreDuplicate: widget.showDuplicatesOnly,
+                            );
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text("Lead assigned successfully! ✅"),
@@ -228,7 +258,13 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                     },
                   );
                   if (result == true) {
-                    context.read<GetManagerLeadsCubit>().getLeadsByManager();
+                    context
+                        .read<GetManagerLeadsCubit>()
+                        .getManagerLeadsPagination(
+                          data: widget.data ?? false,
+                          stageIds: [widget.stageName ?? ''],
+                          ignoreDuplicate: widget.showDuplicatesOnly,
+                        );
                     setState(() {
                       _showCheckboxes = false;
                       _selectedLeads.clear();
@@ -338,13 +374,23 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                               final leadsCubit =
                                   context.read<GetManagerLeadsCubit>();
                               // leadsCubit.resetPagination();
-                              leadsCubit.getLeadsByManager();
+                              leadsCubit.getManagerLeadsPagination(
+                                data: widget.data ?? false,
+                                stageIds: [widget.stageName ?? ''],
+                                ignoreDuplicate: widget.showDuplicatesOnly,
+                              );
                             },
                           ),
                         ),
                   );
                   if (result == true) {
-                    context.read<GetManagerLeadsCubit>().getLeadsByManager();
+                    context
+                        .read<GetManagerLeadsCubit>()
+                        .getManagerLeadsPagination(
+                          data: widget.data ?? false,
+                          stageIds: [widget.stageName ?? ''],
+                          ignoreDuplicate: widget.showDuplicatesOnly,
+                        );
                   }
                 },
                 child: const _ActionIcon(icon: Icon(Icons.edit)),
@@ -367,11 +413,13 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
 
     return BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
       builder: (context, state) {
-        if (state is GetManagerLeadsSuccess && widget.stageName != null) {
+        if (state is GetManagerDashboardSuccess && widget.stageName != null) {
           // نفلتر مرة واحدة فقط
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            context.read<GetManagerLeadsCubit>().filterLeadsByStageInManager(
-              widget.stageName!,
+            context.read<GetManagerLeadsCubit>().getManagerLeadsPagination(
+              data: widget.data ?? false,
+              stageIds: [widget.stageName ?? ''],
+              ignoreDuplicate: widget.showDuplicatesOnly,
             );
           });
         }
@@ -416,7 +464,12 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                             onChanged: (value) {
                               context
                                   .read<GetManagerLeadsCubit>()
-                                  .filterLeadsManager(query: value.trim());
+                                  .getManagerLeadsPagination(
+                                    search: value.trim(),
+                                    data: widget.data ?? false,
+                                    stageIds: [widget.stageName ?? ''],
+                                    ignoreDuplicate: widget.showDuplicatesOnly,
+                                  );
                             },
                             decoration: InputDecoration(
                               hintText: 'Search',
@@ -485,7 +538,10 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                       : Constants.mainDarkmodecolor,
                             ),
                             onPressed: () {
-                              showFilterDialogManager(context);
+                              showFilterDialogManagerr(
+                                context,
+                                widget.data ?? false,
+                              );
                             },
                           ),
                         ),
@@ -551,30 +607,44 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                   builder: (_) {
                     if (state is GetManagerLeadsLoading) {
                       return const Center(child: CircularProgressIndicator());
-                    } else if (state is GetManagerLeadsSuccess) {
-                      final leads = state.leads.data;
-                      if (leads!.isEmpty) {
+                    } else if (state is GetManagerCrmLeadsSuccess) {
+                      final cubit = context.read<GetManagerLeadsCubit>();
+                      final leads = cubit.allLeads;
+
+                      if (leads.isEmpty) {
                         return const Center(child: Text('No leads found.'));
                       }
                       return RefreshIndicator(
                         onRefresh: () async {
                           final cubit = context.read<GetManagerLeadsCubit>();
                           // ✅ أول حاجة نرجع كل الداتا
-                          await cubit.getLeadsByManager();
+                          await cubit.getManagerLeadsPagination(
+                            data: widget.data ?? false,
+                            stageIds: [widget.stageName ?? ''],
+                            ignoreDuplicate: widget.showDuplicatesOnly,
+                          );
                           // ✅ بعدين نفلتر على نفس stageName زي BlocBuilder
-                          if (widget.stageName != null &&
-                              widget.stageName!.isNotEmpty) {
-                            cubit.filterLeadsByStageInManager(
-                              widget.stageName!,
-                            );
-                          }
                         },
                         child: ListView.builder(
-                          itemCount: leads.length,
+                          controller: _scrollController,
+                          itemCount:
+                              leads.length +
+                              (cubit.isFetchingMore
+                                  ? 1
+                                  : 0), // ✅ استخدم cubit مش _cubit
+                          // ✅ زيادة 1 لو بنجلب
                           itemBuilder: (context, index) {
+                            // ✅ عنصر التحميل في الآخر
+                            if (index == leads.length) {
+                              return const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
                             final lead = leads[index];
-                            final salesfcmtoken =
-                                lead.sales?.userlog?.fcmtokenn;
+                            final salesfcmtoken = lead.sales?.userlog?.fcmToken;
                             final leadassign = lead.assign;
                             print("assign of lead: ${lead.assign}");
                             final userlognamee = lead.sales?.userlog?.name;
@@ -635,109 +705,71 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                       _selectedLeads.add(lead.id!);
                                     }
                                   });
-                                } else if (lead.assign == false) {
-                                  final firstVersion =
-                                      (lead.allVersions != null &&
-                                              lead.allVersions!.isNotEmpty)
-                                          ? lead.allVersions!.first
-                                          : null;
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => BlocProvider(
-                                            create:
-                                                (_) => LeadCommentsCubit(
-                                                  GetAllLeadCommentsApiService(),
-                                                ),
-                                            child: LeadsDetailsScreenManager(
-                                              leedId: lead.id!,
-                                              leadName: lead.name ?? '',
-                                              leadPhone: lead.phone ?? '',
-                                              leadEmail: lead.email ?? '',
-                                              leadStage: lead.stage?.name ?? '',
-                                              leadStageId: lead.stage?.id ?? '',
-                                              leadChannel:
-                                                  lead.chanel?.name ?? '',
-                                              leadCreationDate:
-                                                  lead.createdAt != null
-                                                      ? formatDateTimeToDubai(
-                                                        lead.createdAt!,
-                                                      )
-                                                      : '',
-                                              leadProject:
-                                                  lead.project?.name ?? '',
-                                              leadLastComment:
-                                                  lead.lastcommentdate ?? '',
-                                              leadcampaign:
-                                                  lead.campaign?.name ??
-                                                  "campaign",
-                                              leadNotes:
-                                                  lead.notes ?? "no notes",
-                                              leaddeveloper:
-                                                  lead
-                                                      .project
-                                                      ?.developer
-                                                      ?.name ??
-                                                  "no developer",
-                                              fcmtokenn: salesfcmtoken!,
-                                              leadwhatsappnumber:
-                                                  lead.whatsappnumber,
-                                              jobdescription:
-                                                  lead.jobdescription ??
-                                                  'no job description',
-                                              secondphonenumber:
-                                                  lead.secondphonenumber,
-                                              laststageupdated:
-                                                  leadstageupdated,
-                                              stageId: lead.stage?.id ?? '',
-                                              sales: lead.sales?.name ?? '',
-                                              leadLastDateAssigned:
-                                                  lead.lastdateassign,
-                                            ),
-                                          ),
-                                    ),
-                                  );
-                                  context
-                                      .read<GetManagerLeadsCubit>()
-                                      .getLeadsByManager();
-                                } else {
-                                  showDialog(
-                                    context: context,
-                                    builder:
-                                        (_) => AlertDialog(
-                                          title: const Text("Attention"),
-                                          content: const Text(
-                                            "You must receive this lead first.",
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              style: TextButton.styleFrom(
-                                                backgroundColor:
-                                                    Theme.of(
-                                                              context,
-                                                            ).brightness ==
-                                                            Brightness.light
-                                                        ? Constants.maincolor
-                                                        : Constants
-                                                            .mainDarkmodecolor,
-                                              ),
-                                              onPressed:
-                                                  () =>
-                                                      Navigator.of(
-                                                        context,
-                                                      ).pop(),
-                                              child: const Text(
-                                                "OK",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                  );
                                 }
+                                final firstVersion =
+                                    (lead.allVersions != null &&
+                                            lead.allVersions!.isNotEmpty)
+                                        ? lead.allVersions!.first
+                                        : null;
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => BlocProvider(
+                                          create:
+                                              (_) => LeadCommentsCubit(
+                                                GetAllLeadCommentsApiService(),
+                                              ),
+                                          child: LeadsDetailsScreenManager(
+                                            leedId: lead.id!,
+                                            leadName: lead.name ?? '',
+                                            leadPhone: lead.phone ?? '',
+                                            leadEmail: lead.email ?? '',
+                                            leadStage: lead.stage?.name ?? '',
+                                            leadStageId: lead.stage?.id ?? '',
+                                            leadChannel:
+                                                lead.chanel?.name ?? '',
+                                            leadCreationDate:
+                                                lead.createdAt != null
+                                                    ? formatDateTimeToDubai(
+                                                      lead.createdAt!,
+                                                    )
+                                                    : '',
+                                            leadProject:
+                                                lead.project?.name ?? '',
+                                            leadLastComment:
+                                                lead.lastcommentdate ?? '',
+                                            leadcampaign:
+                                                lead.campaign?.campainName ??
+                                                "campaign",
+                                            leaddeveloper:
+                                                lead.project?.developer?.name ??
+                                                "no developer",
+                                            fcmtokenn: salesfcmtoken!,
+                                            leadwhatsappnumber:
+                                                lead.whatsappnumber,
+                                            jobdescription:
+                                                lead.jobdescription ??
+                                                'no job description',
+                                            secondphonenumber:
+                                                lead.phonenumber2,
+                                            laststageupdated: leadstageupdated,
+                                            stageId: lead.stage?.id ?? '',
+                                            sales: lead.sales?.name ?? '',
+                                            leadLastDateAssigned:
+                                                lead.lastdateassign,
+                                          ),
+                                        ),
+                                  ),
+                                );
+                                context
+                                    .read<GetManagerLeadsCubit>()
+                                    .getManagerLeadsPagination(
+                                      data: widget.data ?? false,
+                                      stageIds: [widget.stageName ?? ''],
+                                      ignoreDuplicate:
+                                          widget.showDuplicatesOnly,
+                                    );
                               },
                               child: Card(
                                 color:
@@ -753,7 +785,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             ? Colors.white
                                             : Colors.grey[900]),
                                 margin: const EdgeInsets.symmetric(
-                                  // horizontal: 16,
+                                  horizontal: 10,
                                   vertical: 8,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -1225,14 +1257,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                                                     ) {
                                                                       if (commentState
                                                                           is LeadCommentsLoading) {
-                                                                        return const SizedBox(
-                                                                          height:
-                                                                              100,
-                                                                          child: Center(
-                                                                            child:
-                                                                                CircularProgressIndicator(),
-                                                                          ),
-                                                                        );
+                                                                        return const CommentShimmer();
                                                                       } else if (commentState
                                                                           is LeadCommentsError) {
                                                                         return SizedBox(
@@ -1575,6 +1600,39 @@ class _ActionIcon extends StatelessWidget {
           color: isDark ? Colors.white : Constants.maincolor,
         ),
         child: icon,
+      ),
+    );
+  }
+}
+
+class CommentShimmer extends StatelessWidget {
+  const CommentShimmer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 120,
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey.shade300,
+        highlightColor: Colors.grey.shade100,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(height: 14, width: 120, color: Colors.white),
+            const SizedBox(height: 10),
+            Container(height: 12, width: double.infinity, color: Colors.white),
+            const SizedBox(height: 6),
+            Container(
+              height: 12,
+              width: MediaQuery.of(context).size.width * 0.6,
+              color: Colors.white,
+            ),
+            const SizedBox(height: 15),
+            Container(height: 14, width: 100, color: Colors.white),
+            const SizedBox(height: 10),
+            Container(height: 12, width: double.infinity, color: Colors.white),
+          ],
+        ),
       ),
     );
   }

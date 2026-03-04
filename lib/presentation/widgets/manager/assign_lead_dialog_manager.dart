@@ -1,16 +1,13 @@
-// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, avoid_print
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, avoid_print, deprecated_member_use
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
-import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
-import 'package:homewalkers_app/data/models/all_sales_model.dart';
-import 'package:homewalkers_app/data/models/leads_model.dart';
+import 'package:homewalkers_app/data/models/leads_model.dart' hide Sales;
+import 'package:homewalkers_app/data/models/manager_new/manager_dashboard_pagination_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_state.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
@@ -22,7 +19,7 @@ class AssignLeadDialogManager extends StatefulWidget {
   final List? leadIds;
   final String? leadId;
   final String fcmtoken;
-  final Function? onAssignSuccess; // اضيفه في constructor
+  final Function? onAssignSuccess;
 
   const AssignLeadDialogManager({
     super.key,
@@ -50,6 +47,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
   bool isSearching = false;
   String selectedOption = 'same';
   String? selectedStageId;
+
   Future<void> _loadManagerId() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -64,16 +62,41 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
     _loadManagerId();
   }
 
- Future<void> saveClearHistoryTime() async {
+  Future<void> saveClearHistoryTime() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // توقيت دبي +4
     final dubaiTime = DateTime.now().toUtc().add(const Duration(hours: 4));
-
     await prefs.setString('clear_history_time', dubaiTime.toIso8601String());
-
     log('Clear history time saved (Dubai): $dubaiTime');
   }
+
+  // 🟢 دالة جديدة لتحميل بيانات المدير إذا لم تكن موجودة
+  Future<void> _ensureDashboardDataLoaded() async {
+    final managerCubit = context.read<GetManagerLeadsCubit>();
+
+    // إذا كانت البيانات غير موجودة، قم بتحميلها
+    if (managerCubit.dashboardDataS == null) {
+      log("📊 Loading manager dashboard data from dialog...");
+      await managerCubit.getManagerDashboardCounts();
+    }
+  }
+
+  // 🟢 دالة للبحث عن الـ sales.id المناسب للـ Team Leader
+  String? _getSalesIdForTeamLeader(TeamLeader teamLeader) {
+    if (teamLeader.teamLeaderInfo == null) return null;
+
+    final teamLeaderEmail = teamLeader.teamLeaderInfo!.email;
+
+    // البحث في قائمة الـ sales عن مندوب له نفس email الـ Team Leader
+    for (var sale in teamLeader.sales ?? []) {
+      if (sale.userlog?.email == teamLeaderEmail) {
+        return sale.id; // 🟢 نرجع الـ sales.id
+      }
+    }
+
+    // إذا لم نجد، نرجع null (يعني هذا الـ Team Leader ليس له حساب مندوب)
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final stagesCubit = context.read<StagesCubit>();
@@ -83,6 +106,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
       stagesCubit.fetchStages();
     }
     final stageState = stagesCubit.state;
+
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => AssignleadCubit()),
@@ -92,9 +116,6 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                   LeadCommentsCubit(GetAllLeadCommentsApiService())
                     ..fetchLeadComments(widget.leadId!),
         ),
-        BlocProvider(
-          create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
-        ),
       ],
       child: Builder(
         builder: (dialogContext) {
@@ -103,9 +124,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Container(
-              constraints: const BoxConstraints(
-                maxHeight: 500,
-              ), // يحدد ارتفاع ثابت للـ dialog
+              constraints: const BoxConstraints(maxHeight: 500),
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
@@ -126,89 +145,219 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  // 🔹 قائمة Sales
+
+                  // 🔹 قائمة Sales و Team Leaders من GetManagerLeadsCubit
                   Expanded(
-                    child: BlocBuilder<SalesCubit, SalesState>(
-                      builder: (context, state) {
-                        if (state is SalesLoading) {
+                    child: FutureBuilder(
+                      future: _ensureDashboardDataLoaded(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Center(
                             child: CircularProgressIndicator(),
                           );
-                        } else if (state is SalesLoaded &&
-                            state.salesData.data != null) {
-                          final uniqueSalesMap = <String, SalesData>{};
-                          for (var sale in state.salesData.data!) {
-                            final salesManagerId = sale.manager?.id?.toString();
-                            final user = sale.userlog;
-                            if (user != null &&
-                                salesManagerId == managerId &&
-                                (user.role == "Sales" ||
-                                    user.role == "Team Leader")) {
-                              uniqueSalesMap[sale.id!] = sale;
+                        }
+
+                        return BlocBuilder<
+                          GetManagerLeadsCubit,
+                          GetManagerLeadsState
+                        >(
+                          builder: (context, state) {
+                            final managerCubit =
+                                context.read<GetManagerLeadsCubit>();
+                            final dashboardData = managerCubit.dashboardDataS;
+
+                            if (state is GetManagerLeadsLoading &&
+                                dashboardData == null) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
                             }
-                          }
-                          List<SalesData> salesOnly =
-                              uniqueSalesMap.values.toList();
 
-                          // 🔹 فلترة البحث
-                          if (searchQuery.isNotEmpty) {
-                            salesOnly =
-                                salesOnly
-                                    .where(
-                                      (s) => (s.userlog?.name ?? "")
-                                          .toLowerCase()
-                                          .contains(searchQuery),
-                                    )
-                                    .toList();
-                          }
-
-                          if (salesOnly.isEmpty) {
-                            return const Center(
-                              child: Text(
-                                "No sales or team leaders available.",
-                              ),
-                            );
-                          }
-
-                          return ListView.builder(
-                            itemCount: salesOnly.length,
-                            itemBuilder: (context, index) {
-                              final sale = salesOnly[index];
-                              final userId = sale.id!;
-                              return ListTile(
-                                title: Text(
-                                  sale.userlog?.name ?? "Unnamed Sales",
-                                ),
-                                subtitle: Text(
-                                  sale.userlog?.role ?? "",
-                                  style: TextStyle(color: widget.mainColor),
-                                ),
-                                trailing: Checkbox(
-                                  activeColor: widget.mainColor,
-                                  value: selectedSales[userId] ?? false,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      selectedSales.clear();
-                                      selectedSales[userId] = val ?? false;
-                                      selectedSalesId =
-                                          val == true ? userId : null;
-                                    });
-                                  },
+                            if (state is GetManagerLeadsFailure &&
+                                dashboardData == null) {
+                              return Center(
+                                child: Text(
+                                  "Failed to load data: ${state.message}",
+                                  style: const TextStyle(color: Colors.red),
                                 ),
                               );
-                            },
-                          );
-                        } else if (state is SalesError) {
-                          return Center(child: Text(state.message));
-                        } else {
-                          return const Center(
-                            child: Text("No sales available for assignment."),
-                          );
-                        }
+                            }
+
+                            if (dashboardData != null &&
+                                dashboardData.data != null) {
+                              // 🟢 قائمة لعرض المستخدمين (كل عنصر يحتوي على الاسم والدور والمعرّف الذي سنستخدمه للتعيين)
+                              final List<Map<String, dynamic>> displayUsers =
+                                  [];
+
+                              // 1. إضافة المندوبين المباشرين للمدير (Direct Manager Sales)
+                              final directSales =
+                                  dashboardData.data!.directManagerSales ?? [];
+                              for (var sale in directSales) {
+                                if (sale.id != null) {
+                                  displayUsers.add({
+                                    'displayId':
+                                        sale.id, // 🟢 نستخدم sales.id للتعيين
+                                    'name': sale.userlog?.name ?? 'Unnamed',
+                                    'role': sale.userlog?.role ?? 'Sales',
+                                    'email': sale.userlog?.email,
+                                    'originalId': sale.id,
+                                  });
+                                }
+                              }
+
+                              // 2. إضافة الـ Team Leaders (مع البحث عن الـ sales.id المناسب)
+                              final teamLeaders =
+                                  dashboardData.data!.teamLeaders ?? [];
+                              for (var teamLeader in teamLeaders) {
+                                if (teamLeader.teamLeaderInfo != null) {
+                                  // 🟢 البحث عن الـ sales.id المناسب لهذا الـ Team Leader
+                                  final salesIdForTeamLeader =
+                                      _getSalesIdForTeamLeader(teamLeader);
+
+                                  // إذا وجدنا sales.id، نضيف الـ Team Leader للقائمة
+                                  if (salesIdForTeamLeader != null) {
+                                    displayUsers.add({
+                                      'displayId':
+                                          salesIdForTeamLeader, // 🟢 نستخدم sales.id للتعيين
+                                      'name':
+                                          teamLeader.teamLeaderInfo!.name ??
+                                          'Unnamed',
+                                      'role': 'Team Leader (Sales)',
+                                      'email': teamLeader.teamLeaderInfo!.email,
+                                      'originalId':
+                                          teamLeader.teamLeaderInfo!.id,
+                                      'salesId': salesIdForTeamLeader,
+                                    });
+                                  }
+                                }
+
+                                // إضافة المندوبين العاديين تحت هذا الـ Team Leader
+                                final salesUnderTeamLeader =
+                                    teamLeader.sales ?? [];
+                                for (var sale in salesUnderTeamLeader) {
+                                  if (sale.id != null) {
+                                    displayUsers.add({
+                                      'displayId':
+                                          sale.id, // 🟢 نستخدم sales.id للتعيين
+                                      'name': sale.userlog?.name ?? 'Unnamed',
+                                      'role': sale.userlog?.role ?? 'Sales',
+                                      'email': sale.userlog?.email,
+                                      'originalId': sale.id,
+                                    });
+                                  }
+                                }
+                              }
+
+                              // 🟢 إزالة التكرار بناءً على displayId
+                              final uniqueUsersMap =
+                                  <String, Map<String, dynamic>>{};
+                              for (var user in displayUsers) {
+                                final displayId = user['displayId'] as String;
+                                if (!uniqueUsersMap.containsKey(displayId)) {
+                                  uniqueUsersMap[displayId] = user;
+                                }
+                              }
+                              List<Map<String, dynamic>> usersList =
+                                  uniqueUsersMap.values.toList();
+
+                              // 🟢 فلترة البحث
+                              if (searchQuery.isNotEmpty) {
+                                usersList =
+                                    usersList
+                                        .where(
+                                          (user) => (user['name'] as String)
+                                              .toLowerCase()
+                                              .contains(searchQuery),
+                                        )
+                                        .toList();
+                              }
+
+                              if (usersList.isEmpty) {
+                                return const Center(
+                                  child: Text(
+                                    "No sales or team leaders available.",
+                                  ),
+                                );
+                              }
+
+                              return ListView.builder(
+                                itemCount: usersList.length,
+                                itemBuilder: (context, index) {
+                                  final user = usersList[index];
+                                  final displayId = user['displayId'] as String;
+                                  final name = user['name'] as String;
+                                  final role = user['role'] as String;
+
+                                  return ListTile(
+                                    title: Text(name),
+                                    subtitle: Text(
+                                      role,
+                                      style: TextStyle(color: widget.mainColor),
+                                    ),
+                                    trailing: Checkbox(
+                                      activeColor: widget.mainColor,
+                                      value: selectedSales[displayId] ?? false,
+                                      onChanged: (val) {
+                                        setState(() {
+                                          selectedSales.clear();
+                                          selectedSales[displayId] =
+                                              val ?? false;
+                                          selectedSalesId =
+                                              val == true ? displayId : null;
+
+                                          if (val == true) {
+                                            log(
+                                              "📤 Selected user for assignment:",
+                                            );
+                                            log("   - Name: $name");
+                                            log("   - Role: $role");
+                                            log(
+                                              "   - Display ID (will be sent): $displayId",
+                                            );
+                                            if (user.containsKey(
+                                              'originalId',
+                                            )) {
+                                              log(
+                                                "   - Original ID: ${user['originalId']}",
+                                              );
+                                            }
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  );
+                                },
+                              );
+                            } else {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Text(
+                                      "No data available for assignment.",
+                                    ),
+                                    const SizedBox(height: 8),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        context
+                                            .read<GetManagerLeadsCubit>()
+                                            .getManagerDashboardCounts();
+                                      },
+                                      child: const Text("Retry"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          },
+                        );
                       },
                     ),
                   ),
+
                   const SizedBox(height: 16),
+
                   // 🔹 Clear History checkbox
                   CheckboxListTile(
                     title: const Text("Clear History"),
@@ -224,6 +373,8 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                   ),
 
                   const SizedBox(height: 8),
+
+                  // 🔹 خيارات الـ Stage
                   Column(
                     children: [
                       RadioListTile<String>(
@@ -280,7 +431,9 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                         ),
                     ],
                   ),
+
                   const SizedBox(height: 8),
+
                   // 🔹 Buttons: Cancel & Apply
                   BlocListener<AssignleadCubit, AssignState>(
                     listener: (context, state) async {
@@ -292,7 +445,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                           widget.onAssignSuccess!();
                         }
                         final cubit = context.read<GetManagerLeadsCubit>();
-                        await cubit.getLeadsByManager();
+                        await cubit.getManagerLeadsPagination();
 
                         ScaffoldMessenger.of(dialogContext).showSnackBar(
                           const SnackBar(
@@ -353,6 +506,10 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                               if (clearHistory) {
                                 await saveClearHistoryTime();
                               }
+
+                              log(
+                                "📤 Assigning lead to sales ID: $selectedSalesId",
+                              );
 
                               final assignCubit =
                                   BlocProvider.of<AssignleadCubit>(

@@ -255,20 +255,11 @@ class MyApp extends StatelessWidget {
             return cubit;
           },
         ),
-        BlocProvider(
-          create: (_) => GetLeadsCubit(GetLeadsService()),
-        ),
+        BlocProvider(create: (_) => GetLeadsCubit(GetLeadsService())),
         BlocProvider<GetLeadsTeamLeaderCubit>(
-          create:
-              (_) => GetLeadsTeamLeaderCubit(
-                GetLeadsService(),
-              ),
+          create: (_) => GetLeadsTeamLeaderCubit(GetLeadsService()),
         ),
-        BlocProvider(
-          create:
-              (_) =>
-                  GetManagerLeadsCubit(GetLeadsService())..getLeadsByManager(),
-        ),
+        BlocProvider(create: (_) => GetManagerLeadsCubit(GetLeadsService())),
         BlocProvider(
           create:
               (_) =>

@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/data/models/manager_new/manager_dashboard_pagination_model.dart';
+import 'package:homewalkers_app/data/models/manager_new/manager_leads_pagiantion_model.dart';
 import 'package:homewalkers_app/data/models/marketer_dashboard_model.dart';
 import 'package:homewalkers_app/data/models/new_marketer_pagination_model.dart';
 import 'package:homewalkers_app/data/models/salesLeadsModelWithPagination.dart';
@@ -563,7 +564,8 @@ class GetLeadsService {
         return null;
       }
 
-      final url = "${Constants.baseUrl}/users/stage-Dashboard-Manager-crmdata/$email";
+      final url =
+          "${Constants.baseUrl}/users/stage-Dashboard-Manager-crmdata/$email";
 
       log("📤 GET URL: $url");
 
@@ -665,6 +667,174 @@ class GetLeadsService {
     } catch (e) {
       log('❌ Error in getLeadsDataByManager: $e');
       rethrow;
+    }
+  }
+
+  /// ✅ دالة مساعدة لبداية اليوم بالتوقيت المحلي ثم تحويلها لـ UTC
+  /// دالة مساعدة لبداية اليوم كـ String بالتوقيت المحلي
+  String startOfDayLocalString(DateTime date) {
+    // إرجاع التاريخ بصيغة YYYY-MM-DD 00:00:00
+    return "${date.year.toString().padLeft(4, '0')}-"
+        "${date.month.toString().padLeft(2, '0')}-"
+        "${date.day.toString().padLeft(2, '0')} "
+        "00:00:00";
+  }
+
+  /// دالة مساعدة لنهاية اليوم كـ String بالتوقيت المحلي
+  String endOfDayLocalString(DateTime date) {
+    // إرجاع التاريخ بصيغة YYYY-MM-DD 23:59:59
+    return "${date.year.toString().padLeft(4, '0')}-"
+        "${date.month.toString().padLeft(2, '0')}-"
+        "${date.day.toString().padLeft(2, '0')} "
+        "23:59:59";
+  }
+
+  Future<CrmLeadsResponse> fetchManagerLeads({
+    bool? data,
+    int page = 1,
+    int limit = 10,
+    String? search,
+    List<String>? salesIds,
+    List<String>? developerIds,
+    List<String>? projectIds,
+    List<String>? channelIds,
+    List<String>? campaignIds,
+    List<String>? communicationWayIds,
+    List<String>? stageIds,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    DateTime? lastStageUpdateFrom,
+    DateTime? lastStageUpdateTo,
+    DateTime? lastCommentDateFrom,
+    DateTime? lastCommentDateTo,
+    bool? ignoreDuplicate,
+    bool? transferefromdata,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? email = prefs.getString('email');
+      final String? token = prefs.getString('token');
+
+      if (email == null || email.isEmpty) {
+        throw Exception('Email not found');
+      }
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Token not found');
+      }
+
+      /// 🔹 تحديد الـ endpoint
+      final String endpoint =
+          (data ?? false)
+              ? "users/managers-leads"
+              : "users/managers-leads-crm-data";
+
+      /// 🔹 Query Parameters الأساسية
+      Map<String, String> queryParameters = {
+        "email": email,
+        "page": page.toString(),
+        "limit": limit.toString(),
+      };
+
+      /// 🔹 Search
+      if (search != null && search.isNotEmpty) {
+        queryParameters["keyword"] = search;
+      }
+
+      /// 🔹 Join arrays
+      if (salesIds != null && salesIds.isNotEmpty) {
+        queryParameters["sales"] = salesIds.join(",");
+      }
+
+      if (developerIds != null && developerIds.isNotEmpty) {
+        queryParameters["developerParam"] = developerIds.join(",");
+      }
+
+      if (projectIds != null && projectIds.isNotEmpty) {
+        queryParameters["projectParam"] = projectIds.join(",");
+      }
+
+      if (channelIds != null && channelIds.isNotEmpty) {
+        queryParameters["channel"] = channelIds.join(",");
+      }
+
+      if (campaignIds != null && campaignIds.isNotEmpty) {
+        queryParameters["campaign"] = campaignIds.join(",");
+      }
+
+      if (communicationWayIds != null && communicationWayIds.isNotEmpty) {
+        queryParameters["communicationway"] = communicationWayIds.join(",");
+      }
+
+      if (stageIds != null && stageIds.isNotEmpty) {
+        queryParameters["stage"] = stageIds.join(",");
+      }
+
+      if (ignoreDuplicate != null) {
+        queryParameters["ignoredublicate"] = ignoreDuplicate.toString();
+      }
+
+      if (transferefromdata != null) {
+        queryParameters["transferefromdata"] = transferefromdata.toString();
+      }
+
+      if (creationDateFrom != null) {
+        queryParameters["createdFrom"] = startOfDayLocalString(
+          creationDateFrom,
+        );
+      }
+
+      if (creationDateTo != null) {
+        queryParameters["createdTo"] = endOfDayLocalString(creationDateTo);
+      }
+
+      if (lastStageUpdateFrom != null) {
+        queryParameters["stageDateFrom"] = startOfDayLocalString(
+          lastStageUpdateFrom,
+        );
+      }
+
+      if (lastStageUpdateTo != null) {
+        queryParameters["stageDateTo"] = endOfDayLocalString(lastStageUpdateTo);
+      }
+
+      if (stageDateFrom != null) {
+        queryParameters["stageDateFrom"] = startOfDayLocalString(stageDateFrom);
+      }
+
+      if (stageDateTo != null) {
+        queryParameters["stageDateTo"] = endOfDayLocalString(stageDateTo);
+      }
+
+      /// 🔹 Build URL
+      final Uri url = Uri.parse(
+        "${Constants.baseUrl}/$endpoint",
+      ).replace(queryParameters: queryParameters);
+
+      print("📡 Fetching Manager Leads: $url");
+
+      final response = await http.get(
+        url,
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        return CrmLeadsResponse.fromJson(decoded);
+      } else {
+        throw Exception(
+          "Failed: ${response.statusCode} - ${response.reasonPhrase}",
+        );
+      }
+    } catch (e) {
+      print("❌ Error fetching manager leads: $e");
+      throw Exception("Error fetching manager leads: $e");
     }
   }
 
@@ -870,59 +1040,34 @@ class GetLeadsService {
       if (ignoreDuplicate != null) {
         queryParameters["ignoredublicate"] = ignoreDuplicate.toString();
       }
-      // if (data != null) {
-      //   queryParameters["data"] = data.toString();
-      // }
-      // if (transferefromdata != null) {
-      //   queryParameters["transferefromdata"] = transferefromdata.toString();
-      // }
-
-      /// 🔥 Date helpers
-      DateTime startOfDay(DateTime date) =>
-          DateTime(date.year, date.month, date.day, 0, 0, 0);
-
-      DateTime endOfDay(DateTime date) =>
-          DateTime(date.year, date.month, date.day, 23, 59, 59);
 
       // Add date filters
       if (creationDateFrom != null) {
-        queryParameters["createdAt[gte]"] =
-            startOfDay(creationDateFrom).toIso8601String();
+        queryParameters["createdFrom"] = startOfDayLocalString(
+          creationDateFrom,
+        );
       }
 
       if (creationDateTo != null) {
-        queryParameters["createdAt[lte]"] =
-            endOfDay(creationDateTo).toIso8601String();
+        queryParameters["createdTo"] = endOfDayLocalString(creationDateTo);
       }
 
       if (lastStageUpdateFrom != null) {
-        queryParameters["last_stage_date_updated[gte]"] =
-            startOfDay(lastStageUpdateFrom).toIso8601String();
+        queryParameters["stageDateFrom"] = startOfDayLocalString(
+          lastStageUpdateFrom,
+        );
       }
 
       if (lastStageUpdateTo != null) {
-        queryParameters["last_stage_date_updated[lte]"] =
-            endOfDay(lastStageUpdateTo).toIso8601String();
-      }
-
-      if (lastCommentDateFrom != null) {
-        queryParameters["lastcommentdate[gte]"] =
-            startOfDay(lastCommentDateFrom).toIso8601String();
-      }
-
-      if (lastCommentDateTo != null) {
-        queryParameters["lastcommentdate[lte]"] =
-            endOfDay(lastCommentDateTo).toIso8601String();
+        queryParameters["stageDateTo"] = endOfDayLocalString(lastStageUpdateTo);
       }
 
       if (stageDateFrom != null) {
-        queryParameters["stagedateupdated[gte]"] =
-            startOfDay(stageDateFrom).toIso8601String();
+        queryParameters["stageDateFrom"] = startOfDayLocalString(stageDateFrom);
       }
 
       if (stageDateTo != null) {
-        queryParameters["stagedateupdated[lte]"] =
-            endOfDay(stageDateTo).toIso8601String();
+        queryParameters["stageDateTo"] = endOfDayLocalString(stageDateTo);
       }
       if (transferefromdata == true) {
         urll = "users/GetAllLeadsAddedByUser-advanced";

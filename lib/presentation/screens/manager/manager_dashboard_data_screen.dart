@@ -142,7 +142,12 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardDataScreen>
                   : Constants.backgroundDarkmode,
           elevation: 0,
           toolbarHeight: 100,
-          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios, color: Constants.maincolor),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
           title: Row(
             children: [
               FutureBuilder<String>(
@@ -271,6 +276,16 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardDataScreen>
                                 "${summary?.totalLeads ?? 0}",
                                 Icons.group,
                                 context,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) =>
+                                              ManagerLeadsScreen(data: false),
+                                    ),
+                                  );
+                                },
                               ),
 
                               /// Team Leaders
@@ -299,7 +314,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardDataScreen>
                                     MaterialPageRoute(
                                       builder:
                                           (_) => ManagerLeadsScreen(
-                                            stageName: managerFresh?.stageName,
+                                            stageName: managerFresh?.stageId,
+                                            data: false,
                                           ),
                                     ),
                                   );
@@ -318,8 +334,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardDataScreen>
                                     MaterialPageRoute(
                                       builder:
                                           (_) => ManagerLeadsScreen(
-                                            stageName:
-                                                managerPending?.stageName,
+                                            stageName: managerPending?.stageId,
+                                            data: false,
                                           ),
                                     ),
                                   );
@@ -339,7 +355,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardDataScreen>
                                       MaterialPageRoute(
                                         builder:
                                             (_) => ManagerLeadsScreen(
-                                              stageName: stage.stageName,
+                                              stageName: stage.stageId,
+                                              data: false,
                                             ),
                                       ),
                                     );

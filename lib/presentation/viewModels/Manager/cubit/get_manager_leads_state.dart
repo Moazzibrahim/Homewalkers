@@ -20,6 +20,16 @@ final class GetManagerLeadsSuccess extends GetManagerLeadsState {
   List<Object> get props => [leads];
 }
 
+class GetManagerCrmLeadsSuccess extends GetManagerLeadsState {
+  final CrmLeadsResponse crmLeads;
+  final bool isMore; // ✅ جديد
+
+  const GetManagerCrmLeadsSuccess(this.crmLeads, {this.isMore = false});
+
+  @override
+  List<Object> get props => [crmLeads, isMore];
+}
+
 final class GetManagerLeadsFailure extends GetManagerLeadsState {
   final String message;
 
@@ -28,6 +38,7 @@ final class GetManagerLeadsFailure extends GetManagerLeadsState {
   @override
   List<Object> get props => [message];
 }
+
 class GetManagerDashboardSuccess extends GetManagerLeadsState {
   final ManagerDashboardPaginationModel dashboard;
 
@@ -36,4 +47,3 @@ class GetManagerDashboardSuccess extends GetManagerLeadsState {
   @override
   List<Object> get props => [dashboard];
 }
-
