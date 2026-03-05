@@ -1,4 +1,4 @@
-// ignore_for_file: must_be_immutable, use_build_context_synchronously, avoid_print, unused_local_variable
+// ignore_for_file: must_be_immutable, use_build_context_synchronously, avoid_print, unused_local_variable, unused_element
 import 'dart:developer';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -237,6 +237,9 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
             ),
           ),
           child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -355,42 +358,39 @@ class _AddCommentBottomSheetState extends State<AddCommentBottomSheet> {
                       SizedBox(height: (10 * tabletHeightScale).h),
 
                       // CustomChangeStageWidget داخل نفس الـ BottomSheet
-                      BlocProvider(
-                        create: (context) => ChangeStageCubit(),
-                        child: CustomChangeStageWidget(
-                          leadStage: widget.leadStage ?? '',
-                          leedId: widget.leadId!,
-                          onDoneDealDataChanged: (data) {
-                            setState(() {
-                              doneDealData = data;
-                            });
-                          },
-                          onStageDateChanged: (date) {
-                            _selectedStageDate = date;
-                          },
-                          onAnswerChanged: (isAnswered) {
-                            if (!isAnswered) {
-                              _applyNoAnswerLogic();
-                            } else {
-                              _clearNoAnswerLogic();
-                            }
-                          },
-                          onStageSelected: (stageName, stageId) async {
-                            setState(() {
-                              _selectedStageName = stageName;
-                              _selectedStageId = stageId;
-                            });
-                            print("Done Deal Data: $doneDealData");
-                            print("Selected Stage ID: $stageId");
+                      CustomChangeStageWidget(
+                        leadStage: widget.leadStage ?? '',
+                        leedId: widget.leadId!,
+                        onDoneDealDataChanged: (data) {
+                          setState(() {
+                            doneDealData = data;
+                          });
+                        },
+                        onStageDateChanged: (date) {
+                          _selectedStageDate = date;
+                        },
+                        onAnswerChanged: (isAnswered) {
+                          if (!isAnswered) {
+                            _applyNoAnswerLogic();
+                          } else {
+                            _clearNoAnswerLogic();
+                          }
+                        },
+                        onStageSelected: (stageName, stageId) async {
+                          setState(() {
+                            _selectedStageName = stageName;
+                            _selectedStageId = stageId;
+                          });
+                          print("Done Deal Data: $doneDealData");
+                          print("Selected Stage ID: $stageId");
 
-                            if (stageName.toLowerCase() == "no answer") {
-                              _applyNoAnswerLogic();
-                            }
-                          },
-                          salesId: salesId,
-                          stageId: widget.stageId,
-                          leadstageupdated: widget.laststageupdated,
-                        ),
+                          if (stageName.toLowerCase() == "no answer") {
+                            _applyNoAnswerLogic();
+                          }
+                        },
+                        salesId: salesId,
+                        stageId: widget.stageId,
+                        leadstageupdated: widget.laststageupdated,
                       ),
                       SizedBox(height: (10 * tabletHeightScale).h),
                     ],

@@ -752,24 +752,16 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                       isScrollControlled: true,
                                       backgroundColor: Colors.transparent,
                                       builder:
-                                          (_) => Padding(
-                                            padding: EdgeInsets.only(
-                                              bottom:
-                                                  MediaQuery.of(
-                                                    context,
-                                                  ).viewInsets.bottom,
-                                            ),
-                                            child: BlocProvider(
-                                              create: (_) => AddCommentCubit(),
-                                              child: AddCommentBottomSheet(
-                                                buttonName: "add comment",
-                                                optionalName: "add comment",
-                                                leadId: widget.leedId,
-                                                leadStage: widget.leadStage,
-                                                laststageupdated:
-                                                    widget.laststageupdated,
-                                                stageId: widget.stageId,
-                                              ),
+                                          (_) => BlocProvider(
+                                            create: (_) => AddCommentCubit(),
+                                            child: AddCommentBottomSheet(
+                                              buttonName: "add comment",
+                                              optionalName: "add comment",
+                                              leadId: widget.leedId,
+                                              leadStage: widget.leadStage,
+                                              laststageupdated:
+                                                  widget.laststageupdated,
+                                              stageId: widget.stageId,
                                             ),
                                           ),
                                     );

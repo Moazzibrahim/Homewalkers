@@ -212,7 +212,23 @@ class GetLeadsService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
-        return Salesleadsmodelwithpagination.fromJson(jsonData);
+        final result = Salesleadsmodelwithpagination.fromJson(jsonData);
+
+        // لو فيه stageId ابعت اتعمل sort حسب stage date
+        if (stageId != null && result.data != null) {
+          result.data!.sort((a, b) {
+            DateTime dateA =
+                DateTime.tryParse(a.lastStageDateUpdated ?? '') ??
+                DateTime(1970);
+            DateTime dateB =
+                DateTime.tryParse(b.lastStageDateUpdated ?? '') ??
+                DateTime(1970);
+
+            return dateA.compareTo(dateB); // من القديم للجديد
+          });
+        }
+
+        return result;
       } else {
         print("Failed to load leads: ${response.statusCode}");
         print(response.body);
@@ -325,9 +341,23 @@ class GetLeadsService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
-        final leadsResponse = TeamleaderPaginationLeadsModel.fromJson(jsonData);
+        final result = TeamleaderPaginationLeadsModel.fromJson(jsonData);
 
-        return leadsResponse;
+        // لو فيه stageId ابعت اتعمل sort حسب stage date
+        if (stageId != null && result.data != null) {
+          result.data!.sort((a, b) {
+            DateTime dateA =
+                DateTime.tryParse(a.lastStageDateUpdated ?? '') ??
+                DateTime(1970);
+            DateTime dateB =
+                DateTime.tryParse(b.lastStageDateUpdated ?? '') ??
+                DateTime(1970);
+
+            return dateA.compareTo(dateB); // من القديم للجديد
+          });
+        }
+
+        return result;
       } else {
         print("Failed to load leads: ${response.statusCode}");
         print(response.body);
