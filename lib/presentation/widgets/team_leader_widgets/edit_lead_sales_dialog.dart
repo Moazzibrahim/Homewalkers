@@ -154,7 +154,7 @@ class _EditLeadDialogState extends State<EditLeadSalesDialog> {
                     width: double.infinity,
                     child: DropdownButtonFormField<String>(
                       isExpanded: true,
-                      initialValue: selectedProjectId,
+                      value: selectedProjectId,
                       decoration: InputDecoration(
                         labelText: 'Project',
                         labelStyle: TextStyle(fontSize: fieldFontSize),
