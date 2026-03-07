@@ -47,19 +47,11 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
   bool isSearching = false;
   String selectedOption = 'same';
   String? selectedStageId;
-
-  Future<void> _loadManagerId() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      managerId = prefs.getString("managerIdspecific");
-    });
-    print("managerId: $managerId");
-  }
+  String? selectedFcmToken;
 
   @override
   void initState() {
     super.initState();
-    _loadManagerId();
   }
 
   Future<void> saveClearHistoryTime() async {
@@ -201,8 +193,14 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                     'name': sale.userlog?.name ?? 'Unnamed',
                                     'role': sale.userlog?.role ?? 'Sales',
                                     'email': sale.userlog?.email,
+                                    'fcmtoken': sale.userlog?.fcmToken,
                                     'originalId': sale.id,
                                   });
+                                  for (var u in displayUsers) {
+                                    log(
+                                      "USER: ${u['name']}  TOKEN: ${u['fcmtoken']}",
+                                    );
+                                  }
                                 }
                               }
 
@@ -227,8 +225,15 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                       'email': teamLeader.teamLeaderInfo!.email,
                                       'originalId':
                                           teamLeader.teamLeaderInfo!.id,
+                                      'fcmtoken':
+                                          teamLeader.teamLeaderInfo?.fcmToken,
                                       'salesId': salesIdForTeamLeader,
                                     });
+                                  }
+                                  for (var u in displayUsers) {
+                                    log(
+                                      "USER: ${u['name']}  TOKEN: ${u['fcmtoken']}",
+                                    );
                                   }
                                 }
 
@@ -243,8 +248,14 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                       'name': sale.userlog?.name ?? 'Unnamed',
                                       'role': sale.userlog?.role ?? 'Sales',
                                       'email': sale.userlog?.email,
+                                      'fcmtoken': sale.userlog?.fcmToken,
                                       'originalId': sale.id,
                                     });
+                                  }
+                                  for (var u in displayUsers) {
+                                    log(
+                                      "USER: ${u['name']}  TOKEN: ${u['fcmtoken']}",
+                                    );
                                   }
                                 }
                               }
@@ -305,7 +316,13 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                               val ?? false;
                                           selectedSalesId =
                                               val == true ? displayId : null;
-
+                                          selectedFcmToken =
+                                              val == true
+                                                  ? user['fcmtoken']
+                                                  : null;
+                                          log(
+                                            "Selected FCM TOKEN: $selectedFcmToken",
+                                          );
                                           if (val == true) {
                                             log(
                                               "📤 Selected user for assignment:",
@@ -458,7 +475,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                             .sendNotificationToToken(
                               title: "Lead",
                               body: "New Lead assigned successfully ✅",
-                              fcmtokennnn: widget.fcmtoken,
+                              fcmtokennnn: selectedFcmToken ?? "",
                             );
                       } else if (state is AssignFailure) {
                         ScaffoldMessenger.of(dialogContext).showSnackBar(

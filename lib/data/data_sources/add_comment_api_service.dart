@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/add_comment_model.dart';
@@ -23,12 +25,22 @@ class AddCommentApiService {
       "usernamelog": usernamelog,
     };
 
+    final url = "${Constants.baseUrl}/Action";
+
+    // ✅ طباعة الداتا قبل الإرسال
+    print("📤 URL: $url");
+    print("📤 BODY: ${jsonEncode(body)}");
+
     try {
       final response = await http.post(
-        Uri.parse("${Constants.baseUrl}/Action"),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
+
+      // ✅ طباعة الرد
+      print("📥 STATUS CODE: ${response.statusCode}");
+      print("📥 RESPONSE BODY: ${response.body}");
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);

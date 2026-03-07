@@ -6,6 +6,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/manager/manager_dashboard_data_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/manager_leads_screen.dart';
+import 'package:homewalkers_app/presentation/screens/manager/manager_team_leader_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
@@ -337,19 +338,20 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                   );
                                 },
                               ),
-                              /// Team Leaders
-                              ManagerDashboardScreen._dashboardCard(
-                                "Team Leaders",
-                                "${summary?.totalTeamLeaders ?? 0}",
-                                Icons.supervisor_account,
-                                context,
-                              ),
 
                               ManagerDashboardScreen._dashboardCard(
                                 "Total Sales",
                                 "${summary?.totalSales ?? 0}",
                                 Icons.supervisor_account,
                                 context,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ManagerTeamLeaderScreen(),
+                                    ),
+                                  );
+                                },
                               ),
 
                               /// Fresh
@@ -365,8 +367,18 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                       builder:
                                           (_) => ManagerLeadsScreen(
                                             stageName: managerFresh?.stageId,
-                                            data:
-                                                true, // ✅ نمرر data: true عشان نجيب بيانات الـ Fresh لما نضغط
+                                            data: true,
+                                            // ✅ نمرر data: true عشان نجيب بيانات الـ Fresh لما نضغط
+                                            salesId:
+                                                managerFresh?.salesIds !=
+                                                            null &&
+                                                        managerFresh!
+                                                            .salesIds!
+                                                            .isNotEmpty
+                                                    ? managerFresh
+                                                        .salesIds!
+                                                        .first
+                                                    : null,
                                           ),
                                     ),
                                   );
@@ -388,6 +400,16 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                             stageName: managerPending?.stageId,
                                             data:
                                                 true, // ✅ نمرر data: true عشان نجيب بيانات الـ Pending لما نضغط
+                                            salesId:
+                                                managerPending?.salesIds !=
+                                                            null &&
+                                                        managerPending!
+                                                            .salesIds!
+                                                            .isNotEmpty
+                                                    ? managerPending
+                                                        .salesIds!
+                                                        .first
+                                                    : null,
                                           ),
                                     ),
                                   );

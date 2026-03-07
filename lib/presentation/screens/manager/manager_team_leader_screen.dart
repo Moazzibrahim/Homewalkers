@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -22,16 +24,16 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
   void initState() {
     super.initState();
     // طلب البيانات عند بدء الشاشة
-    context.read<GetManagerLeadsCubit>().getManagerLeadsPagination(data: true);
+    context.read<GetManagerLeadsCubit>().getManagerDashboardCounts();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.backgroundlightmode
-                      : Constants.backgroundDarkmode,
+          Theme.of(context).brightness == Brightness.light
+              ? Constants.backgroundlightmode
+              : Constants.backgroundDarkmode,
       appBar: CustomAppBar(
         title: "Team Leaders",
         onBack: () {
@@ -45,23 +47,26 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
         padding: const EdgeInsets.all(16.0),
         child: BlocBuilder<GetManagerLeadsCubit, GetManagerLeadsState>(
           builder: (context, state) {
-            if (state is GetManagerLeadsSuccess) {
-              // نحصل على الخريطة المجمعة
-              groupedLeads =
-                  context
-                      .read<GetManagerLeadsCubit>()
-                      .getSalesGroupedByTeamLeader();
-              if (groupedLeads.isEmpty) {
+            if (state is GetManagerDashboardSuccess) {
+              final dashboard =
+                  context.read<GetManagerLeadsCubit>().dashboardDataS;
+
+              final teamLeaders = dashboard?.data?.teamLeaders ?? [];
+
+              if (teamLeaders.isEmpty) {
                 return const Center(child: Text(" No Team Leaders."));
               }
-              // إذا لم يتم اختيار أي team leader، اختار الأول تلقائياً
-              selectedTeamLeaderName ??= groupedLeads.keys.first;
-              final salesList = groupedLeads[selectedTeamLeaderName] ?? [];
-              final uniqueSales =
-                  {
-                    for (var lead in salesList)
-                      if (lead.sales?.id != null) lead.sales!.id!: lead,
-                  }.values.toList();
+
+              selectedTeamLeaderName ??= teamLeaders.first.teamLeaderInfo?.name;
+
+              final selectedLeader = teamLeaders.firstWhere(
+                (leader) =>
+                    leader.teamLeaderInfo?.name == selectedTeamLeaderName,
+                orElse: () => teamLeaders.first,
+              );
+
+              final salesList = selectedLeader.sales ?? [];
+
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -74,7 +79,8 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
                     ),
                   ),
                   SizedBox(height: 12),
-                  // Dropdown لاختيار team leader بناء على أسماء المفاتيح في الخريطة
+
+                  /// Dropdown Team Leaders
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(
                       hintText: "Select Team Leaders",
@@ -84,7 +90,6 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
                         fontWeight: FontWeight.w400,
                       ),
                       filled: true,
-                      // fillColor: Color(0xffF4F6F9),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -96,10 +101,10 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
                     ),
                     value: selectedTeamLeaderName,
                     items:
-                        groupedLeads.keys.map((leaderName) {
+                        teamLeaders.map((leader) {
                           return DropdownMenuItem<String>(
-                            value: leaderName,
-                            child: Text(leaderName),
+                            value: leader.teamLeaderInfo?.name,
+                            child: Text(leader.teamLeaderInfo?.name ?? ''),
                           );
                         }).toList(),
                     onChanged: (value) {
@@ -108,15 +113,17 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
                       });
                     },
                   ),
+
                   SizedBox(height: 16),
-                  // تفاصيل الـ Team Leader (يمكنك تعديلها حسب البيانات المتوفرة لديك)
+
+                  /// Team Leader Info
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       color:
                           Brightness.light == Theme.of(context).brightness
-                              ? Colors.grey[100] // لون الخلفية البيضاء
+                              ? Colors.grey[100]
                               : Color(0xff1e1e1e),
                     ),
                     child: Row(
@@ -126,7 +133,7 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                selectedTeamLeaderName ?? '',
+                                selectedLeader.teamLeaderInfo?.name ?? '',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w400,
                                   fontSize: 16,
@@ -136,68 +143,80 @@ class _ManagerTeamLeaderScreenState extends State<ManagerTeamLeaderScreen> {
                               Text("Role: Team Leader"),
                               SizedBox(height: 4),
                               Text(
-                                "Email: ${salesList.first.sales?.teamleader?.email ?? 'No email'}",
+                                "Email: ${selectedLeader.teamLeaderInfo?.email ?? 'No email'}",
                               ),
-                              // يمكنك إضافة بيانات أخرى إذا كانت متاحة
                             ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Your Sales",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color:
-                              Brightness.light == Theme.of(context).brightness
-                                  ? Colors
-                                      .black // لون الخلفية البيضاء
-                                  : Colors.white,
-                        ),
-                      ),
-                      Text(
-                        "leads Count",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color:
-                              Brightness.light == Theme.of(context).brightness
-                                  ? Colors
-                                      .black // لون الخلفية البيضاء
-                                  : Colors.white,
-                        ),
-                      ),
-                    ],
+                  SizedBox(height: 20),
+                  Text(
+                    "Your Sales",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Colors.black
+                              : Colors.white,
+                    ),
                   ),
-                  SizedBox(height: 5),
-
-                  // قائمة الـ sales التابعين للـ team leader المحدد
-                  // فلترة السيلز عشان تبقى unique
+                  SizedBox(height: 10),
+                  /// Sales List
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: uniqueSales.length,
+                    child: ListView.separated(
+                      itemCount: salesList.length,
+                      separatorBuilder:
+                          (context, index) => SizedBox(height: 10),
                       itemBuilder: (context, index) {
-                        final salesLead = uniqueSales[index];
-                        final sales = salesLead.sales;
-
-                        final leadCount =
-                            salesList
-                                .where((lead) => lead.sales?.id == sales?.id)
-                                .length;
-
-                        return ListTile(
-                          contentPadding: EdgeInsets.symmetric(vertical: 4),
-                          title: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        final sales = salesList[index];
+                        return Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.white
+                                    : Color(0xff1E1E1E),
+                            boxShadow: [
+                              if (Theme.of(context).brightness ==
+                                  Brightness.light)
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                            ],
+                          ),
+                          child: Row(
                             children: [
-                              Text(sales?.name ?? 'Unknown Sales'),
-                              Text('$leadCount Leads'),
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: Constants.maincolor
+                                    .withOpacity(.15),
+                                child: Icon(
+                                  Icons.person,
+                                  color: Constants.maincolor,
+                                  size: 20,
+                                ),
+                              ),
+
+                              SizedBox(width: 12),
+
+                              Expanded(
+                                child: Text(
+                                  sales.name ?? "Unknown Sales",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         );

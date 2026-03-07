@@ -7,7 +7,6 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
-import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
@@ -16,7 +15,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubi
 import 'package:homewalkers_app/presentation/widgets/custom_add_comment_sheet.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart';
-import 'package:homewalkers_app/presentation/widgets/manager/assign_lead_dialog_manager.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -355,136 +354,9 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                 ],
                               ],
                             ),
-                            SizedBox(height: 12.h),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                BlocBuilder<
-                                  GetManagerLeadsCubit,
-                                  GetManagerLeadsState
-                                >(
-                                  builder: (context, state) {
-                                    return ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            4.r,
-                                          ),
-                                        ),
-                                        backgroundColor:
-                                            Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? Color(0xffFFFFFF)
-                                                : Color(0xff080719),
-                                        side: const BorderSide(
-                                          color: Constants.maincolor,
-                                        ),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 20.w,
-                                          vertical: 9.h,
-                                        ),
-                                      ),
-                                      onPressed:
-                                          state is GetManagerLeadsSuccess
-                                              ? () async {
-                                                await showDialog(
-                                                  context: context,
-                                                  builder:
-                                                      (
-                                                        context,
-                                                      ) => AssignLeadDialogManager(
-                                                        leadIds: [
-                                                          widget.leedId,
-                                                        ],
-                                                        leadId: widget.leedId,
-                                                        mainColor:
-                                                            Theme.of(
-                                                                      context,
-                                                                    ).brightness ==
-                                                                    Brightness
-                                                                        .light
-                                                                ? Constants
-                                                                    .maincolor
-                                                                : Constants
-                                                                    .mainDarkmodecolor,
-                                                        leadResponse:
-                                                            state.leads,
-                                                        fcmtoken:
-                                                            widget.fcmtokenn,
-                                                      ),
-                                                );
-                                              }
-                                              : null,
-                                      child: Text(
-                                        'Assign Lead',
-                                        style: TextStyle(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.light
-                                                  ? Constants.maincolor
-                                                  : Constants.mainDarkmodecolor,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                //SizedBox(width: 22.w),
-                                // ElevatedButton(
-                                //   style: ElevatedButton.styleFrom(
-                                //     shape: RoundedRectangleBorder(
-                                //       borderRadius: BorderRadius.circular(4),
-                                //     ),
-                                //     backgroundColor:
-                                //         Theme.of(context).brightness ==
-                                //                 Brightness.light
-                                //             ? Color(0xffFFFFFF)
-                                //             : Color(0xff080719),
-                                //     side: const BorderSide(
-                                //       color: Constants.maincolor,
-                                //     ),
-                                //     padding: EdgeInsets.symmetric(
-                                //       horizontal: 16.w,
-                                //       vertical: 9.h,
-                                //     ),
-                                //   ),
-                                //   onPressed: () async {
-                                //     final prefs =
-                                //         await SharedPreferences.getInstance();
-                                //     final String salesId =
-                                //         prefs.getString('salesIdD') ?? '';
-                                //     CustomChangeStageDialog.showChangeDialog(
-                                //       context: context,
-                                //       leadStage: widget.leadStage,
-                                //       leedId: widget.leedId,
-                                //       salesId: salesId,
-                                //       onStageChanged: (newStage) {
-                                //         setState(() {
-                                //           widget.leadStage = newStage;
-                                //         });
-                                //       },
-                                //     );
-                                //   },
-                                //   child: Text(
-                                //     'Change stage ',
-                                //     style: TextStyle(
-                                //       fontSize: 15.sp,
-                                //       fontWeight: FontWeight.w500,
-                                //       color:
-                                //           Theme.of(context).brightness ==
-                                //                   Brightness.light
-                                //               ? Constants.maincolor
-                                //               : Constants.mainDarkmodecolor,
-                                //     ),
-                                //   ),
-                                // ),
-                              ],
-                            ),
                           ],
                         ),
                       ),
-                      SizedBox(height: 16.h),
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
