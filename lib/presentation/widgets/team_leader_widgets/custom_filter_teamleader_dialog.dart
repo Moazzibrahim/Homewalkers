@@ -260,63 +260,6 @@ class _FilterDialogState extends State<FilterDialog> {
                 SizedBox(height: (12 * tabletHeightScale).h),
 
                 // 🌍 Country Picker - متجاوب
-                GestureDetector(
-                  onTap: () {
-                    showCountryPicker(
-                      context: context,
-                      showPhoneCode: true,
-                      onSelect: (Country country) {
-                        setState(() {
-                          selectedCountry = country;
-                        });
-                      },
-                    );
-                  },
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: (8 * tabletHeightScale).h,
-                    ),
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        hintText: "Select Country",
-                        hintStyle: TextStyle(
-                          fontSize: (14 * tabletFontScale).sp,
-                          color: const Color.fromRGBO(143, 146, 146, 1),
-                          fontWeight: FontWeight.w400,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            (8 * tabletScale).r,
-                          ),
-                          borderSide: BorderSide(
-                            color: const Color(0xffE1E1E1),
-                            width: (1 * tabletScale).r,
-                          ),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: (12 * tabletWidthScale).w,
-                          vertical: (16 * tabletHeightScale).h,
-                        ),
-                        suffixIcon: Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: (24 * tabletFontScale).sp,
-                        ),
-                      ),
-                      child: Text(
-                        selectedCountry?.name ?? "Select Country",
-                        style: TextStyle(
-                          fontSize: (14 * tabletFontScale).sp,
-                          fontWeight: FontWeight.w400,
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? const Color(0xff080719)
-                                  : const Color(0xffFFFFFF),
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
                 SizedBox(height: (12 * tabletHeightScale).h),
 
                 // 👤 Sales Dropdown - متجاوب

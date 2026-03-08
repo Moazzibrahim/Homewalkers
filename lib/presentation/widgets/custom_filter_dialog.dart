@@ -199,52 +199,6 @@ class _FilterDialogState extends State<FilterDialog> {
               const SizedBox(height: 12),
               CustomTextField(hint: "Full Name", controller: nameController),
               const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () {
-                  showCountryPicker(
-                    context: context,
-                    showPhoneCode: true,
-                    onSelect: (Country country) {
-                      setState(() {
-                        selectedCountry = country;
-                      });
-                    },
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      hintText: "Select Country",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical:
-                            isTablet10
-                                ? 20
-                                : isTablet7
-                                ? 18
-                                : 16,
-                      ),
-                      suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
-                    ),
-                    child: Text(
-                      selectedCountry?.name ?? "Select Country",
-                      style: TextStyle(
-                        fontSize:
-                            isTablet10
-                                ? 16
-                                : isTablet7
-                                ? 15
-                                : 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
 
               /// Developers
               BlocBuilder<DevelopersCubit, DevelopersState>(

@@ -1,4 +1,5 @@
 // ignore_for_file: library_private_types_in_public_api, avoid_print, unused_local_variable, deprecated_member_use, use_build_context_synchronously, unused_field
+import 'dart:async';
 import 'dart:developer';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -79,6 +80,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   bool _selectAll = false; // متغير لتتبع حالة تحديد الكل
   int _selectedCount = 0; // عدد العناصر المختارة
   late ResponsiveSalesValues _responsive;
+  Timer? _debounce;
 
   void init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -144,26 +146,41 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
 
     _cubit = GetLeadsTeamLeaderCubit(GetLeadsService());
 
-    _loadLeads();
+    // ✅ امسح الـ search controller
+    searchController.clear(); // 👈 مهم جداً
+
+    _loadLeads(); // ✅ دي بتعمل resetPagination: true
 
     context.read<SalesCubit>().fetchAllSales();
-    init();
 
-    // حساب عدد العناصر المختارة كلما تغيرت القائمة
+    // ✅ استبدل init() بالكود ده
+    _initUserData();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateSelectedCount();
     });
   }
 
+  // ✅ دالة جديدة لتحميل بيانات المستخدم بدون تحميل الليدز تاني
+  Future<void> _initUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      teamleadname = prefs.getString('name');
+      teamleadid = prefs.getString('salesId');
+    });
+  }
+
   Future<void> _loadLeads() async {
+    // ✅ تأكد إن searchController فاضي
+    searchController.clear();
+
     await _cubit.fetchTeamLeaderLeadsWithPagination(
       data: widget.data,
       transferefromdata: widget.transferfromdata,
       stageId: widget.stageId,
-      resetPagination: true,
-      salesId:
-          widget
-              .salesName, // ✅ تمرير salesName لتحميل ليدز المخصصة لهذا المبيعات
+      resetPagination: true, // ✅ مهم جداً
+      salesId: widget.salesName,
     );
   }
 
@@ -173,15 +190,21 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
 
-    if (currentScroll >= maxScroll - 200) {
+    // Load more when user scrolls to 80% of the way
+    if (currentScroll >= maxScroll * 0.8) {
       if (_cubit.hasMoreData && !_cubit.isFetchingMore) {
+        log(
+          "📜 Loading more data at scroll position: $currentScroll/$maxScroll",
+        );
         _cubit.fetchTeamLeaderLeadsWithPagination(
           isLoadMore: true,
-          limit: 400,
+          limit: 10, // Adjust limit as needed
           data: widget.data,
           transferefromdata: widget.transferfromdata,
           stageId: widget.stageId,
           salesId: widget.salesName,
+          search:
+              searchController.text.isNotEmpty ? searchController.text : null,
         );
       }
     }
@@ -191,6 +214,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    searchController.dispose(); // ✅ مهم جداً
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -274,7 +299,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                     ? Constants.backgroundlightmode
                     : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
-              title: "Assign",
+              title: "Leads",
               onBack: () {
                 if (widget.transferfromdata == true) {
                   Navigator.pushReplacement(
@@ -299,145 +324,274 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   );
                 }
               },
-            ),
-            body: Column(
-              children: [
+
+              extraActions: [
                 BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
                   builder: (context, state) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Colors.white
-                                : Constants.backgroundDarkmode,
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all((12 * tabletScale).r),
-                        child: Column(
-                          children: [
-                            if (isSelectionMode) buildAssignButtons(),
-                            SizedBox(height: (10 * tabletScale).h),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: searchController,
-                                    onChanged: (value) {
-                                      final cubit =
-                                          context
-                                              .read<GetLeadsTeamLeaderCubit>();
-
-                                      cubit.fetchTeamLeaderLeadsWithPagination(
-                                        search: value,
-                                        stageId: widget.stageId,
-                                        data: widget.data,
-                                        transferefromdata:
-                                            widget.transferfromdata,
-                                      );
-                                    },
-                                    style: TextStyle(
-                                      fontSize: (14 * tabletFontScale).sp,
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: 'Search',
-                                      hintStyle: TextStyle(
-                                        fontSize: (14 * tabletFontScale).sp,
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: (16 * tabletWidthScale).w,
-                                        vertical: 0,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          (12 * tabletScale).r,
-                                        ),
-                                        borderSide: BorderSide(
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.light
-                                                  ? Constants.maincolor
-                                                  : Constants.mainDarkmodecolor,
-                                          width: (1 * tabletScale).r,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          (12 * tabletScale).r,
-                                        ),
-                                        borderSide: BorderSide(
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.light
-                                                  ? Constants.maincolor
-                                                  : Constants.mainDarkmodecolor,
-                                          width: (1.5 * tabletScale).r,
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          (12 * tabletScale).r,
-                                        ),
-                                        borderSide: BorderSide(
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.light
-                                                  ? Constants.maincolor
-                                                  : Constants.mainDarkmodecolor,
-                                          width: (1 * tabletScale).r,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: (10 * tabletWidthScale).w),
-                                Container(
-                                  height: (50 * tabletHeightScale).h,
-                                  width: (50 * tabletWidthScale).w,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE8F1F2),
-                                    border: Border.all(
-                                      color:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Constants.maincolor
-                                              : Constants.mainDarkmodecolor,
-                                      width: (1 * tabletScale).r,
-                                    ),
-                                    borderRadius: BorderRadius.circular(
-                                      (8 * tabletScale).r,
-                                    ),
-                                  ),
-                                  child: IconButton(
-                                    icon: Icon(
-                                      Icons.filter_list,
-                                      size: (24 * tabletFontScale).sp,
-                                      color:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Constants.maincolor
-                                              : Constants.mainDarkmodecolor,
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    onPressed: () {
-                                      showFilterDialogTeamLeader(
-                                        context,
-                                        context.read<GetLeadsTeamLeaderCubit>(),
-                                        widget.data,
-                                        widget.transferfromdata,
-                                      );
-                                    },
-                                  ),
-                                ),
-                                SizedBox(width: (10 * tabletWidthScale).w),
-                              ],
+                    return Row(
+                      children: [
+                        /// search
+                        SizedBox(
+                          width: (200 * tabletWidthScale).w,
+                          height: (50 * tabletHeightScale).h,
+                          child: TextField(
+                            controller: searchController,
+                            onChanged: (value) {
+                              final cubit =
+                                  context.read<GetLeadsTeamLeaderCubit>();
+                              _debounce?.cancel();
+                              _debounce = Timer(
+                                const Duration(milliseconds: 500),
+                                () {
+                                  cubit.fetchTeamLeaderLeadsWithPagination(
+                                    search: value,
+                                    stageId: widget.stageId,
+                                    data: widget.data,
+                                    transferefromdata: widget.transferfromdata,
+                                  );
+                                },
+                              );
+                            },
+                            style: TextStyle(
+                              fontSize: (14 * tabletFontScale).sp,
                             ),
-                          ],
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              hintStyle: TextStyle(
+                                fontSize: (14 * tabletFontScale).sp,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: (16 * tabletWidthScale).w,
+                                vertical: 0,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  (12 * tabletScale).r,
+                                ),
+                                borderSide: BorderSide(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                  width: (1 * tabletScale).r,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  (12 * tabletScale).r,
+                                ),
+                                borderSide: BorderSide(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                  width: (1.5 * tabletScale).r,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  (12 * tabletScale).r,
+                                ),
+                                borderSide: BorderSide(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? Constants.maincolor
+                                          : Constants.mainDarkmodecolor,
+                                  width: (1 * tabletScale).r,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+
+                        SizedBox(width: (10 * tabletWidthScale).w),
+
+                        /// filter
+                        Container(
+                          height: (50 * tabletHeightScale).h,
+                          width: (50 * tabletWidthScale).w,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F1F2),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Constants.maincolor
+                                      : Constants.mainDarkmodecolor,
+                              width: (1 * tabletScale).r,
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              (8 * tabletScale).r,
+                            ),
+                          ),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.filter_list,
+                              size: (24 * tabletFontScale).sp,
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Constants.maincolor
+                                      : Constants.mainDarkmodecolor,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              showFilterDialogTeamLeader(
+                                context,
+                                context.read<GetLeadsTeamLeaderCubit>(),
+                                widget.data,
+                                widget.transferfromdata,
+                              );
+                            },
+                          ),
+                        ),
+
+                        SizedBox(width: (10 * tabletWidthScale).w),
+                      ],
                     );
                   },
                 ),
+              ],
+            ),
+            body: Column(
+              children: [
+                if (isSelectionMode)
+                  Padding(
+                    padding: EdgeInsets.all((8 * tabletScale).r),
+                    child: buildAssignButtons(),
+                  ),
+                // BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
+                //   builder: (context, state) {
+                //     return Padding(
+                //       padding: EdgeInsets.all((8 * tabletScale).r),
+                //       child: Column(
+                //         children: [
+                //           if (isSelectionMode) buildAssignButtons(),
+                //           // SizedBox(height: (10 * tabletScale).h),
+                //           // Row(
+                //           //   children: [
+                //           //     Expanded(
+                //           //       child: TextField(
+                //           //         controller: searchController,
+                //           //         onChanged: (value) {
+                //           //           final cubit =
+                //           //               context
+                //           //                   .read<GetLeadsTeamLeaderCubit>();
+
+                //           //           cubit.fetchTeamLeaderLeadsWithPagination(
+                //           //             search: value,
+                //           //             stageId: widget.stageId,
+                //           //             data: widget.data,
+                //           //             transferefromdata:
+                //           //                 widget.transferfromdata,
+                //           //           );
+                //           //         },
+                //           //         style: TextStyle(
+                //           //           fontSize: (14 * tabletFontScale).sp,
+                //           //         ),
+                //           //         decoration: InputDecoration(
+                //           //           hintText: 'Search',
+                //           //           hintStyle: TextStyle(
+                //           //             fontSize: (14 * tabletFontScale).sp,
+                //           //           ),
+                //           //           contentPadding: EdgeInsets.symmetric(
+                //           //             horizontal: (16 * tabletWidthScale).w,
+                //           //             vertical: 0,
+                //           //           ),
+                //           //           border: OutlineInputBorder(
+                //           //             borderRadius: BorderRadius.circular(
+                //           //               (12 * tabletScale).r,
+                //           //             ),
+                //           //             borderSide: BorderSide(
+                //           //               color:
+                //           //                   Theme.of(context).brightness ==
+                //           //                           Brightness.light
+                //           //                       ? Constants.maincolor
+                //           //                       : Constants.mainDarkmodecolor,
+                //           //               width: (1 * tabletScale).r,
+                //           //             ),
+                //           //           ),
+                //           //           focusedBorder: OutlineInputBorder(
+                //           //             borderRadius: BorderRadius.circular(
+                //           //               (12 * tabletScale).r,
+                //           //             ),
+                //           //             borderSide: BorderSide(
+                //           //               color:
+                //           //                   Theme.of(context).brightness ==
+                //           //                           Brightness.light
+                //           //                       ? Constants.maincolor
+                //           //                       : Constants.mainDarkmodecolor,
+                //           //               width: (1.5 * tabletScale).r,
+                //           //             ),
+                //           //           ),
+                //           //           enabledBorder: OutlineInputBorder(
+                //           //             borderRadius: BorderRadius.circular(
+                //           //               (12 * tabletScale).r,
+                //           //             ),
+                //           //             borderSide: BorderSide(
+                //           //               color:
+                //           //                   Theme.of(context).brightness ==
+                //           //                           Brightness.light
+                //           //                       ? Constants.maincolor
+                //           //                       : Constants.mainDarkmodecolor,
+                //           //               width: (1 * tabletScale).r,
+                //           //             ),
+                //           //           ),
+                //           //         ),
+                //           //       ),
+                //           //     ),
+                //           //     SizedBox(width: (10 * tabletWidthScale).w),
+                //           //     Container(
+                //           //       height: (50 * tabletHeightScale).h,
+                //           //       width: (50 * tabletWidthScale).w,
+                //           //       decoration: BoxDecoration(
+                //           //         color: const Color(0xFFE8F1F2),
+                //           //         border: Border.all(
+                //           //           color:
+                //           //               Theme.of(context).brightness ==
+                //           //                       Brightness.light
+                //           //                   ? Constants.maincolor
+                //           //                   : Constants.mainDarkmodecolor,
+                //           //           width: (1 * tabletScale).r,
+                //           //         ),
+                //           //         borderRadius: BorderRadius.circular(
+                //           //           (8 * tabletScale).r,
+                //           //         ),
+                //           //       ),
+                //           //       child: IconButton(
+                //           //         icon: Icon(
+                //           //           Icons.filter_list,
+                //           //           size: (24 * tabletFontScale).sp,
+                //           //           color:
+                //           //               Theme.of(context).brightness ==
+                //           //                       Brightness.light
+                //           //                   ? Constants.maincolor
+                //           //                   : Constants.mainDarkmodecolor,
+                //           //         ),
+                //           //         padding: EdgeInsets.zero,
+                //           //         constraints: const BoxConstraints(),
+                //           //         onPressed: () {
+                //           //           showFilterDialogTeamLeader(
+                //           //             context,
+                //           //             context.read<GetLeadsTeamLeaderCubit>(),
+                //           //             widget.data,
+                //           //             widget.transferfromdata,
+                //           //           );
+                //           //         },
+                //           //       ),
+                //           //     ),
+                //           //     SizedBox(width: (10 * tabletWidthScale).w),
+                //           //   ],
+                //           // ),
+                //         ],
+                //       ),
+                //     );
+                //   },
+                // ),
                 // ... بعد الـ Column الأول
                 Expanded(
                   child: Column(
@@ -591,33 +745,95 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                           controller: _scrollController,
                                           padding: EdgeInsets.symmetric(
                                             horizontal:
-                                                (16 * tabletWidthScale).w,
-                                            vertical: (8 * tabletHeightScale).h,
+                                                (10 * tabletWidthScale).w,
+                                            vertical: (2 * tabletHeightScale).h,
                                           ),
                                           itemCount:
                                               _leads.length +
                                               1, // +1 to account for the loading indicator
                                           itemBuilder: (context, index) {
                                             if (index >= _leads.length) {
-                                              // ✅ عرض مؤشر التحميل فقط إذا كان هناك المزيد من البيانات للتحميل
-                                              return context
-                                                      .read<
-                                                        GetLeadsTeamLeaderCubit
-                                                      >()
-                                                      .hasMoreData
-                                                  ? Padding(
-                                                    padding: EdgeInsets.symmetric(
-                                                      vertical:
-                                                          (16 * tabletHeightScale)
-                                                              .h,
+                                              // Show loading indicator only if there's more data
+                                              if (context
+                                                  .read<
+                                                    GetLeadsTeamLeaderCubit
+                                                  >()
+                                                  .hasMoreData) {
+                                                return Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    vertical:
+                                                        (20 * tabletHeightScale)
+                                                            .h,
+                                                  ),
+                                                  child: Center(
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        const CircularProgressIndicator(),
+                                                        SizedBox(
+                                                          height:
+                                                              (8 * tabletHeightScale)
+                                                                  .h,
+                                                        ),
+                                                        Text(
+                                                          "Loading more leads... (Page ${_cubit.currentPage})",
+                                                          style: TextStyle(
+                                                            fontSize:
+                                                                (14 * tabletFontScale)
+                                                                    .sp,
+                                                            color: Colors.grey,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                    child: const Center(
-                                                      child:
-                                                          CircularProgressIndicator(),
+                                                  ),
+                                                );
+                                              } else if (_leads.isNotEmpty) {
+                                                // Show end of list message
+                                                return Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    vertical:
+                                                        (20 * tabletHeightScale)
+                                                            .h,
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      "✓ All leads loaded (${_leads.length} total)",
+                                                      style: TextStyle(
+                                                        fontSize:
+                                                            (14 * tabletFontScale)
+                                                                .sp,
+                                                        color: Colors.green,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                     ),
-                                                  )
-                                                  : const SizedBox(); // إذا لم تكن هناك بيانات أخرى، لا تظهر شيئًا
+                                                  ),
+                                                );
+                                              }
+                                              return const SizedBox();
                                             }
+                                            // if (index >= _leads.length) {
+                                            //   // ✅ عرض مؤشر التحميل فقط إذا كان هناك المزيد من البيانات للتحميل
+                                            //   return context
+                                            //           .read<
+                                            //             GetLeadsTeamLeaderCubit
+                                            //           >()
+                                            //           .hasMoreData
+                                            //       ? Padding(
+                                            //         padding: EdgeInsets.symmetric(
+                                            //           vertical:
+                                            //               (12 * tabletHeightScale)
+                                            //                   .h,
+                                            //         ),
+                                            //         child: const Center(
+                                            //           child:
+                                            //               CircularProgressIndicator(),
+                                            //         ),
+                                            //       )
+                                            //       : const SizedBox(); // إذا لم تكن هناك بيانات أخرى، لا تظهر شيئًا
+                                            // }
                                             final lead = _leads[index];
                                             print(
                                               "assign of lead: ${lead.assign}",
@@ -1767,8 +1983,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
       },
       child: Container(
         margin: EdgeInsets.symmetric(
-          vertical: (8 * tabletHeightScale).h,
-          horizontal: (12 * tabletWidthScale).w,
+          vertical: (4 * tabletHeightScale).h,
+          horizontal: (2 * tabletWidthScale).w,
         ),
         padding: EdgeInsets.all((16 * tabletScale).r),
         decoration: BoxDecoration(
@@ -2006,10 +2222,16 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                                                   .read<
                                                                     GetLeadsTeamLeaderCubit
                                                                   >()
-                                                                  .refreshLeads(
-                                                                    stageName:
+                                                                  .fetchTeamLeaderLeadsWithPagination(
+                                                                    data:
                                                                         widget
-                                                                            .stageName,
+                                                                            .data,
+                                                                    transferefromdata:
+                                                                        widget
+                                                                            .transferfromdata,
+                                                                    stageId:
+                                                                        widget
+                                                                            .stageId,
                                                                   );
                                                             }
                                                           } finally {

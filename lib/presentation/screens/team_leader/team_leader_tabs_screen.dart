@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // ignore_for_file: deprecated_member_use
@@ -70,11 +72,14 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
                 },
                 children: [
                   BlocProvider(
-                    create: (context) => TeamleaderDashboardCubit(TeamleaderDashboardApiService()),
+                    create:
+                        (context) => TeamleaderDashboardCubit(
+                          TeamleaderDashboardApiService(),
+                        ),
                     child: TeamLeaderDashboardScreen(),
                   ),
+                  TeamLeaderAssignScreen(data: false, transferfromdata: true),
                   TeamLeaderSalesScreen(),
-                  TeamLeaderAssignScreen(data: false,transferfromdata: true,),
                   BlocProvider(
                     create: (context) => AuthCubit(LoginApiService()),
                     child: TeamLeaderProfileScreen(),
@@ -111,7 +116,7 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
                 onTap: () => _onTap(1),
                 child: _bottomBarItem(
                   Icons.groups,
-                  'Sales',
+                  'Leads',
                   _currentIndex == 1,
                 ),
               ),
@@ -120,7 +125,7 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
                 onTap: () => _onTap(2),
                 child: _bottomBarItem(
                   Icons.assignment,
-                  'Assign',
+                  'Sales',
                   _currentIndex == 2,
                 ),
               ),

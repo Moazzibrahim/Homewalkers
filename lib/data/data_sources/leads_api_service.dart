@@ -242,7 +242,7 @@ class GetLeadsService {
 
   Future<TeamleaderPaginationLeadsModel?> fetchTeamLeaderLeadsWithPagination({
     int page = 1,
-    int limit = 1000,
+    int limit = 10,
     String? search, // الاسم، الايميل، واتساب، تليفون
     String? salesId,
     String? developerId,

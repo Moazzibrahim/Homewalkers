@@ -28,150 +28,189 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
     : super(GetLeadsTeamLeaderInitial());
 
   Future<void> fetchTeamLeaderLeadsWithPagination({
-  int limit = 1000,
-  bool isLoadMore = false,
-  String? search,
-  String? salesId,
-  String? developerId,
-  String? projectId,
-  String? channelId,
-  String? stageId,
-  DateTime? stageDateFrom,
-  DateTime? stageDateTo,
-  DateTime? creationDateFrom,
-  DateTime? creationDateTo,
-  bool? data,
-  bool? transferefromdata,
-  bool resetPagination = false,
-}) async {
-  // ✅ منع التحميل المتكرر
-  if (isFetchingMore) {
-    log("🔄 Already fetching more data...");
-    return;
-  }
-
-  // ✅ إعادة تعيين البيانات إذا طلب المستخدم ذلك
-  if (resetPagination) {
-    currentPage = 1;
-    hasMoreData = true;
-    paginatedLeads.clear();
-    log("🔄 Pagination reset - clearing all data");
-  }
-
-  // ✅ Handle initial load vs load more
-  if (!isLoadMore) {
-    // Initial load or refresh
-    currentPage = 1;
-    hasMoreData = true;
-    paginatedLeads.clear();
-    emit(GetLeadsTeamLeaderPaginationLoading());
-  } else {
-    // Load more - check if there's more data
-    if (!hasMoreData) {
-      log("📭 No more data to load");
+    int limit = 10,
+    bool isLoadMore = false,
+    String? search,
+    String? salesId,
+    String? developerId,
+    String? projectId,
+    String? channelId,
+    String? stageId,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    bool? data,
+    bool? transferefromdata,
+    bool resetPagination = false,
+  }) async {
+    // ✅ Prevent concurrent requests
+    if (isFetchingMore) {
+      log("🔄 Already fetching more data...");
       return;
     }
-    isFetchingMore = true;
-    // Don't emit loading state for load more, just show indicator in UI
-    // The UI will handle showing the loading indicator at the bottom
-  }
 
-  try {
-    // ✅ تحديد الصفحة المطلوبة للتحميل
-    // إذا كان تحميل إضافي، نستخدم currentPage + 1
-    // إذا كان تحميل عادي، نستخدم currentPage (التي تكون 1)
-    final int pageToFetch = isLoadMore ? currentPage + 1 : currentPage;
-    
-    log("📡 Fetching page $pageToFetch with limit $limit...");
-    log("🚀 Sending request with page: $pageToFetch");
+    // ✅ Check if search query changed - if yes, reset pagination automatically
+    if (search != _lastSearchQuery) {
+      resetPagination = true;
+      _lastSearchQuery = search;
+    }
 
-    final result = await _getLeadsService.fetchTeamLeaderLeadsWithPagination(
-      page: pageToFetch,
-      limit: limit,
-      search: search,
-      salesId: salesId,
-      developerId: developerId,
-      projectId: projectId,
-      channelId: channelId,
-      stageId: stageId,
-      stageDateFrom: stageDateFrom,
-      stageDateTo: stageDateTo,
-      creationDateFrom: creationDateFrom,
-      creationDateTo: creationDateTo,
-      data: data,
-      transferefromdata: transferefromdata,
-    );
+    // ✅ Reset pagination if requested or if search changed
+    if (resetPagination) {
+      currentPage = 1;
+      hasMoreData = true;
+      paginatedLeads.clear();
+      _loadedLeadIds.clear(); // Track loaded IDs to prevent duplicates
+      log("🔄 Pagination reset - clearing all data");
+    }
 
-    if (result != null && result.data != null) {
-      final newData = result.data!;
+    // ✅ Handle initial load vs load more
+    if (!isLoadMore) {
+      // Initial load or refresh
+      if (!resetPagination) {
+        // If not resetting, clear and start from page 1 anyway for consistency
+        currentPage = 1;
+        hasMoreData = true;
+        paginatedLeads.clear();
+        _loadedLeadIds.clear();
+      }
+      emit(GetLeadsTeamLeaderPaginationLoading());
+    } else {
+      // Load more - check if there's more data
+      if (!hasMoreData) {
+        log("📭 No more data to load");
+        return;
+      }
+      isFetchingMore = true;
+    }
 
-      if (newData.isEmpty) {
-        // No more data
-        hasMoreData = false;
-        log("📭 No more data - page $pageToFetch is empty");
+    try {
+      // ✅ Use currentPage for the request (no +1 needed)
+      final int pageToFetch = currentPage;
 
-        if (paginatedLeads.isEmpty) {
-          emit(GetLeadsTeamLeaderPaginationEmpty());
+      log("📡 Fetching page $pageToFetch with limit $limit...");
+      log("🚀 Search query: $search");
+
+      final result = await _getLeadsService.fetchTeamLeaderLeadsWithPagination(
+        page: pageToFetch,
+        limit: limit,
+        search: search,
+        salesId: salesId,
+        developerId: developerId,
+        projectId: projectId,
+        channelId: channelId,
+        stageId: stageId,
+        stageDateFrom: stageDateFrom,
+        stageDateTo: stageDateTo,
+        creationDateFrom: creationDateFrom,
+        creationDateTo: creationDateTo,
+        data: data,
+        transferefromdata: transferefromdata,
+      );
+
+      if (result != null && result.data != null) {
+        final newData = result.data!;
+
+        if (newData.isEmpty) {
+          // No more data
+          hasMoreData = false;
+          log("📭 No more data - page $pageToFetch is empty");
+
+          if (paginatedLeads.isEmpty) {
+            emit(GetLeadsTeamLeaderPaginationEmpty());
+          } else {
+            final updatedModel = TeamleaderPaginationLeadsModel(
+              data: List.from(paginatedLeads),
+            );
+            emit(GetLeadsTeamLeaderPaginationSuccess(updatedModel));
+          }
         } else {
+          // ✅ Filter out duplicates by ID before adding
+          final uniqueNewData = <LeadDataPagination>[];
+          for (var lead in newData) {
+            final leadId = lead.id?.toString();
+            if (leadId != null && !_loadedLeadIds.contains(leadId)) {
+              uniqueNewData.add(lead);
+              _loadedLeadIds.add(leadId);
+            } else {
+              log("⚠️ Skipping duplicate lead with ID: $leadId");
+            }
+          }
+
+          if (uniqueNewData.isNotEmpty) {
+            paginatedLeads.addAll(uniqueNewData);
+
+            // ✅ Update currentPage only after successful load
+            currentPage++;
+
+            // ✅ Check if there's more data
+            hasMoreData = newData.length >= limit;
+
+            log(
+              "✅ Added ${uniqueNewData.length} unique leads. Total: ${paginatedLeads.length}, "
+              "Current page: $currentPage, Has more: $hasMoreData",
+            );
+          } else {
+            // If all received data were duplicates, try next page
+            if (newData.length >= limit) {
+              currentPage++;
+              // Trigger load of next page automatically
+              fetchTeamLeaderLeadsWithPagination(
+                isLoadMore: true,
+                limit: limit,
+                search: search,
+                salesId: salesId,
+                developerId: developerId,
+                projectId: projectId,
+                channelId: channelId,
+                stageId: stageId,
+                stageDateFrom: stageDateFrom,
+                stageDateTo: stageDateTo,
+                creationDateFrom: creationDateFrom,
+                creationDateTo: creationDateTo,
+                data: data,
+                transferefromdata: transferefromdata,
+              );
+              return;
+            } else {
+              hasMoreData = false;
+            }
+          }
+
           final updatedModel = TeamleaderPaginationLeadsModel(
             data: List.from(paginatedLeads),
           );
           emit(GetLeadsTeamLeaderPaginationSuccess(updatedModel));
         }
       } else {
-        // Add new data
-        paginatedLeads.addAll(newData);
-
-        // ✅ تحديث currentPage بناءً على الصفحة التي تم تحميلها بنجاح
-        if (isLoadMore) {
-          // إذا كان تحميل إضافي، currentPage تصبح هي pageToFetch
-          currentPage = pageToFetch;
+        if (!isLoadMore) {
+          emit(GetLeadsTeamLeaderPaginationError("No leads found"));
         } else {
-          // إذا كان تحميل عادي، currentPage تبقى 1 (أو يتم تحديثها حسب الحاجة)
-          currentPage = 1;
+          hasMoreData = false;
+          log("📭 No data received - setting hasMoreData to false");
         }
-
-        // ✅ التحقق مما إذا كان هناك المزيد من البيانات
-        // إذا كان عدد العناصر المستلمة يساوي الحد الأقصى، فمن المحتمل أن هناك المزيد
-        hasMoreData = newData.length >= limit;
-
-        log(
-          "✅ Added ${newData.length} leads. Total: ${paginatedLeads.length}, "
-          "Current page: $currentPage, Next page: ${currentPage + 1}, "
-          "Has more: $hasMoreData",
-        );
-
-        final updatedModel = TeamleaderPaginationLeadsModel(
-          data: List.from(paginatedLeads),
-        );
-        emit(GetLeadsTeamLeaderPaginationSuccess(updatedModel));
       }
-    } else {
+    } catch (e) {
+      log("❌ Error fetching leads: $e");
       if (!isLoadMore) {
-        emit(GetLeadsTeamLeaderPaginationError("No leads found"));
+        emit(
+          GetLeadsTeamLeaderPaginationError(
+            "Failed to load leads with pagination: ${e.toString()}",
+          ),
+        );
       } else {
-        hasMoreData = false;
-        log("📭 No data received - setting hasMoreData to false");
+        log("❌ Error during load more: $e");
       }
+    } finally {
+      isFetchingMore = false;
+      log("🔓 isFetchingMore set to false");
     }
-  } catch (e) {
-    log("❌ Error fetching leads: $e");
-    if (!isLoadMore) {
-      emit(
-        GetLeadsTeamLeaderPaginationError(
-          "Failed to load leads with pagination: ${e.toString()}",
-        ),
-      );
-    } else {
-      // في حالة خطأ أثناء التحميل الإضافي، لا نغير hasMoreData
-      // لكن نعطي المستخدم فرصة للمحاولة مرة أخرى
-      log("❌ Error during load more: $e");
-    }
-  } finally {
-    isFetchingMore = false;
-    log("🔓 isFetchingMore set to false");
   }
-}
+
+  // Add these class variables at the top of your cubit:
+  Set<String> _loadedLeadIds = {};
+  String? _lastSearchQuery;
 
   /// جلب البيانات مع حساب عدد الـ leads حسب كل مرحلة
   Future<void> getLeadsByTeamLeader({
