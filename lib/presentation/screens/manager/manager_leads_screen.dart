@@ -16,8 +16,8 @@ import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/data/models/lead_comments_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/screens/manager/leads_details_screen_manager.dart';
+import 'package:homewalkers_app/presentation/screens/manager/manager_dashboard_data_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
-import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/campaigns/get/cubit/get_campaigns_cubit.dart';
@@ -439,178 +439,121 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
           appBar: CustomAppBar(
             title: 'Leads',
             onBack: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => TabsScreenManager()),
-              );
+              if (widget.data == true) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TabsScreenManager(),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ManagerDashboardDataScreen(),
+                  ),
+                );
+              }
             },
-          ),
-          body: Column(
-            children: [
-              // Search & filter
-              Container(
-                decoration: BoxDecoration(
-                  // color:
-                  //     Theme.of(context).brightness == Brightness.light
-                  //         ? Colors.white
-                  //         : Constants.backgroundDarkmode,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Column(
-                  children: [
-                    if (_showCheckboxes && _selectedLeads.isNotEmpty)
-                      SafeArea(child: buildAssignButtons()),
-                    SizedBox(height: 20.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: nameController,
-                            onChanged: (value) {
-                              context
-                                  .read<GetManagerLeadsCubit>()
-                                  .getManagerLeadsPagination(
-                                    search: value.trim(),
-                                    data: widget.data ?? false,
-                                    stageIds: [widget.stageName ?? ''],
-                                    ignoreDuplicate: widget.showDuplicatesOnly,
-                                    salesIds: [widget.salesId ?? ''],
-                                  );
-                            },
-                            decoration: InputDecoration(
-                              hintText: 'Search',
-                              hintStyle: TextStyle(
-                                color: Color(0xff969696),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.search,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 0,
-                                horizontal: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          height: 50.h,
-                          width: 50.w,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F1F2),
-                            border: Border.all(
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Constants.maincolor
-                                      : Constants.mainDarkmodecolor,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.filter_list,
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Constants.maincolor
-                                      : Constants.mainDarkmodecolor,
-                            ),
-                            onPressed: () {
-                              showFilterDialogManagerr(
-                                context,
-                                widget.data ?? false,
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Create Lead Button
+            extraActions: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
+                  SizedBox(
+                    width: 200.w,
+                    child: TextField(
+                      controller: nameController,
+                      onChanged: (value) {
+                        context
+                            .read<GetManagerLeadsCubit>()
+                            .getManagerLeadsPagination(
+                              search: value.trim(),
+                              data: widget.data ?? false,
+                              stageIds: [widget.stageName ?? ''],
+                              ignoreDuplicate: widget.showDuplicatesOnly,
+                              salesIds: [widget.salesId ?? ''],
+                            );
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search',
+                        hintStyle: TextStyle(
+                          color: Color(0xff969696),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color:
                               Theme.of(context).brightness == Brightness.light
                                   ? Constants.maincolor
                                   : Constants.mainDarkmodecolor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
                         ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CreateLeadScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(
-                          Icons.add,
-                          size: 20,
-                          color: Colors.white,
-                        ),
-                        label: Text(
-                          'Create Lead',
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Constants.maincolor
+                                    : Constants.mainDarkmodecolor,
                           ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Constants.maincolor
+                                    : Constants.mainDarkmodecolor,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 0,
+                          horizontal: 12,
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
-              // Leads List Based on State
+              const SizedBox(width: 10),
+              Container(
+                height: 50.h,
+                width: 50.w,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F1F2),
+                  border: Border.all(
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.filter_list,
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
+                  ),
+                  onPressed: () {
+                    showFilterDialogManagerr(context, widget.data ?? false);
+                  },
+                ),
+              ),
+            ],
+          ),
+          body: Column(
+            children: [
+              if (_showCheckboxes && _selectedLeads.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: SafeArea(child: buildAssignButtons()),
+                ),
               Expanded(
                 child: Builder(
                   builder: (_) {
@@ -619,7 +562,6 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                     } else if (state is GetManagerCrmLeadsSuccess) {
                       final cubit = context.read<GetManagerLeadsCubit>();
                       final leads = cubit.allLeads;
-
                       if (leads.isEmpty) {
                         return const Center(child: Text('No leads found.'));
                       }

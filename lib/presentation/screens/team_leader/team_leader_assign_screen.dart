@@ -449,8 +449,6 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             },
                           ),
                         ),
-
-                        SizedBox(width: (10 * tabletWidthScale).w),
                       ],
                     );
                   },
@@ -777,7 +775,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                                                   .h,
                                                         ),
                                                         Text(
-                                                          "Loading more leads... (Page ${_cubit.currentPage})",
+                                                          "Loading more leads...",
                                                           style: TextStyle(
                                                             fontSize:
                                                                 (14 * tabletFontScale)

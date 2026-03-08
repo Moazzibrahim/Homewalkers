@@ -5,6 +5,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/manager/manager_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/manager_team_leader_screen.dart';
+import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
@@ -146,7 +147,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardDataScreen>
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios, color: Constants.maincolor),
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => TabsScreenManager()),
+              );
             },
           ),
           title: Row(

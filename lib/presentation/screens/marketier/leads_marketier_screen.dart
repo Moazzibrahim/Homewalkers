@@ -247,72 +247,36 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
             );
           }
         },
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Column(
-          children: [
-            // Search & filter
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _nameSearchController,
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value.trim();
-                        });
-                        _applyCurrentFiltersWithPagination();
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search',
-                        hintStyle: TextStyle(
-                          color: const Color(0xff969696),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? Constants.maincolor
-                                  : Constants.mainDarkmodecolor,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Constants.maincolor
-                                    : Constants.mainDarkmodecolor,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Constants.maincolor
-                                    : Constants.mainDarkmodecolor,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 0,
-                          horizontal: 12,
-                        ),
-                      ),
+        extraActions: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 200.w,
+                child: TextField(
+                  controller: _nameSearchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.trim();
+                    });
+                    _applyCurrentFiltersWithPagination();
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search',
+                    hintStyle: TextStyle(
+                      color: const Color(0xff969696),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    height: 50.h,
-                    width: 50.w,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F1F2),
-                      border: Border.all(
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
                         color:
                             Theme.of(context).brightness == Brightness.light
                                 ? Constants.maincolor
@@ -320,189 +284,217 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.filter_list,
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
                         color:
                             Theme.of(context).brightness == Brightness.light
                                 ? Constants.maincolor
                                 : Constants.mainDarkmodecolor,
                       ),
-
-                      // في leads_marketier_screen.dart - تعديل جزء استقبال الفلاتر من الـ Dialog
-                      onPressed: () async {
-                        final Map<String, dynamic>?
-                        filters = await showDialog<Map<String, dynamic>>(
-                          context: context,
-                          builder: (dialogContext) {
-                            return MultiBlocProvider(
-                              providers: [
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          DevelopersCubit(DeveloperApiService())
-                                            ..getDevelopers(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          ProjectsCubit(ProjectsApiService())
-                                            ..fetchProjects(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          StagesCubit(StagesApiService())
-                                            ..fetchStages(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          ChannelCubit(GetChannelsApiService())
-                                            ..fetchChannels(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) => GetCommunicationWaysCubit(
-                                        CommunicationWayApiService(),
-                                      )..fetchCommunicationWays(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) => GetCampaignsCubit(
-                                        CampaignApiService(),
-                                      )..fetchCampaigns(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          SalesCubit(GetAllSalesApiService())
-                                            ..fetchAllSales(),
-                                ),
-                              ],
-                              child: MarketerFilterDialog(
-                                initialCountry:
-                                    _selectedCountryFilter.isNotEmpty
-                                        ? _selectedCountryFilter
-                                        : null,
-                                initialDeveloper:
-                                    _selectedDeveloperFilter.isNotEmpty
-                                        ? _selectedDeveloperFilter
-                                        : null,
-                                initialProject:
-                                    _selectedProjectFilter.isNotEmpty
-                                        ? _selectedProjectFilter
-                                        : null,
-                                initialStage:
-                                    _selectedStageFilter.isNotEmpty
-                                        ? _selectedStageFilter
-                                        : null,
-                                initialChannel:
-                                    _selectedChannelFilter.isNotEmpty
-                                        ? _selectedChannelFilter
-                                        : null,
-                                initialSales:
-                                    _selectedSalesFilter.isNotEmpty
-                                        ? _selectedSalesFilter
-                                        : null,
-                                initialCommunicationWay:
-                                    _selectedCommunicationWayFilter.isNotEmpty
-                                        ? _selectedCommunicationWayFilter
-                                        : null,
-                                initialCampaign:
-                                    _selectedCampaignFilter.isNotEmpty
-                                        ? _selectedCampaignFilter
-                                        : null,
-                                initialSearchName: _nameSearchController.text,
-                                initialStartDate: _startDate,
-                                initialEndDate: _endDate,
-                                initialLastStageUpdateStart:
-                                    _lastStageUpdateStart,
-                                initialLastStageUpdateEnd: _lastStageUpdateEnd,
-                              ),
-                            );
-                          },
-                        );
-
-                        if (filters != null) {
-                          setState(() {
-                            _searchQuery = filters['name'] ?? _searchQuery;
-                            _nameSearchController.text = _searchQuery;
-
-                            // ✅ تحديث قوائم الأسماء (للعرض فقط)
-                            _selectedCountryFilter = filters['country'] ?? [];
-                            _selectedDeveloperFilter =
-                                filters['developer'] ?? [];
-                            _selectedProjectFilter = filters['project'] ?? [];
-                            _selectedStageFilter = filters['stage'] ?? [];
-                            _selectedChannelFilter = filters['channel'] ?? [];
-                            _selectedSalesFilter = filters['sales'] ?? [];
-                            _selectedCommunicationWayFilter =
-                                filters['communicationWay'] ?? [];
-                            _selectedCampaignFilter = filters['campaign'] ?? [];
-
-                            // ✅ الأهم: تحديث قوائم IDs مباشرة (لأن الـ Dialog يرجع IDs)
-                            _selectedSalesIdsFilter =
-                                filters['sales']?.isNotEmpty == true
-                                    ? List<String>.from(filters['sales'])
-                                    : null;
-                            _selectedDeveloperIdsFilter =
-                                filters['developer']?.isNotEmpty == true
-                                    ? List<String>.from(filters['developer'])
-                                    : null;
-                            _selectedProjectIdsFilter =
-                                filters['project']?.isNotEmpty == true
-                                    ? List<String>.from(filters['project'])
-                                    : null;
-                            _selectedStageIdsFilter =
-                                filters['stage']?.isNotEmpty == true
-                                    ? List<String>.from(filters['stage'])
-                                    : null;
-                            _selectedChannelIdsFilter =
-                                filters['channel']?.isNotEmpty == true
-                                    ? List<String>.from(filters['channel'])
-                                    : null;
-                            _selectedCampaignIdsFilter =
-                                filters['campaign']?.isNotEmpty == true
-                                    ? List<String>.from(filters['campaign'])
-                                    : null;
-                            _selectedCommunicationWayIdsFilter =
-                                filters['communicationWay']?.isNotEmpty == true
-                                    ? List<String>.from(
-                                      filters['communicationWay'],
-                                    )
-                                    : null;
-
-                            _startDate = filters['startDate'];
-                            _endDate = filters['endDate'];
-                            _lastStageUpdateStart =
-                                filters['lastStageUpdateStart'];
-                            _lastStageUpdateEnd = filters['lastStageUpdateEnd'];
-                          });
-
-                          // ✅ للتصحيح - طباعة الـ IDs المرسلة
-                          print("📊 Sending filters with IDs:");
-                          print("   Sales IDs: $_selectedSalesIdsFilter");
-                          print(
-                            "   Developer IDs: $_selectedDeveloperIdsFilter",
-                          );
-                          print("   Project IDs: $_selectedProjectIdsFilter");
-                          print("   Stage IDs: $_selectedStageIdsFilter");
-                          print("   Channel IDs: $_selectedChannelIdsFilter");
-                          print("   Campaign IDs: $_selectedCampaignIdsFilter");
-                          print(
-                            "   Communication Way IDs: $_selectedCommunicationWayIdsFilter",
-                          );
-
-                          // ✅ تطبيق الفلاتر
-                          _applyCurrentFiltersWithPagination();
-                        }
-                      },
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 0,
+                      horizontal: 12,
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(width: 10),
+              Container(
+                height: 50.h,
+                width: 50.w,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F1F2),
+                  border: Border.all(
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.filter_list,
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
+                  ),
+
+                  // في leads_marketier_screen.dart - تعديل جزء استقبال الفلاتر من الـ Dialog
+                  onPressed: () async {
+                    final Map<String, dynamic>?
+                    filters = await showDialog<Map<String, dynamic>>(
+                      context: context,
+                      builder: (dialogContext) {
+                        return MultiBlocProvider(
+                          providers: [
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      DevelopersCubit(DeveloperApiService())
+                                        ..getDevelopers(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      ProjectsCubit(ProjectsApiService())
+                                        ..fetchProjects(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      StagesCubit(StagesApiService())
+                                        ..fetchStages(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      ChannelCubit(GetChannelsApiService())
+                                        ..fetchChannels(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) => GetCommunicationWaysCubit(
+                                    CommunicationWayApiService(),
+                                  )..fetchCommunicationWays(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      GetCampaignsCubit(CampaignApiService())
+                                        ..fetchCampaigns(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      SalesCubit(GetAllSalesApiService())
+                                        ..fetchAllSales(),
+                            ),
+                          ],
+                          child: MarketerFilterDialog(
+                            initialCountry:
+                                _selectedCountryFilter.isNotEmpty
+                                    ? _selectedCountryFilter
+                                    : null,
+                            initialDeveloper:
+                                _selectedDeveloperFilter.isNotEmpty
+                                    ? _selectedDeveloperFilter
+                                    : null,
+                            initialProject:
+                                _selectedProjectFilter.isNotEmpty
+                                    ? _selectedProjectFilter
+                                    : null,
+                            initialStage:
+                                _selectedStageFilter.isNotEmpty
+                                    ? _selectedStageFilter
+                                    : null,
+                            initialChannel:
+                                _selectedChannelFilter.isNotEmpty
+                                    ? _selectedChannelFilter
+                                    : null,
+                            initialSales:
+                                _selectedSalesFilter.isNotEmpty
+                                    ? _selectedSalesFilter
+                                    : null,
+                            initialCommunicationWay:
+                                _selectedCommunicationWayFilter.isNotEmpty
+                                    ? _selectedCommunicationWayFilter
+                                    : null,
+                            initialCampaign:
+                                _selectedCampaignFilter.isNotEmpty
+                                    ? _selectedCampaignFilter
+                                    : null,
+                            initialSearchName: _nameSearchController.text,
+                            initialStartDate: _startDate,
+                            initialEndDate: _endDate,
+                            initialLastStageUpdateStart: _lastStageUpdateStart,
+                            initialLastStageUpdateEnd: _lastStageUpdateEnd,
+                          ),
+                        );
+                      },
+                    );
+
+                    if (filters != null) {
+                      setState(() {
+                        _searchQuery = filters['name'] ?? _searchQuery;
+                        _nameSearchController.text = _searchQuery;
+
+                        // ✅ تحديث قوائم الأسماء (للعرض فقط)
+                        _selectedCountryFilter = filters['country'] ?? [];
+                        _selectedDeveloperFilter = filters['developer'] ?? [];
+                        _selectedProjectFilter = filters['project'] ?? [];
+                        _selectedStageFilter = filters['stage'] ?? [];
+                        _selectedChannelFilter = filters['channel'] ?? [];
+                        _selectedSalesFilter = filters['sales'] ?? [];
+                        _selectedCommunicationWayFilter =
+                            filters['communicationWay'] ?? [];
+                        _selectedCampaignFilter = filters['campaign'] ?? [];
+
+                        // ✅ الأهم: تحديث قوائم IDs مباشرة (لأن الـ Dialog يرجع IDs)
+                        _selectedSalesIdsFilter =
+                            filters['sales']?.isNotEmpty == true
+                                ? List<String>.from(filters['sales'])
+                                : null;
+                        _selectedDeveloperIdsFilter =
+                            filters['developer']?.isNotEmpty == true
+                                ? List<String>.from(filters['developer'])
+                                : null;
+                        _selectedProjectIdsFilter =
+                            filters['project']?.isNotEmpty == true
+                                ? List<String>.from(filters['project'])
+                                : null;
+                        _selectedStageIdsFilter =
+                            filters['stage']?.isNotEmpty == true
+                                ? List<String>.from(filters['stage'])
+                                : null;
+                        _selectedChannelIdsFilter =
+                            filters['channel']?.isNotEmpty == true
+                                ? List<String>.from(filters['channel'])
+                                : null;
+                        _selectedCampaignIdsFilter =
+                            filters['campaign']?.isNotEmpty == true
+                                ? List<String>.from(filters['campaign'])
+                                : null;
+                        _selectedCommunicationWayIdsFilter =
+                            filters['communicationWay']?.isNotEmpty == true
+                                ? List<String>.from(filters['communicationWay'])
+                                : null;
+
+                        _startDate = filters['startDate'];
+                        _endDate = filters['endDate'];
+                        _lastStageUpdateStart = filters['lastStageUpdateStart'];
+                        _lastStageUpdateEnd = filters['lastStageUpdateEnd'];
+                      });
+
+                      // ✅ للتصحيح - طباعة الـ IDs المرسلة
+                      print("📊 Sending filters with IDs:");
+                      print("   Sales IDs: $_selectedSalesIdsFilter");
+                      print("   Developer IDs: $_selectedDeveloperIdsFilter");
+                      print("   Project IDs: $_selectedProjectIdsFilter");
+                      print("   Stage IDs: $_selectedStageIdsFilter");
+                      print("   Channel IDs: $_selectedChannelIdsFilter");
+                      print("   Campaign IDs: $_selectedCampaignIdsFilter");
+                      print(
+                        "   Communication Way IDs: $_selectedCommunicationWayIdsFilter",
+                      );
+
+                      // ✅ تطبيق الفلاتر
+                      _applyCurrentFiltersWithPagination();
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Column(
+          children: [
             // باقي الكود كما هو...
             if (selectedTab == 0 && _selectedLeads.isNotEmpty)
               Container(
@@ -514,7 +506,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const SizedBox(),
-
                     if (_selectedLeads.isNotEmpty)
                       Expanded(
                         child: Container(

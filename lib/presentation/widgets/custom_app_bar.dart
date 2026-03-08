@@ -56,7 +56,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (extraActions != null) ...extraActions!,
 
         Container(
-          margin: const EdgeInsets.only(right: 10),
+          margin: const EdgeInsets.only(right: 10, left: 6),
           decoration: BoxDecoration(
             color: const Color(0xFFE8F1F2),
             borderRadius: BorderRadius.circular(8),

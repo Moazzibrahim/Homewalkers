@@ -14,7 +14,7 @@ import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/data/models/salesLeadsModelWithPagination.dart';
 import 'package:homewalkers_app/data/models/stages_models.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/meetingCommentsScreen.dart';
-import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
+import 'package:homewalkers_app/presentation/screens/sales/sales_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
@@ -310,6 +310,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
   LeadPagination? _selectedLead;
   late ScrollController _scrollController;
   late ResponsiveSalesValues _responsive;
+  final nameController = TextEditingController();
 
   @override
   void initState() {
@@ -358,6 +359,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    nameController.dispose();
     super.dispose();
   }
 
@@ -403,11 +405,25 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
           appBar: CustomAppBar(
             title: 'Leads',
             onBack: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => SalesTabsScreen()),
-              );
+              if (widget.transferfromdata == true) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SalesTabsScreen(),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SalesDataDashboardScreen(),
+                  ),
+                );
+              }
             },
+            extraActions: [
+              _buildSearchAndFilter(),
+            ], // هنا بقى البحث والفلتر جوه الـ AppBar
           ),
           body: _buildBody(state),
         );
@@ -418,27 +434,16 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
   Widget _buildBody(GetLeadsState state) {
     return Column(
       children: [
-        _buildSearchAndFilter(),
-        _buildActionButtons(),
+        _buildActionButtons(), // الأزرار (Edit, Add Meeting, Create Lead)
         Expanded(child: _buildLeadsList(state)),
       ],
     );
   }
 
   Widget _buildSearchAndFilter() {
-    final nameController = TextEditingController();
-
     return Container(
-      decoration: BoxDecoration(
-        color:
-            Theme.of(context).brightness == Brightness.light
-                ? Colors.white
-                : Constants.backgroundDarkmode,
-      ),
-      padding: EdgeInsets.symmetric(
-        horizontal: _responsive.horizontalPadding.w,
-        vertical: _responsive.verticalPadding.h,
-      ),
+      width: 250, // عرض ثابت للبحث في AppBar
+      margin: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
         children: [
           Expanded(
@@ -453,6 +458,14 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                   stageId: widget.stageId,
                 );
               },
+              style: TextStyle(
+                // 🔹 إضافة هذه الخاصية
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Colors.black
+                        : Colors.white,
+                fontSize: _responsive.fontSizeMedium.sp,
+              ),
               decoration: InputDecoration(
                 hintText: 'Search',
                 hintStyle: TextStyle(
@@ -490,6 +503,14 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                   vertical: _responsive.buttonHeight * 0.3,
                   horizontal: _responsive.horizontalPadding.w * 0.5,
                 ),
+                filled: true,
+                fillColor:
+                    Theme.of(context).brightness ==
+                            Brightness
+                                .light // 🔹 تغيير لون الخلفية
+                        ? Colors.white
+                        : const Color(0xFF2C2C2C), // لون غامق للوضع الليلي
+                isDense: true,
               ),
             ),
           ),
@@ -525,6 +546,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
               },
             ),
           ),
+          SizedBox(width: _responsive.horizontalPadding.w * 0.2),
         ],
       ),
     );
@@ -663,45 +685,6 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                 ],
               ),
             ),
-
-          const Spacer(),
-
-          /// 🔹 Create Lead Button
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.maincolor
-                      : Constants.mainDarkmodecolor,
-              padding: EdgeInsets.symmetric(
-                horizontal: _responsive.horizontalPadding.w,
-                vertical: _responsive.verticalPadding.h * 0.5,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.r),
-              ),
-              elevation: 2,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CreateLeadScreen()),
-              );
-            },
-            icon: Icon(
-              Icons.add,
-              size: _responsive.iconSizeMedium.sp,
-              color: Colors.white,
-            ),
-            label: Text(
-              'Create Lead',
-              style: TextStyle(
-                fontSize: _responsive.fontSizeLarge.sp,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
         ],
       ),
     );

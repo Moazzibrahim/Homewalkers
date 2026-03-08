@@ -18,6 +18,7 @@ import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_lead_details.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
@@ -496,111 +497,72 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       appBar: CustomAppBar(
         title: 'Leads',
         onBack: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AdminTabsScreen()),
-          );
+          if (widget.transferefromdata == true) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminTabsScreen()),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminDataDashboardScreen(),
+              ),
+            );
+          }
         },
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: (16 * tabletWidthScale).w,
-          vertical: (10 * tabletHeightScale).h,
-        ),
-        child: Column(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                // color:
-                //     Theme.of(context).brightness == Brightness.light
-                //         ? Colors.white
-                //         : Constants.backgroundDarkmode,
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: (16 * tabletWidthScale).w,
-                vertical: (12 * tabletHeightScale).h,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _nameSearchController,
-                      onChanged: (value) {
-  _searchDebounce?.cancel();
-  _searchDebounce = Timer(
-    const Duration(milliseconds: 500),
-    () {
-      _searchQuery = value.trim();
+        extraActions: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 200.w,
+                child: TextField(
+                  controller: _nameSearchController,
+                  onChanged: (value) {
+                    _searchDebounce?.cancel();
+                    _searchDebounce = Timer(
+                      const Duration(milliseconds: 500),
+                      () {
+                        _searchQuery = value.trim();
 
-      if (selectedTab == 0) {
-        // ✅ Leads العادية
-        _applyCurrentFilters();
-      } else {
-        // 🗑️ Leads Trash
-        _currentPage = 1;
+                        if (selectedTab == 0) {
+                          // ✅ Leads العادية
+                          _applyCurrentFilters();
+                        } else {
+                          // 🗑️ Leads Trash
+                          _currentPage = 1;
 
-        context.read<AllLeadsCubitWithPagination>()
-            .fetchLeadsInTrash(
-          page: 1,
-          search: _searchQuery.isNotEmpty ? _searchQuery : null,
-        );
-      }
-    },
-  );
-},
-                      decoration: InputDecoration(
-                        hintText: 'Search',
-                        hintStyle: TextStyle(
-                          color: const Color(0xff969696),
-                          fontSize: (12 * tabletFontScale).sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          size: (20 * tabletFontScale).sp,
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? Constants.maincolor
-                                  : Constants.mainDarkmodecolor,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Constants.maincolor
-                                    : Constants.mainDarkmodecolor,
-                            width: (1.5 * tabletScale).w,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            (8 * tabletScale).r,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Constants.maincolor
-                                    : Constants.mainDarkmodecolor,
-                            width: (2 * tabletScale).w,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            (8 * tabletScale).r,
-                          ),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: 0,
-                          horizontal: (12 * tabletWidthScale).w,
-                        ),
-                      ),
+                          context
+                              .read<AllLeadsCubitWithPagination>()
+                              .fetchLeadsInTrash(
+                                page: 1,
+                                search:
+                                    _searchQuery.isNotEmpty
+                                        ? _searchQuery
+                                        : null,
+                              );
+                        }
+                      },
+                    );
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search',
+                    hintStyle: TextStyle(
+                      color: const Color(0xff969696),
+                      fontSize: (12 * tabletFontScale).sp,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                  SizedBox(width: (10 * tabletWidthScale).w),
-                  Container(
-                    height: (50 * tabletHeightScale).h,
-                    width: (50 * tabletWidthScale).w,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F1F2),
-                      border: Border.all(
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: (20 * tabletFontScale).sp,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.maincolor
+                              : Constants.mainDarkmodecolor,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
                         color:
                             Theme.of(context).brightness == Brightness.light
                                 ? Constants.maincolor
@@ -609,166 +571,205 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                       ),
                       borderRadius: BorderRadius.circular((8 * tabletScale).r),
                     ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.filter_list,
-                        size: (24 * tabletFontScale).sp,
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
                         color:
                             Theme.of(context).brightness == Brightness.light
                                 ? Constants.maincolor
                                 : Constants.mainDarkmodecolor,
+                        width: (2 * tabletScale).w,
                       ),
-                      padding: EdgeInsets.all((8 * tabletScale).r),
-                      constraints: BoxConstraints(
-                        minWidth: (50 * tabletWidthScale).w,
-                        minHeight: (50 * tabletHeightScale).h,
-                      ),
-                      onPressed: () async {
-                        if (selectedTab == 1) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Filtering is not available for the trash.",
-                                style: TextStyle(
-                                  fontSize: (14 * tabletFontScale).sp,
-                                ),
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-                        final Map<String, dynamic>?
-                        filters = await showDialog<Map<String, dynamic>>(
-                          context: context,
-                          builder: (dialogContext) {
-                            return MultiBlocProvider(
-                              providers: [
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          DevelopersCubit(DeveloperApiService())
-                                            ..getDevelopers(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          ProjectsCubit(ProjectsApiService())
-                                            ..fetchProjects(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          StagesCubit(StagesApiService())
-                                            ..fetchStages(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          ChannelCubit(GetChannelsApiService())
-                                            ..fetchChannels(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) => GetCommunicationWaysCubit(
-                                        CommunicationWayApiService(),
-                                      )..fetchCommunicationWays(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) => GetCampaignsCubit(
-                                        CampaignApiService(),
-                                      )..fetchCampaigns(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          SalesCubit(GetAllSalesApiService())
-                                            ..fetchAllSales(),
-                                ),
-                              ],
-                              child: FilterDialog(
-                                // ✅ تمرير null أو قوائم فارغة لفتح الـ Dialog بدون تحديدات سابقة
-                                initialDeveloperIds: null, // أو [] إذا كنت تفضل
-                                initialProjectIds: null,
-                                initialStageIds: null,
-                                initialChannelIds: null,
-                                initialSalesIds: null,
-                                initialCommunicationWayIds: null,
-                                initialCampaignIds: null,
-                                initialSearchName:
-                                    null, // أو _nameSearchController.text إذا كنت تريد الاحتفاظ بالبحث
-                                // ✅ إضافة null للقيم الأخرى
-                                initialAddedBy: null,
-                                initialAssignedFrom: null,
-                                initialAssignedTo: null,
-                                initialStartDate: null,
-                                initialEndDate: null,
-                                initialLastStageUpdateStart: null,
-                                initialLastStageUpdateEnd: null,
-                                initialLastCommentDateStart: null,
-                                initialLastCommentDateEnd: null,
-                                initialOldStageStartDate: null,
-                                initialOldStageEndDate: null,
-                              ),
-                            );
-                          },
-                        );
-                        if (filters != null) {
-                          setState(() {
-                            _searchQuery = filters['name'] ?? _searchQuery;
-                            _nameSearchController.text = _searchQuery;
-                            _selectedCountryFilter = filters['country'];
-
-                            // ✅ استقبال القوائم من الفلتر للـ Multi Select
-                            _selectedDeveloperFilter = List<String>.from(
-                              filters['developerIds'] ?? [],
-                            );
-                            _selectedProjectFilter = List<String>.from(
-                              filters['projectIds'] ?? [],
-                            );
-                            _selectedStageFilter = List<String>.from(
-                              filters['stageIds'] ?? [],
-                            );
-                            _selectedChannelFilter = List<String>.from(
-                              filters['channelIds'] ?? [],
-                            );
-                            _selectedSalesFilter = List<String>.from(
-                              filters['salesIds'] ?? [],
-                            );
-                            _selectedCommunicationWayFilter = List<String>.from(
-                              filters['communicationWayIds'] ?? [],
-                            );
-                            _selectedCampaignFilter = List<String>.from(
-                              filters['campaignIds'] ?? [],
-                            );
-
-                            // ✅ استقبال القيم الجديدة للـ Single Select والتواريخ
-                            _addedByFilter = filters['addedBy'];
-                            _assignedFromFilter = filters['assignedFrom'];
-                            _assignedToFilter = filters['assignedTo'];
-                            _startDateFilter = filters['startDate'];
-                            _endDateFilter = filters['endDate'];
-                            _lastStageUpdateStartFilter =
-                                filters['lastStageUpdateStart'];
-                            _lastStageUpdateEndFilter =
-                                filters['lastStageUpdateEnd'];
-                            _lastCommentDateStartFilter =
-                                filters['lastCommentDateStart'];
-                            _lastCommentDateEndFilter =
-                                filters['lastCommentDateEnd'];
-                            _oldStageNameFilter = filters['oldStageName'];
-                            _oldStageDateStartFilter =
-                                filters['oldStageDateStart'];
-                            _oldStageDateEndFilter = filters['oldStageDateEnd'];
-                          });
-                          _applyCurrentFilters();
-                        }
-                      },
+                      borderRadius: BorderRadius.circular((8 * tabletScale).r),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: 0,
+                      horizontal: (12 * tabletWidthScale).w,
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+              SizedBox(width: (10 * tabletWidthScale).w),
+              Container(
+                height: (50 * tabletHeightScale).h,
+                width: (50 * tabletWidthScale).w,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F1F2),
+                  border: Border.all(
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
+                    width: (1.5 * tabletScale).w,
+                  ),
+                  borderRadius: BorderRadius.circular((8 * tabletScale).r),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.filter_list,
+                    size: (24 * tabletFontScale).sp,
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Constants.maincolor
+                            : Constants.mainDarkmodecolor,
+                  ),
+                  padding: EdgeInsets.all((8 * tabletScale).r),
+                  constraints: BoxConstraints(
+                    minWidth: (50 * tabletWidthScale).w,
+                    minHeight: (50 * tabletHeightScale).h,
+                  ),
+                  onPressed: () async {
+                    if (selectedTab == 1) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            "Filtering is not available for the trash.",
+                            style: TextStyle(
+                              fontSize: (14 * tabletFontScale).sp,
+                            ),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    final Map<String, dynamic>?
+                    filters = await showDialog<Map<String, dynamic>>(
+                      context: context,
+                      builder: (dialogContext) {
+                        return MultiBlocProvider(
+                          providers: [
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      DevelopersCubit(DeveloperApiService())
+                                        ..getDevelopers(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      ProjectsCubit(ProjectsApiService())
+                                        ..fetchProjects(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      StagesCubit(StagesApiService())
+                                        ..fetchStages(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      ChannelCubit(GetChannelsApiService())
+                                        ..fetchChannels(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) => GetCommunicationWaysCubit(
+                                    CommunicationWayApiService(),
+                                  )..fetchCommunicationWays(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      GetCampaignsCubit(CampaignApiService())
+                                        ..fetchCampaigns(),
+                            ),
+                            BlocProvider(
+                              create:
+                                  (_) =>
+                                      SalesCubit(GetAllSalesApiService())
+                                        ..fetchAllSales(),
+                            ),
+                          ],
+                          child: FilterDialog(
+                            // ✅ تمرير null أو قوائم فارغة لفتح الـ Dialog بدون تحديدات سابقة
+                            initialDeveloperIds: null, // أو [] إذا كنت تفضل
+                            initialProjectIds: null,
+                            initialStageIds: null,
+                            initialChannelIds: null,
+                            initialSalesIds: null,
+                            initialCommunicationWayIds: null,
+                            initialCampaignIds: null,
+                            initialSearchName:
+                                null, // أو _nameSearchController.text إذا كنت تريد الاحتفاظ بالبحث
+                            // ✅ إضافة null للقيم الأخرى
+                            initialAddedBy: null,
+                            initialAssignedFrom: null,
+                            initialAssignedTo: null,
+                            initialStartDate: null,
+                            initialEndDate: null,
+                            initialLastStageUpdateStart: null,
+                            initialLastStageUpdateEnd: null,
+                            initialLastCommentDateStart: null,
+                            initialLastCommentDateEnd: null,
+                            initialOldStageStartDate: null,
+                            initialOldStageEndDate: null,
+                          ),
+                        );
+                      },
+                    );
+                    if (filters != null) {
+                      setState(() {
+                        _searchQuery = filters['name'] ?? _searchQuery;
+                        _nameSearchController.text = _searchQuery;
+                        _selectedCountryFilter = filters['country'];
+
+                        // ✅ استقبال القوائم من الفلتر للـ Multi Select
+                        _selectedDeveloperFilter = List<String>.from(
+                          filters['developerIds'] ?? [],
+                        );
+                        _selectedProjectFilter = List<String>.from(
+                          filters['projectIds'] ?? [],
+                        );
+                        _selectedStageFilter = List<String>.from(
+                          filters['stageIds'] ?? [],
+                        );
+                        _selectedChannelFilter = List<String>.from(
+                          filters['channelIds'] ?? [],
+                        );
+                        _selectedSalesFilter = List<String>.from(
+                          filters['salesIds'] ?? [],
+                        );
+                        _selectedCommunicationWayFilter = List<String>.from(
+                          filters['communicationWayIds'] ?? [],
+                        );
+                        _selectedCampaignFilter = List<String>.from(
+                          filters['campaignIds'] ?? [],
+                        );
+
+                        // ✅ استقبال القيم الجديدة للـ Single Select والتواريخ
+                        _addedByFilter = filters['addedBy'];
+                        _assignedFromFilter = filters['assignedFrom'];
+                        _assignedToFilter = filters['assignedTo'];
+                        _startDateFilter = filters['startDate'];
+                        _endDateFilter = filters['endDate'];
+                        _lastStageUpdateStartFilter =
+                            filters['lastStageUpdateStart'];
+                        _lastStageUpdateEndFilter =
+                            filters['lastStageUpdateEnd'];
+                        _lastCommentDateStartFilter =
+                            filters['lastCommentDateStart'];
+                        _lastCommentDateEndFilter =
+                            filters['lastCommentDateEnd'];
+                        _oldStageNameFilter = filters['oldStageName'];
+                        _oldStageDateStartFilter = filters['oldStageDateStart'];
+                        _oldStageDateEndFilter = filters['oldStageDateEnd'];
+                      });
+                      _applyCurrentFilters();
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: (16 * tabletWidthScale).w,
+          vertical: (10 * tabletHeightScale).h,
+        ),
+        child: Column(
+          children: [
             if (selectedTab == 0 && _selectedLeads.isNotEmpty)
               Container(
                 padding: EdgeInsets.symmetric(
@@ -780,7 +781,6 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                   children: [
                     // ✅ مكان فاضي عشان المسافات تبقى مظبوطة
                     SizedBox(width: (0 * tabletWidthScale).w),
-
                     if (_selectedLeads.isNotEmpty)
                       Expanded(
                         child: Container(

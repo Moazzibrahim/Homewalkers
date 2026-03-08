@@ -8,6 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/Admin_with_pagination/fetch_data_with_pagination.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
@@ -379,7 +380,10 @@ class _AdminDashboardScreenState extends State<AdminDataDashboardScreen>
             color: Colors.black, // تقدر تغيّره حسب الثيم
           ),
           onPressed: () {
-            Navigator.pop(context); // ترجع للشاشة السابقة
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminTabsScreen()),
+            );
           },
         ),
         toolbarHeight: isTabletDevice ? (120 * tabletHeightScale).h : 100.h,

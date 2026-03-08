@@ -7,6 +7,7 @@ import 'package:homewalkers_app/core/utils/dialog_utils.dart';
 import 'package:homewalkers_app/data/data_sources/get_sales_dashboard_count_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
+import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/cubit/sales_dashboard_count_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/cubit/sales_dashboard_count_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
@@ -96,7 +97,12 @@ class _SalesDataDashboardScreenState extends State<SalesDataDashboardScreen>
               color: Colors.black, // تقدر تغيّره حسب الثيم
             ),
             onPressed: () {
-              Navigator.pop(context); // ترجع للشاشة السابقة
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SalesTabsScreen(),
+                ),
+              ); // ترجع للشاشة السابقة
             },
           ),
           title: Row(
