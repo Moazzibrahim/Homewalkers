@@ -164,6 +164,9 @@ class GetLeadsService {
       if (search != null && search.isNotEmpty) {
         queryParams["keyword"] = search;
       }
+      if (stageId != null) {
+        queryParams["sortBy"] = "stagedateupdated:asc";
+      }
 
       if (salesId != null) queryParams["sales"] = salesId;
       if (developerId != null) queryParams["developer"] = developerId;
@@ -213,20 +216,6 @@ class GetLeadsService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
         final result = Salesleadsmodelwithpagination.fromJson(jsonData);
-
-        // لو فيه stageId ابعت اتعمل sort حسب stage date
-        if (stageId != null && result.data != null) {
-          result.data!.sort((a, b) {
-            DateTime dateA =
-                DateTime.tryParse(a.lastStageDateUpdated ?? '') ??
-                DateTime(1970);
-            DateTime dateB =
-                DateTime.tryParse(b.lastStageDateUpdated ?? '') ??
-                DateTime(1970);
-
-            return dateA.compareTo(dateB); // من القديم للجديد
-          });
-        }
 
         return result;
       } else {
@@ -291,6 +280,9 @@ class GetLeadsService {
       if (search != null && search.isNotEmpty) {
         queryParams["keyword"] = search;
       }
+      if (stageId != null) {
+        queryParams["sortBy"] = "stagedateupdated:asc";
+      }
 
       if (salesId != null) queryParams["sales"] = salesId;
       if (developerId != null) queryParams["developer"] = developerId;
@@ -342,20 +334,6 @@ class GetLeadsService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
         final result = TeamleaderPaginationLeadsModel.fromJson(jsonData);
-
-        // لو فيه stageId ابعت اتعمل sort حسب stage date
-        if (stageId != null && result.data != null) {
-          result.data!.sort((a, b) {
-            DateTime dateA =
-                DateTime.tryParse(a.lastStageDateUpdated ?? '') ??
-                DateTime(1970);
-            DateTime dateB =
-                DateTime.tryParse(b.lastStageDateUpdated ?? '') ??
-                DateTime(1970);
-
-            return dateA.compareTo(dateB); // من القديم للجديد
-          });
-        }
 
         return result;
       } else {

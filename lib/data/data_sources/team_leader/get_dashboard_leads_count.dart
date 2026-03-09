@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/Data/teamleader_data_dashboard_model.dart';
 import 'package:homewalkers_app/data/models/team_leader/dashboard_count.dart';
@@ -53,7 +54,8 @@ class TeamleaderDashboardApiService {
       rethrow;
     }
   }
-   /// Fetch Teamleader Dashboard Data using TeamleaderDataDashboardModel
+
+  /// Fetch Teamleader Dashboard Data using TeamleaderDataDashboardModel
   Future<TeamleaderDataDashboardModel> fetchDashboardData() async {
     try {
       final token = await _getToken();
@@ -65,6 +67,7 @@ class TeamleaderDashboardApiService {
 
       // Final URL including email
       final url = Uri.parse('$_baseUrl-CRMDATA/$email');
+      log('Fetching dashboard data from URL: $url');
 
       final response = await http.get(
         url,

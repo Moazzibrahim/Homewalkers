@@ -1,4 +1,5 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, library_private_types_in_public_api, unused_field
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -311,6 +312,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
   late ScrollController _scrollController;
   late ResponsiveSalesValues _responsive;
   final nameController = TextEditingController();
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -360,6 +362,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     nameController.dispose();
+    _debounceTimer?.cancel(); // إلغاء التايمر عند الخروج
     super.dispose();
   }
 
@@ -451,12 +454,15 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
               controller: nameController,
               onChanged: (value) {
                 final cubit = context.read<GetLeadsCubit>();
-                cubit.fetchSalesLeadsWithPagination(
-                  search: value.trim(),
-                  data: widget.data,
-                  transferefromdata: widget.transferfromdata,
-                  stageId: widget.stageId,
-                );
+                _debounceTimer?.cancel();
+                _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+                  cubit.fetchSalesLeadsWithPagination(
+                    search: value.trim(),
+                    data: widget.data,
+                    transferefromdata: widget.transferfromdata,
+                    stageId: widget.stageId,
+                  );
+                });
               },
               style: TextStyle(
                 // 🔹 إضافة هذه الخاصية
@@ -553,6 +559,11 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
   }
 
   Widget _buildActionButtons() {
+    // إذا كانت الشيكات غير ظاهرة، لا نضيف أي شيء (لا Padding ولا Row)
+    if (!_showCheckboxes) {
+      return const SizedBox.shrink();
+    }
+
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: _responsive.horizontalPadding.w,
@@ -560,131 +571,130 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
       ),
       child: Row(
         children: [
-          if (_showCheckboxes)
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: _responsive.horizontalPadding.w * 0.5,
-                vertical: _responsive.verticalPadding.h * 0.2,
-              ),
-              decoration: BoxDecoration(
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
-                        : Constants.mainDarkmodecolor,
-                borderRadius: BorderRadius.circular(16.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  /// 🔹 Edit Icon
-                  GestureDetector(
-                    onTap: () async {
-                      log("_selectedLead ID: ${_selectedLead?.id}");
-                      if (_selectedLead != null) {
-                        final result = await showDialog(
-                          context: context,
-                          builder:
-                              (_) => MultiBlocProvider(
-                                providers: [
-                                  BlocProvider(
-                                    create:
-                                        (_) =>
-                                            EditLeadCubit(EditLeadApiService()),
-                                  ),
-                                  BlocProvider(
-                                    create:
-                                        (_) =>
-                                            ProjectsCubit(ProjectsApiService())
-                                              ..fetchProjects(),
-                                  ),
-                                  BlocProvider(
-                                    create:
-                                        (_) =>
-                                            SalesCubit(GetAllSalesApiService())
-                                              ..fetchAllSales(),
-                                  ),
-                                ],
-                                child: EditLeadSalesDialog(
-                                  userId: _selectedLead!.id ?? '',
-                                  initialName: _selectedLead!.name ?? '',
-                                  initialPhone2:
-                                      _selectedLead!.phonenumber2 ?? '',
-                                  initialWhatsappNumber:
-                                      _selectedLead!.whatsappnumber ?? '',
-                                  initialNotes: '',
-                                  initialProjectId: _selectedLead!.project?.id,
-                                  salesID: _selectedLead!.sales?.id ?? '',
-                                  onSuccess: () {
-                                    context
-                                        .read<GetLeadsCubit>()
-                                        .fetchSalesLeadsWithPagination(
-                                          data: widget.data,
-                                          transferefromdata:
-                                              widget.transferfromdata,
-                                          stageId: widget.stageId,
-                                        );
-                                  },
-                                ),
-                              ),
-                        );
-
-                        if (result == true) {
-                          context
-                              .read<GetLeadsCubit>()
-                              .fetchSalesLeadsWithPagination(
-                                data: widget.data,
-                                transferefromdata: widget.transferfromdata,
-                                stageId: widget.stageId,
-                              );
-                        }
-                      }
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(_responsive.cardPadding.w * 0.4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: Icon(
-                        Icons.edit,
-                        color: Colors.white,
-                        size: _responsive.iconSizeMedium.sp,
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(width: _responsive.horizontalPadding.w * 3.5),
-
-                  /// 🔹 Add Meeting Icon
-                  GestureDetector(
-                    onTap: () {
-                      if (_selectedLead != null) {
-                        _showAddMeetingSheet(context, _selectedLead!.id!);
-                      }
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(_responsive.cardPadding.w * 0.4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: Icon(
-                        Icons.event,
-                        color: Colors.white,
-                        size: _responsive.iconSizeMedium.sp,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: _responsive.horizontalPadding.w * 0.5,
+              vertical: _responsive.verticalPadding.h * 0.2,
             ),
+            decoration: BoxDecoration(
+              color:
+                  Theme.of(context).brightness == Brightness.light
+                      ? Constants.maincolor
+                      : Constants.mainDarkmodecolor,
+              borderRadius: BorderRadius.circular(16.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                /// 🔹 Edit Icon
+                GestureDetector(
+                  onTap: () async {
+                    log("_selectedLead ID: ${_selectedLead?.id}");
+                    if (_selectedLead != null) {
+                      final result = await showDialog(
+                        context: context,
+                        builder:
+                            (_) => MultiBlocProvider(
+                              providers: [
+                                BlocProvider(
+                                  create:
+                                      (_) =>
+                                          EditLeadCubit(EditLeadApiService()),
+                                ),
+                                BlocProvider(
+                                  create:
+                                      (_) =>
+                                          ProjectsCubit(ProjectsApiService())
+                                            ..fetchProjects(),
+                                ),
+                                BlocProvider(
+                                  create:
+                                      (_) =>
+                                          SalesCubit(GetAllSalesApiService())
+                                            ..fetchAllSales(),
+                                ),
+                              ],
+                              child: EditLeadSalesDialog(
+                                userId: _selectedLead!.id ?? '',
+                                initialName: _selectedLead!.name ?? '',
+                                initialPhone2:
+                                    _selectedLead!.phonenumber2 ?? '',
+                                initialWhatsappNumber:
+                                    _selectedLead!.whatsappnumber ?? '',
+                                initialNotes: '',
+                                initialProjectId: _selectedLead!.project?.id,
+                                salesID: _selectedLead!.sales?.id ?? '',
+                                onSuccess: () {
+                                  context
+                                      .read<GetLeadsCubit>()
+                                      .fetchSalesLeadsWithPagination(
+                                        data: widget.data,
+                                        transferefromdata:
+                                            widget.transferfromdata,
+                                        stageId: widget.stageId,
+                                      );
+                                },
+                              ),
+                            ),
+                      );
+
+                      if (result == true) {
+                        context
+                            .read<GetLeadsCubit>()
+                            .fetchSalesLeadsWithPagination(
+                              data: widget.data,
+                              transferefromdata: widget.transferfromdata,
+                              stageId: widget.stageId,
+                            );
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(_responsive.cardPadding.w * 0.4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                      size: _responsive.iconSizeMedium.sp,
+                    ),
+                  ),
+                ),
+
+                SizedBox(width: _responsive.horizontalPadding.w * 3.5),
+
+                /// 🔹 Add Meeting Icon
+                GestureDetector(
+                  onTap: () {
+                    if (_selectedLead != null) {
+                      _showAddMeetingSheet(context, _selectedLead!.id!);
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(_responsive.cardPadding.w * 0.4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Icon(
+                      Icons.event,
+                      color: Colors.white,
+                      size: _responsive.iconSizeMedium.sp,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

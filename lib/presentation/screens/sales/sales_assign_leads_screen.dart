@@ -1,10 +1,11 @@
-// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api, unused_local_variable
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/dialog_utils.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
-import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
@@ -26,17 +27,42 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
   List? leadResponse;
   String? leadIdd;
 
+  ScrollController _scrollController = ScrollController(); // ✅
+  Timer? _debounceTimer;
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // أول صفحة
       context.read<GetLeadsCubit>().fetchSalesLeadsWithPagination(
         data: widget.data ?? false,
         transferefromdata: widget.transferfromdata ?? false,
         resetPagination: true,
       );
     });
+
+    // ✅ إضافة Listener للـ scroll
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
+        // وصلنا تقريبًا لنهاية القائمة، اطلب الصفحة التالية
+        context.read<GetLeadsCubit>().fetchSalesLeadsWithPagination(
+          data: widget.data ?? false,
+          transferefromdata: widget.transferfromdata ?? false,
+          isLoadMore: true, // مهم جدًا
+          resetPagination: false,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _debounceTimer?.cancel(); // إلغاء التايمر عند الخروج
+    super.dispose();
   }
 
   @override
@@ -80,13 +106,21 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
                   child: TextField(
                     controller: nameController,
                     onChanged: (value) {
-                      context
-                          .read<GetLeadsCubit>()
-                          .fetchSalesLeadsWithPagination(
-                            search: value.trim(),
-                            data: widget.data ?? false,
-                            transferefromdata: widget.transferfromdata ?? false,
-                          );
+                      _debounceTimer?.cancel();
+                      _debounceTimer = Timer(
+                        const Duration(milliseconds: 500),
+                        () {
+                          context
+                              .read<GetLeadsCubit>()
+                              .fetchSalesLeadsWithPagination(
+                                search: value.trim(),
+                                data: widget.data ?? false,
+                                transferefromdata:
+                                    widget.transferfromdata ?? false,
+                                resetPagination: true,
+                              );
+                        },
+                      );
                     },
                     decoration: InputDecoration(
                       hintText: 'Search',
@@ -168,6 +202,7 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
 
                   return isTablet
                       ? GridView.builder(
+                        controller: _scrollController, // ✅
                         padding: EdgeInsets.symmetric(
                           horizontal: isLargeTablet ? 32 : 24,
                           vertical: 16,
@@ -190,6 +225,7 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
                         },
                       )
                       : ListView.builder(
+                        controller: _scrollController, // ✅
                         itemCount: _leads.length,
                         itemBuilder: (context, index) {
                           final lead = _leads[index];
@@ -258,7 +294,7 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
                       Theme.of(context).brightness == Brightness.light
                           ? Constants.maincolor
                           : Constants.mainDarkmodecolor,
-                  
+
                   onSuccess: () {
                     // ← هنا بعد نجاح العملية، أرسل طلب إعادة تحميل الليدز
                     context.read<GetLeadsCubit>().fetchSalesLeadsWithPagination(
