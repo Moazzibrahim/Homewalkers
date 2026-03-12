@@ -41,14 +41,21 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   final _notesController = TextEditingController();
   final _budgetController = TextEditingController();
   final TextEditingController _salesSearchController = TextEditingController();
+
+  // 👇 حقل جديد لرابط إعادة التوجيه
+  late TextEditingController _campaignRedirectLinkController;
+
+  // 👇 قوائم للأسئلة والأجوبة الديناميكية
+  final List<Map<String, TextEditingController>> _qaControllers = [];
+
   String? selectedProjectId;
   String? selectedStageId;
-  String? selectedStageName; // 👈 -- الخطوة 1: إضافة متغير جديد لاسم المرحلة
+  String? selectedStageName;
   String? _selectedCommunicationWayId;
   String? _selectedChannelId;
   String? _selectedCampaignId;
   String? _selectedSalesId;
-  bool isCold = false; // أو false حسب الافتراضي
+  bool isCold = false;
   String? _fullPhoneNumber;
   String? _selectedSalesFcmToken;
   String? role;
@@ -64,7 +71,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<T>(
-        isExpanded: true, // ✅ أهم تعديل
+        isExpanded: true,
         value: value,
         items: items,
         onChanged: onChanged,
@@ -80,10 +87,65 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
     );
   }
 
+  // 👇 دالة لإضافة حقل سؤال وجواب جديد
+  void _addQuestionAnswerField() {
+    if (_qaControllers.length < 5) {
+      setState(() {
+        _qaControllers.add({
+          'question': TextEditingController(),
+          'answer': TextEditingController(),
+        });
+      });
+    }
+  }
+
+  // 👇 دالة لحذف حقل سؤال وجواب
+  void _removeQuestionAnswerField(int index) {
+    setState(() {
+      _qaControllers[index]['question']?.dispose();
+      _qaControllers[index]['answer']?.dispose();
+      _qaControllers.removeAt(index);
+    });
+  }
+
+  // 👇 دالة لجلب بيانات الأسئلة والأجوبة بالتنسيق المطلوب للكيوبيت
+  Map<String, String> _getQAForSubmission() {
+    Map<String, String> qaMap = {};
+
+    for (int i = 0; i < _qaControllers.length; i++) {
+      final question = _qaControllers[i]['question']?.text.trim() ?? '';
+      final answer = _qaControllers[i]['answer']?.text.trim() ?? '';
+
+      if (question.isNotEmpty && answer.isNotEmpty) {
+        qaMap['question${i + 1}_text'] = question;
+        qaMap['question${i + 1}_answer'] = answer;
+      }
+    }
+
+    return qaMap;
+  }
+
+  // 👇 دالة للتحقق إذا كان المستخدم Admin أو Marketer
+  bool get _isAdminOrMarketer {
+    return role?.toLowerCase() == 'admin' || role?.toLowerCase() == 'marketer';
+  }
+
   @override
   void initState() {
     super.initState();
+    _campaignRedirectLinkController = TextEditingController();
+    _addQuestionAnswerField(); // 👇 إضافة أول حقل سؤال وجواب افتراضياً
     init();
+  }
+
+  @override
+  void dispose() {
+    _campaignRedirectLinkController.dispose();
+    for (var qa in _qaControllers) {
+      qa['question']?.dispose();
+      qa['answer']?.dispose();
+    }
+    super.dispose();
   }
 
   void init() async {
@@ -172,7 +234,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ... Header Row ...
+                      // Header Row
                       Row(
                         children: [
                           Container(
@@ -202,14 +264,17 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                         ],
                       ),
                       const SizedBox(height: 20),
+
                       CustomTextField(
                         hint: "Full Name",
                         controller: _nameController,
                       ),
+
                       CustomTextField(
                         hint: "Email Address",
                         controller: _emailController,
                       ),
+
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: IntlPhoneField(
@@ -221,7 +286,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                             ),
                           ),
                           initialCountryCode: 'AE',
-                          // 👈 -- الخطوة 2: تحديث المتغير عند تغيير الرقم
                           onChanged: (phone) {
                             setState(() {
                               _fullPhoneNumber = phone.completeNumber;
@@ -229,8 +293,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           },
                         ),
                       ),
-                      // ... other dropdowns ...
+
                       const SizedBox(height: 12),
+
                       // Project Dropdown
                       BlocBuilder<ProjectsCubit, ProjectsState>(
                         builder: (context, state) {
@@ -260,43 +325,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           );
                         },
                       ),
-                      // const SizedBox(height: 12),
-                      // // --- MODIFIED: Stage Dropdown ---
-                      // BlocBuilder<StagesCubit, StagesState>(
-                      //   builder: (context, state) {
-                      //     if (state is StagesLoaded) {
-                      //       return _buildDropdown<String>(
-                      //         hint: "Choose Stage",
-                      //         value: selectedStageId,
-                      //         items:
-                      //             state.stages.map((stage) {
-                      //               return DropdownMenuItem<String>(
-                      //                 value: stage.id,
-                      //                 child: Text(stage.name!),
-                      //               );
-                      //             }).toList(),
-                      //         // 👈 -- الخطوة 2: تحديث كلا المتغيرين عند التغيير
-                      //         onChanged: (val) {
-                      //           setState(() {
-                      //             selectedStageId = val;
-                      //             // Find the stage name corresponding to the selected ID
-                      //             selectedStageName =
-                      //                 state.stages
-                      //                     .firstWhere(
-                      //                       (stage) => stage.id == val,
-                      //                       orElse: () => state.stages.first,
-                      //                     )
-                      //                     .name;
-                      //           });
-                      //         },
-                      //       );
-                      //     }
-                      //     return const Center(
-                      //       child: CircularProgressIndicator(),
-                      //     );
-                      //   },
-                      // ),
+
                       const SizedBox(height: 12),
+
                       if (role != "Sales")
                         BlocBuilder<SalesCubit, SalesState>(
                           builder: (context, state) {
@@ -334,20 +365,15 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                       filteredSales.map((sale) {
                                         return DropdownMenuItem<String>(
                                           value: sale.id,
-
                                           child: Text(
                                             sale.name ?? 'Unnamed',
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         );
                                       }).toList(),
-
-                                  /// ✅ Search
                                   dropdownSearchData: DropdownSearchData(
-                                    
                                     searchController: _salesSearchController,
-                                    searchInnerWidgetHeight: 60, // 👈 REQUIRED
-
+                                    searchInnerWidgetHeight: 60,
                                     searchInnerWidget: Padding(
                                       padding: const EdgeInsets.all(8),
                                       child: TextField(
@@ -369,7 +395,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                           .contains(searchValue.toLowerCase());
                                     },
                                   ),
-
                                   onChanged: (val) {
                                     setState(() {
                                       _selectedSalesId = val;
@@ -382,13 +407,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                               ?.fcmtoken;
                                     });
                                   },
-
                                   onMenuStateChange: (isOpen) {
                                     if (!isOpen) {
                                       _salesSearchController.clear();
                                     }
                                   },
-
                                   buttonStyleData: ButtonStyleData(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -396,20 +419,15 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                     height: 50,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                       // color: Colors.grey.shade400,
-                                      ),
+                                      border: Border.all(),
                                     ),
                                   ),
-
                                   dropdownStyleData: DropdownStyleData(
                                     maxHeight: 300,
-                                    // borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                               );
                             }
-
                             return const Center(
                               child: CircularProgressIndicator(),
                             );
@@ -417,6 +435,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                         ),
 
                       const SizedBox(height: 12),
+
                       BlocBuilder<ChannelCubit, ChannelState>(
                         builder: (context, state) {
                           if (state is ChannelLoaded) {
@@ -440,7 +459,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           );
                         },
                       ),
+
                       const SizedBox(height: 12),
+
                       BlocBuilder<GetCampaignsCubit, GetCampaignsState>(
                         builder: (context, state) {
                           if (state is GetCampaignsSuccess) {
@@ -469,7 +490,18 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           );
                         },
                       ),
+
+                      // 👇 حقل Campaign Redirect Link - يظهر فقط للـ Admin أو Marketer
+                      if (_isAdminOrMarketer) ...[
+                        const SizedBox(height: 12),
+                        CustomTextField(
+                          hint: "Campaign Redirect Link (Optional)",
+                          controller: _campaignRedirectLinkController,
+                        ),
+                      ],
+
                       const SizedBox(height: 12),
+
                       BlocBuilder<
                         GetCommunicationWaysCubit,
                         GetCommunicationWaysState
@@ -497,18 +529,135 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           );
                         },
                       ),
+
                       const SizedBox(height: 12),
+
                       CustomTextField(
                         hint: "Budget",
                         controller: _budgetController,
                         textInputType: TextInputType.number,
                       ),
+
+                      // 👇 قسم الأسئلة والأجوبة الديناميكية - يظهر فقط للـ Admin أو Marketer
+                      if (_isAdminOrMarketer) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "Questions & Answers (Optional)",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                "Add up to 5 Q&A pairs",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // عرض حقول الأسئلة والأجوبة
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _qaControllers.length,
+                                itemBuilder: (context, index) {
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: Colors.grey.shade200,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              "Q&A #${index + 1}",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const Spacer(),
+                                            if (index > 0)
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.delete_outline,
+                                                  color: Colors.red,
+                                                  size: 20,
+                                                ),
+                                                onPressed:
+                                                    () =>
+                                                        _removeQuestionAnswerField(
+                                                          index,
+                                                        ),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        CustomTextField(
+                                          hint: "Question ${index + 1}",
+                                          controller:
+                                              _qaControllers[index]['question']!,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        CustomTextField(
+                                          hint: "Answer ${index + 1}",
+                                          controller:
+                                              _qaControllers[index]['answer']!,
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              // 👇 زر إضافة سؤال وجواب جديد
+                              if (_qaControllers.length < 5)
+                                Center(
+                                  child: TextButton.icon(
+                                    onPressed: _addQuestionAnswerField,
+                                    icon: const Icon(Icons.add_circle_outline),
+                                    label: const Text("Add Question & Answer"),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+
                       const SizedBox(height: 12),
+
                       CustomTextField(
                         hint: "Notes",
                         controller: _notesController,
                       ),
+
                       const SizedBox(height: 12),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -543,7 +692,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 20),
+
                       Row(
                         children: [
                           Expanded(
@@ -605,42 +756,81 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                               );
                                               return;
                                             }
+
                                             final formattedPhone =
                                                 _fullPhoneNumber?.replaceAll(
                                                   '+',
                                                   '',
                                                 ) ??
                                                 '';
-                                            await context
-                                                .read<CreateLeadCubit>()
-                                                .createLead(
-                                                  name: _nameController.text,
-                                                  email: _emailController.text,
-                                                  phone: formattedPhone,
-                                                  project:
-                                                      selectedProjectId ?? '',
-                                                  sales:
-                                                      role == 'Sales'
-                                                          ? id!
-                                                          : _selectedSalesId!,
-                                                  notes: _notesController.text,
-                                                  leedtype:
-                                                      isCold ? "Cold" : "Fresh",
-                                                  chanel:
-                                                      _selectedChannelId ?? '',
-                                                  communicationway:
-                                                      _selectedCommunicationWayId ??
-                                                      '',
-                                                  dayonly: _dateController.text,
-                                                  lastStageDateUpdated:
-                                                      _dateController.text,
-                                                  campaign:
-                                                      _selectedCampaignId ?? '',
-                                                  budget:
-                                                      _budgetController.text,
-                                                );
 
-                                            // ⚡ إرسال الإشعار لا تحتاج SnackBar هنا
+                                            // 👇 تجهيز بيانات الأسئلة والأجوبة (فقط إذا كان المستخدم Admin/Marketer)
+                                            final qaData =
+                                                _isAdminOrMarketer
+                                                    ? _getQAForSubmission()
+                                                    : <String, String>{};
+
+                                            await context.read<CreateLeadCubit>().createLead(
+                                              name: _nameController.text,
+                                              email: _emailController.text,
+                                              phone: formattedPhone,
+                                              project: selectedProjectId ?? '',
+                                              sales:
+                                                  role == 'Sales'
+                                                      ? id!
+                                                      : _selectedSalesId!,
+                                              notes: _notesController.text,
+                                              leedtype:
+                                                  isCold ? "Cold" : "Fresh",
+                                              chanel: _selectedChannelId ?? '',
+                                              communicationway:
+                                                  _selectedCommunicationWayId ??
+                                                  '',
+                                              dayonly: _dateController.text,
+                                              lastStageDateUpdated:
+                                                  _dateController.text,
+                                              campaign:
+                                                  _selectedCampaignId ?? '',
+                                              budget: _budgetController.text,
+
+                                              // 👇 إضافة الحقول الجديدة (فقط إذا كان المستخدم Admin/Marketer)
+                                              campaignRedirectLink:
+                                                  _isAdminOrMarketer
+                                                      ? _campaignRedirectLinkController
+                                                          .text
+                                                      : '',
+                                              question1_text:
+                                                  qaData['question1_text'] ??
+                                                  '',
+                                              question1_answer:
+                                                  qaData['question1_answer'] ??
+                                                  '',
+                                              question2_text:
+                                                  qaData['question2_text'] ??
+                                                  '',
+                                              question2_answer:
+                                                  qaData['question2_answer'] ??
+                                                  '',
+                                              question3_text:
+                                                  qaData['question3_text'] ??
+                                                  '',
+                                              question3_answer:
+                                                  qaData['question3_answer'] ??
+                                                  '',
+                                              question4_text:
+                                                  qaData['question4_text'] ??
+                                                  '',
+                                              question4_answer:
+                                                  qaData['question4_answer'] ??
+                                                  '',
+                                              question5_text:
+                                                  qaData['question5_text'] ??
+                                                  '',
+                                              question5_answer:
+                                                  qaData['question5_answer'] ??
+                                                  '',
+                                            );
+                                            // ⚡ إرسال الإشعار
                                             if (state is CreateLeadSuccess) {
                                               context
                                                   .read<NotificationCubit>()
@@ -651,6 +841,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                                     fcmtokennnn:
                                                         _selectedSalesFcmToken!,
                                                   );
+                                              log(
+                                                "Notification sent to token: $_selectedSalesFcmToken",
+                                              );
                                             }
                                           },
                                   style: ElevatedButton.styleFrom(

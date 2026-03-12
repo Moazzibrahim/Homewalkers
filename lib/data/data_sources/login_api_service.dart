@@ -159,10 +159,6 @@ class LoginApiService {
         throw Exception("SalesId or DeviceId not found in storage");
       }
 
-      // ✅ حذف FCM Token من Firebase
-      await FirebaseMessaging.instance.deleteToken();
-      log("🧹 FCM Token Deleted ✅");
-
       final url = Uri.parse(
         "${Constants.baseUrl}/userdevices/$savedSalesId/devices/$savedDeviceId/logout",
       );
@@ -179,14 +175,16 @@ class LoginApiService {
 
       if (response.statusCode == 200) {
         log("✅ Logout successful: ${response.body}");
-
+        // ✅ حذف FCM Token من Firebase
+        await FirebaseMessaging.instance.deleteToken();
+        log("🧹 FCM Token Deleted ✅");
         // 🗑️ امسح كل البيانات من SharedPreferences
         await prefs.remove('token');
         await prefs.remove('deviceId');
         await prefs.remove('role');
         await prefs.remove('salesId');
 
-          context.read<NotificationCubit>().disposeNotifications();
+        context.read<NotificationCubit>().disposeNotifications();
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => LoginScreen()),

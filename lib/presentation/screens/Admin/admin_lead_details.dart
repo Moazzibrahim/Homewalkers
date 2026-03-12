@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable
+// ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable, non_constant_identifier_names, avoid_print, unnecessary_to_list_in_spreads
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -66,6 +66,17 @@ class AdminLeadDetails extends StatefulWidget {
   final CommentDetails? lastcommentFirst;
   final CommentDetails? lastcommentNext;
   final String? linkCampaign;
+  final String? campaignRedirectLink;
+  final String? question1_text;
+  final String? question1_answer;
+  final String? question2_text;
+  final String? question2_answer;
+  final String? question3_text;
+  final String? question3_answer;
+  final String? question4_text;
+  final String? question4_answer;
+  final String? question5_text;
+  final String? question5_answer;
 
   AdminLeadDetails({
     super.key,
@@ -108,6 +119,17 @@ class AdminLeadDetails extends StatefulWidget {
     this.lastcommentFirst,
     this.lastcommentNext,
     this.linkCampaign,
+    this.campaignRedirectLink,
+    this.question1_text,
+    this.question1_answer,
+    this.question2_text,
+    this.question2_answer,
+    this.question3_text,
+    this.question3_answer,
+    this.question4_text,
+    this.question4_answer,
+    this.question5_text,
+    this.question5_answer,
   });
   @override
   State<AdminLeadDetails> createState() => _SalesLeadsDetailsScreenState();
@@ -799,54 +821,6 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                     ),
                                   ),
                                 ],
-                                // ElevatedButton(
-                                //   style: ElevatedButton.styleFrom(
-                                //     shape: RoundedRectangleBorder(
-                                //       borderRadius: BorderRadius.circular(4),
-                                //     ),
-                                //     backgroundColor:
-                                //         Theme.of(context).brightness ==
-                                //                 Brightness.light
-                                //             ? Color(0xffFFFFFF)
-                                //             : Color(0xff080719),
-                                //     side: const BorderSide(
-                                //       color: Constants.maincolor,
-                                //     ),
-                                //     padding: EdgeInsets.symmetric(
-                                //       horizontal: 16.w,
-                                //       vertical: 9.h,
-                                //     ),
-                                //   ),
-                                //   onPressed: () async {
-                                //     final prefs =
-                                //         await SharedPreferences.getInstance();
-                                //     final String salesId =
-                                //         prefs.getString('salesIdD') ?? '';
-                                //     CustomChangeStageDialog.showChangeDialog(
-                                //       context: context,
-                                //       leadStage: widget.leadStage,
-                                //       leedId: widget.leedId,
-                                //       salesId: salesId,
-                                //       onStageChanged: (newStage) {
-                                //         setState(() {
-                                //           widget.leadStage = newStage;
-                                //         });
-                                //       },
-                                //     );
-                                //   },
-                                //   child: Text(
-                                //     'Change stage ',
-                                //     style: TextStyle(
-                                //       fontSize: 15.sp,
-                                //       fontWeight: FontWeight.w500,
-                                //       color:
-                                //           Theme.of(context).brightness ==
-                                //                   Brightness.light
-                                //               ? Constants.maincolor
-                                //               : Constants.mainDarkmodecolor,
-                                //     ),
-                                //   ),
-                                // ),
                               ],
                             ),
                           ],
@@ -909,12 +883,21 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                               label: 'campaign',
                               value: '${widget.leadcampaign}',
                             ),
-                            if(widget.linkCampaign!=null)
-                            InfoRow(
-                              icon: Icons.link,
-                              label: 'campaign link',
-                              value: '${widget.linkCampaign}',
-                            ),
+                            if (widget.linkCampaign != null &&
+                                widget.linkCampaign!.isNotEmpty)
+                              InfoRow(
+                                icon: Icons.link,
+                                label: 'campaign link',
+                                value: '${widget.linkCampaign}',
+                              ),
+                            // إضافة campaign redirect link إذا كان موجوداً
+                            if (widget.campaignRedirectLink != null &&
+                                widget.campaignRedirectLink!.isNotEmpty)
+                              InfoRow(
+                                icon: Icons.open_in_browser,
+                                label: 'Campaign Redirect Link',
+                                value: '${widget.campaignRedirectLink}',
+                              ),
                             InfoRow(
                               icon: Icons.calendar_today,
                               label: 'Creation Date',
@@ -922,42 +905,84 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                 widget.leadCreationDate!,
                               ),
                             ),
+                            // تغيير أيقونة Channel إلى أيقونة أكثر دلالة
                             InfoRow(
-                              icon: Icons.link,
+                              icon:
+                                  Icons
+                                      .settings_input_antenna, // أيقونة أفضل للـ Channel
                               label: 'Channel',
                               value: '${widget.leadChannel}',
                             ),
                             InfoRow(
-                              icon: Icons.list,
+                              icon:
+                                  Icons
+                                      .format_list_numbered, // أيقونة أفضل للإجمالي
                               label: 'Total Submissions',
                               value: widget.totalsubmissions ?? '0',
                             ),
-                            // Row(
-                            //   mainAxisSize: MainAxisSize.min,
-                            //   children: [
-                            //     Text(
-                            //       "Σ",
-                            //       style: TextStyle(
-                            //         color:
-                            //             Theme.of(context).brightness ==
-                            //                     Brightness.light
-                            //                 ? Constants.maincolor
-                            //                 : Constants.mainDarkmodecolor,
-                            //         fontSize: 18.sp,
-                            //         fontWeight: FontWeight.bold,
-                            //       ),
-                            //     ),
-                            //     const SizedBox(width: 14),
-                            //     Text(
-                            //       "Total Submission: ${widget.totalsubmissions ?? '0'}",
-                            //       style: const TextStyle(
-                            //         fontWeight: FontWeight.w400,
-                            //         fontSize: 14,
-                            //         color: Color(0xff6A6A75),
-                            //       ),
-                            //     ),
-                            //   ],
-                            // ),
+
+                            // إضافة قسم الأسئلة إذا كانت موجودة
+                            if (widget.question1_text != null &&
+                                widget.question1_text!.isNotEmpty)
+                              Column(
+                                children: [
+                                  SizedBox(height: 8.h),
+                                  Divider(
+                                    color: Colors.grey[300],
+                                    thickness: 1,
+                                  ),
+                                  SizedBox(height: 8.h),
+                                  Text(
+                                    'Additional Questions:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14.sp,
+                                      color: Color(0xff6A6A75),
+                                    ),
+                                  ),
+                                  SizedBox(height: 10.h),
+                                  if (widget.question1_text != null &&
+                                      widget.question1_text!.isNotEmpty)
+                                    QuestionRow(
+                                      question: widget.question1_text!,
+                                      answer:
+                                          widget.question1_answer ??
+                                          'No answer provided',
+                                    ),
+                                  if (widget.question2_text != null &&
+                                      widget.question2_text!.isNotEmpty)
+                                    QuestionRow(
+                                      question: widget.question2_text!,
+                                      answer:
+                                          widget.question2_answer ??
+                                          'No answer provided',
+                                    ),
+                                  if (widget.question3_text != null &&
+                                      widget.question3_text!.isNotEmpty)
+                                    QuestionRow(
+                                      question: widget.question3_text!,
+                                      answer:
+                                          widget.question3_answer ??
+                                          'No answer provided',
+                                    ),
+                                  if (widget.question4_text != null &&
+                                      widget.question4_text!.isNotEmpty)
+                                    QuestionRow(
+                                      question: widget.question4_text!,
+                                      answer:
+                                          widget.question4_answer ??
+                                          'No answer provided',
+                                    ),
+                                  if (widget.question5_text != null &&
+                                      widget.question5_text!.isNotEmpty)
+                                    QuestionRow(
+                                      question: widget.question5_text!,
+                                      answer:
+                                          widget.question5_answer ??
+                                          'No answer provided',
+                                    ),
+                                ],
+                              ),
                           ],
                         ),
                       ),
@@ -1205,6 +1230,60 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
           const SizedBox(width: 8),
           Text("$title : ", style: TextStyle(fontWeight: FontWeight.w500)),
           Expanded(child: Text(value, overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+    );
+  }
+}
+
+class QuestionRow extends StatelessWidget {
+  final String question;
+  final String answer;
+
+  const QuestionRow({super.key, required this.question, required this.answer});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.help_outline,
+                size: 18,
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.maincolor
+                        : Constants.mainDarkmodecolor,
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  question,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 4.h),
+          Padding(
+            padding: EdgeInsets.only(left: 26.w), // محاذاة مع بداية النص
+            child: Text(
+              answer,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w400,
+                color: Color(0xff6A6A75),
+              ),
+            ),
+          ),
         ],
       ),
     );

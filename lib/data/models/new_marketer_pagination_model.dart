@@ -168,6 +168,17 @@ class Datum {
   num? duplicateCount;
   num? relatedLeadsCount;
   List<AllVersion>? allVersions;
+  String? campaignRedirectLink;
+  String? question1_text;
+  String? question1_answer;
+  String? question2_text;
+  String? question2_answer;
+  String? question3_text;
+  String? question3_answer;
+  String? question4_text;
+  String? question4_answer;
+  String? question5_text;
+  String? question5_answer;
   num? totalSubmissions;
   DateTime? date;
   List<dynamic>? mergeHistory;
@@ -204,6 +215,17 @@ class Datum {
     this.eoi,
     this.reservation,
     this.review,
+    this.campaignRedirectLink,
+    this.question1_text,
+    this.question1_answer,
+    this.question2_text,
+    this.question2_answer,
+    this.question3_text,
+    this.question3_answer,
+    this.question4_text,
+    this.question4_answer,
+    this.question5_text,
+    this.question5_answer,
     this.unitnumber,
     this.commissionratio,
     this.commissionmoney,
@@ -247,6 +269,17 @@ class Datum {
         json["communicationway"] == null
             ? null
             : Communicationway.fromJson(json["communicationway"]),
+    campaignRedirectLink: json['campaignRedirectLink'] as String?,
+    question1_text: json['question1_text'] as String?,
+    question1_answer: json['question1_answer'] as String?,
+    question2_text: json['question2_text'] as String?,
+    question2_answer: json['question2_answer'] as String?,
+    question3_text: json['question3_text'] as String?,
+    question3_answer: json['question3_answer'] as String?,
+    question4_text: json['question4_text'] as String?,
+    question4_answer: json['question4_answer'] as String?,
+    question5_text: json['question5_text'] as String?,
+    question5_answer: json['question5_answer'] as String?,
     leedtype: json["leedtype"],
     assigntype: json["assigntype"],
     data: json["data"],

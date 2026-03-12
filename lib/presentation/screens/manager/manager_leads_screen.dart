@@ -437,7 +437,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                   ? Constants.backgroundlightmode
                   : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
-            title: 'Leads',
+            //   title: 'Leads',
             onBack: () {
               if (widget.data == true) {
                 Navigator.pushReplacement(
@@ -517,16 +517,16 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
               ),
               const SizedBox(width: 10),
               Container(
-                height: 50.h,
-                width: 50.w,
+                //  height: 50.h,
+                //width: 50.w,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F1F2),
-                  border: Border.all(
-                    color:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                  ),
+                  // border: Border.all(
+                  //   color:
+                  //       Theme.of(context).brightness == Brightness.light
+                  //           ? Constants.maincolor
+                  //           : Constants.mainDarkmodecolor,
+                  // ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: IconButton(

@@ -236,7 +236,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
               ? Constants.backgroundlightmode
               : Constants.backgroundDarkmode,
       appBar: CustomAppBar(
-        title: 'Leads',
+        //  title: 'Leads',
         onBack: () {
           if (Navigator.canPop(context)) {
             Navigator.pop(context);
@@ -302,16 +302,16 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
               ),
               const SizedBox(width: 10),
               Container(
-                height: 50.h,
-                width: 50.w,
+            //    height: 50.h,
+             //   width: 50.w,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F1F2),
-                  border: Border.all(
-                    color:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                  ),
+                  // border: Border.all(
+                  //   color:
+                  //       Theme.of(context).brightness == Brightness.light
+                  //           ? Constants.maincolor
+                  //           : Constants.mainDarkmodecolor,
+                  // ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: IconButton(
@@ -1070,6 +1070,25 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                               "No communication way",
                                           leadStages: [lead.stage?.id],
                                           leadSalesName: lead.sales?.name ?? '',
+                                          campaignlink: lead.campaign?.redirectLink ??
+                                              'no campaign link',
+                                          campaignRedirectLink:
+                                              lead.campaignRedirectLink,
+                                          question1_text: lead.question1_text,
+                                          question1_answer:
+                                              lead.question1_answer,
+                                          question2_text: lead.question2_text,
+                                          question2_answer:
+                                              lead.question2_answer,
+                                          question3_text: lead.question3_text,
+                                          question3_answer:
+                                              lead.question3_answer,
+                                          question4_text: lead.question4_text,
+                                          question4_answer:
+                                              lead.question4_answer,
+                                          question5_text: lead.question5_text,
+                                          question5_answer:
+                                              lead.question5_answer,
                                         ),
                                   ),
                                 );

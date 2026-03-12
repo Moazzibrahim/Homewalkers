@@ -3,14 +3,14 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
+  final String? title; // 👈 جعلها nullable
   final VoidCallback onBack;
   final VoidCallback? onNotification;
   final List<Widget>? extraActions;
 
   const CustomAppBar({
     super.key,
-    required this.title,
+    this.title, // 👈 جعلها optional
     required this.onBack,
     this.onNotification,
     this.extraActions,
@@ -40,17 +40,21 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         onPressed: onBack,
       ),
 
-      title: Text(
-        title,
-        style: TextStyle(
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? const Color(0xff080719)
-                  : const Color(0xffFFFFFF),
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      // 👇 إظهار العنوان فقط إذا كان موجوداً وليس فارغاً
+      title:
+          (title != null && title!.isNotEmpty)
+              ? Text(
+                title!,
+                style: TextStyle(
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? const Color(0xff080719)
+                          : const Color(0xffFFFFFF),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              )
+              : null, // 👈 إذا كان العنوان فارغاً، لا نضع أي widget في الـ title
 
       actions: [
         if (extraActions != null) ...extraActions!,

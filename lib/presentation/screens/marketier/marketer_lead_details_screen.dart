@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable, avoid_print
+// ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable, avoid_print, non_constant_identifier_names
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,6 +7,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_lead_details.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
@@ -53,6 +54,18 @@ class MarketerLeadDetailsScreen extends StatefulWidget {
   final String? leadversionschannel;
   final String? leadversionscreationdate;
   final String? leadversionscommunicationway;
+  final String? campaignlink;
+  final String? campaignRedirectLink;
+  final String? question1_text;
+  final String? question1_answer;
+  final String? question2_text;
+  final String? question2_answer;
+  final String? question3_text;
+  final String? question3_answer;
+  final String? question4_text;
+  final String? question4_answer;
+  final String? question5_text;
+  final String? question5_answer;
   MarketerLeadDetailsScreen({
     super.key,
     required this.leedId,
@@ -85,6 +98,18 @@ class MarketerLeadDetailsScreen extends StatefulWidget {
     this.leadversionschannel,
     this.leadversionscreationdate,
     this.leadversionscommunicationway,
+    this.campaignlink,
+    this.campaignRedirectLink,
+    this.question1_text,
+    this.question1_answer,
+    this.question2_text,
+    this.question2_answer,
+    this.question3_text,
+    this.question3_answer,
+    this.question4_text,
+    this.question4_answer,
+    this.question5_text,
+    this.question5_answer,
   });
   @override
   State<MarketerLeadDetailsScreen> createState() =>
@@ -710,6 +735,20 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                               label: 'campaign',
                               value: '${widget.leadcampaign}',
                             ),
+                            if (widget.campaignlink != null &&
+                                widget.campaignlink!.isNotEmpty)
+                              InfoRow(
+                                icon: Icons.link,
+                                label: 'campaign link',
+                                value: '${widget.campaignlink}',
+                              ),
+                            if (widget.campaignRedirectLink != null &&
+                                widget.campaignRedirectLink!.isNotEmpty)
+                              InfoRow(
+                                icon: Icons.open_in_browser,
+                                label: 'Campaign Redirect Link',
+                                value: '${widget.campaignRedirectLink}',
+                              ),
                             InfoRow(
                               icon: Icons.calendar_today,
                               label: 'Creation Date',
@@ -727,6 +766,67 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                               label: 'Total Submissions',
                               value: widget.totalsubmissions ?? '0',
                             ),
+                            if (widget.question1_text != null &&
+                                widget.question1_text!.isNotEmpty)
+                              Column(
+                                children: [
+                                  SizedBox(height: 8.h),
+                                  Divider(
+                                    color: Colors.grey[300],
+                                    thickness: 1,
+                                  ),
+                                  SizedBox(height: 8.h),
+                                  Text(
+                                    'Additional Questions:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14.sp,
+                                      color: Color(0xff6A6A75),
+                                    ),
+                                  ),
+                                  SizedBox(height: 10.h),
+                                  if (widget.question1_text != null &&
+                                      widget.question1_text!.isNotEmpty)
+                                    QuestionRow(
+                                      question: widget.question1_text!,
+                                      answer:
+                                          widget.question1_answer ??
+                                          'No answer provided',
+                                    ),
+                                  if (widget.question2_text != null &&
+                                      widget.question2_text!.isNotEmpty)
+                                    QuestionRow(
+                                      question: widget.question2_text!,
+                                      answer:
+                                          widget.question2_answer ??
+                                          'No answer provided',
+                                    ),
+                                  if (widget.question3_text != null &&
+                                      widget.question3_text!.isNotEmpty)
+                                    QuestionRow(
+                                      question: widget.question3_text!,
+                                      answer:
+                                          widget.question3_answer ??
+                                          'No answer provided',
+                                    ),
+                                  if (widget.question4_text != null &&
+                                      widget.question4_text!.isNotEmpty)
+                                    QuestionRow(
+                                      question: widget.question4_text!,
+                                      answer:
+                                          widget.question4_answer ??
+                                          'No answer provided',
+                                    ),
+                                  if (widget.question5_text != null &&
+                                      widget.question5_text!.isNotEmpty)
+                                    QuestionRow(
+                                      question: widget.question5_text!,
+                                      answer:
+                                          widget.question5_answer ??
+                                          'No answer provided',
+                                    ),
+                                ],
+                              ),
                           ],
                         ),
                       ),

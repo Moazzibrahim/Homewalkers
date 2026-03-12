@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, non_constant_identifier_names
 
 import 'dart:convert';
 import 'package:homewalkers_app/core/constants/apiExceptions.dart';
@@ -14,18 +14,28 @@ class CreateLeadApiService {
     required String project,
     required String sales,
     required String notes,
-    // required bool assign,
-    // required String stage,
     required String chanel,
     required String communicationway,
     required String leedtype,
-    required String dayonly, // لازم يكون بصيغة yyyy-MM-dd
+    required String dayonly,
     required String lastStageDateUpdated,
     required String campaign,
     required String budget,
+    // 🔹 الجديد: اختياري
+    String campaignRedirectLink = '',
+    String question1_text = '',
+    String question1_answer = '',
+    String question2_text = '',
+    String question2_answer = '',
+    String question3_text = '',
+    String question3_answer = '',
+    String question4_text = '',
+    String question4_answer = '',
+    String question5_text = '',
+    String question5_answer = '',
   }) async {
     final url = Uri.parse('${Constants.baseUrl}/users');
-    final now = DateTime.now().toUtc(); // بتوقيت UTC زي المطلوب
+    final now = DateTime.now().toUtc();
     final String currentDateTime = now.toIso8601String();
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -34,6 +44,7 @@ class CreateLeadApiService {
     }
     final salesid = prefs.getString('salesId');
     final pendingStageId = prefs.getString('pending_stage_id');
+
     final body = {
       "name": name,
       "email": email,
@@ -41,7 +52,6 @@ class CreateLeadApiService {
       "project": project,
       "sales": sales,
       "notes": notes,
-      // "assign": assign,
       "stage": pendingStageId,
       "chanel": chanel,
       "communicationway": communicationway,
@@ -56,7 +66,20 @@ class CreateLeadApiService {
       "lastdateassign": currentDateTime,
       "stagedateupdated": currentDateTime,
       "budget": budget,
+      // 🔹 هنا ضفت الحقول الجديدة
+      "campaignRedirectLink": campaignRedirectLink,
+      "question1_text": question1_text,
+      "question1_answer": question1_answer,
+      "question2_text": question2_text,
+      "question2_answer": question2_answer,
+      "question3_text": question3_text,
+      "question3_answer": question3_answer,
+      "question4_text": question4_text,
+      "question4_answer": question4_answer,
+      "question5_text": question5_text,
+      "question5_answer": question5_answer,
     };
+
     final response = await http.post(
       url,
       headers: {
@@ -65,22 +88,21 @@ class CreateLeadApiService {
       },
       body: jsonEncode(body),
     );
-
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      print("➡️ Sending Lead Body: ${jsonEncode(body)}");
-      print('✅ Lead created successfully: ${response.body}');
+    print("body sent: ${jsonEncode(body)}");
+    print("url: $url");
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      print('✅ Lead created successfully');
     } else {
-      print("➡️ Sending Lead Body: ${jsonEncode(body)}");
-      print('❌ Failed to create lead. Status: ${response.statusCode}');
-      print(response.body);
       final res = jsonDecode(response.body);
-      final message = res['message'] ?? 'Unknown error';
-      if (message ==
-          "This phone number is already registered. You cannot create a new lead with an existing phone number.") {
-        throw ApiException("phone already exists");
-      } else {
-        throw ApiException(message);
-      } // ❌ ارمي استثناء هنا بدل print
+      if ((res['message'] ?? '').contains(
+        "phone number is already registered",
+      )) {
+        print("⚠️ Warning: phone already exists");
+      }
+      print(
+        '❌ Failed to create lead: ${response.statusCode} ${res['message']}',
+      );
+      throw ApiException(res['message'] ?? 'Unknown error');
     }
   }
 }

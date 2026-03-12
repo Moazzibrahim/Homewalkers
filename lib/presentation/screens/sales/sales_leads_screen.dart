@@ -406,7 +406,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                   ? Constants.backgroundlightmode
                   : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
-            title: 'Leads',
+            //  title: 'Leads',
             onBack: () {
               if (widget.transferfromdata == true) {
                 Navigator.pushReplacement(
@@ -444,9 +444,9 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
   }
 
   Widget _buildSearchAndFilter() {
-    return Container(
-      width: 250, // عرض ثابت للبحث في AppBar
-      margin: EdgeInsets.symmetric(vertical: 8.h),
+    return SizedBox(
+      width: (_responsive.screenWidth * 0.7).clamp(220.0, 360.0),
+      // margin: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
         children: [
           Expanded(
@@ -520,24 +520,15 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
               ),
             ),
           ),
-          SizedBox(width: _responsive.horizontalPadding.w * 0.5),
+          SizedBox(width: _responsive.horizontalPadding.w * 0.6),
           Container(
-            height: _responsive.buttonHeight.h,
-            width: _responsive.buttonWidth.w,
             decoration: BoxDecoration(
               color: const Color(0xFFE8F1F2),
-              border: Border.all(
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
-                        : Constants.mainDarkmodecolor,
-              ),
-              borderRadius: BorderRadius.circular(10.r),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: IconButton(
               icon: Icon(
                 Icons.filter_list,
-                size: _responsive.iconSizeMedium.sp,
                 color:
                     Theme.of(context).brightness == Brightness.light
                         ? Constants.maincolor
@@ -552,7 +543,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
               },
             ),
           ),
-          SizedBox(width: _responsive.horizontalPadding.w * 0.2),
+          SizedBox(width: _responsive.horizontalPadding.w * 0.1),
         ],
       ),
     );

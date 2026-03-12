@@ -495,7 +495,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
               ? Constants.backgroundlightmode
               : Constants.backgroundDarkmode,
       appBar: CustomAppBar(
-        title: 'Leads',
+        //  title: 'Leads',
         onBack: () {
           if (widget.transferefromdata == true) {
             Navigator.pushReplacement(
@@ -590,33 +590,33 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
               ),
               SizedBox(width: (10 * tabletWidthScale).w),
               Container(
-                height: (50 * tabletHeightScale).h,
-                width: (50 * tabletWidthScale).w,
+                //  height: (50 * tabletHeightScale).h,
+                // width: (50 * tabletWidthScale).w,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F1F2),
-                  border: Border.all(
-                    color:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                    width: (1.5 * tabletScale).w,
-                  ),
+                  // border: Border.all(
+                  //   color:
+                  //       Theme.of(context).brightness == Brightness.light
+                  //           ? Constants.maincolor
+                  //           : Constants.mainDarkmodecolor,
+                  //   width: (1.5 * tabletScale).w,
+                  // ),
                   borderRadius: BorderRadius.circular((8 * tabletScale).r),
                 ),
                 child: IconButton(
                   icon: Icon(
                     Icons.filter_list,
-                    size: (24 * tabletFontScale).sp,
+                    //  size: (24 * tabletFontScale).sp,
                     color:
                         Theme.of(context).brightness == Brightness.light
                             ? Constants.maincolor
                             : Constants.mainDarkmodecolor,
                   ),
-                  padding: EdgeInsets.all((8 * tabletScale).r),
-                  constraints: BoxConstraints(
-                    minWidth: (50 * tabletWidthScale).w,
-                    minHeight: (50 * tabletHeightScale).h,
-                  ),
+                  //  padding: EdgeInsets.all((8 * tabletScale).r),
+                  //constraints: BoxConstraints(
+                  // minWidth: (50 * tabletWidthScale).w,
+                  //  minHeight: (50 * tabletHeightScale).h,
+                  // ),
                   onPressed: () async {
                     if (selectedTab == 1) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -1701,6 +1701,23 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               lead.lastComment?.secondcomment,
                                           linkCampaign:
                                               lead.campaign?.redirectLink,
+                                          campaignRedirectLink:
+                                              lead.campaignRedirectLink,
+                                          question1_text: lead.question1_text,
+                                          question1_answer:
+                                              lead.question1_answer,
+                                          question2_text: lead.question2_text,
+                                          question2_answer:
+                                              lead.question2_answer,
+                                          question3_text: lead.question3_text,
+                                          question3_answer:
+                                              lead.question3_answer,
+                                          question4_text: lead.question4_text,
+                                          question4_answer:
+                                              lead.question4_answer,
+                                          question5_text: lead.question5_text,
+                                          question5_answer:
+                                              lead.question5_answer,
                                         ),
                                   ),
                                 ).then((_) {
