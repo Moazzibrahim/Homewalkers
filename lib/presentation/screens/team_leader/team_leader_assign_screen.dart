@@ -741,6 +741,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                     crossAxisCount == 1
                                         ? ListView.builder(
                                           controller: _scrollController,
+                                          physics:
+                                              const AlwaysScrollableScrollPhysics(),
                                           padding: EdgeInsets.symmetric(
                                             horizontal:
                                                 (10 * tabletWidthScale).w,

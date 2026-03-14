@@ -1057,6 +1057,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
         child: ListView.builder(
           controller: _scrollController,
           itemCount: leads.length + 1,
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.all(_responsive.horizontalPadding.w),
           itemBuilder: (context, index) {
             if (index >= leads.length) {

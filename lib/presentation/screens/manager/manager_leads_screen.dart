@@ -579,6 +579,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                         },
                         child: ListView.builder(
                           controller: _scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
                           itemCount:
                               leads.length +
                               (cubit.isFetchingMore
