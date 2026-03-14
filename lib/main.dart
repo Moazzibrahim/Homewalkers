@@ -41,9 +41,23 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  final token = await FirebaseMessaging.instance.getToken();
-  debugPrint("🧪 Main.dart direct FCM Token: $token");
+  try {
+    await Firebase.initializeApp();
+    debugPrint("✅ Firebase initialized. Active apps: ${Firebase.apps.length}");
+
+    // Check if app is actually configured
+    if (Firebase.apps.isNotEmpty) {
+      final token = await FirebaseMessaging.instance.getToken();
+      debugPrint("🧪 Main.dart direct FCM Token: $token");
+    } else {
+      debugPrint("⚠️ No Firebase apps configured after initializeApp()");
+    }
+  } catch (e) {
+    debugPrint("❌ Firebase initialization or token retrieval failed: $e");
+  }
+
+  // Small delay to ensure native side is ready
+  await Future.delayed(const Duration(seconds: 1));
 
   // تهيئة الثيم
   final prefs = await SharedPreferences.getInstance();
@@ -54,8 +68,14 @@ void main() async {
 
   const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher');
+  const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
   const InitializationSettings initSettings = InitializationSettings(
     android: androidSettings,
+    iOS: iosSettings,
   );
   await flutterLocalNotificationsPlugin.initialize(initSettings);
 
