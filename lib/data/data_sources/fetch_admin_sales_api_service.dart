@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FetchAdminSalesApiService {
-  static const String _baseUrl =
+  static final String _baseUrl =
       '${Constants.baseUrl}/users/admin/sales-Leads-count';
 
   Future<AdminSalesModel> getSalesLeadsCount() async {
@@ -31,9 +31,7 @@ class FetchAdminSalesApiService {
         return AdminSalesModel.fromJson(decoded);
       } else {
         throw Exception(
-          'Failed to fetch sales leads count | '
-          'Status: ${response.statusCode} | '
-          'Body: ${response.body}',
+          'Failed to fetch sales leads count '
         );
       }
     } catch (e) {

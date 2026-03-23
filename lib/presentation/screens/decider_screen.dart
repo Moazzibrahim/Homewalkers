@@ -2,13 +2,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/update_service.dart';
+import 'package:homewalkers_app/presentation/screens/company_name_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:homewalkers_app/presentation/screens/login_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
 
 class DeciderScreen extends StatelessWidget {
@@ -16,9 +18,22 @@ class DeciderScreen extends StatelessWidget {
 
   Future<Map<String, dynamic>> checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
+
     final token = prefs.getString('token');
     final role = prefs.getString('role');
+
+    // 🔥 تحميل الدومين
+    final savedDomain = prefs.getString('company_domain');
+
+    if (savedDomain != null && savedDomain.isNotEmpty) {
+      Constants.baseUrl = "https://$savedDomain/api/v1";
+      print("✅ Loaded Base URL: ${Constants.baseUrl}");
+    } else {
+      print("❌ No saved domain");
+    }
+
     print("token: $token, role: $role");
+
     return {'hasToken': token != null && token.isNotEmpty, 'role': role};
   }
 
@@ -35,7 +50,12 @@ class DeciderScreen extends StatelessWidget {
           final data = snapshot.data;
           final hasToken = data?['hasToken'] == true;
           final role = data?['role'];
-          
+
+          // 👈 هنا نعمل update check
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            UpdateService.checkForUpdate(context);
+          });
+
           if (hasToken && role == 'Sales') {
             context.read<NotificationCubit>().initNotifications();
             return const SalesTabsScreen(); // ✅ إذا كان الدور "sales"
@@ -52,7 +72,7 @@ class DeciderScreen extends StatelessWidget {
             context.read<NotificationCubit>().initNotifications();
             return const AdminTabsScreen();
           } else {
-            return const LoginScreen(); // ❌ إذا لم يوجد توكن أو الدور ليس "sales"
+            return const CompanySelectionScreen(); // ❌ إذا لم يوجد توكن أو الدور ليس "sales"
           }
         }
       },
