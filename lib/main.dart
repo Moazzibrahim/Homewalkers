@@ -1,7 +1,9 @@
 // ignore_for_file: unused_element
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -47,6 +49,26 @@ void main() async {
 
     // Check if app is actually configured
     if (Firebase.apps.isNotEmpty) {
+      // On iOS, wait for APNs token first
+      if (Platform.isIOS) {
+        String? apnsToken;
+        for (int i = 0; i < 3; i++) {
+          apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+          if (apnsToken != null) break;
+          debugPrint("⏳ [main] Waiting for APNs token... attempt ${i + 1}/3");
+          await Future.delayed(const Duration(seconds: 2));
+        }
+        debugPrint("🍎 [main] APNs Token: $apnsToken");
+      }
+
+      // 🔔 This is CRITICAL for showing notifications while the app is OPEN on iOS
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+
       final token = await FirebaseMessaging.instance.getToken();
       debugPrint("🧪 Main.dart direct FCM Token: $token");
     } else {
@@ -77,7 +99,35 @@ void main() async {
     android: androidSettings,
     iOS: iosSettings,
   );
-  await flutterLocalNotificationsPlugin.initialize(initSettings);
+  await flutterLocalNotificationsPlugin.initialize(
+    initSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse response) {
+      if (response.payload != null && response.payload!.isNotEmpty) {
+        log("📲 Local Notification clicked: ${response.payload}");
+        try {
+          final data = jsonDecode(response.payload!);
+          final target = data['target'];
+          final id = data['id'];
+
+          if (target == 'order' && id != null) {
+            navigatorKey.currentState?.pushNamed(
+              '/orderDetails',
+              arguments: id,
+            );
+          } else if (target == 'chat') {
+            navigatorKey.currentState?.pushNamed('/chat');
+          } else {
+            navigatorKey.currentState?.pushNamed('/notifications');
+          }
+        } catch (e) {
+          log("⚠️ Error parsing notification payload: $e");
+          navigatorKey.currentState?.pushNamed('/notifications');
+        }
+      } else {
+        navigatorKey.currentState?.pushNamed('/notifications');
+      }
+    },
+  );
 
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'high_importance_channel',
