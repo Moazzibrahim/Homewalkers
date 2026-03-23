@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GetLeadsCountApiService {
-  static const String baseUrl =
+  static  String baseUrl =
       '${Constants.baseUrl}/users/Get_Sales_Data_And_Thier_Leads_Data';
 
   Future<TeamLeaderResponse?> fetchSalesData() async {

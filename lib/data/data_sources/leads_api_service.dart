@@ -864,10 +864,10 @@ class GetLeadsService {
     }
   }
 
-  static const String _baseUrl =
+  static  String _baseUrl =
       "${Constants.baseUrl}/users/stages-with-duplicate-by-addedby/";
 
-  static const String _leadsBaseUrl =
+  static  String _leadsBaseUrl =
       "${Constants.baseUrl}/users/stages-crm-data-with-duplicate-by-addedby/";
 
   Future<MarketerDashboardModel> fetchMarketerDashboard() async {

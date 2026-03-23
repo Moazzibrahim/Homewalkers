@@ -12,10 +12,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GetAllUsersApiService {
-  static const String _baseUrl =
+  static  String _baseUrl =
       '${Constants.baseUrl}/users/leads-with-stages?leadisactive=true';
 
-  static const String _stagesStatsUrl =
+  static  String _stagesStatsUrl =
       '${Constants.baseUrl}/users/mobile/stages-stats';
 
   Future<String?> _getToken() async {

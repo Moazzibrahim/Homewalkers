@@ -25,13 +25,16 @@ class LoginApiService {
   String? newFcmToken;
   String? deviceId;
 
-  final String baseUrl = Constants.baseUrl;
+  final String? baseUrl = Constants.baseUrl;
 
   Future<Map<String, dynamic>> login(
     String email,
     String password,
     BuildContext context,
   ) async {
+    if (baseUrl == null) {
+      throw Exception("Base URL not set. Please set company domain first.");
+    }
     try {
       final fcmToken = await FirebaseMessaging.instance.getToken();
 
