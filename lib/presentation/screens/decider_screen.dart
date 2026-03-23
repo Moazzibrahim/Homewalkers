@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/update_service.dart';
 import 'package:homewalkers_app/presentation/screens/company_name_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
@@ -49,6 +50,11 @@ class DeciderScreen extends StatelessWidget {
           final data = snapshot.data;
           final hasToken = data?['hasToken'] == true;
           final role = data?['role'];
+
+          // 👈 هنا نعمل update check
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            UpdateService.checkForUpdate(context);
+          });
 
           if (hasToken && role == 'Sales') {
             context.read<NotificationCubit>().initNotifications();

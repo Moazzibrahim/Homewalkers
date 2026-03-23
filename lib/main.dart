@@ -43,6 +43,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await Firebase.initializeApp();
+
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
     debugPrint("✅ Firebase initialized. Active apps: ${Firebase.apps.length}");
 
     // Check if app is actually configured
