@@ -2,7 +2,6 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -64,7 +63,7 @@ class NotificationCubit extends Cubit<NotificationState> {
 
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
         emit(state.copyWith(error: "Permission denied"));
-        _showDebugInfo("❌ Permission DENIED", "null", "null");
+     //   _showDebugInfo("❌ Permission DENIED", "null", "null");
         return;
       }
 
@@ -90,11 +89,11 @@ class NotificationCubit extends Cubit<NotificationState> {
       log("🔑 FCM Token: $token");
 
       // 🐛 DEBUG: Show visible info on TestFlight (REMOVE AFTER DEBUGGING)
-      _showDebugInfo(
-        "✅ ${settings.authorizationStatus}",
-        apnsTokenStr ?? "null",
-        token ?? "null",
-      );
+      // _showDebugInfo(
+      //   "✅ ${settings.authorizationStatus}",
+      //   apnsTokenStr ?? "null",
+      //   token ?? "null",
+      // );
 
       // 📝 حفظ التوكن وإرساله للسيرفر
       await _saveAndSendToken(token);
@@ -150,61 +149,61 @@ class NotificationCubit extends Cubit<NotificationState> {
       }
     } catch (e) {
       log("⚠️ initNotifications error: $e");
-      _showDebugInfo("❌ ERROR", "error", e.toString());
+   //   _showDebugInfo("❌ ERROR", "error", e.toString());
       emit(state.copyWith(error: e.toString()));
     }
   }
 
-  /// 🐛 DEBUG: Show visible dialog for TestFlight debugging (REMOVE AFTER FIXING)
-  void _showDebugInfo(
-    String permissionStatus,
-    String apnsToken,
-    String fcmToken,
-  ) {
-    // Delay to make sure the navigator is ready
-    Future.delayed(const Duration(seconds: 2), () {
-      final ctx = navigatorKey.currentContext;
-      if (ctx == null) return;
-      showDialog(
-        context: ctx,
-        builder:
-            (context) => AlertDialog(
-              title: const Text("🐛 Notification Debug Info"),
-              content: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Permission: $permissionStatus",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "APNs Token: ${apnsToken.length > 20 ? '${apnsToken.substring(0, 20)}...' : apnsToken}",
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "FCM Token: ${fcmToken.length > 20 ? '${fcmToken.substring(0, 20)}...' : fcmToken}",
-                    ),
-                    const SizedBox(height: 8),
-                    SelectableText(
-                      "Full FCM: $fcmToken",
-                      style: const TextStyle(fontSize: 10),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("OK"),
-                ),
-              ],
-            ),
-      );
-    });
-  }
+  // /// 🐛 DEBUG: Show visible dialog for TestFlight debugging (REMOVE AFTER FIXING)
+  // void _showDebugInfo(
+  //   String permissionStatus,
+  //   String apnsToken,
+  //   String fcmToken,
+  // ) {
+  //   // Delay to make sure the navigator is ready
+  //   Future.delayed(const Duration(seconds: 2), () {
+  //     final ctx = navigatorKey.currentContext;
+  //     if (ctx == null) return;
+  //     showDialog(
+  //       context: ctx,
+  //       builder:
+  //           (context) => AlertDialog(
+  //             title: const Text("🐛 Notification Debug Info"),
+  //             content: SingleChildScrollView(
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: [
+  //                   Text(
+  //                     "Permission: $permissionStatus",
+  //                     style: const TextStyle(fontWeight: FontWeight.bold),
+  //                   ),
+  //                   const SizedBox(height: 8),
+  //                   Text(
+  //                     "APNs Token: ${apnsToken.length > 20 ? '${apnsToken.substring(0, 20)}...' : apnsToken}",
+  //                   ),
+  //                   const SizedBox(height: 8),
+  //                   Text(
+  //                     "FCM Token: ${fcmToken.length > 20 ? '${fcmToken.substring(0, 20)}...' : fcmToken}",
+  //                   ),
+  //                   const SizedBox(height: 8),
+  //                   SelectableText(
+  //                     "Full FCM: $fcmToken",
+  //                     style: const TextStyle(fontSize: 10),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //             actions: [
+  //               TextButton(
+  //                 onPressed: () => Navigator.pop(context),
+  //                 child: const Text("OK"),
+  //               ),
+  //             ],
+  //           ),
+  //     );
+  //   });
+  // }
 
   Future<void> _saveAndSendToken(String? token) async {
     if (token == null || token.isEmpty) return;
