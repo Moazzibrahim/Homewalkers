@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -63,10 +64,37 @@ class NotificationCubit extends Cubit<NotificationState> {
 
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
         emit(state.copyWith(error: "Permission denied"));
+        _showDebugInfo("❌ Permission DENIED", "null", "null");
         return;
       }
 
+      // 🍎 On iOS, we MUST get the APNs token first before FCM token
+      String? apnsTokenStr;
+      if (Platform.isIOS) {
+        String? apnsToken;
+        // Retry up to 5 times with delay, APNs token may take time on real devices
+        for (int i = 0; i < 5; i++) {
+          apnsToken = await messaging.getAPNSToken();
+          if (apnsToken != null) break;
+          log("⏳ Waiting for APNs token... attempt ${i + 1}/5");
+          await Future.delayed(const Duration(seconds: 2));
+        }
+        apnsTokenStr = apnsToken;
+        log("🍎 APNs Token: $apnsToken");
+        if (apnsToken == null) {
+          log("⚠️ APNs token is null after retries. FCM may not work on iOS.");
+        }
+      }
+
       final token = await messaging.getToken();
+      log("🔑 FCM Token: $token");
+
+      // 🐛 DEBUG: Show visible info on TestFlight (REMOVE AFTER DEBUGGING)
+      _showDebugInfo(
+        "✅ ${settings.authorizationStatus}",
+        apnsTokenStr ?? "null",
+        token ?? "null",
+      );
 
       // 📝 حفظ التوكن وإرساله للسيرفر
       await _saveAndSendToken(token);
@@ -122,8 +150,60 @@ class NotificationCubit extends Cubit<NotificationState> {
       }
     } catch (e) {
       log("⚠️ initNotifications error: $e");
+      _showDebugInfo("❌ ERROR", "error", e.toString());
       emit(state.copyWith(error: e.toString()));
     }
+  }
+
+  /// 🐛 DEBUG: Show visible dialog for TestFlight debugging (REMOVE AFTER FIXING)
+  void _showDebugInfo(
+    String permissionStatus,
+    String apnsToken,
+    String fcmToken,
+  ) {
+    // Delay to make sure the navigator is ready
+    Future.delayed(const Duration(seconds: 2), () {
+      final ctx = navigatorKey.currentContext;
+      if (ctx == null) return;
+      showDialog(
+        context: ctx,
+        builder:
+            (context) => AlertDialog(
+              title: const Text("🐛 Notification Debug Info"),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Permission: $permissionStatus",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "APNs Token: ${apnsToken.length > 20 ? '${apnsToken.substring(0, 20)}...' : apnsToken}",
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "FCM Token: ${fcmToken.length > 20 ? '${fcmToken.substring(0, 20)}...' : fcmToken}",
+                    ),
+                    const SizedBox(height: 8),
+                    SelectableText(
+                      "Full FCM: $fcmToken",
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+      );
+    });
   }
 
   Future<void> _saveAndSendToken(String? token) async {
@@ -178,11 +258,23 @@ class NotificationCubit extends Cubit<NotificationState> {
   /// 💬 Show local push notification
   void _showLocalNotification(RemoteMessage message) {
     final notification = message.notification;
+
+    // On iOS, if the message has a notification object, FCM natively handles showing the foreground
+    // alert because we use `setForegroundNotificationPresentationOptions` in main.dart.
+    // Calling `flutterLocalNotificationsPlugin.show` here would cause duplicate notifications.
+    if (Platform.isIOS && notification != null) {
+      log(
+        "🍎 iOS Native foreground notification shown by FCM. Skipping local notification.",
+      );
+      return;
+    }
+
     final title = notification?.title ?? message.data['title'] ?? '📢 إشعار';
     final body = notification?.body ?? message.data['body'] ?? '📬 رسالة جديدة';
+    final payload = jsonEncode(message.data);
 
     flutterLocalNotificationsPlugin.show(
-      notification.hashCode,
+      message.hashCode,
       title,
       body,
       const NotificationDetails(
@@ -193,8 +285,13 @@ class NotificationCubit extends Cubit<NotificationState> {
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
         ),
-        iOS: DarwinNotificationDetails(),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
       ),
+      payload: payload,
     );
   }
 
