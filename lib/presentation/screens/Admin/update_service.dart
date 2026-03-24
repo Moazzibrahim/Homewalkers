@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:http/http.dart' as http;
@@ -20,7 +21,7 @@ class UpdateService {
       final data = jsonDecode(res.body);
 
       String latest = data['latest_version'];
-      bool force = data['force_update'];
+      bool force = data['force_update'].toString() == 'true';
 
       if (_isUpdateAvailable(currentVersion, latest)) {
         _showUpdateDialog(context, force);
@@ -53,20 +54,33 @@ class UpdateService {
             ),
             actions: [
               if (!force)
-                TextButton(
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Constants.maincolor,
+                  ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Later"),
+                  child: const Text(
+                    "Later",
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Constants.maincolor,
                 ),
                 onPressed: () async {
-                  final url = Uri.parse(
-                    "https://play.google.com/store/apps/details?id=com.realatixcrm.app&hl=en",
-                  );
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  String url;
+                  if (Platform.isAndroid) {
+                    url =
+                        "https://play.google.com/store/apps/details?id=com.realatixcrm.app";
+                  } else if (Platform.isIOS) {
+                    url = "https://apps.apple.com/app/id6758859624";
+                  } else {
+                    return;
+                  }
+                  final uri = Uri.parse(url);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
                   }
                 },
                 child: const Text(
