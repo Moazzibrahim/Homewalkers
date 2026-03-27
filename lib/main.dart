@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -54,30 +53,7 @@ void main() async {
     debugPrint("✅ Firebase initialized. Active apps: ${Firebase.apps.length}");
 
     // Check if app is actually configured
-    if (Firebase.apps.isNotEmpty) {
-      // On iOS, wait for APNs token first
-      if (Platform.isIOS) {
-        String? apnsToken;
-        for (int i = 0; i < 3; i++) {
-          apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-          if (apnsToken != null) break;
-          debugPrint("⏳ [main] Waiting for APNs token... attempt ${i + 1}/3");
-          await Future.delayed(const Duration(seconds: 2));
-        }
-        debugPrint("🍎 [main] APNs Token: $apnsToken");
-      }
-
-      // 🔔 This is CRITICAL for showing notifications while the app is OPEN on iOS
-      await FirebaseMessaging.instance
-          .setForegroundNotificationPresentationOptions(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
-
-      final token = await FirebaseMessaging.instance.getToken();
-      debugPrint("🧪 Main.dart direct FCM Token: $token");
-    } else {
+    if (Firebase.apps.isEmpty) {
       debugPrint("⚠️ No Firebase apps configured after initializeApp()");
     }
   } catch (e) {
