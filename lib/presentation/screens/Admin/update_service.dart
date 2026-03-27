@@ -15,8 +15,6 @@ class UpdateService {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      DateTime now = DateTime.now();
-
       // 📅 آخر مرة ظهر فيها البوب أب
       final lastShownString = prefs.getString('last_update_shown');
       DateTime? lastShown =
@@ -24,12 +22,8 @@ class UpdateService {
 
       // 🏷️ آخر نسخة تم عرض البوب أب لها
       final lastShownVersion = prefs.getString('last_update_version');
-      // 🆕 أول مرة يفتح التطبيق → متعرضش update
-      if (lastShownVersion == null) {
-        prefs.setString('last_update_version', currentVersion);
-        prefs.setString('last_update_shown', now.toIso8601String());
-        return;
-      }
+
+      DateTime now = DateTime.now();
 
       // 🌐 جلب JSON بدون كاش
       final res = await http
