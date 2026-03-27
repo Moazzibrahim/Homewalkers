@@ -42,23 +42,16 @@ class UpdateService {
       bool force = data['force_update'].toString() == 'true';
 
       // 🚫 لو نفس النسخة → مفيش داعي للبوب أب
+      // 🚫 لو نفس النسخة → مفيش داعي للبوب أب
       if (currentVersion == latest) return;
-
-      // 🚫 لو اتعرض النهاردة أو لنفس النسخة
-      if ((lastShown != null &&
-              lastShown.year == now.year &&
-              lastShown.month == now.month &&
-              lastShown.day == now.day) ||
-          (lastShownVersion != null && lastShownVersion == latest)) {
-        return;
-      }
 
       // ✅ تحقق من وجود تحديث
       if (_isUpdateAvailable(currentVersion, latest)) {
         await _showUpdateDialog(context, force);
 
-        // 💾 حفظ بعد العرض
-        prefs.setString('last_update_shown', now.toIso8601String());
+        // 💾 حفظ بعد العرض لو حابب بس مش شرط للظهور أكتر من مرة
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('last_update_shown', DateTime.now().toIso8601String());
         prefs.setString('last_update_version', latest);
       }
     } catch (e) {
