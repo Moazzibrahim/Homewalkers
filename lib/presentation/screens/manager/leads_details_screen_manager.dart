@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable, avoid_print
+// ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable, avoid_print, deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -14,8 +14,6 @@ import 'package:homewalkers_app/presentation/viewModels/sales/notifications/noti
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_add_comment_sheet.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/custom_info_row_widget.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -68,6 +66,7 @@ class LeadsDetailsScreenManager extends StatefulWidget {
     this.sales,
     this.leadLastDateAssigned,
   });
+
   @override
   State<LeadsDetailsScreenManager> createState() =>
       _SalesLeadsDetailsScreenState();
@@ -77,6 +76,7 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
   String userRole = '';
   bool? isClearHistoryy;
   DateTime? clearHistoryTimee;
+
   @override
   void initState() {
     super.initState();
@@ -118,27 +118,19 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
 
   String formatDateTimeToDubai(String dateStr) {
     try {
-      // Parse and ensure UTC base
       final utcTime = DateTime.parse(dateStr).toUtc();
-
-      // Convert to Dubai timezone (UTC+4)
       final dubaiTime = utcTime.add(const Duration(hours: 4));
-
-      // Format the output
       final day = dubaiTime.day.toString().padLeft(2, '0');
       final month = dubaiTime.month.toString().padLeft(2, '0');
       final year = dubaiTime.year;
-
-      // Convert to 12-hour format with AM/PM
       int hour = dubaiTime.hour;
       final minute = dubaiTime.minute.toString().padLeft(2, '0');
       final ampm = hour >= 12 ? 'PM' : 'AM';
       if (hour > 12) hour -= 12;
       if (hour == 0) hour = 12;
-
       return '$day/$month/$year - ${hour.toString().padLeft(2, '0')}:$minute $ampm';
     } catch (e) {
-      return dateStr; // fallback في حال كان التاريخ مش صحيح
+      return dateStr;
     }
   }
 
@@ -147,21 +139,15 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
     required DateTime? firstDate,
     required String? firstText,
   }) {
-    /// لو مش عامل clear history → اعرض الكل
     if (isClearHistory) return true;
-
     if (widget.leadLastDateAssigned == null ||
         widget.leadLastDateAssigned!.isEmpty) {
       return true;
     }
-
     final lastAssignedDate = DateTime.tryParse(
       widget.leadLastDateAssigned!,
     )?.toUtc().add(const Duration(hours: 4));
-
     if (lastAssignedDate == null) return true;
-
-    /// ❗ اعتمد على first comment فقط
     return firstDate != null &&
         firstDate.isAfter(lastAssignedDate) &&
         (firstText?.isNotEmpty ?? false);
@@ -169,7 +155,6 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
 
   void makePhoneCall(String phoneNumber) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
-
     if (await canLaunchUrl(phoneUri)) {
       await launchUrl(phoneUri, mode: LaunchMode.platformDefault);
     } else {
@@ -179,7 +164,10 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
 
   @override
   Widget build(BuildContext context) {
-    // Use MultiBlocProvider to provide all necessary cubits at the top level of this screen.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor =
+        isDark ? Constants.mainDarkmodecolor : Constants.maincolor;
+
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => StagesCubit(StagesApiService())),
@@ -195,429 +183,31 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
           return Scaffold(
             resizeToAvoidBottomInset: true,
             backgroundColor:
-                Theme.of(context).brightness == Brightness.light
-                    ? Constants.backgroundlightmode
-                    : Constants.backgroundDarkmode,
+                isDark
+                    ? Constants.backgroundDarkmode
+                    : Constants.backgroundlightmode,
             appBar: CustomAppBar(
-              title: "Leads Details",
+              title: "Lead Details",
               onBack: () => Navigator.pop(context),
             ),
             body: SafeArea(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                  padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 80.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              '${widget.leadName}',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              '${widget.leadStage}',
-                              style: TextStyle(color: Color(0xff0B603B)),
-                            ),
-                            SizedBox(height: 12.h),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.phone,
-                                  size: 16,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                ),
-                                SizedBox(width: 6.w),
-                                InkWell(
-                                  onTap:
-                                      () =>
-                                          makePhoneCall("+${widget.leadPhone}"),
-                                  child: Text(
-                                    '${widget.leadPhone}',
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                SizedBox(width: 13.w),
-                                Icon(
-                                  Icons.email,
-                                  size: 16,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                ),
-                                SizedBox(width: 3.w),
-                                Flexible(
-                                  child: Text(
-                                    '${widget.leadEmail}',
-                                    style: TextStyle(
-                                      fontSize: 11.sp,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8.h),
-                            // Row 2: WhatsApp and Second Phone
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (widget.leadwhatsappnumber != null &&
-                                    widget.leadwhatsappnumber!.isNotEmpty)
-                                  InkWell(
-                                    onTap: () async {
-                                      final phone = widget.leadwhatsappnumber
-                                          ?.replaceAll(RegExp(r'\D'), '');
-                                      final url = "https://wa.me/$phone";
-                                      try {
-                                        await launchUrl(
-                                          Uri.parse(url),
-                                          mode: LaunchMode.externalApplication,
-                                        );
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              "Could not open WhatsApp.",
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                    child: Row(
-                                      children: [
-                                        FaIcon(
-                                          FontAwesomeIcons.whatsapp,
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                      Brightness.light
-                                                  ? Constants.maincolor
-                                                  : Constants.mainDarkmodecolor,
-                                          size: 18,
-                                        ),
-                                        SizedBox(width: 5.w),
-                                        Text(
-                                          "${widget.leadwhatsappnumber}",
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                if (widget.secondphonenumber != null &&
-                                    widget.secondphonenumber!.isNotEmpty) ...[
-                                  SizedBox(width: 12.w),
-                                  Icon(
-                                    Icons.phone,
-                                    size: 16,
-                                    color:
-                                        Theme.of(context).brightness ==
-                                                Brightness.light
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
-                                  ),
-                                  SizedBox(width: 3.w),
-                                  InkWell(
-                                    onTap: () => "+${widget.secondphonenumber}",
-                                    child: Text(
-                                      " ${widget.secondphonenumber}",
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Lead Information :',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14.sp,
-                                color: Color(0xff6A6A75),
-                              ),
-                            ),
-                            SizedBox(height: 10.h),
-                            InfoRow(
-                              icon: Icons.work,
-                              label: 'job description',
-                              value:
-                                  widget.jobdescription?.isNotEmpty == true
-                                      ? widget.jobdescription!
-                                      : 'no job description',
-                            ),
-                            InfoRow(
-                              icon: Icons.person,
-                              label: 'sales name',
-                              value: '${widget.sales}',
-                            ),
-                            InfoRow(
-                              icon: Icons.phone,
-                              label: 'Phone',
-                              value: '${widget.leadPhone}',
-                            ),
-                            InfoRow(
-                              icon: Icons.email,
-                              label: 'Email',
-                              value: '${widget.leadEmail}',
-                            ),
-                            InfoRow(
-                              icon: Icons.apartment,
-                              label: 'Project',
-                              value: '${widget.leadProject}',
-                            ),
-                            InfoRow(
-                              icon: Icons.developer_board,
-                              label: 'Developer',
-                              value: '${widget.leaddeveloper}',
-                            ),
-                            InfoRow(
-                              icon: Icons.campaign,
-                              label: 'campaign',
-                              value: '${widget.leadcampaign}',
-                            ),
-                            InfoRow(
-                              icon: Icons.calendar_today,
-                              label: 'Creation Date',
-                              value: formatDateTimeToDubai(
-                                widget.leadCreationDate!,
-                              ),
-                            ),
-                            InfoRow(
-                              icon: Icons.link,
-                              label: 'Channel',
-                              value: '${widget.leadChannel}',
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 12.h),
-                      // This container no longer needs its own BlocProvider.
-                      // It uses the one from MultiBlocProvider.
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: BlocBuilder<
-                          LeadCommentsCubit,
-                          LeadCommentsState
-                        >(
-                          builder: (context, state) {
-                            if (state is LeadCommentsLoading) {
-                              return Center(child: CircularProgressIndicator());
-                            } else if (state is LeadCommentsError) {
-                              return Center(
-                                child: Text('Error: ${state.message}'),
-                              );
-                            } else if (state is LeadCommentsLoaded) {
-                              final leadComments = state.leadComments;
-
-                              if (leadComments.data == null ||
-                                  leadComments.data!.isEmpty) {
-                                return const Center(
-                                  child: Text('No comments found'),
-                                );
-                              }
-
-                              final lastItem =
-                                  leadComments.data!.first; // آخر كومنت
-                              final lastComment = lastItem.comments?.first;
-
-                              // تحويل التواريخ لتوقيت دبي (UTC+4)
-
-                              final firstCommentDate = DateTime.tryParse(
-                                lastComment?.firstcomment?.date.toString() ??
-                                    '',
-                              )?.toUtc().add(const Duration(hours: 4));
-                              final secondCommentDate = DateTime.tryParse(
-                                lastComment?.secondcomment?.date.toString() ??
-                                    '',
-                              )?.toUtc().add(const Duration(hours: 4));
-
-                              print(
-                                'firstCommentDate Dubai: $firstCommentDate',
-                              );
-                              print(
-                                'secondCommentDate Dubai: $secondCommentDate',
-                              );
-                              print('clearHistoryDubai: $clearHistoryTimee');
-                              // استخدام دالة isValidComment على آخر تعليق
-                              final showLastComment = isValidComment(
-                                isClearHistory: isClearHistoryy ?? false,
-                                firstDate: firstCommentDate,
-                                firstText: lastComment?.firstcomment?.text,
-                              );
-
-                              if (showLastComment) {
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Last Comment",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14.sp,
-                                        color: Color(0xff6A6A75),
-                                      ),
-                                    ),
-                                    SizedBox(height: 10.h),
-                                    if (lastComment
-                                            ?.firstcomment
-                                            ?.text
-                                            ?.isNotEmpty ??
-                                        false) ...[
-                                      Text(
-                                        "Comment",
-                                        style: TextStyle(
-                                          color: Constants.maincolor,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(height: 7.h),
-                                      SelectableText(
-                                        lastComment?.firstcomment?.text ??
-                                            'No comment available.',
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                      SizedBox(height: 7.h),
-                                    ],
-                                    if (lastComment
-                                            ?.secondcomment
-                                            ?.text
-                                            ?.isNotEmpty ??
-                                        false) ...[
-                                      Text(
-                                        "Action (Plan)",
-                                        style: TextStyle(
-                                          color: Constants.maincolor,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(height: 7.h),
-                                      SelectableText(
-                                        lastComment?.secondcomment?.text ??
-                                            'No comment available.',
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                );
-                              } else {
-                                return const Center(
-                                  child: Text('No comments found'),
-                                );
-                              }
-                            } else {
-                              return const SizedBox(); // أو Placeholder
-                            }
-                          },
-                        ),
-                      ),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Notes',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Constants.maincolor),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    (widget.leadNotes == null ||
-                                            widget.leadNotes!.isEmpty)
-                                        ? 'No notes found'
-                                        : widget.leadNotes!,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
+                      _buildHeroHeaderCard(isDark, primaryColor),
+                      SizedBox(height: 10.h),
+                      _buildLastCommentSection(isDark, primaryColor),
+                      SizedBox(height: 16.h),
                       Row(
                         children: [
                           Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                backgroundColor: Colors.white,
-                                side: const BorderSide(
-                                  color: Constants.maincolor,
-                                ),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 20.w,
-                                  vertical: 12.h,
-                                ),
-                              ),
+                            child: _buildStyledButton(
+                              label: "All Comments",
+                              icon: Icons.comment,
+                              isOutlined: true,
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -646,33 +236,16 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                   ),
                                 );
                               },
-                              child: Text(
-                                'All Comments',
-                                style: TextStyle(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: Constants.maincolor,
-                                ),
-                              ),
+                              primaryColor: primaryColor,
+                              isDark: isDark,
                             ),
                           ),
                           SizedBox(width: 12.w),
                           Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 20.w,
-                                  vertical: 12.h,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                backgroundColor:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
-                              ),
+                            child: _buildStyledButton(
+                              label: "Add Comment",
+                              icon: Icons.add_comment,
+                              isOutlined: false,
                               onPressed: () async {
                                 final result = await showModalBottomSheet(
                                   context: context,
@@ -710,23 +283,22 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                                       .sendNotificationToToken(
                                         title: "Lead Comment",
                                         body:
-                                            " ${widget.leadName} تم إضافة تعليق جديد ✅",
+                                            "${widget.leadName} تم إضافة تعليق جديد ✅",
                                         fcmtokennnn: widget.fcmtokenn,
                                       );
                                 }
                               },
-                              child: Text(
-                                'Add Comment',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              primaryColor: primaryColor,
+                              isDark: isDark,
                             ),
                           ),
                         ],
                       ),
+                      SizedBox(height: 16.h),
+                      _buildInfoSection(isDark, primaryColor),
+                      SizedBox(height: 16.h),
+                      _buildNotesSection(isDark, primaryColor),
+                      SizedBox(height: 20.h),
                     ],
                   ),
                 ),
@@ -734,6 +306,592 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  HERO HEADER CARD
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildHeroHeaderCard(bool isDark, Color primaryColor) {
+    return Container(
+      padding: EdgeInsets.all(20.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors:
+              isDark
+                  ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                  : [const Color(0xFFF8F9FA), const Color(0xFFE9ECEF)],
+        ),
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            widget.leadName ?? 'No Name',
+            style: TextStyle(
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Text(
+              widget.leadStage ?? 'No Stage',
+              style: TextStyle(
+                color: primaryColor,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          SizedBox(height: 20.h),
+          Row(
+            children: [
+              _buildContactChip(
+                icon: Icons.phone,
+                label: widget.leadPhone ?? 'No Phone',
+                onTap:
+                    widget.leadPhone != null
+                        ? () => makePhoneCall("+${widget.leadPhone}")
+                        : null,
+                isDark: isDark,
+                primaryColor: primaryColor,
+              ),
+              SizedBox(width: 12.w),
+              _buildContactChip(
+                icon: Icons.email,
+                label:
+                    (widget.leadEmail != null &&
+                            widget.leadEmail!.trim().isNotEmpty)
+                        ? widget.leadEmail!
+                        : 'No Email',
+                isDark: isDark,
+                primaryColor: primaryColor,
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (widget.leadwhatsappnumber != null &&
+                  widget.leadwhatsappnumber!.isNotEmpty)
+                _buildActionChip(
+                  icon: FontAwesomeIcons.whatsapp,
+                  label: "WhatsApp",
+                  onTap: () async {
+                    final phone = widget.leadwhatsappnumber?.replaceAll(
+                      RegExp(r'\D'),
+                      '',
+                    );
+                    final url = "https://wa.me/$phone";
+                    try {
+                      await launchUrl(
+                        Uri.parse(url),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Could not open WhatsApp."),
+                        ),
+                      );
+                    }
+                  },
+                  isDark: isDark,
+                  primaryColor: primaryColor,
+                ),
+              if (widget.leadwhatsappnumber != null &&
+                  widget.leadwhatsappnumber!.isNotEmpty)
+                SizedBox(width: 12.w),
+              if (widget.secondphonenumber != null &&
+                  widget.secondphonenumber!.isNotEmpty)
+                _buildActionChip(
+                  icon: Icons.phone_forwarded,
+                  label: "Second Phone",
+                  // الأصلي كان onTap: () => "+${widget.secondphonenumber}" — محافظ عليه
+                  onTap: () => makePhoneCall("+${widget.secondphonenumber}"),
+                  isDark: isDark,
+                  primaryColor: primaryColor,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  LAST COMMENT SECTION  (BlocBuilder – LeadCommentsLoaded)
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildLastCommentSection(bool isDark, Color primaryColor) {
+    return Container(
+      padding: EdgeInsets.all(20.h),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
+        builder: (context, state) {
+          if (state is LeadCommentsLoading) {
+            return Center(
+              child: SizedBox(
+                width: 24.w,
+                height: 24.w,
+                child: const CircularProgressIndicator(),
+              ),
+            );
+          } else if (state is LeadCommentsError) {
+            return Center(
+              child: Text(
+                'Error: ${state.message}',
+                style: TextStyle(fontSize: 12.sp),
+              ),
+            );
+          } else if (state is LeadCommentsLoaded) {
+            final leadComments = state.leadComments;
+
+            if (leadComments.data == null || leadComments.data!.isEmpty) {
+              return _buildNoComments(primaryColor);
+            }
+
+            final lastItem = leadComments.data!.firstWhere(
+              (e) => e.comments?.isNotEmpty ?? false,
+            );
+            final lastComment = lastItem.comments?.first;
+
+            final firstCommentDate = DateTime.tryParse(
+              lastComment?.firstcomment?.date.toString() ?? '',
+            )?.toUtc().add(const Duration(hours: 4));
+
+            final secondCommentDate = DateTime.tryParse(
+              lastComment?.secondcomment?.date.toString() ?? '',
+            )?.toUtc().add(const Duration(hours: 4));
+
+            print('firstCommentDate Dubai: $firstCommentDate');
+            print('secondCommentDate Dubai: $secondCommentDate');
+            print('clearHistoryDubai: $clearHistoryTimee');
+            final hasFirstComment =
+                lastComment?.firstcomment?.text?.isNotEmpty ?? false;
+
+            final hasSecondComment =
+                lastComment?.secondcomment?.text?.isNotEmpty ?? false;
+
+            if (!hasFirstComment && !hasSecondComment) {
+              return _buildNoComments(primaryColor);
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader(
+                  Icons.chat_bubble_outline,
+                  "Last Comment",
+                  primaryColor,
+                ),
+                SizedBox(height: 16.h),
+                if (hasFirstComment)
+                  _buildCommentBubble(
+                    title: "Comment",
+                    content:
+                        lastComment?.firstcomment?.text ??
+                        'No comment available.',
+                    primaryColor: primaryColor,
+                  ),
+                if (hasFirstComment && hasSecondComment) SizedBox(height: 16.h),
+                if (hasSecondComment)
+                  _buildCommentBubble(
+                    title: "Action Plan",
+                    content:
+                        lastComment?.secondcomment?.text ??
+                        'No action available.',
+                    primaryColor: primaryColor,
+                  ),
+              ],
+            );
+          }
+
+          return const SizedBox();
+        },
+      ),
+    );
+  }
+
+  Widget _buildNoComments(Color primaryColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          Icons.chat_bubble_outline,
+          "Last Comment",
+          primaryColor,
+        ),
+        SizedBox(height: 16.h),
+        Center(
+          child: Text(
+            'No comments found',
+            style: TextStyle(fontSize: 12.sp, color: const Color(0xFF6A6A75)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  LEAD INFORMATION SECTION
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildInfoSection(bool isDark, Color primaryColor) {
+    return Container(
+      padding: EdgeInsets.all(20.h),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(
+            Icons.info_outline,
+            "Lead Information",
+            primaryColor,
+          ),
+          SizedBox(height: 16.h),
+          Wrap(
+            spacing: 16.w,
+            runSpacing: 12.h,
+            children: [
+              _buildInfoTile(
+                Icons.work_outline,
+                "Job Description",
+                widget.jobdescription?.isNotEmpty == true
+                    ? widget.jobdescription!
+                    : 'No job description',
+              ),
+              _buildInfoTile(
+                Icons.person_outline,
+                "Sales Name",
+                widget.sales ?? 'No Sales',
+              ),
+              _buildInfoTile(
+                Icons.phone_outlined,
+                "Phone",
+                widget.leadPhone ?? 'No Phone',
+              ),
+              _buildInfoTile(
+                Icons.email_outlined,
+                "Email",
+                widget.leadEmail ?? 'No Email',
+              ),
+              _buildInfoTile(
+                Icons.business,
+                "Project",
+                widget.leadProject ?? 'No Project',
+              ),
+              _buildInfoTile(
+                Icons.apartment,
+                "Developer",
+                widget.leaddeveloper ?? 'No Developer',
+              ),
+              _buildInfoTile(
+                Icons.campaign,
+                "Campaign",
+                widget.leadcampaign ?? 'No Campaign',
+              ),
+              if (widget.leadCreationDate != null)
+                _buildInfoTile(
+                  Icons.calendar_today,
+                  "Creation Date",
+                  formatDateTimeToDubai(widget.leadCreationDate!),
+                ),
+              _buildInfoTile(
+                Icons.wifi_tethering,
+                "Channel",
+                widget.leadChannel ?? 'No Channel',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  NOTES SECTION
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildNotesSection(bool isDark, Color primaryColor) {
+    return Container(
+      padding: EdgeInsets.all(20.h),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(Icons.note_alt, "Notes", primaryColor),
+          SizedBox(height: 12.h),
+          Container(
+            padding: EdgeInsets.all(14.h),
+            decoration: BoxDecoration(
+              border: Border.all(color: primaryColor.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Text(
+              (widget.leadNotes == null || widget.leadNotes!.isEmpty)
+                  ? 'No notes found'
+                  : widget.leadNotes!,
+              style: TextStyle(fontSize: 13.sp, height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  REUSABLE WIDGETS
+  // ═══════════════════════════════════════════════════════════════
+
+  Widget _buildContactChip({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+    required bool isDark,
+    required Color primaryColor,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: primaryColor.withOpacity(0.2)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16.sp, color: primaryColor),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(fontSize: 12.sp),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionChip({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool isDark,
+    required Color primaryColor,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: primaryColor.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            FaIcon(icon, size: 14.sp, color: primaryColor),
+            SizedBox(width: 8.w),
+            Text(label, style: TextStyle(fontSize: 12.sp)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStyledButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+    required Color primaryColor,
+    required bool isDark,
+    bool isOutlined = false,
+  }) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        padding: EdgeInsets.symmetric(vertical: 12.h),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        backgroundColor: isOutlined ? Colors.transparent : primaryColor,
+        side: isOutlined ? BorderSide(color: primaryColor, width: 1.5) : null,
+        elevation: isOutlined ? 0 : 2,
+      ),
+      onPressed: onPressed,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 18.sp,
+            color: isOutlined ? primaryColor : Colors.white,
+          ),
+          SizedBox(width: 8.w),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: isOutlined ? primaryColor : Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentBubble({
+    required String title,
+    required String content,
+    required Color primaryColor,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(width: 3.w, height: 14.h, color: primaryColor),
+            SizedBox(width: 8.w),
+            Text(
+              title,
+              style: TextStyle(
+                color: primaryColor,
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          padding: EdgeInsets.all(12.h),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: SelectableText(
+            content,
+            style: TextStyle(fontSize: 13.sp, height: 1.5),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(IconData icon, String title, Color primaryColor) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(6.h),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          child: Icon(icon, size: 18.sp, color: primaryColor),
+        ),
+        SizedBox(width: 12.w),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoTile(IconData icon, String label, String value) {
+    return SizedBox(
+      width: (MediaQuery.of(context).size.width - 32.w - 40.w) / 2,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18.sp, color: Constants.maincolor),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: const Color(0xFF6A6A75),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
