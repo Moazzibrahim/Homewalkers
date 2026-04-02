@@ -110,6 +110,9 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
     }
     _showDuplicatesOnly = widget.showDuplicatesOnly!;
     log("stage name: $_selectedStageFilter");
+    log("show duplicates only: $_showDuplicatesOnly");
+    log("Data: ${widget.data}");
+    log("Transfere From Data: ${widget.transferefromdata}");
 
     _scrollController.addListener(_onScroll);
 
@@ -127,7 +130,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
       context.read<GetLeadsMarketerCubit>().fetchLeadsMarketerWithPagination(
         refresh: true,
         stageIds: stage != null ? [stage] : null,
-        ignoreDuplicate: _showDuplicatesOnly == true ? true : null,
+        ignoreDuplicate: _showDuplicatesOnly == true ? true : false,
         data: widget.data,
         transferefromdata: widget.transferefromdata,
       );
@@ -142,11 +145,22 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
     super.dispose();
   }
 
+  // ضيف ده مع باقي المتغيرات في أول الـ State
+  DateTime? _lastScrollLoadTime;
+
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
+      // ✅ FIX: throttle — متشتلوش أكتر من مرة كل 500ms
+      final now = DateTime.now();
+      if (_lastScrollLoadTime != null &&
+          now.difference(_lastScrollLoadTime!).inMilliseconds < 500) {
+        return;
+      }
+
       final cubit = context.read<GetLeadsMarketerCubit>();
       if (!cubit.isLoadingMore && cubit.hasMoreData) {
+        _lastScrollLoadTime = now;
         log("📜 Loading next page from scroll...");
         cubit.loadNextPage();
       }
@@ -229,7 +243,6 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool isOutdated = false;
     return Scaffold(
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
@@ -302,8 +315,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
               ),
               const SizedBox(width: 10),
               Container(
-            //    height: 50.h,
-             //   width: 50.w,
+                //    height: 50.h,
+                //   width: 50.w,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F1F2),
                   // border: Border.all(
@@ -928,6 +941,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                               ),
                             );
                           }
+                          bool isOutdated = false;
+
                           final lead = leads[index];
                           final leadassign = lead.assign;
                           final salesfcmtoken = lead.sales?.userlog?.fcmToken;
@@ -1070,7 +1085,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                               "No communication way",
                                           leadStages: [lead.stage?.id],
                                           leadSalesName: lead.sales?.name ?? '',
-                                          campaignlink: lead.campaign?.redirectLink ??
+                                          campaignlink:
+                                              lead.campaign?.redirectLink ??
                                               'no campaign link',
                                           campaignRedirectLink:
                                               lead.campaignRedirectLink,

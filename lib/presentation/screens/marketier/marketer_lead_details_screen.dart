@@ -535,7 +535,7 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                             Text(
                               "Show Duplicate",
                               style: TextStyle(
-                                fontSize: 18.sp,
+                                fontSize: 17.sp,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -758,6 +758,66 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
     );
   }
 
+  Widget _buildLinkTile(
+    IconData icon,
+    String label,
+    String url,
+    Color primaryColor,
+  ) {
+    return SizedBox(
+      width: (MediaQuery.of(context).size.width - 32.w - 40.w) / 2,
+      child: InkWell(
+        onTap: () async {
+          // تأكد إن الـ URL فيه scheme
+          final uri = Uri.parse(url.startsWith('http') ? url : 'https://$url');
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Could not open link.")),
+            );
+          }
+        },
+        borderRadius: BorderRadius.circular(8.r),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18.sp, color: primaryColor),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: const Color(0xFF6A6A75),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    url,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: primaryColor,
+                      decoration: TextDecoration.underline,
+                      decorationColor: primaryColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════════
   //  LEAD INFORMATION SECTION
   // ═══════════════════════════════════════════════════════════════
@@ -825,19 +885,22 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                 "Campaign",
                 widget.leadcampaign ?? 'No Campaign',
               ),
+              // ✅ بعد
               if (widget.campaignlink != null &&
                   widget.campaignlink!.isNotEmpty)
-                _buildInfoTile(
+                _buildLinkTile(
                   Icons.link,
                   "Campaign Link",
                   widget.campaignlink!,
+                  primaryColor,
                 ),
               if (widget.campaignRedirectLink != null &&
                   widget.campaignRedirectLink!.isNotEmpty)
-                _buildInfoTile(
+                _buildLinkTile(
                   Icons.open_in_browser,
                   "Redirect Link",
                   widget.campaignRedirectLink!,
+                  primaryColor,
                 ),
               if (widget.leadCreationDate != null)
                 _buildInfoTile(

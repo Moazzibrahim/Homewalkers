@@ -14,6 +14,51 @@ NewMarketerPaginationModel NewMarketerPaginationModelFromJson(String str) =>
 String NewMarketerPaginationModelToJson(NewMarketerPaginationModel data) =>
     json.encode(data.toJson());
 
+// ✅ الكود الجديد
+DateTime? _safeParseDate(dynamic value) {
+  if (value == null) return null;
+  final str = value.toString().trim();
+  if (str.isEmpty || str == 'null') return null;
+
+  // محاولة 1: ISO 8601 عادي
+  try {
+    return DateTime.parse(str);
+  } catch (_) {}
+
+  // محاولة 2: JavaScript Date format
+  // "Mon Dec 08 2025 15:37:08 GMT+0000 (Coordinated Universal Time)"
+  try {
+    final cleaned = str.replaceAll(RegExp(r'\(.*?\)'), '').trim();
+    final parts = cleaned.split(RegExp(r'\s+'));
+    // parts: [Mon, Dec, 08, 2025, 15:37:08, GMT+0000]
+    if (parts.length >= 5) {
+      const months = {
+        'Jan': '01',
+        'Feb': '02',
+        'Mar': '03',
+        'Apr': '04',
+        'May': '05',
+        'Jun': '06',
+        'Jul': '07',
+        'Aug': '08',
+        'Sep': '09',
+        'Oct': '10',
+        'Nov': '11',
+        'Dec': '12',
+      };
+      final month = months[parts[1]];
+      if (month != null) {
+        final day = parts[2].padLeft(2, '0');
+        final year = parts[3];
+        final time = parts[4];
+        return DateTime.tryParse('${year}-${month}-${day}T${time}Z');
+      }
+    }
+  } catch (_) {}
+
+  return null;
+}
+
 class NewMarketerPaginationModel {
   bool? success;
   num? results;
@@ -111,21 +156,6 @@ class Pagination {
     "inactivePercentage": inactivePercentage,
     "next": next,
   };
-}
-
-DateTime? _safeParseDate(dynamic value) {
-  if (value == null) return null;
-
-  try {
-    return DateTime.parse(value);
-  } catch (_) {
-    try {
-      final cleaned = value.toString().split(" GMT")[0];
-      return DateTime.tryParse(cleaned);
-    } catch (_) {
-      return null;
-    }
-  }
 }
 
 class Datum {
@@ -552,8 +582,8 @@ class AllVersion {
             ? null
             : Communicationway.fromJson(json["communicationway"]),
     addby: json["addby"] == null ? null : Addby.fromJson(json["addby"]),
-    recordedAt:
-        json["recordedAt"] == null ? null : DateTime.parse(json["recordedAt"]),
+    recordedAt: _safeParseDate(json["recordedAt"]),
+
     versionNumber: json["versionNumber"],
   );
 
@@ -596,7 +626,7 @@ class Campaign {
   factory Campaign.fromJson(Map<String, dynamic> json) => Campaign(
     id: json["_id"],
     campainName: json["CampainName"],
-    date: json["Date"] == null ? null : DateTime.parse(json["Date"]),
+    date: _safeParseDate(json["Date"]),
     cost: json["Cost"],
     redirectLink: json["redirectLink"],
     isactivate: json["isactivate"],
@@ -704,14 +734,11 @@ class LeadAssign {
             ? null
             : AssignedTo.fromJson(json["Assigned_to"]),
     clearHistory: json["clearHistory"],
-    assignDateTime:
-        json["assignDateTime"] == null
-            ? null
-            : DateTime.parse(json["assignDateTime"]),
-    createdAt:
-        json["createdAt"] == null ? null : DateTime.parse(json["createdAt"]),
-    updatedAt:
-        json["updatedAt"] == null ? null : DateTime.parse(json["updatedAt"]),
+
+    // ✅
+    assignDateTime: _safeParseDate(json["assignDateTime"]),
+    createdAt: _safeParseDate(json["createdAt"]),
+    updatedAt: _safeParseDate(json["updatedAt"]),
     v: json["__v"],
   );
 
@@ -889,17 +916,13 @@ class LeadStage {
   factory LeadStage.fromJson(Map<String, dynamic> json) => LeadStage(
     id: json["_id"],
     leadId: json["LeadId"] == null ? null : LeadId.fromJson(json["LeadId"]),
-    date: json["date"] == null ? null : DateTime.parse(json["date"]),
+    date: _safeParseDate(json["Date"]),
     stage: json["stage"] == null ? null : Stage.fromJson(json["stage"]),
     sales: json["sales"] == null ? null : Sales.fromJson(json["sales"]),
-    dateselectedforstage:
-        json["dateselectedforstage"] == null
-            ? null
-            : DateTime.parse(json["dateselectedforstage"]),
-    createdAt:
-        json["createdAt"] == null ? null : DateTime.parse(json["createdAt"]),
-    updatedAt:
-        json["updatedAt"] == null ? null : DateTime.parse(json["updatedAt"]),
+
+    dateselectedforstage: _safeParseDate(json["dateselectedforstage"]),
+    createdAt: _safeParseDate(json["createdAt"]),
+    updatedAt: _safeParseDate(json["updatedAt"]),
     v: json["__v"],
   );
 

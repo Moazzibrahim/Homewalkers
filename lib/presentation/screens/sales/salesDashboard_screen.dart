@@ -188,6 +188,18 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                         } else if (state is SalesDashboardSuccess) {
                           final cubit = context.read<SalesDashboardCubit>();
                           final stages = cubit.getVisibleStages(state.response);
+
+                          // check لو فيه Fresh
+                          final hasFresh = stages.any(
+                            (e) => e.stageName == 'Fresh',
+                          );
+
+                          final filteredStages =
+                              hasFresh
+                                  ? stages
+                                      .where((e) => e.stageName != 'No Stage')
+                                      .toList()
+                                  : stages;
                           final totalLeads =
                               state.response.data?.summary?.totalLeads ?? 0;
 
@@ -235,7 +247,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                 childAspectRatio: isTablet ? 1.8 : 1.3,
                                 physics: const NeverScrollableScrollPhysics(),
                                 children:
-                                    stages.map((stage) {
+                                    filteredStages.map((stage) {
                                       final stageName = stage.stageName ?? '';
                                       return _dashboardCard(
                                         stageName == 'No Stage'

@@ -228,6 +228,12 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
       emit(GetLeadsMarketerPaginationSuccess(paginationModel: response));
     } catch (e) {
       _isLoadingMore = false;
+
+      // ✅ FIX: رجّع الصفحة عشان نقدر نعمل retry صح
+      if (!refresh && _currentPage > 1) {
+        _currentPage--;
+      }
+
       log('❌ Error in fetchLeadsMarketerWithPagination: $e');
       emit(
         GetLeadsMarketerPaginationFailure(

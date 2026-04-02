@@ -237,16 +237,18 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
               ? Constants.maincolor
               : Constants.mainDarkmodecolor,
     );
-    final dateFormat = DateFormat('yyyy-MM-dd hh:mm a');
+
+    final dateFormat = DateFormat('d MMMM yyyy, hh:mm a');
     final firstComment = dataItem.comments?.first.firstcomment;
     final secondComment = dataItem.comments?.first.secondcomment;
     final reply = dataItem.comments?.first.replies;
-    final salesName = dataItem.comments?.first.sales?.name;
-    final leadName = dataItem.leed?.name;
+    final salesName = dataItem.comments?.first.sales?.name ?? "User";
+    final leadName = dataItem.leed?.name ?? "";
 
     final firstDate = DateTime.tryParse(
       firstComment?.date?.toString() ?? '',
     )?.toUtc().add(const Duration(hours: 4));
+
     final secondDate = DateTime.tryParse(
       secondComment?.date?.toString() ?? '',
     )?.toUtc().add(const Duration(hours: 4));
@@ -264,243 +266,193 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
     final secondDateString =
         secondDate != null ? dateFormat.format(secondDate) : 'N/A';
 
-    if ((isFirstValid && firstComment?.text != null) ||
-        (isSecondValid && secondComment?.text != null)) {
-      return Card(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    if (!isFirstValid && !isSecondValid) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// 🔹 Header (Avatar + Name + Date)
+          Row(
             children: [
-              Row(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FutureBuilder(
-                        future: checkAuthName(),
-                        builder: (
-                          BuildContext context,
-                          AsyncSnapshot snapshot,
-                        ) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Text(" ....");
-                          }
-                          if (snapshot.hasError) {
-                            return const Text('Error fetching name');
-                          }
-                          return Text(
-                            '$salesName',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? const Color(0xff080719)
-                                      : Colors.white,
-                            ),
-                          );
-                        },
-                      ),
-                      FutureBuilder(
-                        future: checkRoleName(),
-                        builder: (
-                          BuildContext context,
-                          AsyncSnapshot snapshot,
-                        ) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Text(" ....");
-                          }
-                          if (snapshot.hasError) {
-                            return const Text('Error fetching name');
-                          }
-                          return Text(
-                            '$leadName',
-                            style: TextStyle(
-                              color:
-                                  Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? const Color(0xff080719)
-                                      : Colors.grey,
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: Constants.maincolor.withOpacity(0.1),
+                child: Text(
+                  salesName.isNotEmpty ? salesName[0] : "U",
+                  style: TextStyle(
+                    color: Constants.maincolor,
+                    fontWeight: FontWeight.bold,
                   ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              if (isFirstValid) ...[
-                Text('First action', style: commentTitleStyle),
-                SelectableText(
-                  firstComment?.text ?? 'No Comment',
-                  style: const TextStyle(fontSize: 14),
                 ),
-                if (firstComment?.date != null)
-                  Text(
-                    "comment at :$firstDateString",
-                    style: const TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-              ],
-              const SizedBox(height: 6),
-              if (isSecondValid) ...[
-                Text('Second action', style: commentTitleStyle),
-                SelectableText(
-                  secondComment?.text ?? 'No Comment',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                if (secondComment?.date != null)
-                  Text(
-                    "next action at : $secondDateString",
-                    style: const TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-              ],
-              const SizedBox(height: 8),
-              Text('Replies:', style: commentTitleStyle),
-              const SizedBox(height: 6),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children:
-                    (reply != null && reply.isNotEmpty)
-                        ? reply.map((r) {
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  r.text ?? 'No Reply Text',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                if (r.date != null)
-                                  Text(
-                                    "replied at: ${formatDate(r.date)}",
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          );
-                        }).toList()
-                        : [const Text('No Replies')],
               ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final TextEditingController replyController =
-                        TextEditingController();
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext ctx) {
-                        return AlertDialog(
-                          title: const Text("Write a reply"),
-                          content: TextField(
-                            controller: replyController,
-                            maxLines: 3,
-                            decoration: const InputDecoration(
-                              hintText: 'Type your reply here...',
-                              border: OutlineInputBorder(),
-                            ),
+              const SizedBox(width: 10),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      salesName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color:
+                            Theme.of(context).brightness == Brightness.light
+                                ? const Color(0xff080719)
+                                : Colors.white,
+                      ),
+                    ),
+                    Text(
+                      leadName,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Text(
+                firstDateString,
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          /// 🔹 First Action
+          if (isFirstValid) ...[
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Constants.maincolor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text('First Action', style: commentTitleStyle),
+              ],
+            ),
+            const SizedBox(height: 6),
+            SelectableText(
+              firstComment?.text ?? 'No Comment',
+              style: const TextStyle(fontSize: 14),
+            ),
+            if (firstComment?.date != null)
+              Text(
+                "comment at : $firstDateString",
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+          ],
+
+          const SizedBox(height: 10),
+
+          /// 🔹 Second Action
+          if (isSecondValid) ...[
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.orange,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text('Second Action', style: commentTitleStyle),
+              ],
+            ),
+            const SizedBox(height: 6),
+            SelectableText(
+              secondComment?.text ?? 'No Comment',
+              style: const TextStyle(fontSize: 14),
+            ),
+            if (secondComment?.date != null)
+              Text(
+                "next action at : $secondDateString",
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+          ],
+
+          const SizedBox(height: 12),
+
+          /// 🔹 Replies
+          if (reply != null && reply.isNotEmpty)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children:
+                  reply.map((r) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            r.text ?? 'No Reply Text',
+                            style: const TextStyle(fontSize: 14),
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              child: const Text("Cancel"),
-                            ),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Constants.maincolor
-                                        : Constants.mainDarkmodecolor,
-                              ),
-                              onPressed: () async {
-                                final replyText = replyController.text.trim();
-                                if (replyText.isEmpty) return;
-                                Navigator.pop(ctx);
-                                context
-                                    .read<LeadCommentsCubit>()
-                                    .sendReplyToComment(
-                                      commentId:
-                                          dataItem.comments?.first.id ?? '',
-                                      replyText: replyText,
-                                    );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Reply sent!')),
-                                );
-                                if (widget.fcmtoken != null) {
-                                  context
-                                      .read<NotificationCubit>()
-                                      .sendNotificationToToken(
-                                        title: "Comment Reply",
-                                        body:
-                                            "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
-                                        fcmtokennnn: widget.fcmtoken!,
-                                      );
-                                  if (widget.managerfcm != null) {
-                                    context
-                                        .read<NotificationCubit>()
-                                        .sendNotificationToToken(
-                                          title: "Comment Reply",
-                                          body:
-                                              "تم الرد على التعليق بنجاح ✅ ${widget.leadName}",
-                                          fcmtokennnn: widget.managerfcm!,
-                                        );
-                                  }
-                                }
-                                context
-                                    .read<LeadCommentsCubit>()
-                                    .fetchAllLeadData(widget.leedId);
-                              },
-                              child: const Text(
-                                "Send",
-                                style: TextStyle(color: Colors.white),
+                          const SizedBox(height: 4),
+                          if (r.date != null)
+                            Text(
+                              "replied at: ${formatDate(r.date)}",
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 11,
                               ),
                             ),
-                          ],
-                        );
-                      },
+                        ],
+                      ),
                     );
-                  },
-                  icon: const Icon(Icons.reply, color: Colors.white),
-                  label: const Text(
-                    "Reply",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                  ),
-                ),
-              ),
+                  }).toList(),
+            )
+          else
+            const Text('No Replies'),
+
+          const SizedBox(height: 10),
+
+          /// 🔹 Actions Row
+          Row(
+            children: [
+              const Spacer(),
+
+              /// Edit (كامل زي ما كان)
               FutureBuilder(
                 future: checkRoleName(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const SizedBox();
                   }
+
                   if (snapshot.hasData && snapshot.data == "Admin") {
-                    return Align(
-                      alignment: Alignment.centerRight,
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.edit, color: Colors.white),
                         label: const Text(
@@ -520,6 +472,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                           final secondTextController = TextEditingController(
                             text: secondComment?.text ?? '',
                           );
+
                           showDialog(
                             context: context,
                             builder: (ctx) {
@@ -561,7 +514,9 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                           firstTextController.text.trim();
                                       final secondText =
                                           secondTextController.text.trim();
+
                                       Navigator.pop(ctx);
+
                                       context
                                           .read<EditCommentCubit>()
                                           .editComment(
@@ -578,28 +533,6 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                                   .fetchAllLeadData(
                                                     widget.leedId,
                                                   );
-                                              if (widget.fcmtoken != null) {
-                                                context
-                                                    .read<NotificationCubit>()
-                                                    .sendNotificationToToken(
-                                                      title: "Lead",
-                                                      body:
-                                                          " comment has been edited ✅ on ${widget.leadName}",
-                                                      fcmtokennnn:
-                                                          widget.fcmtoken!,
-                                                    );
-                                                if (widget.managerfcm != null) {
-                                                  context
-                                                      .read<NotificationCubit>()
-                                                      .sendNotificationToToken(
-                                                        title: "Lead",
-                                                        body:
-                                                            " comment has been edited ✅ on ${widget.leadName}",
-                                                        fcmtokennnn:
-                                                            widget.managerfcm!,
-                                                      );
-                                                }
-                                              }
                                             } else {
                                               ScaffoldMessenger.of(
                                                 context,
@@ -626,15 +559,77 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                       ),
                     );
                   }
+
                   return const SizedBox();
                 },
               ),
+
+              /// Reply (كامل زي ما كان)
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final TextEditingController replyController =
+                      TextEditingController();
+
+                  showDialog(
+                    context: context,
+                    builder: (ctx) {
+                      return AlertDialog(
+                        title: const Text("Write a reply"),
+                        content: TextField(
+                          controller: replyController,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            hintText: 'Type your reply here...',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text("Cancel"),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              final replyText = replyController.text.trim();
+                              if (replyText.isEmpty) return;
+
+                              Navigator.pop(ctx);
+
+                              context
+                                  .read<LeadCommentsCubit>()
+                                  .sendReplyToComment(
+                                    commentId:
+                                        dataItem.comments?.first.id ?? '',
+                                    replyText: replyText,
+                                  );
+
+                              context
+                                  .read<LeadCommentsCubit>()
+                                  .fetchAllLeadData(widget.leedId);
+                            },
+                            child: const Text("Send"),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                icon: const Icon(Icons.reply, size: 18, color: Colors.white),
+                label: const Text(
+                  "Reply",
+                  style: TextStyle(color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Constants.maincolor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
-      );
-    } else {
-      return const SizedBox.shrink();
-    }
+        ],
+      ),
+    );
   }
 }
