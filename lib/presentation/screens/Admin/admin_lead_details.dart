@@ -656,7 +656,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                             Text(
                               "Duplicate Leads",
                               style: TextStyle(
-                                fontSize: 18.sp,
+                                fontSize: 16.sp,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -672,7 +672,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                           child: SingleChildScrollView(
                             child: Column(
                               children:
-                                  (widget.leadversions as List<LeadVersionnn>?)
+                                  (widget.leadversions as List<AllVersion>?)
                                       ?.map((version) {
                                         return Container(
                                           margin: EdgeInsets.only(bottom: 16.h),
@@ -728,7 +728,8 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                                 "Creation Date",
                                                 version.recordedAt != null
                                                     ? formatDateTimeToDubai(
-                                                      version.recordedAt!,
+                                                      version.recordedAt!
+                                                          .toString(),
                                                     )
                                                     : 'No Date',
                                               ),
@@ -741,7 +742,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                                               _buildMiniInfoRow(
                                                 Icons.campaign,
                                                 "Campaign",
-                                                version.campaign?.campainName ??
+                                                version.campaign?.CampainName ??
                                                     'No Campaign',
                                               ),
                                               _buildMiniInfoRow(
