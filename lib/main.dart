@@ -22,6 +22,7 @@ import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_
 import 'package:homewalkers_app/presentation/viewModels/get_all_users_signup/cubit/getalluserssignup_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notification_helper.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/theme/theme_cubit.dart';
@@ -88,19 +89,7 @@ void main() async {
         log("📲 Local Notification clicked: ${response.payload}");
         try {
           final data = jsonDecode(response.payload!);
-          final target = data['target'];
-          final id = data['id'];
-
-          if (target == 'order' && id != null) {
-            navigatorKey.currentState?.pushNamed(
-              '/orderDetails',
-              arguments: id,
-            );
-          } else if (target == 'chat') {
-            navigatorKey.currentState?.pushNamed('/chat');
-          } else {
-            navigatorKey.currentState?.pushNamed('/notifications');
-          }
+          NotificationNavigationHelper.handleNavigation(data);
         } catch (e) {
           log("⚠️ Error parsing notification payload: $e");
           navigatorKey.currentState?.pushNamed('/notifications');
@@ -128,7 +117,6 @@ void main() async {
 }
 
 StreamSubscription<PhoneState>? _phoneSubscription;
-
 
 Future<bool> _checkFirstLaunch() async {
   final prefs = await SharedPreferences.getInstance();

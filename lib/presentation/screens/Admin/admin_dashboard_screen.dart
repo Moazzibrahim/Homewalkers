@@ -5,6 +5,7 @@ import 'dart:math' as math; // ✅ للكشف عن التابلت
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/Admin_with_pagination/fetch_data_with_pagination.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
@@ -12,6 +13,7 @@ import 'package:homewalkers_app/data/data_sources/meeting/get_meeting_comments.d
 import 'package:homewalkers_app/presentation/screens/Admin/admin_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_sales_sceen.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/all_request_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/meetingCommentsScreen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
@@ -504,6 +506,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ],
             ),
             const Spacer(),
+            // أيقونة الاجتماعات
             AdminDashboardScreen._iconBox(
               Icons.event,
               () {
@@ -528,7 +531,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               tabletWidthScale: tabletWidthScale,
               tabletHeightScale: tabletHeightScale,
             ),
-            SizedBox(width: (12 * tabletWidthScale).w),
+            SizedBox(width: (8 * tabletWidthScale).w),
+            // أيقونة طلبات الـ Leads (جديدة)
+            // AdminDashboardScreen._iconBox(
+            //   FontAwesomeIcons.box,
+            //   () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(
+            //         builder: (context) => const RequestsHistoryScreen(),
+            //       ),
+            //     );
+            //   },
+            //   context,
+            //   isTabletDevice: isTabletDevice,
+            //   tabletScale: tabletScale,
+            //   tabletFontScale: tabletFontScale,
+            //   tabletWidthScale: tabletWidthScale,
+            //   tabletHeightScale: tabletHeightScale,
+            // ),
+            // SizedBox(width: (8 * tabletWidthScale).w),
+            // أيقونة الإشعارات
             AdminDashboardScreen._iconBox(
               Icons.notifications_none,
               () {

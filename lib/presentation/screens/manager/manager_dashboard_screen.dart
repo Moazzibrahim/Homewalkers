@@ -361,6 +361,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                 Icons.fiber_new,
                                 context,
                                 onTap: () {
+                                  final managerid = dashboard.managerInfo?.id;
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -369,15 +370,19 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                             stageName: managerFresh?.stageId,
                                             data: true,
                                             // ✅ نمرر data: true عشان نجيب بيانات الـ Fresh لما نضغط
-                                            salesId:
-                                                managerFresh?.salesIds !=
-                                                            null &&
-                                                        managerFresh!
-                                                            .salesIds!
-                                                            .isNotEmpty
-                                                    ? managerFresh
-                                                        .salesIds!
-                                                        .first
+                                            // salesId:
+                                            //     managerFresh?.salesIds !=
+                                            //                 null &&
+                                            //             managerFresh!
+                                            //                 .salesIds!
+                                            //                 .isNotEmpty
+                                            //         ? managerFresh
+                                            //             .salesIds!
+                                            //             .first
+                                            //         : null,
+                                            salesIds:
+                                                managerid != null
+                                                    ? [managerid]
                                                     : null,
                                           ),
                                     ),
@@ -392,6 +397,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                 Icons.hourglass_bottom,
                                 context,
                                 onTap: () {
+                                  final managerid = dashboard.managerInfo?.id;
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -400,15 +406,19 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen>
                                             stageName: managerPending?.stageId,
                                             data:
                                                 true, // ✅ نمرر data: true عشان نجيب بيانات الـ Pending لما نضغط
-                                            salesId:
-                                                managerPending?.salesIds !=
-                                                            null &&
-                                                        managerPending!
-                                                            .salesIds!
-                                                            .isNotEmpty
-                                                    ? managerPending
-                                                        .salesIds!
-                                                        .first
+                                            // salesId:
+                                            //     managerPending?.salesIds !=
+                                            //                 null &&
+                                            //             managerPending!
+                                            //                 .salesIds!
+                                            //                 .isNotEmpty
+                                            //         ? managerPending
+                                            //             .salesIds!
+                                            //             .first
+                                            //         : null,
+                                            salesIds:
+                                                managerid != null
+                                                    ? [managerid]
                                                     : null,
                                           ),
                                     ),

@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable, avoid_print, deprecated_member_use
+// ignore_for_file: unused_local_variable, use_build_context_synchronously, must_be_immutable, avoid_print, deprecated_member_use, non_constant_identifier_names
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -40,6 +40,16 @@ class LeadsDetailsScreenManager extends StatefulWidget {
   final String? stageId;
   final String? sales;
   final String? leadLastDateAssigned;
+  final String? question1_text;
+  final String? question1_answer;
+  final String? question2_text;
+  final String? question2_answer;
+  final String? question3_text;
+  final String? question3_answer;
+  final String? question4_text;
+  final String? question4_answer;
+  final String? question5_text;
+  final String? question5_answer;
 
   LeadsDetailsScreenManager({
     super.key,
@@ -65,6 +75,16 @@ class LeadsDetailsScreenManager extends StatefulWidget {
     this.stageId,
     this.sales,
     this.leadLastDateAssigned,
+    this.question1_text,
+    this.question1_answer,
+    this.question2_text,
+    this.question2_answer,
+    this.question3_text,
+    this.question3_answer,
+    this.question4_text,
+    this.question4_answer,
+    this.question5_text,
+    this.question5_answer,
   });
 
   @override
@@ -132,6 +152,94 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
     } catch (e) {
       return dateStr;
     }
+  }
+
+  bool _hasQuestions() {
+    return (widget.question1_text != null &&
+            widget.question1_text!.isNotEmpty) ||
+        (widget.question2_text != null && widget.question2_text!.isNotEmpty) ||
+        (widget.question3_text != null && widget.question3_text!.isNotEmpty) ||
+        (widget.question4_text != null && widget.question4_text!.isNotEmpty) ||
+        (widget.question5_text != null && widget.question5_text!.isNotEmpty);
+  }
+
+  List<Widget> _buildQuestionsList(Color primaryColor, bool isDark) {
+    final questions = [
+      if (widget.question1_text != null && widget.question1_text!.isNotEmpty)
+        _buildQuestionItem(
+          widget.question1_text!,
+          widget.question1_answer ?? 'No answer provided',
+          primaryColor,
+        ),
+      if (widget.question2_text != null && widget.question2_text!.isNotEmpty)
+        _buildQuestionItem(
+          widget.question2_text!,
+          widget.question2_answer ?? 'No answer provided',
+          primaryColor,
+        ),
+      if (widget.question3_text != null && widget.question3_text!.isNotEmpty)
+        _buildQuestionItem(
+          widget.question3_text!,
+          widget.question3_answer ?? 'No answer provided',
+          primaryColor,
+        ),
+      if (widget.question4_text != null && widget.question4_text!.isNotEmpty)
+        _buildQuestionItem(
+          widget.question4_text!,
+          widget.question4_answer ?? 'No answer provided',
+          primaryColor,
+        ),
+      if (widget.question5_text != null && widget.question5_text!.isNotEmpty)
+        _buildQuestionItem(
+          widget.question5_text!,
+          widget.question5_answer ?? 'No answer provided',
+          primaryColor,
+        ),
+    ];
+
+    return questions;
+  }
+
+  Widget _buildQuestionItem(
+    String question,
+    String answer,
+    Color primaryColor,
+  ) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.help_outline, size: 16.sp, color: primaryColor),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  question,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 6.h),
+          Padding(
+            padding: EdgeInsets.only(left: 24.w),
+            child: Text(
+              answer,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: Color(0xFF6A6A75),
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   bool isValidComment({
@@ -638,6 +746,19 @@ class _SalesLeadsDetailsScreenState extends State<LeadsDetailsScreenManager> {
                 "Channel",
                 widget.leadChannel ?? 'No Channel',
               ),
+              // Questions Section
+              if (_hasQuestions()) ...[
+                SizedBox(height: 20.h),
+                Divider(color: primaryColor.withOpacity(0.2)),
+                SizedBox(height: 16.h),
+                _buildSectionHeader(
+                  Icons.quiz,
+                  "Additional Questions",
+                  primaryColor,
+                ),
+                SizedBox(height: 16.h),
+                ..._buildQuestionsList(primaryColor, isDark),
+              ],
             ],
           ),
         ],

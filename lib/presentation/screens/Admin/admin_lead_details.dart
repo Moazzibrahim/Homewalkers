@@ -10,7 +10,6 @@ import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
-import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
@@ -1025,42 +1024,106 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String label, String value) {
-    return SizedBox(
-      width: (MediaQuery.of(context).size.width - 32.w - 32.w) / 2,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18.sp, color: Constants.maincolor),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: Color(0xFF6A6A75),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
+  // أضف هذه الدالة داخل الـ State
+  Future<void> _launchUrlWithFeedback(String url, String type) async {
+    if (url.isEmpty) return;
+
+    // Show user feedback that the link is opening
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Opening $type: $url...'),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
       ),
     );
+
+    final Uri uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        // Optional success message after opening
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Link opened successfully'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+      } else {
+        throw 'Could not launch $url';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Failed to open link: $url'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildInfoTile(IconData icon, String label, String value) {
+    // Check if this field is clickable (a link)
+    final bool isLink =
+        (label == "Campaign Link" || label == "Redirect Link") &&
+        value.isNotEmpty;
+
+    Widget tileContent = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18.sp, color: Constants.maincolor),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: Color(0xFF6A6A75),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w500,
+                  // Add special style for links (blue color and underline)
+                  color: isLink ? Constants.maincolor : null,
+                  decoration: isLink ? TextDecoration.underline : null,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    // If it's a link, wrap with GestureDetector
+    if (isLink) {
+      return GestureDetector(
+        onTap: () {
+          // Determine link type to send to the function
+          if (label == "Campaign Link") {
+            _launchUrlWithFeedback(value, 'Campaign Link');
+          } else if (label == "Redirect Link") {
+            _launchUrlWithFeedback(value, 'Redirect Link');
+          }
+        },
+        child: tileContent,
+      );
+    }
+
+    // If not a link, return normal content
+    return tileContent;
   }
 
   Widget _buildLastCommentSection(bool isDark, Color primaryColor) {

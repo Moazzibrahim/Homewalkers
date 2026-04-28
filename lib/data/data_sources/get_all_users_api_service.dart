@@ -8,14 +8,14 @@ import 'package:homewalkers_app/data/models/Data/admin_data_dashboard_count_mode
 import 'package:homewalkers_app/data/models/lead_stats_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart';
 import 'package:homewalkers_app/data/models/new_admin_users_model.dart';
-import 'package:http/http.dart' as http;
+import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GetAllUsersApiService {
-  static  String _baseUrl =
+  static  final String _baseUrl =
       '${Constants.baseUrl}/users/leads-with-stages?leadisactive=true';
 
-  static  String _stagesStatsUrl =
+  static  final String _stagesStatsUrl =
       '${Constants.baseUrl}/users/mobile/stages-stats';
 
   Future<String?> _getToken() async {
@@ -58,7 +58,7 @@ class GetAllUsersApiService {
     print('URL of getUsers: $uri');
 
     try {
-      final response = await http.get(
+      final response = await HttpClient.get(
         uri,
         headers: {
           'Authorization': 'Bearer $token',
@@ -92,7 +92,7 @@ class GetAllUsersApiService {
     String url = _baseUrl;
 
     try {
-      final response = await http.get(
+      final response = await HttpClient.get(
         Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $token',
@@ -119,7 +119,7 @@ class GetAllUsersApiService {
 
     try {
       final url = Uri.parse('${Constants.baseUrl}/users?leadisactive=false');
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {
           'Authorization': 'Bearer $token',
@@ -147,7 +147,7 @@ class GetAllUsersApiService {
     if (token == null) return null;
 
     try {
-      final response = await http.get(
+      final response = await HttpClient.get(
         Uri.parse(_stagesStatsUrl),
         headers: {
           'Authorization': 'Bearer $token',
@@ -175,7 +175,7 @@ class GetAllUsersApiService {
     final token = await _getToken();
     if (token == null) return null;
     try {
-      final response = await http.get(
+      final response = await HttpClient.get(
         Uri.parse("${Constants.baseUrl}/users/stage-statistics-CRM-DATA"),
         headers: {
           'Content-Type': 'application/json',

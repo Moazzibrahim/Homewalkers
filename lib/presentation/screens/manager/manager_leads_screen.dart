@@ -44,6 +44,7 @@ class ManagerLeadsScreen extends StatefulWidget {
   final bool shouldRefreshOnOpen;
   final bool? data;
   final String? salesId;
+  final List<String>? salesIds;
   const ManagerLeadsScreen({
     super.key,
     this.stageName,
@@ -51,6 +52,7 @@ class ManagerLeadsScreen extends StatefulWidget {
     this.shouldRefreshOnOpen = false,
     this.data,
     this.salesId,
+    this.salesIds,
   });
 
   @override
@@ -90,7 +92,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
         data: widget.data ?? false,
         stageIds: [widget.stageName ?? ''],
         ignoreDuplicate: widget.showDuplicatesOnly,
-        salesIds: [widget.salesId ?? ''],
+        salesIds: widget.salesIds,
       );
     });
 
@@ -249,7 +251,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                               data: widget.data ?? false,
                               stageIds: [widget.stageName ?? ''],
                               ignoreDuplicate: widget.showDuplicatesOnly,
-                              salesIds: [widget.salesId ?? ''],
+                              salesIds: widget.salesIds,
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -268,7 +270,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                           data: widget.data ?? false,
                           stageIds: [widget.stageName ?? ''],
                           ignoreDuplicate: widget.showDuplicatesOnly,
-                          salesIds: [widget.salesId ?? ''],
+                          salesIds: widget.salesIds,
                         );
                     setState(() {
                       _showCheckboxes = false;
@@ -383,7 +385,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                 data: widget.data ?? false,
                                 stageIds: [widget.stageName ?? ''],
                                 ignoreDuplicate: widget.showDuplicatesOnly,
-                                salesIds: [widget.salesId ?? ''],
+                                salesIds: widget.salesIds ,
                               );
                             },
                           ),
@@ -396,7 +398,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                           data: widget.data ?? false,
                           stageIds: [widget.stageName ?? ''],
                           ignoreDuplicate: widget.showDuplicatesOnly,
-                          salesIds: [widget.salesId ?? ''],
+                          salesIds: widget.salesIds ,
                         );
                   }
                 },
@@ -427,7 +429,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
               data: widget.data ?? false,
               stageIds: [widget.stageName ?? ''],
               ignoreDuplicate: widget.showDuplicatesOnly,
-              salesIds: [widget.salesId ?? ''],
+              salesIds: widget.salesIds ,
             );
           });
         }
@@ -471,7 +473,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                               data: widget.data ?? false,
                               stageIds: [widget.stageName ?? ''],
                               ignoreDuplicate: widget.showDuplicatesOnly,
-                              salesIds: [widget.salesId ?? ''],
+                              salesIds: widget.salesIds ,
                             );
                       },
                       decoration: InputDecoration(
@@ -573,7 +575,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                             data: widget.data ?? false,
                             stageIds: [widget.stageName ?? ''],
                             ignoreDuplicate: widget.showDuplicatesOnly,
-                            salesIds: [widget.salesId ?? ''],
+                            salesIds: widget.salesIds ,
                           );
                           // ✅ بعدين نفلتر على نفس stageName زي BlocBuilder
                         },
@@ -711,6 +713,21 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             sales: lead.sales?.name ?? '',
                                             leadLastDateAssigned:
                                                 lead.lastdateassign,
+                                            question1_text: lead.question1_text,
+                                            question1_answer:
+                                                lead.question1_answer,
+                                            question2_text: lead.question2_text,
+                                            question2_answer:
+                                                lead.question2_answer,
+                                            question3_text: lead.question3_text,
+                                            question3_answer:
+                                                lead.question3_answer,
+                                            question4_text: lead.question4_text,
+                                            question4_answer:
+                                                lead.question4_answer,
+                                            question5_text: lead.question5_text,
+                                            question5_answer:
+                                                lead.question5_answer,
                                           ),
                                         ),
                                   ),
@@ -722,7 +739,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                       stageIds: [widget.stageName ?? ''],
                                       ignoreDuplicate:
                                           widget.showDuplicatesOnly,
-                                      salesIds: [widget.salesId ?? ''],
+                                      salesIds: widget.salesIds ,
                                     );
                               },
                               child: Card(

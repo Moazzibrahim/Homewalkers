@@ -57,19 +57,6 @@ class AdminMenuScreen extends StatelessWidget {
           );
         },
       ),
-
-      _MenuItem(
-        icon: Icons.search,
-        label: 'Advanced Search',
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AdminAdvancedSearch(),
-            ),
-          );
-        },
-      ),
       _MenuItem(
         icon: Icons.chat_outlined,
         label: 'Communication Way',

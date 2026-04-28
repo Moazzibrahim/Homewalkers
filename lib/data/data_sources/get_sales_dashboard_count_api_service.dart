@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/Data/sales_data_dashboard_count_model.dart';
 import 'package:homewalkers_app/data/models/sales_dashboard_model.dart';
-import 'package:http/http.dart' as http;
+import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SalesDashboardApiService {
-  static  String _baseUrl =
+  static final String _baseUrl =
       '${Constants.baseUrl}/users/sales/dashboard/fast';
 
   /// Get token from SharedPreferences
@@ -33,7 +33,7 @@ class SalesDashboardApiService {
 
       final url = Uri.parse('$_baseUrl/$email');
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {
           'Authorization': 'Bearer $token',
@@ -66,7 +66,7 @@ class SalesDashboardApiService {
 
       final url = Uri.parse('$_baseUrl/CRMDATA/$email');
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {
           'Authorization': 'Bearer $token',

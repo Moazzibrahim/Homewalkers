@@ -3,11 +3,11 @@ import 'dart:developer';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/Data/teamleader_data_dashboard_model.dart';
 import 'package:homewalkers_app/data/models/team_leader/dashboard_count.dart';
-import 'package:http/http.dart' as http;
+import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TeamleaderDashboardApiService {
-  static  String _baseUrl =
+  static  final String _baseUrl =
       '${Constants.baseUrl}/users/teamleader/dashboard-cached2';
 
   /// Get token from SharedPreferences
@@ -34,7 +34,7 @@ class TeamleaderDashboardApiService {
 
       final url = Uri.parse('$_baseUrl/$email');
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {
           'Authorization': 'Bearer $token',
@@ -69,7 +69,7 @@ class TeamleaderDashboardApiService {
       final url = Uri.parse('$_baseUrl-CRMDATA/$email');
       log('Fetching dashboard data from URL: $url');
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {
           'Authorization': 'Bearer $token',

@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 class TeamleaderPaginationLeadsModel {
   final bool? success;
   final String? requestedEmail;
@@ -432,6 +434,16 @@ class LeadDataPagination {
   final num? v;
   final Developer? developer;
   final EmailVerification? emailVerification;
+  String? question1_text;
+  String? question1_answer;
+  String? question2_text;
+  String? question2_answer;
+  String? question3_text;
+  String? question3_answer;
+  String? question4_text;
+  String? question4_answer;
+  String? question5_text;
+  String? question5_answer;
 
   LeadDataPagination({
     this.id,
@@ -484,6 +496,16 @@ class LeadDataPagination {
     this.v,
     this.developer,
     this.emailVerification,
+    this.question1_text,
+    this.question1_answer,
+    this.question2_text,
+    this.question2_answer,
+    this.question3_text,
+    this.question3_answer,
+    this.question4_text,
+    this.question4_answer,
+    this.question5_text,
+    this.question5_answer,
   });
 
   factory LeadDataPagination.fromJson(Map<String, dynamic> json) {
@@ -560,6 +582,16 @@ class LeadDataPagination {
           json['emailVerification'] != null
               ? EmailVerification.fromJson(json['emailVerification'])
               : null,
+      question1_text: json['question1_text'] as String?,
+      question1_answer: json['question1_answer'] as String?,
+      question2_text: json['question2_text'] as String?,
+      question2_answer: json['question2_answer'] as String?,
+      question3_text: json['question3_text'] as String?,
+      question3_answer: json['question3_answer'] as String?,
+      question4_text: json['question4_text'] as String?,
+      question4_answer: json['question4_answer'] as String?,
+      question5_text: json['question5_text'] as String?,
+      question5_answer: json['question5_answer'] as String?,
     );
   }
 
@@ -615,6 +647,16 @@ class LeadDataPagination {
       '__v': v,
       'developer': developer?.toJson(),
       'emailVerification': emailVerification?.toJson(),
+      'question1_text': question1_text,
+      'question1_answer': question1_answer,
+      'question2_text': question2_text,
+      'question2_answer': question2_answer,
+      'question3_text': question3_text,
+      'question3_answer': question3_answer,
+      'question4_text': question4_text,
+      'question4_answer': question4_answer,
+      'question5_text': question5_text,
+      'question5_answer': question5_answer,
     };
   }
 }

@@ -442,6 +442,16 @@ class LeadPagination {
   EmailVerification? emailVerification;
   String? leadType;
   String? transferStatus;
+  String? question1_text;
+  String? question1_answer;
+  String? question2_text;
+  String? question2_answer;
+  String? question3_text;
+  String? question3_answer;
+  String? question4_text;
+  String? question4_answer;
+  String? question5_text;
+  String? question5_answer;
 
   LeadPagination({
     this.id,
@@ -495,6 +505,16 @@ class LeadPagination {
     this.emailVerification,
     this.leadType,
     this.transferStatus,
+    this.question1_text,
+    this.question1_answer,
+    this.question2_text,
+    this.question2_answer,
+    this.question3_text,
+    this.question3_answer,
+    this.question4_text,
+    this.question4_answer,
+    this.question5_text,
+    this.question5_answer,
   });
 
   factory LeadPagination.fromJson(Map<String, dynamic> json) => LeadPagination(
@@ -568,6 +588,16 @@ class LeadPagination {
             : EmailVerification.fromJson(json["emailVerification"]),
     leadType: json["leadType"],
     transferStatus: json["transferStatus"],
+    question1_text: json['question1_text'] as String?,
+    question1_answer: json['question1_answer'] as String?,
+    question2_text: json['question2_text'] as String?,
+    question2_answer: json['question2_answer'] as String?,
+    question3_text: json['question3_text'] as String?,
+    question3_answer: json['question3_answer'] as String?,
+    question4_text: json['question4_text'] as String?,
+    question4_answer: json['question4_answer'] as String?,
+    question5_text: json['question5_text'] as String?,
+    question5_answer: json['question5_answer'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -628,6 +658,7 @@ class LeadPagination {
     "emailVerification": emailVerification?.toJson(),
     "leadType": leadType,
     "transferStatus": transferStatus,
+    
   };
 }
 

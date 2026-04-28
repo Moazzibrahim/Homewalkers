@@ -11,7 +11,7 @@ import 'package:homewalkers_app/data/models/marketer_dashboard_model.dart';
 import 'package:homewalkers_app/data/models/new_marketer_pagination_model.dart';
 import 'package:homewalkers_app/data/models/salesLeadsModelWithPagination.dart';
 import 'package:homewalkers_app/data/models/teamleader_pagination_leads_model.dart';
-import 'package:http/http.dart' as http;
+import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GetLeadsService {
@@ -60,7 +60,7 @@ class GetLeadsService {
       final stopwatch = Stopwatch()..start();
       print("Request URL: $url");
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {'Authorization': 'Bearer $token'},
       );
@@ -205,7 +205,7 @@ class GetLeadsService {
       // بناء URL مع query parameters
       final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
       print("Request URL: $uri");
-      final response = await http.get(
+      final response = await HttpClient.get(
         uri,
         headers: {
           'Content-Type': 'application/json',
@@ -323,7 +323,7 @@ class GetLeadsService {
         "${Constants.baseUrl}/users/teamleader-leads-withpagination",
       ).replace(queryParameters: queryParams);
       print("Request URL: $uri");
-      final response = await http.get(
+      final response = await HttpClient.get(
         uri,
         headers: {
           'Content-Type': 'application/json',
@@ -368,7 +368,7 @@ class GetLeadsService {
 
       print("POST URL: $url");
 
-      final response = await http.post(
+      final response = await HttpClient.post(
         url,
         headers: {
           "Content-Type": "application/json",
@@ -427,7 +427,7 @@ class GetLeadsService {
 
       print("Request URL: $url");
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {'Authorization': 'Bearer $token'},
       );
@@ -625,7 +625,7 @@ class GetLeadsService {
         '${Constants.baseUrl}/users/marketer-leads?email=$savedEmail&leadisactive=true',
       );
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {'Authorization': 'Bearer $token'},
       );
@@ -823,7 +823,7 @@ class GetLeadsService {
 
       print("📡 Fetching Manager Leads: $url");
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {
           "Authorization": "Bearer $token",
@@ -864,10 +864,10 @@ class GetLeadsService {
     }
   }
 
-  static  String _baseUrl =
+  static  final String _baseUrl =
       "${Constants.baseUrl}/users/stages-with-duplicate-by-addedby/";
 
-  static  String _leadsBaseUrl =
+  static  final String _leadsBaseUrl =
       "${Constants.baseUrl}/users/stages-crm-data-with-duplicate-by-addedby/";
 
   Future<MarketerDashboardModel> fetchMarketerDashboard() async {
@@ -883,7 +883,7 @@ class GetLeadsService {
 
       final url = Uri.parse("$_baseUrl$userId");
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {
           "Content-Type": "application/json",
@@ -917,7 +917,7 @@ class GetLeadsService {
 
       final url = Uri.parse("$_leadsBaseUrl$userId");
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {
           "Content-Type": "application/json",
@@ -1091,7 +1091,7 @@ class GetLeadsService {
       print('Fetching leads from: $url');
 
       // Make the API request with authorization header
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {
           'Authorization': 'Bearer $token',
@@ -1134,7 +1134,7 @@ class GetLeadsService {
         '${Constants.baseUrl}/users/GetAllLeadsAddedByUser?email=$savedEmail&leadisactive=true',
       );
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {'Authorization': 'Bearer $token'},
       );
@@ -1196,7 +1196,7 @@ class GetLeadsService {
         '${Constants.baseUrl}/users/GetAllLeadsAddedByUser-advanced?leadisactive=false&email=$email',
       );
 
-      final response = await http.get(
+      final response = await HttpClient.get(
         url,
         headers: {'Authorization': 'Bearer $token'},
       );

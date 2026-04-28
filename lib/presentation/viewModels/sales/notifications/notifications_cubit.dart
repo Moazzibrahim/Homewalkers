@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/notifications_model.dart';
 import 'package:homewalkers_app/main.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notification_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -63,7 +64,7 @@ class NotificationCubit extends Cubit<NotificationState> {
 
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
         emit(state.copyWith(error: "Permission denied"));
-     //   _showDebugInfo("❌ Permission DENIED", "null", "null");
+        //   _showDebugInfo("❌ Permission DENIED", "null", "null");
         return;
       }
 
@@ -139,17 +140,22 @@ class NotificationCubit extends Cubit<NotificationState> {
 
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         log("📲 Notification clicked: ${message.data}");
-        _handleNotificationNavigation(message.data);
+        NotificationNavigationHelper.handleNavigation(
+          _normalizeData(message.data),
+        );
       });
 
       RemoteMessage? initialMessage = await messaging.getInitialMessage();
       if (initialMessage != null) {
-        log("📦 Opened from terminated: ${initialMessage.data}");
-        _handleNotificationNavigation(initialMessage.data);
+        Future.delayed(const Duration(milliseconds: 500), () {
+          NotificationNavigationHelper.handleNavigation(
+            _normalizeData(initialMessage.data),
+          );
+        });
       }
     } catch (e) {
       log("⚠️ initNotifications error: $e");
-   //   _showDebugInfo("❌ ERROR", "error", e.toString());
+      //   _showDebugInfo("❌ ERROR", "error", e.toString());
       emit(state.copyWith(error: e.toString()));
     }
   }
@@ -204,6 +210,23 @@ class NotificationCubit extends Cubit<NotificationState> {
   //     );
   //   });
   // }
+  Map<String, dynamic> _normalizeData(Map<String, dynamic> data) {
+    final result = <String, dynamic>{};
+
+    data.forEach((key, value) {
+      if (value is String) {
+        try {
+          result[key] = jsonDecode(value);
+        } catch (_) {
+          result[key] = value;
+        }
+      } else {
+        result[key] = value;
+      }
+    });
+
+    return result;
+  }
 
   Future<void> _saveAndSendToken(String? token) async {
     if (token == null || token.isEmpty) return;
@@ -255,8 +278,121 @@ class NotificationCubit extends Cubit<NotificationState> {
   }
 
   /// 💬 Show local push notification
+  // في _showLocalNotification function:
+
   void _showLocalNotification(RemoteMessage message) {
     final notification = message.notification;
+
+    log("📩 ===== NEW NOTIFICATION RECEIVED =====");
+    log("📩 Message ID: ${message.messageId}");
+    log("📩 Message Type: ${message.messageType}");
+    log("📩 Notification Title: ${notification?.title}");
+    log("📩 Notification Body: ${notification?.body}");
+    log("📩 Data Keys: ${message.data.keys.toList()}");
+    log("📩 Data: ${message.data}");
+
+    // ✅ حل مؤقت: لو الـ data فاضي، نصنع data من الـ notification
+    Map<String, dynamic> finalData = Map<String, dynamic>.from(message.data);
+
+    if (finalData.isEmpty && notification != null) {
+      log("⚠️ Empty data payload - extracting info from notification");
+
+      final title = notification.title ?? '';
+      final body = notification.body ?? '';
+
+      // ✅ نجمع النصوص للفحص
+      final fullText = '$title $body'.toLowerCase();
+
+      log("📝 Full notification text: $fullText");
+
+      // ✅ تحديد النوع بناءً على الكلمات المفتاحية
+      String? type;
+
+      // فحص comment أولاً
+      if (_containsAnyWord(fullText, [
+        'comment',
+        'تعليق',
+        'commented',
+        'comments',
+      ])) {
+        type = 'comment';
+        log("💬 Detected type: comment");
+      }
+      // فحص assign / transfer / new lead
+      else if (_containsAnyWord(fullText, [
+        'assign',
+        'assigned',
+        'اسناد',
+        'تحويل',
+        'transfer',
+        'transferred',
+        'new lead',
+        'new_lead',
+        'newlead',
+        'lead created',
+        'leadcreated',
+        'created lead',
+      ])) {
+        type = 'assign';
+        log("📌 Detected type: assign/transfer/new lead");
+      }
+      // نوع افتراضي
+      else {
+        type = 'unknown';
+        log("❓ Unknown notification type");
+      }
+
+      finalData = {
+        'typenotification': type,
+        'message': body,
+        'title': title,
+        'body': body,
+        'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+      };
+
+      log("📩 Created data from notification: $finalData");
+    } else {
+      // ✅ لو فيه data، نتأكد إن كل البيانات المهمة موجودة
+      log("📩 Using existing data payload");
+
+      // نتأكد من وجود typenotification
+      if (!finalData.containsKey('typenotification') ||
+          finalData['typenotification'] == null) {
+        // نحاول نستنتج النوع من الـ notification
+        final title = notification?.title ?? '';
+        final body = notification?.body ?? '';
+        final messageText = finalData['message']?.toString() ?? '';
+        final fullText = '$title $body $messageText'.toLowerCase();
+
+        if (_containsAnyWord(fullText, ['comment', 'تعليق'])) {
+          finalData['typenotification'] = 'comment';
+        } else if (_containsAnyWord(fullText, [
+          'assign',
+          'assigned',
+          'اسناد',
+          'تحويل',
+          'transfer',
+          'transferred',
+          'new lead',
+          'new_lead',
+          'newlead',
+        ])) {
+          finalData['typenotification'] = 'assign';
+        }
+
+        log("📩 Added typenotification: ${finalData['typenotification']}");
+      }
+
+      // نتأكد من وجود title و body في الـ data
+      if (notification != null) {
+        finalData['title'] = finalData['title'] ?? notification.title;
+        finalData['body'] = finalData['body'] ?? notification.body;
+      }
+
+      // نتأكد من وجود click_action
+      finalData['click_action'] =
+          finalData['click_action'] ?? 'FLUTTER_NOTIFICATION_CLICK';
+    }
 
     // On iOS, if the message has a notification object, FCM natively handles showing the foreground
     // alert because we use `setForegroundNotificationPresentationOptions` in main.dart.
@@ -268,9 +404,14 @@ class NotificationCubit extends Cubit<NotificationState> {
       return;
     }
 
-    final title = notification?.title ?? message.data['title'] ?? '📢 إشعار';
-    final body = notification?.body ?? message.data['body'] ?? '📬 رسالة جديدة';
-    final payload = jsonEncode(message.data);
+    final title = notification?.title ?? finalData['title']?.toString() ?? "";
+    final body = notification?.body ?? finalData['body']?.toString() ?? '';
+    final payload = jsonEncode(finalData);
+
+    log("🔔 Showing local notification:");
+    log("🔔 Title: $title");
+    log("🔔 Body: $body");
+    log("🔔 Payload: $payload");
 
     flutterLocalNotificationsPlugin.show(
       message.hashCode,
@@ -294,18 +435,10 @@ class NotificationCubit extends Cubit<NotificationState> {
     );
   }
 
-  /// 🧭 Navigate based on notification data
-  void _handleNotificationNavigation(Map<String, dynamic> data) {
-    final target = data['target'];
-    final id = data['id'];
-
-    if (target == 'order' && id != null) {
-      navigatorKey.currentState?.pushNamed('/orderDetails', arguments: id);
-    } else if (target == 'chat') {
-      navigatorKey.currentState?.pushNamed('/chat');
-    } else {
-      navigatorKey.currentState?.pushNamed('/notifications');
-    }
+  /// ✅ دالة مساعدة للبحث عن أي كلمة في النص
+  bool _containsAnyWord(String text, List<String> words) {
+    final lowerText = text.toLowerCase();
+    return words.any((word) => lowerText.contains(word.toLowerCase()));
   }
 
   /// 🚀 Send notification to a specific FCM token
@@ -360,6 +493,8 @@ class NotificationCubit extends Cubit<NotificationState> {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
+        log('✅ Notifications fetched successfully');
+        log("url: $url");
         final decoded = jsonDecode(response.body);
         final model = NotificationModel.fromJson(decoded);
         notifications = model.data ?? [];

@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 class CrmLeadsResponse {
   bool? success;
   String? message;
@@ -102,6 +104,16 @@ class LeadManager {
 
   bool? data;
   bool? transferefromdata;
+  String? question1_text;
+  String? question1_answer;
+  String? question2_text;
+  String? question2_answer;
+  String? question3_text;
+  String? question3_answer;
+  String? question4_text;
+  String? question4_answer;
+  String? question5_text;
+  String? question5_answer;
 
   LeadManager({this.id, this.name});
 
@@ -163,7 +175,17 @@ class LeadManager {
       ..stage = json['stage'] != null ? Stage.fromJson(json['stage']) : null
       ..lastStageDateUpdated = json['last_stage_date_updated']
       ..data = json['data']
-      ..transferefromdata = json['transferefromdata'];
+      ..transferefromdata = json['transferefromdata']
+      ..question1_text = json['question1_text']
+      ..question1_answer = json['question1_answer']
+      ..question2_text = json['question2_text']
+      ..question2_answer = json['question2_answer']
+      ..question3_text = json['question3_text']
+      ..question3_answer = json['question3_answer']
+      ..question4_text = json['question4_text']
+      ..question4_answer = json['question4_answer']
+      ..question5_text = json['question5_text']
+      ..question5_answer = json['question5_answer'];
   }
 }
 
