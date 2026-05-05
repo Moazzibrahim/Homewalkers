@@ -52,9 +52,9 @@ class DeciderScreen extends StatelessWidget {
           final role = data?['role'];
 
           // 👈 هنا نعمل update check
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            UpdateService.checkForUpdate(context);
-          });
+          // WidgetsBinding.instance.addPostFrameCallback((_) {
+          //   UpdateService.checkForUpdate(context);
+          // });
 
           if (hasToken && role == 'Sales') {
             context.read<NotificationCubit>().initNotifications();
