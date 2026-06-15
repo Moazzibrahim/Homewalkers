@@ -188,6 +188,34 @@ class LeadManager {
       ..question5_answer = json['question5_answer'];
   }
 }
+class FcmToken {
+  final String? id;
+  final String? token;
+  final String? deviceId;
+  final String? platform;
+  final String? createdAt;
+  final String? lastUsed;
+
+  FcmToken({
+    this.id,
+    this.token,
+    this.deviceId,
+    this.platform,
+    this.createdAt,
+    this.lastUsed,
+  });
+
+  factory FcmToken.fromJson(Map<String, dynamic> json) {
+    return FcmToken(
+      id: json['_id'],
+      token: json['token'],
+      deviceId: json['deviceId'],
+      platform: json['platform'],
+      createdAt: json['createdAt'],
+      lastUsed: json['lastUsed'],
+    );
+  }
+}
 
 class Project {
   String? id;
@@ -266,8 +294,9 @@ class SalesUser {
   String? profileImg;
   String? role;
   String? fcmToken;
+  List<FcmToken>? fcmTokens;
 
-  SalesUser({this.id, this.name});
+  SalesUser({this.id, this.name,this.fcmTokens});
 
   factory SalesUser.fromJson(Map<String, dynamic> json) =>
       SalesUser(id: json['_id'], name: json['name'])
@@ -275,7 +304,14 @@ class SalesUser {
         ..phone = json['phone']
         ..profileImg = json['profileImg']
         ..role = json['role']
-        ..fcmToken = json['fcmToken'];
+        ..fcmToken = json['fcmToken']
+        ..fcmTokens =
+            json['fcmTokens'] is List
+                ? (json['fcmTokens'] as List)
+                    .map((e) => FcmToken.fromJson(e))
+                    .toList()
+                : []
+        ;
 }
 
 class Channel {

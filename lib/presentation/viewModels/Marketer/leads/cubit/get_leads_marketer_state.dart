@@ -62,12 +62,15 @@ class GetLeadsMarketerPaginationLoading extends GetLeadsMarketerState {
 
 /// ✅ Pagination Success State - يدعم النوعين leads و leadsDatum
 class GetLeadsMarketerPaginationSuccess extends GetLeadsMarketerState {
-  final NewMarketerPaginationModel paginationModel; // للتوافق مع الكود القديم
+  final NewMarketerPaginationModel paginationModel;
+  final DateTime timestamp; // ✅ أضف ده
 
-  const GetLeadsMarketerPaginationSuccess({required this.paginationModel});
+  GetLeadsMarketerPaginationSuccess({
+    required this.paginationModel,
+  }) : timestamp = DateTime.now(); // ✅ كل instance جديدة بيبقى ليها timestamp مختلف
 
   @override
-  List<Object> get props => [paginationModel];
+  List<Object> get props => [paginationModel, timestamp]; // ✅ أضف timestamp
 }
 
 /// ✅ Pagination Failure State

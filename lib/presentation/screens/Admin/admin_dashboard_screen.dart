@@ -1,11 +1,10 @@
 // ignore_for_file: file_names, camel_case_types, deprecated_member_use, use_build_context_synchronously, unused_field, avoid_print
 
 import 'dart:async';
-import 'dart:math' as math; // ✅ للكشف عن التابلت
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/Admin_with_pagination/fetch_data_with_pagination.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
@@ -13,6 +12,7 @@ import 'package:homewalkers_app/data/data_sources/meeting/get_meeting_comments.d
 import 'package:homewalkers_app/presentation/screens/Admin/admin_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_sales_sceen.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/all_request_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/meetingCommentsScreen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
@@ -23,12 +23,122 @@ import 'package:homewalkers_app/presentation/viewModels/meeting/cubit/meetingcom
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
+// ─────────────────────────────────────────────
+//  Helper: icon bg / icon color / progress color
+// ─────────────────────────────────────────────
+Color _getIconBgColor(String title) {
+  switch (title.toLowerCase()) {
+    case 'leads':
+      return const Color(0xFFE8F0FE);
+    case 'sales':
+      return const Color(0xFFFFF8E6);
+    case 'fresh':
+      return const Color(0xFFE8F0FE);
+    case 'follow up':
+    case 'follow':
+      return const Color(0xFFE8F0FE);
+    case 'follow after meeting':
+    case 'long follow':
+      return const Color(0xFFE8F0FE);
+    case 'interested':
+      return const Color(0xFFE8F0FE);
+    case 'not interested':
+      return const Color(0xFFE8F0FE);
+    case 'done deal':
+      return const Color(0xFFE8F0FE);
+    case 'no answer':
+      return const Color(0xFFE8F0FE);
+    case 'transfer':
+      return const Color(0xFFE8F0FE);
+    case 'pending':
+      return const Color(0xFFE8F0FE);
+    case 'meeting':
+      return const Color(0xFFE8F0FE);
+    case 'cancel meeting':
+      return const Color(0xFFE8F0FE);
+    case 'assigned':
+      return const Color(0xFFE8F0FE);
+    case 'delivered':
+      return const Color(0xFFE8F0FE);
+    case 'data centre':
+      return const Color(0xFFE8F0FE);
+    default:
+      return const Color(0xFFE8F0FE);
+  }
+}
+
+Color _getIconColor(String title) {
+  switch (title.toLowerCase()) {
+    case 'leads':
+      return const Color(0xFF2563EB);
+    case 'sales':
+      return const Color(0xFFF59E0B);
+    case 'fresh':
+      return const Color(0xFF003178);
+    case 'follow up':
+    case 'follow':
+      return const Color(0xFF003178);
+    case 'follow after meeting':
+    case 'long follow':
+      return const Color(0xFF003178);
+    case 'interested':
+      return const Color(0xFF003178);
+    case 'not interested':
+      return const Color(0xFF003178);
+    case 'done deal':
+      return const Color(0xFF003178);
+    case 'no answer':
+      return const Color(0xFF003178);
+    case 'transfer':
+      return const Color(0xFF003178);
+    case 'pending':
+      return const Color(0xFF003178);
+    case 'meeting':
+      return const Color(0xFF003178);
+    case 'cancel meeting':
+      return const Color(0xFF003178);
+    case 'assigned':
+      return const Color(0xFF003178);
+    case 'delivered':
+      return const Color(0xFF16A34A);
+    case 'data centre':
+      return const Color(0xFF003178);
+    default:
+      return const Color(0xFF003178);
+  }
+}
+
+Color _getProgressColor(String title) {
+  switch (title.toLowerCase()) {
+    case 'fresh':
+    case 'no answer':
+    case 'cancel meeting':
+      return const Color(0xFF003178);
+    case 'sales':
+      return const Color(0xFFF59E0B);
+    case 'follow after meeting':
+    case 'long follow':
+    case 'meeting':
+    case 'assigned':
+    case 'delivered':
+      return const Color(0xFF003178);
+    case 'not interested':
+      return Colors.black;
+    case 'pending':
+      return const Color(0xFF003178);
+    default:
+      return const Color(0xFF003178);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Shimmer
+// ─────────────────────────────────────────────
 class AdminDashboardShimmer extends StatelessWidget {
   const AdminDashboardShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // ✅ كشف نوع الجهاز
     final bool isTabletDevice = () {
       final data = MediaQuery.of(context);
       final physicalSize = data.size;
@@ -39,22 +149,20 @@ class AdminDashboardShimmer extends StatelessWidget {
       return inches >= 7.0;
     }();
 
-    // ✅ عوامل التصغير
     final double tabletScale = isTabletDevice ? 0.85 : 1.0;
     final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
     final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GridView.builder(
       padding: EdgeInsets.only(top: (8 * tabletHeightScale).h),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isTabletDevice ? 3 : 2, // ✅ تابلت: 3 أعمدة
+        crossAxisCount: isTabletDevice ? 3 : 2,
         crossAxisSpacing: (16 * tabletWidthScale).w,
         mainAxisSpacing: (16 * tabletHeightScale).h,
-        childAspectRatio: isTabletDevice ? 1.6 : 1.4, // ✅ تابلت: نسبة أوسع
+        childAspectRatio: isTabletDevice ? 2.0 : 1.8,
       ),
-      itemCount: isTabletDevice ? 9 : 6, // ✅ تابلت: عرض شيمرات أكثر
+      itemCount: isTabletDevice ? 9 : 6,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemBuilder: (_, __) {
@@ -62,42 +170,55 @@ class AdminDashboardShimmer extends StatelessWidget {
           baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
           highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
           child: Container(
-            padding: EdgeInsets.all((16 * tabletScale).r),
+            padding: EdgeInsets.all((14 * tabletScale).r),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular((20 * tabletScale).r),
+              borderRadius: BorderRadius.circular((16 * tabletScale).r),
             ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      height: (12 * tabletHeightScale).h,
-                      width: (80 * tabletWidthScale).w,
-                      color: Colors.white,
-                    ),
-                    Container(
-                      height: (40 * tabletHeightScale).h,
-                      width: (40 * tabletWidthScale).w,
-                      decoration: const BoxDecoration(
+                      height: (44 * tabletHeightScale).h,
+                      width: (44 * tabletWidthScale).w,
+                      decoration: BoxDecoration(
                         color: Colors.white,
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(
+                          (12 * tabletScale).r,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: (10 * tabletWidthScale).w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: (10 * tabletHeightScale).h,
+                            width: (60 * tabletWidthScale).w,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: (6 * tabletHeightScale).h),
+                          Container(
+                            height: (22 * tabletHeightScale).h,
+                            width: (40 * tabletWidthScale).w,
+                            color: Colors.white,
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
                 Container(
-                  height: (24 * tabletHeightScale).h,
-                  width: (60 * tabletWidthScale).w,
-                  color: Colors.white,
-                ),
-                Container(
-                  height: (8 * tabletHeightScale).h,
+                  height: (5 * tabletHeightScale).h,
                   width: double.infinity,
-                  color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular((6 * tabletScale).r),
+                  ),
                 ),
               ],
             ),
@@ -108,13 +229,18 @@ class AdminDashboardShimmer extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────
+//  Main Screen
+// ─────────────────────────────────────────────
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+  final bool showNavBar; // ← أضف ده
+
+  const AdminDashboardScreen({super.key, this.showNavBar = true});
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
 
-  /// A styled container for icons, like the notification icon.
+  // ── Icon Box ──────────────────────────────────
   static Widget _iconBox(
     IconData icon,
     void Function() onPressed,
@@ -143,7 +269,7 @@ class AdminDashboardScreen extends StatefulWidget {
           size: (24 * tabletFontScale).sp,
           color:
               Theme.of(context).brightness == Brightness.light
-                  ? Constants.maincolor
+                  ? Constants.mainlightmodecolor
                   : Constants.mainDarkmodecolor,
         ),
         onPressed: onPressed,
@@ -156,7 +282,7 @@ class AdminDashboardScreen extends StatefulWidget {
     );
   }
 
-  /// A styled card for the dashboard, matching the new design.
+  // ── Dashboard Card ────────────────────────────
   static Widget _dashboardCard(
     String title,
     String number,
@@ -172,8 +298,10 @@ class AdminDashboardScreen extends StatefulWidget {
   }) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final count = int.tryParse(number) ?? 0;
-    final progress = totalCount == 0 ? 0.0 : count / totalCount;
+    final progress =
+        totalCount == 0 ? 0.0 : (count / totalCount).clamp(0.0, 1.0);
 
+    // Icon selection
     IconData selectedIcon;
     switch (title.toLowerCase()) {
       case 'fresh':
@@ -182,7 +310,7 @@ class AdminDashboardScreen extends StatefulWidget {
       case 'follow':
       case 'follow up':
       case 'long follow':
-        selectedIcon = Icons.autorenew_rounded;
+        selectedIcon = Icons.call;
         break;
       case 'no answer':
         selectedIcon = Icons.phone_missed_rounded;
@@ -191,19 +319,22 @@ class AdminDashboardScreen extends StatefulWidget {
         selectedIcon = Icons.sync_alt_rounded;
         break;
       case 'interested':
-        selectedIcon = Icons.thumb_up_alt_rounded;
+        selectedIcon = Icons.favorite;
         break;
       case 'not interested':
         selectedIcon = Icons.thumb_down_alt_rounded;
         break;
       case 'follow after meeting':
-        selectedIcon = Icons.calendar_today_rounded;
+        selectedIcon = Icons.history;
         break;
       case 'pending':
         selectedIcon = Icons.hourglass_empty_rounded;
         break;
       case 'done deal':
-        selectedIcon = Icons.check_circle_rounded;
+        selectedIcon = Icons.celebration;
+        break;
+      case 'eoi':
+        selectedIcon = Icons.celebration;
         break;
       case 'cancel meeting':
         selectedIcon = Icons.cancel_rounded;
@@ -220,95 +351,113 @@ class AdminDashboardScreen extends StatefulWidget {
       case 'data centre':
         selectedIcon = Icons.dashboard_customize_rounded;
         break;
+      case 'leads':
+        selectedIcon = Icons.group_rounded;
+        break;
+      case 'sales':
+        selectedIcon = Icons.person_rounded;
+        break;
       default:
         selectedIcon = icon ?? Icons.bar_chart_rounded;
     }
 
+    final Color iconBg = _getIconBgColor(title);
+    final Color iconColor = _getIconColor(title);
+    final Color progressColor = _getProgressColor(title);
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular((20 * tabletScale).r),
+      borderRadius: BorderRadius.circular((14 * tabletScale).r),
       child: Container(
-        padding: EdgeInsets.all((16 * tabletScale).r),
+        padding: EdgeInsets.fromLTRB(
+          (10 * tabletScale).r,
+          (10 * tabletScale).r,
+          (10 * tabletScale).r,
+          (8 * tabletScale).r,
+        ),
         decoration: BoxDecoration(
           color: isDarkMode ? const Color(0xff1e1e1e) : Colors.white,
-          borderRadius: BorderRadius.circular((20 * tabletScale).r),
+          borderRadius: BorderRadius.circular((14 * tabletScale).r),
           boxShadow: [
             BoxShadow(
               color:
                   isDarkMode
                       ? Colors.black.withOpacity(0.2)
                       : Colors.black.withOpacity(0.05),
-              blurRadius: (15 * tabletScale).r,
-              offset: Offset(0, (5 * tabletHeightScale).h),
+              blurRadius: (6 * tabletScale).r,
+              offset: Offset(0, (2 * tabletHeightScale).h),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // 👈 أهم حاجة (تقلل المسافات)
+
           children: [
+            // ── Icon (left) + Title & Number (right) ──
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: (12 * tabletFontScale).sp,
-                      color: isDarkMode ? Colors.white70 : Colors.blueGrey,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
+                // Icon box
                 Container(
                   height: (40 * tabletHeightScale).h,
                   width: (40 * tabletWidthScale).w,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors:
-                          title == 'Leads' ||
-                                  title == 'Sales' ||
-                                  title == 'Data Centre'
-                              ? [
-                                Constants.maincolor,
-                                Constants.mainDarkmodecolor,
-                              ]
-                              : [
-                                const Color(0xff50E3C2),
-                                const Color(0xffA0FFED),
-                              ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
+                    color: isDarkMode ? iconColor.withOpacity(0.15) : iconBg,
+                    borderRadius: BorderRadius.circular((10 * tabletScale).r),
                   ),
                   child: Icon(
                     selectedIcon,
-                    color: Colors.white,
+                    color: iconColor,
                     size: (20 * tabletFontScale).sp,
+                  ),
+                ),
+                SizedBox(width: (8 * tabletWidthScale).w),
+                // Title + Number
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: (9 * tabletFontScale).sp,
+                          color: isDarkMode ? Colors.white54 : Colors.blueGrey,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.4,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      SizedBox(height: (2 * tabletHeightScale).h),
+                      Text(
+                        number.isEmpty ? '0' : number,
+                        style: TextStyle(
+                          fontSize: (20 * tabletFontScale).sp,
+                          color:
+                              isDarkMode
+                                  ? Colors.white
+                                  : const Color(0xFF1a2f5e),
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-
-            Text(
-              number.isEmpty ? '' : number,
-              style: TextStyle(
-                fontSize: (25 * tabletFontScale).sp,
-                color: isDarkMode ? Colors.white : const Color(0xFF0D1B2A),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            // ✅ Progress Bar - متجاوب
+            SizedBox(height: (18 * tabletHeightScale).h),
+            // ── Progress Bar ──────────────────────────
             ClipRRect(
-              borderRadius: BorderRadius.circular((6 * tabletScale).r),
+              borderRadius: BorderRadius.circular((4 * tabletScale).r),
               child: LinearProgressIndicator(
                 value: progress,
-                minHeight: (8 * tabletHeightScale).h,
-                backgroundColor: Colors.grey.withOpacity(0.2),
+                minHeight: (4 * tabletHeightScale).h,
+                backgroundColor: Colors.grey.withOpacity(0.15),
+                valueColor: AlwaysStoppedAnimation<Color>(progressColor),
               ),
             ),
           ],
@@ -318,6 +467,9 @@ class AdminDashboardScreen extends StatefulWidget {
   }
 }
 
+// ─────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────
 class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     with WidgetsBindingObserver {
   String _userName = 'User';
@@ -353,7 +505,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     }
   }
 
-  // ✅ زر Data Centre الجديد
+  // ── Data Centre Button ─────────────────────────
   Widget _dataCentreButton({
     required bool isTabletDevice,
     required double tabletScale,
@@ -383,61 +535,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           horizontal:
               isTabletDevice
                   ? (16 * tabletWidthScale).w
-                  : (12 * tabletWidthScale).w,
+                  : (14 * tabletWidthScale).w,
           vertical:
               isTabletDevice
                   ? (12 * tabletHeightScale).h
-                  : (8 * tabletHeightScale).h,
+                  : (10 * tabletHeightScale).h,
         ),
         decoration: BoxDecoration(
-          color: Constants.maincolor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular((12 * tabletScale).r),
-          border: Border.all(
-            color: Constants.maincolor.withOpacity(0.2),
-            width: 1,
+          // ✅ زي الصورة: خلفية داكنة للـ Data Center
+          gradient: LinearGradient(
+            colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
+          borderRadius: BorderRadius.circular((12 * tabletScale).r),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.dashboard_customize_rounded,
-              color: Constants.maincolor,
+              Icons.storage_rounded,
+              color: Colors.white,
               size:
                   isTabletDevice
-                      ? (20 * tabletFontScale).sp
-                      : (18 * tabletFontScale).sp,
+                      ? (18 * tabletFontScale).sp
+                      : (16 * tabletFontScale).sp,
             ),
             SizedBox(
               width:
                   isTabletDevice
                       ? (8 * tabletWidthScale).w
-                      : (4 * tabletWidthScale).w,
+                      : (6 * tabletWidthScale).w,
             ),
             Text(
-              'Data Centre',
+              'Data Center',
               style: TextStyle(
-                color: Constants.maincolor,
+                color: Colors.white,
                 fontSize:
                     isTabletDevice
-                        ? (16 * tabletFontScale).sp
-                        : (14 * tabletFontScale).sp,
-                fontWeight: FontWeight.w500,
+                        ? (15 * tabletFontScale).sp
+                        : (13 * tabletFontScale).sp,
+                fontWeight: FontWeight.w600,
               ),
-            ),
-            SizedBox(
-              width:
-                  isTabletDevice
-                      ? (4 * tabletWidthScale).w
-                      : (2 * tabletWidthScale).w,
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Constants.maincolor,
-              size:
-                  isTabletDevice
-                      ? (16 * tabletFontScale).sp
-                      : (14 * tabletFontScale).sp,
             ),
           ],
         ),
@@ -445,9 +584,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     );
   }
 
+  // ── Build ──────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    // ✅ كشف نوع الجهاز داخل الـ build
     final bool isTabletDevice = () {
       final data = MediaQuery.of(context);
       final physicalSize = data.size;
@@ -458,118 +597,183 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       return inches >= 7.0;
     }();
 
-    // ✅ عوامل التصغير حسب الجهاز
     final double tabletScale = isTabletDevice ? 0.85 : 1.0;
     final double tabletFontScale = isTabletDevice ? 0.9 : 1.0;
     final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
     final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
-
-    // ✅ عدد الأعمدة في GridView
     final int crossAxisCount = isTabletDevice ? 3 : 2;
-    // ✅ نسبة العرض إلى الارتفاع
-    final double childAspectRatio = isTabletDevice ? 1.6 : 1.4;
+    final double childAspectRatio = isTabletDevice ? 2.2 : 2.0;
 
     return Scaffold(
+      bottomNavigationBar:
+          widget.showNavBar ? SharedAdminNavBar(currentIndex: 0) : null,
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
               ? Constants.backgroundlightmode
               : Constants.backgroundDarkmode,
-      appBar: AppBar(
-        elevation: 0,
-        toolbarHeight: isTabletDevice ? (120 * tabletHeightScale).h : 100.h,
-        backgroundColor:
-            Theme.of(context).brightness == Brightness.light
-                ? Colors.white
-                : Constants.backgroundDarkmode,
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _userName,
-                  style: TextStyle(
-                    fontSize: (22 * tabletFontScale).sp,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).textTheme.titleLarge?.color,
-                  ),
-                ),
-                Text(
-                  'Admin',
-                  style: TextStyle(
-                    color: Colors.blueGrey,
-                    fontSize: (16 * tabletFontScale).sp,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            // أيقونة الاجتماعات
-            AdminDashboardScreen._iconBox(
-              Icons.event,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => BlocProvider(
-                          create:
-                              (context) => MeetingCommentsCubit(
-                                MeetingCommentsApiService(),
-                              ),
-                          child: MeetingCommentsScreen(),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(
+          isTabletDevice ? (105 * tabletHeightScale).h : 131.h,
+        ),
+        child: Container(
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.white
+                  : Constants.backgroundDarkmode,
+          child: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: (16 * tabletWidthScale).w,
+                right: (16 * tabletWidthScale).w,
+                top: (8 * tabletHeightScale).h,
+                bottom: (8 * tabletHeightScale).h,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // ── Row 1: Logo + Icons ──────────────
+                  Row(
+                    children: [
+                      Container(
+                        width: (30 * tabletWidthScale).w,
+                        height: (30 * tabletHeightScale).h,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            (7 * tabletScale).r,
+                          ),
                         ),
+                        child: Image.asset(
+                          'assets/images/icon.jpeg',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      SizedBox(width: (7 * tabletWidthScale).w),
+                      Text(
+                        'REALATIX',
+                        style: TextStyle(
+                          fontSize: (14 * tabletFontScale).sp,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF1a2f5e),
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      const Spacer(),
+                      AdminDashboardScreen._iconBox(
+                        Icons.notifications_none,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => const SalesNotificationsScreen(),
+                            ),
+                          );
+                        },
+                        context,
+                        isTabletDevice: isTabletDevice,
+                        tabletScale: tabletScale,
+                        tabletFontScale: tabletFontScale,
+                        tabletWidthScale: tabletWidthScale,
+                        tabletHeightScale: tabletHeightScale,
+                      ),
+                      SizedBox(width: (6 * tabletWidthScale).w),
+                      AdminDashboardScreen._iconBox(
+                        Icons.event_outlined,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => BlocProvider(
+                                    create:
+                                        (context) => MeetingCommentsCubit(
+                                          MeetingCommentsApiService(),
+                                        ),
+                                    child: MeetingCommentsScreen(),
+                                  ),
+                            ),
+                          );
+                        },
+                        context,
+                        isTabletDevice: isTabletDevice,
+                        tabletScale: tabletScale,
+                        tabletFontScale: tabletFontScale,
+                        tabletWidthScale: tabletWidthScale,
+                        tabletHeightScale: tabletHeightScale,
+                      ),
+                      SizedBox(width: (6 * tabletWidthScale).w),
+
+                      AdminDashboardScreen._iconBox(
+                        Icons.history,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => const RequestsHistoryScreen(),
+                            ),
+                          );
+                        },
+                        context,
+                        isTabletDevice: isTabletDevice,
+                        tabletScale: tabletScale,
+                        tabletFontScale: tabletFontScale,
+                        tabletWidthScale: tabletWidthScale,
+                        tabletHeightScale: tabletHeightScale,
+                      ),
+                    ],
                   ),
-                );
-              },
-              context,
-              isTabletDevice: isTabletDevice,
-              tabletScale: tabletScale,
-              tabletFontScale: tabletFontScale,
-              tabletWidthScale: tabletWidthScale,
-              tabletHeightScale: tabletHeightScale,
-            ),
-            SizedBox(width: (8 * tabletWidthScale).w),
-            // أيقونة طلبات الـ Leads (جديدة)
-            // AdminDashboardScreen._iconBox(
-            //   FontAwesomeIcons.box,
-            //   () {
-            //     Navigator.push(
-            //       context,
-            //       MaterialPageRoute(
-            //         builder: (context) => const RequestsHistoryScreen(),
-            //       ),
-            //     );
-            //   },
-            //   context,
-            //   isTabletDevice: isTabletDevice,
-            //   tabletScale: tabletScale,
-            //   tabletFontScale: tabletFontScale,
-            //   tabletWidthScale: tabletWidthScale,
-            //   tabletHeightScale: tabletHeightScale,
-            // ),
-            // SizedBox(width: (8 * tabletWidthScale).w),
-            // أيقونة الإشعارات
-            AdminDashboardScreen._iconBox(
-              Icons.notifications_none,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SalesNotificationsScreen(),
+
+                  SizedBox(height: (8 * tabletHeightScale).h),
+                  const Divider(),
+
+                  // ── Row 2: Welcome + Name + Data Center ─
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Welcome back',
+                            style: TextStyle(
+                              fontSize: (11 * tabletFontScale).sp,
+                              color: Colors.blueGrey,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          Text(
+                            _userName,
+                            style: TextStyle(
+                              fontSize: (20 * tabletFontScale).sp,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF1a2f5e),
+                              height: 1.15,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      _dataCentreButton(
+                        isTabletDevice: isTabletDevice,
+                        tabletScale: tabletScale,
+                        tabletFontScale: tabletFontScale,
+                        tabletWidthScale: tabletWidthScale,
+                        tabletHeightScale: tabletHeightScale,
+                      ),
+                    ],
                   ),
-                );
-              },
-              context,
-              isTabletDevice: isTabletDevice,
-              tabletScale: tabletScale,
-              tabletFontScale: tabletFontScale,
-              tabletWidthScale: tabletWidthScale,
-              tabletHeightScale: tabletHeightScale,
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
       body: RefreshIndicator(
@@ -591,55 +795,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: (10 * tabletHeightScale).h),
-                // 👋 Greeting Row with Data Centre Button
-                Row(
-                  children: [
-                    // 👋 Hello section
-                    Row(
-                      children: [
-                        Text(
-                          'Hello $_userName',
-                          style: TextStyle(
-                            fontSize: (18 * tabletFontScale).sp,
-                            fontWeight: FontWeight.w500,
-                            color: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                          ),
-                        ),
-                        SizedBox(width: (8 * tabletWidthScale).w),
-                        Text(
-                          '👋',
-                          style: TextStyle(fontSize: (24 * tabletFontScale).sp),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    // 🗄️ Data Centre Button
-                    _dataCentreButton(
-                      isTabletDevice: isTabletDevice,
-                      tabletScale: tabletScale,
-                      tabletFontScale: tabletFontScale,
-                      tabletWidthScale: tabletWidthScale,
-                      tabletHeightScale: tabletHeightScale,
-                    ),
-                  ],
-                ),
-                SizedBox(height: (20 * tabletHeightScale).h),
-                // 📊 BlocBuilder للكاردات
+                SizedBox(height: (16 * tabletHeightScale).h),
+
+                // ── Stats Grid ───────────────────────
                 BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
                   builder: (context, usersState) {
                     if (usersState is StagesStatsLoading) {
                       return const AdminDashboardShimmer();
                     }
+
                     if (usersState is StagesStatsSuccess) {
                       final allUsers =
                           (usersState.data.totalLeads ?? 0).toInt();
                       final allSales =
                           (usersState.data.activeSales ?? 0).toInt();
+
                       final List<Widget> statCards = [
-                        // 📋 Leads Card
+                        // Leads
                         AdminDashboardScreen._dashboardCard(
                           'Leads',
                           '$allUsers',
@@ -661,16 +833,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                           (_) => AllLeadsCubitWithPagination(
                                             LeadsApiServiceWithQuery(),
                                           ),
-                                      child: const AdminLeadsScreen(
+                                      child: AdminLeadsScreen(
                                         data: false,
                                         transferefromdata: true,
+                                        leadsCount: allUsers,
+                                        showNavBar: true, // ← أضف ده
                                       ),
                                     ),
                               ),
                             );
                           },
                         ),
-                        // 👤 Sales Card
+                        // Sales
                         AdminDashboardScreen._dashboardCard(
                           'Sales',
                           '$allSales',
@@ -686,11 +860,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                               () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const AdminSalesSceen(),
+                                  builder:
+                                      (_) => const AdminSalesSceen(
+                                        showNavBar: true,
+                                      ),
                                 ),
                               ),
                         ),
-                        // ✅ Cards لكل المراحل (من غير Data Centre)
+                        // Stage cards
                         ...usersState.data.stages!
                             .where(
                               (entry) => entry.stage?.toLowerCase() != 'follow',
@@ -725,6 +902,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                                 showDuplicatesOnly: true,
                                                 data: false,
                                                 transferefromdata: true,
+                                                leadsCount:
+                                                    entry.leadsCount
+                                                        ?.toInt(), // 👈 هنا
+                                                showNavBar: true, // ← أضف ده
                                               ),
                                             ),
                                       ),
@@ -746,6 +927,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                                                 stageId: entry.stageId,
                                                 data: false,
                                                 transferefromdata: true,
+                                                leadsCount:
+                                                    entry.leadsCount
+                                                        ?.toInt(), // 👈 هنا
+                                                showNavBar: true, // ← أضف ده
                                               ),
                                             ),
                                       ),
@@ -755,11 +940,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                               ),
                             ),
                       ];
+
                       return GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: crossAxisCount,
-                          crossAxisSpacing: (16 * tabletWidthScale).w,
-                          mainAxisSpacing: (16 * tabletHeightScale).h,
+                          crossAxisSpacing: (8 * tabletWidthScale).w,
+                          mainAxisSpacing: (8 * tabletHeightScale).h,
                           childAspectRatio: childAspectRatio,
                         ),
                         itemCount: statCards.length,
@@ -768,6 +954,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         itemBuilder: (_, i) => statCards[i],
                       );
                     }
+
                     return Center(
                       child: Padding(
                         padding: EdgeInsets.all((16 * tabletScale).r),
@@ -785,6 +972,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     );
                   },
                 ),
+
                 SizedBox(height: (20 * tabletHeightScale).h),
               ],
             ),

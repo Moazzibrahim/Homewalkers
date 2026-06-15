@@ -38,7 +38,6 @@ class RequestLeadsFromDataApiService {
 
       log("📤 Requesting leads from data centre");
       log("📍 URL: $url");
-      log("📦 Body: ${jsonEncode(requestBody)}");
 
       final response = await HttpClient.post(
         url,
@@ -46,7 +45,6 @@ class RequestLeadsFromDataApiService {
       );
 
       log("📥 Response Status: ${response.statusCode}");
-      log("📥 Response Body: ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
@@ -118,7 +116,7 @@ class RequestLeadsFromDataApiService {
       final response = await HttpClient.get(uri);
 
       log("📥 Response Status: ${response.statusCode}");
-      log("📥 Response Body: ${response.body}");
+    
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);

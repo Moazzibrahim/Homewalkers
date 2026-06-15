@@ -17,14 +17,34 @@ class NotificationState {
   final String? token;
   final String? error;
   final bool isLoading;
+  final bool isLoadingMore; // ✅ NEW: loading more pages
+  final bool hasMore; // ✅ NEW: are there more pages?
+  final int currentPage; // ✅ NEW: current page number
 
-  NotificationState({this.token, this.error, this.isLoading = false});
+  NotificationState({
+    this.token,
+    this.error,
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasMore = true,
+    this.currentPage = 1,
+  });
 
-  NotificationState copyWith({String? token, String? error, bool? isLoading}) {
+  NotificationState copyWith({
+    String? token,
+    String? error,
+    bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasMore,
+    int? currentPage,
+  }) {
     return NotificationState(
       token: token ?? this.token,
       error: error,
       isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasMore: hasMore ?? this.hasMore,
+      currentPage: currentPage ?? this.currentPage,
     );
   }
 }
@@ -36,6 +56,9 @@ class NotificationCubit extends Cubit<NotificationState> {
   List<NotificationItem> notifications = [];
   bool _isInitialized = false;
 
+  // ✅ Pagination constants
+  static const int _pageSize = 10;
+
   /// 🔔 Initializes notification system and handles listeners
   Future<void> initNotifications() async {
     try {
@@ -44,7 +67,6 @@ class NotificationCubit extends Cubit<NotificationState> {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('salesId');
 
-      // ✅ تأكد أن userId موجود قبل بدء التهيئة
       if (userId == null || userId.isEmpty) {
         log("⏳ Skipping notification init: No salesId found.");
         return;
@@ -64,15 +86,12 @@ class NotificationCubit extends Cubit<NotificationState> {
 
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
         emit(state.copyWith(error: "Permission denied"));
-        //   _showDebugInfo("❌ Permission DENIED", "null", "null");
         return;
       }
 
-      // 🍎 On iOS, we MUST get the APNs token first before FCM token
       String? apnsTokenStr;
       if (Platform.isIOS) {
         String? apnsToken;
-        // Retry up to 5 times with delay, APNs token may take time on real devices
         for (int i = 0; i < 5; i++) {
           apnsToken = await messaging.getAPNSToken();
           if (apnsToken != null) break;
@@ -89,17 +108,8 @@ class NotificationCubit extends Cubit<NotificationState> {
       final token = await messaging.getToken();
       log("🔑 FCM Token: $token");
 
-      // 🐛 DEBUG: Show visible info on TestFlight (REMOVE AFTER DEBUGGING)
-      // _showDebugInfo(
-      //   "✅ ${settings.authorizationStatus}",
-      //   apnsTokenStr ?? "null",
-      //   token ?? "null",
-      // );
-
-      // 📝 حفظ التوكن وإرساله للسيرفر
       await _saveAndSendToken(token);
 
-      // 🔁 تحديث التوكن
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
         log("🔁 FCM Token updated: $newToken");
         await _saveAndSendToken(newToken);
@@ -155,61 +165,10 @@ class NotificationCubit extends Cubit<NotificationState> {
       }
     } catch (e) {
       log("⚠️ initNotifications error: $e");
-      //   _showDebugInfo("❌ ERROR", "error", e.toString());
       emit(state.copyWith(error: e.toString()));
     }
   }
 
-  // /// 🐛 DEBUG: Show visible dialog for TestFlight debugging (REMOVE AFTER FIXING)
-  // void _showDebugInfo(
-  //   String permissionStatus,
-  //   String apnsToken,
-  //   String fcmToken,
-  // ) {
-  //   // Delay to make sure the navigator is ready
-  //   Future.delayed(const Duration(seconds: 2), () {
-  //     final ctx = navigatorKey.currentContext;
-  //     if (ctx == null) return;
-  //     showDialog(
-  //       context: ctx,
-  //       builder:
-  //           (context) => AlertDialog(
-  //             title: const Text("🐛 Notification Debug Info"),
-  //             content: SingleChildScrollView(
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 mainAxisSize: MainAxisSize.min,
-  //                 children: [
-  //                   Text(
-  //                     "Permission: $permissionStatus",
-  //                     style: const TextStyle(fontWeight: FontWeight.bold),
-  //                   ),
-  //                   const SizedBox(height: 8),
-  //                   Text(
-  //                     "APNs Token: ${apnsToken.length > 20 ? '${apnsToken.substring(0, 20)}...' : apnsToken}",
-  //                   ),
-  //                   const SizedBox(height: 8),
-  //                   Text(
-  //                     "FCM Token: ${fcmToken.length > 20 ? '${fcmToken.substring(0, 20)}...' : fcmToken}",
-  //                   ),
-  //                   const SizedBox(height: 8),
-  //                   SelectableText(
-  //                     "Full FCM: $fcmToken",
-  //                     style: const TextStyle(fontSize: 10),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             actions: [
-  //               TextButton(
-  //                 onPressed: () => Navigator.pop(context),
-  //                 child: const Text("OK"),
-  //               ),
-  //             ],
-  //           ),
-  //     );
-  //   });
-  // }
   Map<String, dynamic> _normalizeData(Map<String, dynamic> data) {
     final result = <String, dynamic>{};
 
@@ -232,7 +191,8 @@ class NotificationCubit extends Cubit<NotificationState> {
     if (token == null || token.isEmpty) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final oldToken = prefs.getString('NewfcmToken');
+    // final oldToken = prefs.getString('NewfcmToken');
+    final oldToken = prefs.getString('fcm_token'); // ✅ نفس الـ key
     log("📌 Current FCM Token: $token");
     log("📌 Saved Old Token: $oldToken");
 
@@ -277,9 +237,6 @@ class NotificationCubit extends Cubit<NotificationState> {
     }
   }
 
-  /// 💬 Show local push notification
-  // في _showLocalNotification function:
-
   void _showLocalNotification(RemoteMessage message) {
     final notification = message.notification;
 
@@ -291,7 +248,6 @@ class NotificationCubit extends Cubit<NotificationState> {
     log("📩 Data Keys: ${message.data.keys.toList()}");
     log("📩 Data: ${message.data}");
 
-    // ✅ حل مؤقت: لو الـ data فاضي، نصنع data من الـ notification
     Map<String, dynamic> finalData = Map<String, dynamic>.from(message.data);
 
     if (finalData.isEmpty && notification != null) {
@@ -300,15 +256,12 @@ class NotificationCubit extends Cubit<NotificationState> {
       final title = notification.title ?? '';
       final body = notification.body ?? '';
 
-      // ✅ نجمع النصوص للفحص
       final fullText = '$title $body'.toLowerCase();
 
       log("📝 Full notification text: $fullText");
 
-      // ✅ تحديد النوع بناءً على الكلمات المفتاحية
       String? type;
 
-      // فحص comment أولاً
       if (_containsAnyWord(fullText, [
         'comment',
         'تعليق',
@@ -317,9 +270,7 @@ class NotificationCubit extends Cubit<NotificationState> {
       ])) {
         type = 'comment';
         log("💬 Detected type: comment");
-      }
-      // فحص assign / transfer / new lead
-      else if (_containsAnyWord(fullText, [
+      } else if (_containsAnyWord(fullText, [
         'assign',
         'assigned',
         'اسناد',
@@ -335,9 +286,7 @@ class NotificationCubit extends Cubit<NotificationState> {
       ])) {
         type = 'assign';
         log("📌 Detected type: assign/transfer/new lead");
-      }
-      // نوع افتراضي
-      else {
+      } else {
         type = 'unknown';
         log("❓ Unknown notification type");
       }
@@ -352,13 +301,10 @@ class NotificationCubit extends Cubit<NotificationState> {
 
       log("📩 Created data from notification: $finalData");
     } else {
-      // ✅ لو فيه data، نتأكد إن كل البيانات المهمة موجودة
       log("📩 Using existing data payload");
 
-      // نتأكد من وجود typenotification
       if (!finalData.containsKey('typenotification') ||
           finalData['typenotification'] == null) {
-        // نحاول نستنتج النوع من الـ notification
         final title = notification?.title ?? '';
         final body = notification?.body ?? '';
         final messageText = finalData['message']?.toString() ?? '';
@@ -383,20 +329,15 @@ class NotificationCubit extends Cubit<NotificationState> {
         log("📩 Added typenotification: ${finalData['typenotification']}");
       }
 
-      // نتأكد من وجود title و body في الـ data
       if (notification != null) {
         finalData['title'] = finalData['title'] ?? notification.title;
         finalData['body'] = finalData['body'] ?? notification.body;
       }
 
-      // نتأكد من وجود click_action
       finalData['click_action'] =
           finalData['click_action'] ?? 'FLUTTER_NOTIFICATION_CLICK';
     }
 
-    // On iOS, if the message has a notification object, FCM natively handles showing the foreground
-    // alert because we use `setForegroundNotificationPresentationOptions` in main.dart.
-    // Calling `flutterLocalNotificationsPlugin.show` here would cause duplicate notifications.
     if (Platform.isIOS && notification != null) {
       log(
         "🍎 iOS Native foreground notification shown by FCM. Skipping local notification.",
@@ -435,50 +376,187 @@ class NotificationCubit extends Cubit<NotificationState> {
     );
   }
 
-  /// ✅ دالة مساعدة للبحث عن أي كلمة في النص
   bool _containsAnyWord(String text, List<String> words) {
     final lowerText = text.toLowerCase();
     return words.any((word) => lowerText.contains(word.toLowerCase()));
   }
 
-  /// 🚀 Send notification to a specific FCM token
   Future<void> sendNotificationToToken({
     required String title,
     required String body,
     required String fcmtokennnn,
   }) async {
-    try {
-      final url = Uri.parse('${Constants.baseUrl}/Notification/send-fcm');
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? 'unknown_sender';
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          "fcmToken": fcmtokennnn,
-          "title": title,
-          "body": body,
-        }),
-      );
-      print("Sending notification to token: $fcmtokennnn");
+    await _sendWithRetry(fcmToken: fcmtokennnn, title: title, body: body);
+  }
 
-      if (response.statusCode == 200) {
-        log('✅ Notification sent to: $fcmtokennnn');
-      } else {
-        log('❌ Failed to send: ${response.statusCode} - ${response.body}');
-      }
-    } catch (e) {
-      log('❌ Error sending notification: $e');
+  Future<void> sendNotificationToTokens({
+    required String title,
+    required String body,
+    required List<String> fcmTokens,
+  }) async {
+    if (fcmTokens.isEmpty) return;
+    for (final fcmToken in fcmTokens) {
+      if (fcmToken.isEmpty) continue;
+      await _sendWithRetry(fcmToken: fcmToken, title: title, body: body);
     }
   }
 
-  /// 📥 Fetch notifications for specific salesId
+  Future<void> _sendWithRetry({
+    required String fcmToken,
+    required String title,
+    required String body,
+    int maxRetries = 2,
+  }) async {
+    final url = Uri.parse('${Constants.baseUrl}/Notification/send-fcm');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            "fcmToken": fcmToken,
+            "title": title,
+            "body": body,
+          }),
+        );
+
+        // ✅ حاول تقرأ الـ body في أي حالة
+        Map<String, dynamic> responseBody = {};
+        try {
+          responseBody = jsonDecode(response.body);
+        } catch (_) {}
+
+        final errorMessage = responseBody['error']?.toString() ?? '';
+
+        // ✅ الاتنين errors اللي بتحصل
+        final isMissingAuth = errorMessage.toLowerCase().contains(
+          'missing required authentication credential',
+        );
+        final isNotFound = errorMessage.toLowerCase().contains(
+          'requested entity was not found',
+        );
+
+        if (response.statusCode == 200 && !isMissingAuth && !isNotFound) {
+          log('✅ Notification sent to: $fcmToken');
+          return; // ✅ نجح
+        }
+
+        if (isMissingAuth || isNotFound) {
+          log('⚠️ Known FCM error on attempt $attempt: $errorMessage');
+          if (attempt < maxRetries) {
+            await Future.delayed(const Duration(seconds: 2));
+            continue; // 🔁 retry
+          }
+        } else {
+          // ❌ error تاني مش من الاتنين دول
+          log('❌ Unknown error: ${response.statusCode} - ${response.body}');
+          return;
+        }
+      } catch (e) {
+        log('❌ Attempt $attempt exception: $e');
+        if (attempt < maxRetries) {
+          await Future.delayed(const Duration(seconds: 2));
+        }
+      }
+    }
+
+    log('❌ All $maxRetries attempts failed for token: $fcmToken');
+  }
+
+  // Future<void> sendNotificationToToken({
+  //   required String title,
+  //   required String body,
+  //   required String fcmtokennnn,
+  // }) async {
+  //   try {
+  //     final url = Uri.parse('${Constants.baseUrl}/Notification/send-fcm');
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final token = prefs.getString('token') ?? 'unknown_sender';
+  //     final response = await http.post(
+  //       url,
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': 'Bearer $token',
+  //       },
+  //       body: jsonEncode({
+  //         "fcmToken": fcmtokennnn,
+  //         "title": title,
+  //         "body": body,
+  //       }),
+  //     );
+  //     print("Sending notification to token: $fcmtokennnn");
+
+  //     if (response.statusCode == 200) {
+  //       log('✅ Notification sent to: $fcmtokennnn');
+  //     } else {
+  //       log('❌ Failed to send: ${response.statusCode} - ${response.body}');
+  //     }
+  //   } catch (e) {
+  //     log('❌ Error sending notification: $e');
+  //   }
+  // }
+
+  // Future<void> sendNotificationToTokens({
+  //   required String title,
+  //   required String body,
+  //   required List<String> fcmTokens,
+  // }) async {
+  //   if (fcmTokens.isEmpty) return;
+
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final token = prefs.getString('token') ?? '';
+  //     final url = Uri.parse('${Constants.baseUrl}/Notification/send-fcm');
+
+  //     for (final fcmToken in fcmTokens) {
+  //       if (fcmToken.isEmpty) continue;
+
+  //       final response = await http.post(
+  //         url,
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //           'Authorization': 'Bearer $token',
+  //         },
+  //         body: jsonEncode({
+  //           "fcmToken": fcmToken,
+  //           "title": title,
+  //           "body": body,
+  //         }),
+  //       );
+
+  //       if (response.statusCode == 200) {
+  //         log('✅ Notification sent to: $fcmToken');
+  //       } else {
+  //         log(
+  //           '❌ Failed to send to $fcmToken: ${response.statusCode} - ${response.body}',
+  //         );
+  //       }
+  //     }
+  //   } catch (e) {
+  //     log('❌ Error sending notifications: $e');
+  //   }
+  // }
+
+  // ✅ ==================== PAGINATION METHODS ====================
+
+  /// 📥 Fetch first page of notifications for specific salesId (refresh / first load)
   Future<void> fetchNotifications() async {
     try {
-      emit(state.copyWith(isLoading: true, error: null));
+      emit(
+        state.copyWith(
+          isLoading: true,
+          error: null,
+          currentPage: 1,
+          hasMore: true,
+        ),
+      );
+
       final prefs = await SharedPreferences.getInstance();
       final receiverId = prefs.getString('salesId');
 
@@ -488,17 +566,29 @@ class NotificationCubit extends Cubit<NotificationState> {
       }
 
       final url = Uri.parse(
-        '${Constants.baseUrl}/Notification?receiver=$receiverId',
+        '${Constants.baseUrl}/Notification?receiver=$receiverId&page=1&pageSize=$_pageSize',
       );
+
+      log("📥 Fetching page 1: $url");
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         log('✅ Notifications fetched successfully');
-        log("url: $url");
         final decoded = jsonDecode(response.body);
         final model = NotificationModel.fromJson(decoded);
-        notifications = model.data ?? [];
-        emit(state.copyWith(isLoading: false));
+        final newItems = model.data ?? [];
+
+        // ✅ Replace list on first page
+        notifications = newItems;
+
+        // ✅ If returned less than pageSize → no more pages
+        final hasMore = newItems.length >= _pageSize;
+
+        emit(
+          state.copyWith(isLoading: false, currentPage: 1, hasMore: hasMore),
+        );
+
+        log("📦 Page 1 loaded: ${newItems.length} items | hasMore: $hasMore");
       } else {
         emit(
           state.copyWith(
@@ -512,19 +602,100 @@ class NotificationCubit extends Cubit<NotificationState> {
     }
   }
 
-  /// 📦 Fetch all notifications (admin or global access)
-  Future<void> fetchAllNotifications() async {
-    try {
-      emit(state.copyWith(isLoading: true, error: null));
+  /// 📥 Load next page (pagination) for specific salesId
+  Future<void> fetchMoreNotifications() async {
+    // ✅ Guard: don't load if already loading or no more pages
+    if (state.isLoadingMore || !state.hasMore) return;
 
-      final url = Uri.parse('${Constants.baseUrl}/Notification');
+    try {
+      final nextPage = state.currentPage + 1;
+
+      emit(state.copyWith(isLoadingMore: true, error: null));
+
+      final prefs = await SharedPreferences.getInstance();
+      final receiverId = prefs.getString('salesId');
+
+      if (receiverId == null || receiverId.isEmpty) {
+        emit(state.copyWith(isLoadingMore: false, error: 'No salesId found'));
+        return;
+      }
+
+      final url = Uri.parse(
+        '${Constants.baseUrl}/Notification?receiver=$receiverId&page=$nextPage&pageSize=$_pageSize',
+      );
+
+      log("📥 Fetching page $nextPage: $url");
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         final model = NotificationModel.fromJson(decoded);
-        notifications = model.data ?? [];
-        emit(state.copyWith(isLoading: false));
+        final newItems = model.data ?? [];
+
+        // ✅ Append new items to existing list
+        notifications = [...notifications, ...newItems];
+
+        final hasMore = newItems.length >= _pageSize;
+
+        emit(
+          state.copyWith(
+            isLoadingMore: false,
+            currentPage: nextPage,
+            hasMore: hasMore,
+          ),
+        );
+
+        log(
+          "📦 Page $nextPage loaded: ${newItems.length} items | hasMore: $hasMore",
+        );
+      } else {
+        emit(
+          state.copyWith(
+            isLoadingMore: false,
+            error: 'Failed to load more notifications',
+          ),
+        );
+      }
+    } catch (e) {
+      emit(state.copyWith(isLoadingMore: false, error: e.toString()));
+    }
+  }
+
+  /// 📦 Fetch first page of all notifications (admin or global access)
+  Future<void> fetchAllNotifications() async {
+    try {
+      emit(
+        state.copyWith(
+          isLoading: true,
+          error: null,
+          currentPage: 1,
+          hasMore: true,
+        ),
+      );
+
+      final url = Uri.parse(
+        '${Constants.baseUrl}/Notification?page=1&pageSize=$_pageSize',
+      );
+
+      log("📥 Fetching all notifications page 1: $url");
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final model = NotificationModel.fromJson(decoded);
+        final newItems = model.data ?? [];
+
+        notifications = newItems;
+
+        final hasMore = newItems.length >= _pageSize;
+
+        emit(
+          state.copyWith(isLoading: false, currentPage: 1, hasMore: hasMore),
+        );
+
+        log(
+          "📦 All notifications page 1: ${newItems.length} items | hasMore: $hasMore",
+        );
       } else {
         emit(
           state.copyWith(
@@ -537,6 +708,57 @@ class NotificationCubit extends Cubit<NotificationState> {
       emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
+
+  /// 📦 Load next page of all notifications (admin or global access)
+  Future<void> fetchMoreAllNotifications() async {
+    if (state.isLoadingMore || !state.hasMore) return;
+
+    try {
+      final nextPage = state.currentPage + 1;
+
+      emit(state.copyWith(isLoadingMore: true, error: null));
+
+      final url = Uri.parse(
+        '${Constants.baseUrl}/Notification?page=$nextPage&pageSize=$_pageSize',
+      );
+
+      log("📥 Fetching all notifications page $nextPage: $url");
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final model = NotificationModel.fromJson(decoded);
+        final newItems = model.data ?? [];
+
+        notifications = [...notifications, ...newItems];
+
+        final hasMore = newItems.length >= _pageSize;
+
+        emit(
+          state.copyWith(
+            isLoadingMore: false,
+            currentPage: nextPage,
+            hasMore: hasMore,
+          ),
+        );
+
+        log(
+          "📦 All notifications page $nextPage: ${newItems.length} items | hasMore: $hasMore",
+        );
+      } else {
+        emit(
+          state.copyWith(
+            isLoadingMore: false,
+            error: 'Failed to load more notifications',
+          ),
+        );
+      }
+    } catch (e) {
+      emit(state.copyWith(isLoadingMore: false, error: e.toString()));
+    }
+  }
+
+  // ✅ ==================== END PAGINATION METHODS ====================
 
   /// 🛑 Stop listening to notifications & unsubscribe
   Future<void> disposeNotifications() async {
@@ -544,7 +766,6 @@ class NotificationCubit extends Cubit<NotificationState> {
       final prefs = await SharedPreferences.getInstance();
       final salesId = prefs.getString('salesId');
 
-      // ✅ Unsubscribe from topics if you used them
       await FirebaseMessaging.instance.unsubscribeFromTopic('all_users');
 
       if (salesId != null && salesId.isNotEmpty) {
@@ -552,11 +773,9 @@ class NotificationCubit extends Cubit<NotificationState> {
         log("🚫 Unsubscribed from user topic user_$salesId");
       }
 
-      // ✅ Delete FCM Token locally (extra safety)
       await FirebaseMessaging.instance.deleteToken();
       log("🧹 FCM Token Deleted from Firebase");
 
-      // ✅ Clear current listeners
       _isInitialized = false;
       log("🔕 Notification listeners stopped successfully");
     } catch (e) {

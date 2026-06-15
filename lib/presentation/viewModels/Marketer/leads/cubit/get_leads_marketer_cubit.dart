@@ -24,6 +24,8 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
   int _limit = 10;
   bool _hasMoreData = true;
   bool _isLoadingMore = false;
+  num totalLeads = 0;
+  num totaltrashleads = 0;
 
   // ✅ Store leads in the correct type (List<Datum>)
   List<Datum> leadsDatum = [];
@@ -194,6 +196,11 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
       _paginationResponse = response;
       _totalItems = (response.pagination?.totalItems ?? 0).toInt();
       _totalPages = (response.pagination?.numberOfPages ?? 1).toInt();
+      totalLeads = response.pagination?.totalItems ?? 0;
+
+      log(
+        "pagination: totalItems=${response.pagination?.totalItems} | totalLeadsActive=${response.pagination?.totalLeadsActive}",
+      );
 
       // التحقق من وجود المزيد من الصفحات
       if (_currentPage >= _totalPages) {
@@ -208,10 +215,13 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
         if (refresh) {
           // في حالة التحديث، نستبدل البيانات بالكامل
           leadsDatum = response.data!;
+          totalLeads =
+              response.pagination?.totalItems ?? 0; // ✅ غير من totalLeadsActive
           log("🔄 Refreshed data: ${leadsDatum.length} leads");
         } else {
           // في حالة التحميل للمزيد، نضيف البيانات الجديدة
           leadsDatum.addAll(response.data!);
+          totalLeads = response.pagination?.totalItems ?? 0;
           log(
             "➕ Added ${response.data!.length} leads. Total: ${leadsDatum.length}",
           );
@@ -546,6 +556,7 @@ class GetLeadsMarketerCubit extends Cubit<GetLeadsMarketerState> {
       final leadsResponse =
           await _getLeadsService.getLeadsDataByMarketerInTrash();
       _originalLeadsResponse = leadsResponse; // 🟡 حفظ البيانات الأصلية هنا
+      totaltrashleads = leadsResponse.count?.toInt() ?? 0;
       final prefs = await SharedPreferences.getInstance();
       // ⬇️ استخراج الأسماء الحقيقية
       final salesSet = <String>{};

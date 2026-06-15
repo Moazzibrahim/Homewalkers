@@ -22,17 +22,42 @@ class NotificationModel {
 }
 
 class Pagination {
+  final num? totalResults; // ✅ أضفت
+  final num? totalPages; // ✅ أضفت
   final num? currentPage;
   final num? limit;
-  final num? numberOfPages;
+  final bool? hasNextPage; // ✅ أضفت
+  final bool? hasPrevPage; // ✅ أضفت
+  final num? nextPage; // ✅ أضفت
+  final num? prevPage; // ✅ أضفت
+  final num? unreadCount; // ✅ أضفت
+  final num? numberOfPages; // ✅ خلّيتها للتوافق مع الكود القديم
 
-  Pagination({this.currentPage, this.limit, this.numberOfPages});
+  Pagination({
+    this.totalResults,
+    this.totalPages,
+    this.currentPage,
+    this.limit,
+    this.hasNextPage,
+    this.hasPrevPage,
+    this.nextPage,
+    this.prevPage,
+    this.unreadCount,
+    this.numberOfPages,
+  });
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
     return Pagination(
+      totalResults: json['totalResults'],
+      totalPages: json['totalPages'],
       currentPage: json['currentPage'],
       limit: json['limit'],
-      numberOfPages: json['NumberOfPages'],
+      hasNextPage: json['hasNextPage'],
+      hasPrevPage: json['hasPrevPage'],
+      nextPage: json['nextPage'],
+      prevPage: json['prevPage'],
+      unreadCount: json['unreadCount'],
+      numberOfPages: json['NumberOfPages'], // القديم للتوافق
     );
   }
 }
@@ -90,6 +115,8 @@ class User {
   final String? role;
   final String? phone;
   final String? fcmToken;
+  final List<FcmToken>? fcmTokens; // ✅ أضف هذا
+  final List? channels;
 
   User({
     this.id,
@@ -99,6 +126,8 @@ class User {
     this.role,
     this.phone,
     this.fcmToken,
+    this.fcmTokens,
+    this.channels,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -110,14 +139,109 @@ class User {
       role: json['role'],
       phone: json['phone'],
       fcmToken: json['fcmToken'],
+      fcmTokens:
+          (json['fcmTokens'] as List?)
+              ?.map((e) => FcmToken.fromJson(e))
+              .toList(),
+      channels: json['channels'],
+    );
+  }
+}
+
+// ✅ أضف هذا الكلاس
+class FcmToken {
+  final String? id;
+  final String? token;
+  final String? deviceId;
+  final String? platform;
+  final String? createdAt;
+  final String? lastUsed;
+
+  FcmToken({
+    this.id,
+    this.token,
+    this.deviceId,
+    this.platform,
+    this.createdAt,
+    this.lastUsed,
+  });
+
+  factory FcmToken.fromJson(Map<String, dynamic> json) {
+    return FcmToken(
+      id: json['_id'],
+      token: json['token'],
+      deviceId: json['deviceId'],
+      platform: json['platform'],
+      createdAt: json['createdAt'],
+      lastUsed: json['lastUsed'],
     );
   }
 }
 
 class Lead {
+  // Basic Info
   final String? id;
   final String? name;
   final String? email;
+  final String? phone;
+  final String? whatsappnumber;
+  final String? phonenumber2;
+  final String? jobdescription;
+  final String? notes;
+  final String? date;
+  
+  // Status Flags
+  final bool? assign;
+  final bool? ignoredublicate;
+  final bool? assigntype;
+  final bool? data;
+  final bool? transferefromdata;
+  final bool? resetcreationdate;
+  final String? leedtype;
+  
+  // Dates
+  final String? last_stage_date_updated;
+  final String? lastdateassign;
+  final String? lastcommentdate;
+  final String? stagedateupdated;
+  final String? createdAt;
+  final String? updatedAt;
+  final String? dayonly;
+  final num? v;
+  
+  // ✅ الأسئلة
+  final String? question1_text;
+  final String? question1_answer;
+  final String? question2_text;
+  final String? question2_answer;
+  final String? question3_text;
+  final String? question3_answer;
+  final String? question4_text;
+  final String? question4_answer;
+  final String? question5_text;
+  final String? question5_answer;
+  
+  // ✅ الحقول الإضافية
+  final String? campaignRedirectLink;
+  final num? totalSubmissions;
+  final num? duplicateCount;
+  final num? relatedLeadsCount;
+  final bool? hidesalesnameonleadcomments;
+  
+  // ✅ الحقول المالية
+  final num? budget;
+  final num? revenue;
+  final num? unit_price;
+  final num? Eoi;
+  final num? Reservation;
+  final bool? review;
+  final String? unitnumber;
+  final num? commissionratio;
+  final num? commissionmoney;
+  final num? cashbackratio;
+  final num? cashbackmoney;
+  
+  // Nested Objects
   final Project? project;
   final Sales? sales;
   final Stage? stage;
@@ -133,6 +257,53 @@ class Lead {
     this.id,
     this.name,
     this.email,
+    this.phone,
+    this.whatsappnumber,
+    this.phonenumber2,
+    this.jobdescription,
+    this.notes,
+    this.date,
+    this.assign,
+    this.ignoredublicate,
+    this.assigntype,
+    this.data,
+    this.transferefromdata,
+    this.resetcreationdate,
+    this.leedtype,
+    this.last_stage_date_updated,
+    this.lastdateassign,
+    this.lastcommentdate,
+    this.stagedateupdated,
+    this.createdAt,
+    this.updatedAt,
+    this.dayonly,
+    this.v,
+    this.question1_text,
+    this.question1_answer,
+    this.question2_text,
+    this.question2_answer,
+    this.question3_text,
+    this.question3_answer,
+    this.question4_text,
+    this.question4_answer,
+    this.question5_text,
+    this.question5_answer,
+    this.campaignRedirectLink,
+    this.totalSubmissions,
+    this.duplicateCount,
+    this.relatedLeadsCount,
+    this.hidesalesnameonleadcomments,
+    this.budget,
+    this.revenue,
+    this.unit_price,
+    this.Eoi,
+    this.Reservation,
+    this.review,
+    this.unitnumber,
+    this.commissionratio,
+    this.commissionmoney,
+    this.cashbackratio,
+    this.cashbackmoney,
     this.project,
     this.sales,
     this.stage,
@@ -150,24 +321,66 @@ class Lead {
       id: json['_id'],
       name: json['name'],
       email: json['email'],
-      project:
-          json['project'] != null ? Project.fromJson(json['project']) : null,
+      phone: json['phone'],
+      whatsappnumber: json['whatsappnumber'],
+      phonenumber2: json['phonenumber2'],
+      jobdescription: json['jobdescription'],
+      notes: json['notes'],
+      date: json['date'],
+      assign: json['assign'],
+      ignoredublicate: json['ignoredublicate'],
+      assigntype: json['assigntype'],
+      data: json['data'],
+      transferefromdata: json['transferefromdata'],
+      resetcreationdate: json['resetcreationdate'],
+      leedtype: json['leedtype'],
+      last_stage_date_updated: json['last_stage_date_updated'],
+      lastdateassign: json['lastdateassign'],
+      lastcommentdate: json['lastcommentdate'],
+      stagedateupdated: json['stagedateupdated'],
+      createdAt: json['createdAt'],
+      updatedAt: json['updatedAt'],
+      dayonly: json['dayonly'],
+      v: json['__v'],
+      question1_text: json['question1_text'],
+      question1_answer: json['question1_answer'],
+      question2_text: json['question2_text'],
+      question2_answer: json['question2_answer'],
+      question3_text: json['question3_text'],
+      question3_answer: json['question3_answer'],
+      question4_text: json['question4_text'],
+      question4_answer: json['question4_answer'],
+      question5_text: json['question5_text'],
+      question5_answer: json['question5_answer'],
+      campaignRedirectLink: json['campaignRedirectLink'],
+      totalSubmissions: json['totalSubmissions'],
+      duplicateCount: json['duplicateCount'],
+      relatedLeadsCount: json['relatedLeadsCount'],
+      hidesalesnameonleadcomments: json['hidesalesnameonleadcomments'],
+      budget: json['budget'],
+      revenue: json['revenue'],
+      unit_price: json['unit_price'],
+      Eoi: json['Eoi'],
+      Reservation: json['Reservation'],
+      review: json['review'],
+      unitnumber: json['unitnumber'],
+      commissionratio: json['commissionratio'],
+      commissionmoney: json['commissionmoney'],
+      cashbackratio: json['cashbackratio'],
+      cashbackmoney: json['cashbackmoney'],
+      project: json['project'] != null ? Project.fromJson(json['project']) : null,
       sales: json['sales'] != null ? Sales.fromJson(json['sales']) : null,
       stage: json['stage'] != null ? Stage.fromJson(json['stage']) : null,
       chanel: json['chanel'] != null ? Chanel.fromJson(json['chanel']) : null,
-      communicationway:
-          json['communicationway'] != null
-              ? CommunicationWay.fromJson(json['communicationway'])
-              : null,
+      communicationway: json['communicationway'] != null
+          ? CommunicationWay.fromJson(json['communicationway'])
+          : null,
       addby: json['addby'] != null ? User.fromJson(json['addby']) : null,
-      updatedby:
-          json['updatedby'] != null ? User.fromJson(json['updatedby']) : null,
-      campaign:
-          json['campaign'] != null ? Campaign.fromJson(json['campaign']) : null,
-      allVersions:
-          (json['allVersions'] as List?)
-              ?.map((e) => AllVersion.fromJson(e))
-              .toList(),
+      updatedby: json['updatedby'] != null ? User.fromJson(json['updatedby']) : null,
+      campaign: json['campaign'] != null ? Campaign.fromJson(json['campaign']) : null,
+      allVersions: (json['allVersions'] as List?)
+          ?.map((e) => AllVersion.fromJson(e))
+          .toList(),
       mergeHistory: json['mergeHistory'],
     );
   }
@@ -263,6 +476,7 @@ class Campaign {
   final String? CampainName;
   final String? Date;
   final num? Cost;
+  final String? redirectLink; // ✅ أضف هذا
   final bool? isactivate;
   final User? addby;
   final User? updatedby;
@@ -272,6 +486,7 @@ class Campaign {
     this.CampainName,
     this.Date,
     this.Cost,
+    this.redirectLink,
     this.isactivate,
     this.addby,
     this.updatedby,
@@ -283,6 +498,7 @@ class Campaign {
       CampainName: json['CampainName'],
       Date: json['Date'],
       Cost: json['Cost'],
+      redirectLink: json['redirectLink'],
       isactivate: json['isactivate'],
       addby: json['addby'] != null ? User.fromJson(json['addby']) : null,
       updatedby:

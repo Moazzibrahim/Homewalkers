@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 
 class LeadsApiServiceWithQuery {
-  final String baseUrl = "${Constants.baseUrl}/users/admin/allleadspagination";
+  String get baseUrl => "${Constants.baseUrl}/users/admin/allleadspagination";
 
   /// fetch leads with query params (search + filters + pagination)
   Future<Leadsadminmodelwithpagination?> fetchLeads({
@@ -229,7 +229,7 @@ class LeadsApiServiceWithQuery {
       Map<String, String> queryParams = {
         "page": page.toString(),
         "leadisactive": "false", // 🗑️ التراش
-       // "limit": limit.toString(),
+        "limit": limit.toString(),
       };
 
       // ✅ إضافة keyword لو موجود

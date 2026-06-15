@@ -25,7 +25,8 @@ class GetCitiesApiService {
       return null;
     }
   }
-   Future<CityResponse?> getCitiesInTrash() async {
+
+  Future<CityResponse?> getCitiesInTrash() async {
     final String baseUrl = '${Constants.baseUrl}/Cities?active=false';
     try {
       final response = await http.get(Uri.parse(baseUrl));
@@ -44,7 +45,7 @@ class GetCitiesApiService {
   }
 
   Future<RegionsModel?> getRegions() async {
-    final String baseUrl = 'https://apirender8.onrender.com/api/v1/regions?active=true';
+    final String baseUrl = '${Constants.baseUrl}/regions?active=true';
     try {
       final response = await http.get(Uri.parse(baseUrl));
 
@@ -60,6 +61,7 @@ class GetCitiesApiService {
       return null;
     }
   }
+
   Future<RegionsModel?> getRegionsInTrashh() async {
     final String baseUrl = '${Constants.baseUrl}/regions?active=false';
     try {

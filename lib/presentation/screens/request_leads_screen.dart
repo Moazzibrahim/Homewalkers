@@ -76,7 +76,7 @@ class _RequestLeadsScreenState extends State<RequestLeadsScreen> {
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, true),
           ),
         ),
         body: BlocConsumer<RequestLeadsCubit, RequestLeadsState>(
@@ -101,8 +101,8 @@ class _RequestLeadsScreenState extends State<RequestLeadsScreen> {
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
                           _buildHeader(context),
-                          const SizedBox(height: 24),
-                          _buildInfoCard(context),
+                          // const SizedBox(height: 24),
+                          // _buildInfoCard(context),
                           const SizedBox(height: 24),
                           NumberInputField(
                             initialValue: 5,
@@ -185,69 +185,69 @@ class _RequestLeadsScreenState extends State<RequestLeadsScreen> {
     );
   }
 
-  Widget _buildInfoCard(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isTablet = ResponsiveHelper.isTablet(context);
+  // Widget _buildInfoCard(BuildContext context) {
+  //   final isDark = Theme.of(context).brightness == Brightness.dark;
+  //   final isTablet = ResponsiveHelper.isTablet(context);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xff1e1e1e) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Constants.maincolor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.info_outline,
-              color: Constants.maincolor,
-              size: isTablet ? 28 : 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Available Leads',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _isCalculating ? '...' : '$_remainingLeads leads available',
-                  style: TextStyle(
-                    fontSize: isTablet ? 20 : 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Max $_maxAllowedLeads leads per request',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  //   return Container(
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: isDark ? const Color(0xff1e1e1e) : Colors.white,
+  //       borderRadius: BorderRadius.circular(16),
+  //       border: Border.all(
+  //         color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+  //       ),
+  //     ),
+  //     child: Row(
+  //       children: [
+  //         Container(
+  //           padding: const EdgeInsets.all(12),
+  //           decoration: BoxDecoration(
+  //             color: Constants.maincolor.withOpacity(0.1),
+  //             borderRadius: BorderRadius.circular(12),
+  //           ),
+  //           child: Icon(
+  //             Icons.info_outline,
+  //             color: Constants.maincolor,
+  //             size: isTablet ? 28 : 24,
+  //           ),
+  //         ),
+  //         const SizedBox(width: 16),
+  //         Expanded(
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Text(
+  //                 'Available Leads',
+  //                 style: TextStyle(
+  //                   fontSize: 12,
+  //                   color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 4),
+  //               Text(
+  //                 _isCalculating ? '...' : '$_remainingLeads leads available',
+  //                 style: TextStyle(
+  //                   fontSize: isTablet ? 20 : 18,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: isDark ? Colors.white : Colors.black87,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 4),
+  //               Text(
+  //                 'Max $_maxAllowedLeads leads per request',
+  //                 style: TextStyle(
+  //                   fontSize: 12,
+  //                   color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildRequestButton(BuildContext context, RequestLeadsState state) {
     final isEnabled = state is! RequestLeadsLoading;
@@ -439,13 +439,12 @@ class _RequestLeadsScreenState extends State<RequestLeadsScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            // ✅ إغلاق الديالوج ثم إرجاع true للشاشة السابقة
-                            Navigator.pop(context); // إغلاق الديالوج
-                            Navigator.pop(
-                              context,
-                              true,
-                            ); // إغلاق الشاشة وإرجاع true
+                          onPressed: () async {
+                            // ✅ قفل الديالوج
+                            Navigator.pop(context);
+
+                            // ✅ قفل شاشة RequestLeadsScreen وإرجاع true
+                            Navigator.pop(context, true);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Constants.maincolor,

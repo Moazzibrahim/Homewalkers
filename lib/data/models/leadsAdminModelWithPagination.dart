@@ -452,6 +452,7 @@ class User {
   String? profileImg;
   String? role;
   String? fcmToken;
+  List<FcmToken>? fcmTokens;
   bool? isMarketer;
   List<dynamic>? channels;
 
@@ -463,6 +464,7 @@ class User {
     this.profileImg,
     this.role,
     this.fcmToken,
+    this.fcmTokens,
     this.isMarketer,
     this.channels,
   });
@@ -477,6 +479,8 @@ class User {
     fcmToken: json['fcmToken'] as String?,
     isMarketer: json['isMarketer'] as bool?,
     channels: json['channels'] as List<dynamic>?,
+    fcmTokens:
+        (json['fcmTokens'] as List?)?.map((e) => FcmToken.fromJson(e)).toList(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -490,6 +494,35 @@ class User {
     'isMarketer': isMarketer,
     'channels': channels,
   };
+}
+
+class FcmToken {
+  final String? id;
+  final String? token;
+  final String? deviceId;
+  final String? platform;
+  final String? createdAt;
+  final String? lastUsed;
+
+  FcmToken({
+    this.id,
+    this.token,
+    this.deviceId,
+    this.platform,
+    this.createdAt,
+    this.lastUsed,
+  });
+
+  factory FcmToken.fromJson(Map<String, dynamic> json) {
+    return FcmToken(
+      id: json['_id'],
+      token: json['token'],
+      deviceId: json['deviceId'],
+      platform: json['platform'],
+      createdAt: json['createdAt'],
+      lastUsed: json['lastUsed'],
+    );
+  }
 }
 
 class Chanel {

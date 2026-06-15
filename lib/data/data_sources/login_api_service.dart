@@ -7,10 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/screens/company_name_screen.dart';
 import 'package:homewalkers_app/presentation/screens/decider_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/screens/splash_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
@@ -25,7 +27,7 @@ class LoginApiService {
   String? newFcmToken;
   String? deviceId;
 
-  final String? baseUrl = Constants.baseUrl;
+  String get baseUrl => Constants.baseUrl;
 
   Future<Map<String, dynamic>> login(
     String email,
@@ -49,10 +51,12 @@ class LoginApiService {
         }),
       );
 
-      log('📦 Raw Response Body: ${response.body}');
+      //  log('📦 Raw Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
+          log('🌐 baseUrl at login time: $baseUrl'); // ✅ أضف السطر ده
+
 
         final userData = responseData['data'];
         token = responseData['token'];
@@ -98,6 +102,7 @@ class LoginApiService {
         await prefs.setString('updatedAt', updatedAt ?? '');
         await prefs.setBool('active', active);
         await prefs.setString('NewfcmToken', newFcmToken ?? '');
+        await prefs.setString('fcm_token', fcmToken ?? '');
 
         context.read<NotificationCubit>().initNotifications();
 
@@ -164,6 +169,10 @@ class LoginApiService {
         log("❌ No token found for refresh");
         return null;
       }
+      if (Constants.baseUrl == null || Constants.baseUrl.isEmpty) {
+        log("❌ BaseUrl is null or empty, cannot refresh token");
+        return null;
+      }
 
       // ✅ استخدام HttpClient بدلاً من Dio
       final response = await HttpClient.post(
@@ -218,7 +227,7 @@ class LoginApiService {
       );
 
       if (response.statusCode == 200) {
-        log("✅ Logout successful: ${response.body}");
+        log("✅ Logout successful");
 
         // ✅ حذف FCM Token من Firebase
         await FirebaseMessaging.instance.deleteToken();
@@ -229,11 +238,14 @@ class LoginApiService {
         await prefs.remove('deviceId');
         await prefs.remove('role');
         await prefs.remove('salesId');
+        await prefs.remove('company_domain'); // ✅ أضف السطر ده
+        Constants.baseUrl = ""; // ✅ وكمان امسح الـ baseUrl في الميموري
+        HttpClientWithInterceptor().reset(); // 🔥 إضافة هذا السطر
 
         context.read<NotificationCubit>().disposeNotifications();
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => DeciderScreen()),
+          MaterialPageRoute(builder: (context) => SplashScreen()),
           (route) => false,
         );
       } else {

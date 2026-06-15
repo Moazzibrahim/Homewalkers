@@ -1,6 +1,9 @@
 // ignore_for_file: use_build_context_synchronously, avoid_print
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/constants.dart';
 import '../../data/data_sources/domains/fetch_domains_api_servive.dart';
@@ -16,6 +19,35 @@ class CompanySelectionScreen extends StatefulWidget {
 class _CompanySelectionScreenState extends State<CompanySelectionScreen> {
   final companyController = TextEditingController();
   bool isLoading = false;
+  @override
+  void initState() {
+    super.initState();
+    _clearOldData(); // 🔥 أضف هذا السطر
+  }
+
+  Future<void> _clearOldData() async {
+    final prefs = await SharedPreferences.getInstance();
+    // اتأكد إن مفيش token قديم
+    final oldToken = prefs.getString('token');
+    if (oldToken != null && oldToken.isNotEmpty) {
+      log("⚠️ Found old token, clearing...");
+      await prefs.remove('token');
+    }
+
+    final oldDomain = prefs.getString('company_domain');
+    if (oldDomain != null && oldDomain.isNotEmpty) {
+      log("⚠️ Found old domain: $oldDomain, clearing...");
+      await prefs.remove('company_domain');
+    }
+
+    // 🔥 امسح أي حاجة في Constants
+    Constants.baseUrl = "";
+
+    // 🔥 Reset الـ Interceptor تاني
+    HttpClientWithInterceptor().reset();
+
+    log("✅ Old data cleared from CompanySelectionScreen");
+  }
 
   Future<void> _searchCompany() async {
     final companyName = companyController.text.trim();
@@ -46,6 +78,7 @@ class _CompanySelectionScreenState extends State<CompanySelectionScreen> {
 
         // تعيين baseUrl
         Constants.baseUrl = "https://$domain/api/v1";
+        log('✅ baseUrl set to: ${Constants.baseUrl}'); // ✅ أضف ده
 
         // الانتقال لشاشة Login
         Navigator.pushReplacement(

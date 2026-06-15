@@ -19,6 +19,7 @@ void showFilterDialog(
   BuildContext context,
   bool? data,
   bool? transferfromdata,
+  Function(Map<String, dynamic>)? onFiltersApplied, // ✅ أضف هذا
 ) {
   showDialog(
     context: context,
@@ -42,7 +43,11 @@ void showFilterDialog(
                   (_) => ChannelCubit(GetChannelsApiService())..fetchChannels(),
             ),
           ],
-          child: FilterDialog(data: data, transferfromdata: transferfromdata),
+          child: FilterDialog(
+            data: data,
+            transferfromdata: transferfromdata,
+            onFiltersApplied: onFiltersApplied, // ✅ تمرير الـ callback
+          ),
         ),
   );
 }
@@ -50,7 +55,14 @@ void showFilterDialog(
 class FilterDialog extends StatefulWidget {
   final bool? data;
   final bool? transferfromdata;
-  const FilterDialog({super.key, this.data, this.transferfromdata});
+  final Function(Map<String, dynamic>)? onFiltersApplied; // ✅ أضف هذا
+
+  const FilterDialog({
+    super.key,
+    this.data,
+    this.transferfromdata,
+    this.onFiltersApplied, // ✅ أضف هذا
+  });
 
   @override
   State<FilterDialog> createState() => _FilterDialogState();
@@ -400,6 +412,24 @@ class _FilterDialogState extends State<FilterDialog> {
                                   .id
                                   .toString();
                         }
+                        // ✅ جمع قيم الفلاتر
+                        final appliedFilters = {
+                          'name':
+                              nameController.text.trim().isEmpty
+                                  ? null
+                                  : nameController.text.trim(),
+                          'developerId': developerId,
+                          'projectId': projectId,
+                          'stageId': stageId,
+                          'channelId': channelId,
+                          'creationDateFrom': _startDate,
+                          'creationDateTo': _endDate,
+                          'stageDateFrom': _lastStageUpdateStart,
+                          'stageDateTo': _lastStageUpdateEnd,
+                        };
+
+                        // ✅ استدعاء الـ callback
+                        widget.onFiltersApplied?.call(appliedFilters);
 
                         context
                             .read<GetLeadsCubit>()

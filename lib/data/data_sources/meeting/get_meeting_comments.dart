@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MeetingCommentsApiService {
-  final String baseUrl = "${Constants.baseUrl}/Meetingcomments";
+  String get baseUrl => "${Constants.baseUrl}/Meetingcomments";
 
   Future<MeetingcommentsModel> fetchMeetingComments({
     num? page,

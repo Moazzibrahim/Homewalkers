@@ -947,6 +947,7 @@ class Manager {
   String? profileImg;
   String? role;
   String? fcmToken;
+  List<FcmToken>? fcmTokens;
   bool? isMarketer;
 
   Manager({
@@ -957,6 +958,7 @@ class Manager {
     this.profileImg,
     this.role,
     this.fcmToken,
+    this.fcmTokens,
     this.isMarketer,
   });
 
@@ -971,6 +973,8 @@ class Manager {
     profileImg: json["profileImg"],
     role: json["role"],
     fcmToken: json["fcmToken"],
+    fcmTokens:
+        (json['fcmTokens'] as List?)?.map((e) => FcmToken.fromJson(e)).toList(),
     isMarketer: json["isMarketer"],
   );
 
@@ -1102,6 +1106,7 @@ class Teamleader {
   String? profileImg;
   String? role;
   String? fcmToken;
+  List<FcmToken>? fcmTokens;
   bool? isMarketer;
   String? phone;
 
@@ -1113,6 +1118,7 @@ class Teamleader {
     this.profileImg,
     this.role,
     this.fcmToken,
+    this.fcmTokens,
     this.isMarketer,
     this.phone,
   });
@@ -1128,6 +1134,8 @@ class Teamleader {
     profileImg: json["profileImg"],
     role: json["role"],
     fcmToken: json["fcmToken"],
+    fcmTokens:
+        (json['fcmTokens'] as List?)?.map((e) => FcmToken.fromJson(e)).toList(),
     isMarketer: json["isMarketer"],
     phone: json["phone"],
   );
@@ -1188,6 +1196,7 @@ class Userlog {
   String? profileImg;
   String? role;
   String? fcmToken;
+  List<FcmToken>? fcmTokens;
 
   Userlog({
     this.id,
@@ -1197,6 +1206,7 @@ class Userlog {
     this.profileImg,
     this.role,
     this.fcmToken,
+    this.fcmTokens,
   });
 
   factory Userlog.fromJson(Map<String, dynamic> json) => Userlog(
@@ -1207,6 +1217,8 @@ class Userlog {
     profileImg: json["profileImg"],
     role: json["role"],
     fcmToken: json["fcmToken"],
+    fcmTokens:
+        (json['fcmTokens'] as List?)?.map((e) => FcmToken.fromJson(e)).toList(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -1218,4 +1230,33 @@ class Userlog {
     "role": role,
     "fcmToken": fcmToken,
   };
+}
+
+class FcmToken {
+  final String? id;
+  final String? token;
+  final String? deviceId;
+  final String? platform;
+  final String? createdAt;
+  final String? lastUsed;
+
+  FcmToken({
+    this.id,
+    this.token,
+    this.deviceId,
+    this.platform,
+    this.createdAt,
+    this.lastUsed,
+  });
+
+  factory FcmToken.fromJson(Map<String, dynamic> json) {
+    return FcmToken(
+      id: json['_id'],
+      token: json['token'],
+      deviceId: json['deviceId'],
+      platform: json['platform'],
+      createdAt: json['createdAt'],
+      lastUsed: json['lastUsed'],
+    );
+  }
 }

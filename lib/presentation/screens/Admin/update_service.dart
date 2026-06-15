@@ -11,21 +11,56 @@ import 'package:url_launcher/url_launcher.dart';
 class UpdateService {
   static const String currentVersion = "1.0.3";
 
+  // static Future<void> checkForUpdate(BuildContext context) async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+
+  //     // 📅 آخر مرة ظهر فيها البوب أب
+  //     final lastShownString = prefs.getString('last_update_shown');
+  //     DateTime? lastShown =
+  //         lastShownString != null ? DateTime.parse(lastShownString) : null;
+
+  //     // 🏷️ آخر نسخة تم عرض البوب أب لها
+  //     final lastShownVersion = prefs.getString('last_update_version');
+
+  //     DateTime now = DateTime.now();
+
+  //     // 🌐 جلب JSON بدون كاش
+  //     final res = await http
+  //         .get(
+  //           Uri.parse(
+  //             "https://raw.githubusercontent.com/Moazzibrahim/Homewalkers/main/lib/presentation/screens/Admin/version.json?${DateTime.now().millisecondsSinceEpoch}",
+  //           ),
+  //         )
+  //         .timeout(const Duration(seconds: 10));
+
+  //     if (res.statusCode != 200) return;
+
+  //     final data = jsonDecode(res.body);
+
+  //     String latest = data['latest_version'];
+  //     bool force = data['force_update'].toString() == 'true';
+
+  //     // 🚫 لو نفس النسخة → مفيش داعي للبوب أب
+  //     // 🚫 لو نفس النسخة → مفيش داعي للبوب أب
+  //     if (currentVersion == latest) return;
+
+  //     // ✅ تحقق من وجود تحديث
+  //     if (_isUpdateAvailable(currentVersion, latest)) {
+  //       await _showUpdateDialog(context, force);
+
+  //       // 💾 حفظ بعد العرض لو حابب بس مش شرط للظهور أكتر من مرة
+  //       final prefs = await SharedPreferences.getInstance();
+  //       prefs.setString('last_update_shown', DateTime.now().toIso8601String());
+  //       prefs.setString('last_update_version', latest);
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Update error: $e");
+  //   }
+  // }
+
   static Future<void> checkForUpdate(BuildContext context) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // 📅 آخر مرة ظهر فيها البوب أب
-      final lastShownString = prefs.getString('last_update_shown');
-      DateTime? lastShown =
-          lastShownString != null ? DateTime.parse(lastShownString) : null;
-
-      // 🏷️ آخر نسخة تم عرض البوب أب لها
-      final lastShownVersion = prefs.getString('last_update_version');
-
-      DateTime now = DateTime.now();
-
-      // 🌐 جلب JSON بدون كاش
       final res = await http
           .get(
             Uri.parse(
@@ -37,23 +72,19 @@ class UpdateService {
       if (res.statusCode != 200) return;
 
       final data = jsonDecode(res.body);
-
       String latest = data['latest_version'];
       bool force = data['force_update'].toString() == 'true';
 
-      // 🚫 لو نفس النسخة → مفيش داعي للبوب أب
-      // 🚫 لو نفس النسخة → مفيش داعي للبوب أب
-      if (currentVersion == latest) return;
+      if (!_isUpdateAvailable(currentVersion, latest)) return;
 
-      // ✅ تحقق من وجود تحديث
-      if (_isUpdateAvailable(currentVersion, latest)) {
-        await _showUpdateDialog(context, force);
+      final prefs = await SharedPreferences.getInstance();
+      final lastShownVersion = prefs.getString('last_update_version');
 
-        // 💾 حفظ بعد العرض لو حابب بس مش شرط للظهور أكتر من مرة
-        final prefs = await SharedPreferences.getInstance();
-        prefs.setString('last_update_shown', DateTime.now().toIso8601String());
-        prefs.setString('last_update_version', latest);
-      }
+      if (!force && lastShownVersion == latest) return;
+
+      await _showUpdateDialog(context, force);
+
+      await prefs.setString('last_update_version', latest);
     } catch (e) {
       debugPrint("Update error: $e");
     }

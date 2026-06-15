@@ -7,7 +7,7 @@ import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TeamleaderDashboardApiService {
-  static  final String _baseUrl =
+  String get _baseUrl =>
       '${Constants.baseUrl}/users/teamleader/dashboard-cached2';
 
   /// Get token from SharedPreferences

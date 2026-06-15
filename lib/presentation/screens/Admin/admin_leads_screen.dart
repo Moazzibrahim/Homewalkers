@@ -21,7 +21,6 @@ import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_lead_details.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
-import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
@@ -116,7 +115,7 @@ class _ChangeLeadToDataDialog extends StatelessWidget {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.maincolor,
+                backgroundColor: Constants.mainlightmodecolor,
               ),
               onPressed:
                   isLoading
@@ -156,6 +155,9 @@ class AdminLeadsScreen extends StatefulWidget {
   final String? stageId;
   final bool? data;
   final bool? transferefromdata;
+  final int? leadsCount;
+  final List<String>? salesIdss;
+  final bool showNavBar; // ← أضف ده
 
   const AdminLeadsScreen({
     super.key,
@@ -165,6 +167,9 @@ class AdminLeadsScreen extends StatefulWidget {
     this.stageId,
     this.data,
     this.transferefromdata,
+    this.leadsCount,
+    this.salesIdss,
+    this.showNavBar = true,
   });
 
   @override
@@ -211,11 +216,15 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isFetchingMore = false; // 👈 متغير داخلي يمنع التكرار
   bool _hasMoreData = true; // ✅ نعرف إذا كان فيه بيانات زيادة
-  bool _didInitialFetch = false;
+  final bool _didInitialFetch = false;
   Timer? _searchDebounce;
   late Future<void> _initialFetch;
   late AllLeadsCubitWithPagination _cubit;
   int _currentPage = 1;
+  bool _isFetchingMoreTrash = false;
+  bool _hasMoreTrashData = true;
+  int _currentTrashPage = 1;
+  final ScrollController _trashScrollController = ScrollController();
 
   @override
   void initState() {
@@ -235,6 +244,32 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
 
     // ✅ إعداد الـ Scroll Listener
     _setupScrollListener();
+    _trashScrollController.addListener(() {
+      if (_trashScrollController.position.pixels >=
+          _trashScrollController.position.maxScrollExtent - 200) {
+        if (!_isFetchingMoreTrash && _hasMoreTrashData) {
+          setState(() => _isFetchingMoreTrash = true);
+          _currentTrashPage++;
+          context
+              .read<AllLeadsCubitWithPagination>()
+              .fetchLeadsInTrash(
+                page: _currentTrashPage,
+                search: _searchQuery.isNotEmpty ? _searchQuery : null,
+              )
+              .then((_) {
+                if (mounted) {
+                  final cubit = context.read<AllLeadsCubitWithPagination>();
+                  setState(() {
+                    _isFetchingMoreTrash = false;
+                    // لو الداتا الجديدة أقل من 10 معناها خلصت
+                    _hasMoreTrashData =
+                        cubit.trashLeads.length < cubit.totaltrashleads;
+                  });
+                }
+              });
+        }
+      }
+    });
 
     _cubit = context.read<AllLeadsCubitWithPagination>();
 
@@ -246,17 +281,25 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   void _fetchInitial() {
     _hasMoreData = true;
     _currentPage = 1;
+
+    // ✅ جيب الـ trash count الأول قبل أي حاجة
+    _cubit.fetchTrashCountOnly().then((_) {
+      // بعد ما العدد اتجيب، emit الـ state الحالية عشان الـ UI يتحدث
+      if (mounted) setState(() {});
+    });
+
     _cubit.fetchLeads(
       page: _currentPage,
       limit: 10,
-      stageIds:
-          _selectedStageFilter.isNotEmpty
-              ? _selectedStageFilter
-              : null, // 👈 تعديل
+      stageIds: _selectedStageFilter.isNotEmpty ? _selectedStageFilter : null,
       duplicates: _showDuplicatesOnly,
       ignoreDuplicate: _showDuplicatesOnly,
       data: widget.data,
       transferefromdata: widget.transferefromdata,
+      salesIds:
+          widget.salesIdss != null && widget.salesIdss!.isNotEmpty
+              ? widget.salesIdss
+              : null,
     );
   }
 
@@ -325,7 +368,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
           salesIds:
               _selectedSalesFilter.isNotEmpty
                   ? _selectedSalesFilter
-                  : null, // 👈 تعديل
+                  : (widget.salesIdss != null && widget.salesIdss!.isNotEmpty)
+                  ? widget.salesIdss
+                  : null,
           communicationWayIds:
               _selectedCommunicationWayFilter.isNotEmpty
                   ? _selectedCommunicationWayFilter
@@ -363,6 +408,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
   void dispose() {
     _nameSearchController.dispose();
     _scrollController.dispose();
+    _trashScrollController.dispose();
     super.dispose();
   }
 
@@ -377,6 +423,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       stageIds:
           _selectedStageFilter.isNotEmpty
               ? _selectedStageFilter
+              : (widget.stageId != null && widget.stageId!.isNotEmpty)
+              ? [widget.stageId!]
               : null, // 👈 تعديل
       developerIds:
           _selectedDeveloperFilter.isNotEmpty
@@ -393,7 +441,9 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       salesIds:
           _selectedSalesFilter.isNotEmpty
               ? _selectedSalesFilter
-              : null, // 👈 تعديل
+              : (widget.salesIdss != null && widget.salesIdss!.isNotEmpty)
+              ? widget.salesIdss
+              : null,
       communicationWayIds:
           _selectedCommunicationWayFilter.isNotEmpty
               ? _selectedCommunicationWayFilter
@@ -471,6 +521,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     }
   }
 
+  // أضف هذه المتغيرات في بداية الـ State
+  bool _isSearchVisible = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
   @override
   Widget build(BuildContext context) {
     final bool isTabletDevice = () {
@@ -489,13 +544,22 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
     final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
     bool isOutdated = false;
+
     return Scaffold(
+      bottomNavigationBar:
+          widget.showNavBar
+              ? SharedAdminNavBar(currentIndex: 1)
+              : null, // ← لو جاي من tabs مش هيظهر
+
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
               ? Constants.backgroundlightmode
               : Constants.backgroundDarkmode,
       appBar: CustomAppBar(
-        //  title: 'Leads',
+        title:
+            _isSearchVisible
+                ? null // إذا كان البحث ظاهراً، لا نريد عرض النص
+                : "Leads",
         onBack: () {
           if (widget.transferefromdata == true) {
             Navigator.pushReplacement(
@@ -515,254 +579,272 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: 200.w,
-                child: TextField(
-                  controller: _nameSearchController,
-                  onChanged: (value) {
-                    _searchDebounce?.cancel();
-                    _searchDebounce = Timer(
-                      const Duration(milliseconds: 500),
-                      () {
-                        _searchQuery = value.trim();
-
-                        if (selectedTab == 0) {
-                          // ✅ Leads العادية
-                          _applyCurrentFilters();
-                        } else {
-                          // 🗑️ Leads Trash
-                          _currentPage = 1;
-
-                          context
-                              .read<AllLeadsCubitWithPagination>()
-                              .fetchLeadsInTrash(
-                                page: 1,
-                                search:
-                                    _searchQuery.isNotEmpty
-                                        ? _searchQuery
-                                        : null,
-                              );
-                        }
-                      },
-                    );
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Search',
-                    hintStyle: TextStyle(
-                      color: const Color(0xff969696),
-                      fontSize: (12 * tabletFontScale).sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      size: (20 * tabletFontScale).sp,
-                      color:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Constants.mainDarkmodecolor,
-                        width: (1.5 * tabletScale).w,
-                      ),
-                      borderRadius: BorderRadius.circular((8 * tabletScale).r),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Constants.mainDarkmodecolor,
-                        width: (2 * tabletScale).w,
-                      ),
-                      borderRadius: BorderRadius.circular((8 * tabletScale).r),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: 0,
-                      horizontal: (12 * tabletWidthScale).w,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: (10 * tabletWidthScale).w),
-              Container(
-                //  height: (50 * tabletHeightScale).h,
-                // width: (50 * tabletWidthScale).w,
+              // ✅ زر البحث المتغير
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                width: _isSearchVisible ? 200.w : 45.w,
+                height: 45.h,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F1F2),
-                  // border: Border.all(
-                  //   color:
-                  //       Theme.of(context).brightness == Brightness.light
-                  //           ? Constants.maincolor
-                  //           : Constants.mainDarkmodecolor,
-                  //   width: (1.5 * tabletScale).w,
-                  // ),
-                  borderRadius: BorderRadius.circular((8 * tabletScale).r),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border:
+                      _isSearchVisible
+                          ? Border.all(
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Constants.mainlightmodecolor
+                                    : Constants.mainDarkmodecolor,
+                            width: 1.5.w,
+                          )
+                          : null,
                 ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.filter_list,
-                    //  size: (24 * tabletFontScale).sp,
-                    color:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                  ),
-                  //  padding: EdgeInsets.all((8 * tabletScale).r),
-                  //constraints: BoxConstraints(
-                  // minWidth: (50 * tabletWidthScale).w,
-                  //  minHeight: (50 * tabletHeightScale).h,
-                  // ),
-                  onPressed: () async {
-                    if (selectedTab == 1) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            "Filtering is not available for the trash.",
-                            style: TextStyle(
-                              fontSize: (14 * tabletFontScale).sp,
+                child:
+                    _isSearchVisible
+                        ? Row(
+                          children: [
+                            SizedBox(width: 8.w),
+                            Icon(Icons.search, size: 20.sp, color: Colors.grey),
+                            SizedBox(width: 8.w),
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                focusNode: _searchFocusNode,
+                                autofocus: true,
+                                onChanged: (value) {
+                                  _searchDebounce?.cancel();
+                                  _searchDebounce = Timer(
+                                    const Duration(milliseconds: 500),
+                                    () {
+                                      _searchQuery = value.trim();
+                                      if (selectedTab == 0) {
+                                        _applyCurrentFilters();
+                                      } else {
+                                        _currentPage = 1;
+                                        context
+                                            .read<AllLeadsCubitWithPagination>()
+                                            .fetchLeadsInTrash(
+                                              page: 1,
+                                              search:
+                                                  _searchQuery.isNotEmpty
+                                                      ? _searchQuery
+                                                      : null,
+                                            );
+                                      }
+                                    },
+                                  );
+                                },
+                                decoration: InputDecoration(
+                                  hintText: 'Search...',
+                                  hintStyle: TextStyle(
+                                    color: const Color(0xff969696),
+                                    fontSize: (14 * tabletFontScale).sp,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: 0,
+                                    horizontal: 0,
+                                  ),
+                                ),
+                              ),
                             ),
+                            GestureDetector(
+                              onTap: () {
+                                _searchController.clear();
+                                _searchQuery = '';
+                                setState(() {
+                                  _isSearchVisible = false;
+                                });
+                                _searchFocusNode.unfocus(); // يقفل الكيبورد
+
+                                if (selectedTab == 0) {
+                                  _applyCurrentFilters();
+                                } else {
+                                  _currentPage = 1;
+                                  context
+                                      .read<AllLeadsCubitWithPagination>()
+                                      .fetchLeadsInTrash(page: 1, search: null);
+                                }
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.only(right: 8.w),
+                                child: Icon(
+                                  Icons.clear,
+                                  size: 18.sp,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                          ],
+                        )
+                        : IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _isSearchVisible = true;
+                            });
+                            Future.delayed(
+                              const Duration(milliseconds: 100),
+                              () {
+                                _searchFocusNode.requestFocus();
+                              },
+                            );
+                          },
+                          icon: Icon(
+                            Icons.search,
+                            size: 22.sp,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Constants.mainlightmodecolor
+                                    : Constants.mainDarkmodecolor,
                           ),
                         ),
-                      );
-                      return;
-                    }
-                    final Map<String, dynamic>?
-                    filters = await showDialog<Map<String, dynamic>>(
-                      context: context,
-                      builder: (dialogContext) {
-                        return MultiBlocProvider(
-                          providers: [
-                            BlocProvider(
-                              create:
-                                  (_) =>
-                                      DevelopersCubit(DeveloperApiService())
-                                        ..getDevelopers(),
-                            ),
-                            BlocProvider(
-                              create:
-                                  (_) =>
-                                      ProjectsCubit(ProjectsApiService())
-                                        ..fetchProjects(),
-                            ),
-                            BlocProvider(
-                              create:
-                                  (_) =>
-                                      StagesCubit(StagesApiService())
-                                        ..fetchStages(),
-                            ),
-                            BlocProvider(
-                              create:
-                                  (_) =>
-                                      ChannelCubit(GetChannelsApiService())
-                                        ..fetchChannels(),
-                            ),
-                            BlocProvider(
-                              create:
-                                  (_) => GetCommunicationWaysCubit(
-                                    CommunicationWayApiService(),
-                                  )..fetchCommunicationWays(),
-                            ),
-                            BlocProvider(
-                              create:
-                                  (_) =>
-                                      GetCampaignsCubit(CampaignApiService())
-                                        ..fetchCampaigns(),
-                            ),
-                            BlocProvider(
-                              create:
-                                  (_) =>
-                                      SalesCubit(GetAllSalesApiService())
-                                        ..fetchAllSales(),
-                            ),
-                          ],
-                          child: FilterDialog(
-                            // ✅ تمرير null أو قوائم فارغة لفتح الـ Dialog بدون تحديدات سابقة
-                            initialDeveloperIds: null, // أو [] إذا كنت تفضل
-                            initialProjectIds: null,
-                            initialStageIds: null,
-                            initialChannelIds: null,
-                            initialSalesIds: null,
-                            initialCommunicationWayIds: null,
-                            initialCampaignIds: null,
-                            initialSearchName:
-                                null, // أو _nameSearchController.text إذا كنت تريد الاحتفاظ بالبحث
-                            // ✅ إضافة null للقيم الأخرى
-                            initialAddedBy: null,
-                            initialAssignedFrom: null,
-                            initialAssignedTo: null,
-                            initialStartDate: null,
-                            initialEndDate: null,
-                            initialLastStageUpdateStart: null,
-                            initialLastStageUpdateEnd: null,
-                            initialLastCommentDateStart: null,
-                            initialLastCommentDateEnd: null,
-                            initialOldStageStartDate: null,
-                            initialOldStageEndDate: null,
-                          ),
-                        );
-                      },
-                    );
-                    if (filters != null) {
-                      setState(() {
-                        _searchQuery = filters['name'] ?? _searchQuery;
-                        _nameSearchController.text = _searchQuery;
-                        _selectedCountryFilter = filters['country'];
-
-                        // ✅ استقبال القوائم من الفلتر للـ Multi Select
-                        _selectedDeveloperFilter = List<String>.from(
-                          filters['developerIds'] ?? [],
-                        );
-                        _selectedProjectFilter = List<String>.from(
-                          filters['projectIds'] ?? [],
-                        );
-                        _selectedStageFilter = List<String>.from(
-                          filters['stageIds'] ?? [],
-                        );
-                        _selectedChannelFilter = List<String>.from(
-                          filters['channelIds'] ?? [],
-                        );
-                        _selectedSalesFilter = List<String>.from(
-                          filters['salesIds'] ?? [],
-                        );
-                        _selectedCommunicationWayFilter = List<String>.from(
-                          filters['communicationWayIds'] ?? [],
-                        );
-                        _selectedCampaignFilter = List<String>.from(
-                          filters['campaignIds'] ?? [],
-                        );
-
-                        // ✅ استقبال القيم الجديدة للـ Single Select والتواريخ
-                        _addedByFilter = filters['addedBy'];
-                        _assignedFromFilter = filters['assignedFrom'];
-                        _assignedToFilter = filters['assignedTo'];
-                        _startDateFilter = filters['startDate'];
-                        _endDateFilter = filters['endDate'];
-                        _lastStageUpdateStartFilter =
-                            filters['lastStageUpdateStart'];
-                        _lastStageUpdateEndFilter =
-                            filters['lastStageUpdateEnd'];
-                        _lastCommentDateStartFilter =
-                            filters['lastCommentDateStart'];
-                        _lastCommentDateEndFilter =
-                            filters['lastCommentDateEnd'];
-                        _oldStageNameFilter = filters['oldStageName'];
-                        _oldStageDateStartFilter = filters['oldStageDateStart'];
-                        _oldStageDateEndFilter = filters['oldStageDateEnd'];
-                      });
-                      _applyCurrentFilters();
-                    }
-                  },
+              ),
+              SizedBox(width: (10 * tabletWidthScale).w),
+              // ✅ زر الفلتر (كما هو دون تغيير)
+              IconButton(
+                icon: Icon(
+                  Icons.filter_list,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Constants.mainlightmodecolor
+                          : Constants.mainDarkmodecolor,
                 ),
+                onPressed: () async {
+                  if (selectedTab == 1) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          "Filtering is not available for the trash.",
+                          style: TextStyle(fontSize: (14 * tabletFontScale).sp),
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  final Map<String, dynamic>? filters =
+                      await showDialog<Map<String, dynamic>>(
+                        context: context,
+                        builder: (dialogContext) {
+                          return MultiBlocProvider(
+                            providers: [
+                              BlocProvider(
+                                create:
+                                    (_) =>
+                                        DevelopersCubit(DeveloperApiService())
+                                          ..getDevelopers(),
+                              ),
+                              BlocProvider(
+                                create:
+                                    (_) =>
+                                        ProjectsCubit(ProjectsApiService())
+                                          ..fetchProjects(),
+                              ),
+                              BlocProvider(
+                                create:
+                                    (_) =>
+                                        StagesCubit(StagesApiService())
+                                          ..fetchStages(),
+                              ),
+                              BlocProvider(
+                                create:
+                                    (_) =>
+                                        ChannelCubit(GetChannelsApiService())
+                                          ..fetchChannels(),
+                              ),
+                              BlocProvider(
+                                create:
+                                    (_) => GetCommunicationWaysCubit(
+                                      CommunicationWayApiService(),
+                                    )..fetchCommunicationWays(),
+                              ),
+                              BlocProvider(
+                                create:
+                                    (_) =>
+                                        GetCampaignsCubit(CampaignApiService())
+                                          ..fetchCampaigns(),
+                              ),
+                              BlocProvider(
+                                create:
+                                    (_) =>
+                                        SalesCubit(GetAllSalesApiService())
+                                          ..fetchAllSales(),
+                              ),
+                            ],
+                            child: FilterDialog(
+                              initialDeveloperIds: null,
+                              initialProjectIds: null,
+                              initialStageIds: null,
+                              initialChannelIds: null,
+                              initialSalesIds: null,
+                              initialCommunicationWayIds: null,
+                              initialCampaignIds: null,
+                              initialSearchName: null,
+                              initialAddedBy: null,
+                              initialAssignedFrom: null,
+                              initialAssignedTo: null,
+                              initialStartDate: null,
+                              initialEndDate: null,
+                              initialLastStageUpdateStart: null,
+                              initialLastStageUpdateEnd: null,
+                              initialLastCommentDateStart: null,
+                              initialLastCommentDateEnd: null,
+                              initialOldStageStartDate: null,
+                              initialOldStageEndDate: null,
+                            ),
+                          );
+                        },
+                      );
+                  if (filters != null) {
+                    setState(() {
+                      _searchQuery = filters['name'] ?? _searchQuery;
+                      _searchController.text = _searchQuery;
+                      _selectedCountryFilter = filters['country'];
+                      _selectedDeveloperFilter = List<String>.from(
+                        filters['developerIds'] ?? [],
+                      );
+                      _selectedProjectFilter = List<String>.from(
+                        filters['projectIds'] ?? [],
+                      );
+                      _selectedStageFilter = List<String>.from(
+                        filters['stageIds'] ?? [],
+                      );
+                      _selectedChannelFilter = List<String>.from(
+                        filters['channelIds'] ?? [],
+                      );
+                      _selectedSalesFilter = List<String>.from(
+                        filters['salesIds'] ?? [],
+                      );
+                      _selectedCommunicationWayFilter = List<String>.from(
+                        filters['communicationWayIds'] ?? [],
+                      );
+                      _selectedCampaignFilter = List<String>.from(
+                        filters['campaignIds'] ?? [],
+                      );
+                      _addedByFilter = filters['addedBy'];
+                      _assignedFromFilter = filters['assignedFrom'];
+                      _assignedToFilter = filters['assignedTo'];
+                      _startDateFilter = filters['startDate'];
+                      _endDateFilter = filters['endDate'];
+                      _lastStageUpdateStartFilter =
+                          filters['lastStageUpdateStart'];
+                      _lastStageUpdateEndFilter = filters['lastStageUpdateEnd'];
+                      _lastCommentDateStartFilter =
+                          filters['lastCommentDateStart'];
+                      _lastCommentDateEndFilter = filters['lastCommentDateEnd'];
+                      _oldStageNameFilter = filters['oldStageName'];
+                      _oldStageDateStartFilter = filters['oldStageDateStart'];
+                      _oldStageDateEndFilter = filters['oldStageDateEnd'];
+                    });
+                    _applyCurrentFilters();
+                  }
+                },
               ),
             ],
           ),
         ],
       ),
+      // باقي الـ body
       body: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: (16 * tabletWidthScale).w,
@@ -770,222 +852,389 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
         ),
         child: Column(
           children: [
+            /// =========================
+            /// TOP ACTION BAR
+            /// =========================
             if (selectedTab == 0 && _selectedLeads.isNotEmpty)
               Container(
+                margin: EdgeInsets.only(bottom: (16 * tabletHeightScale).h),
                 padding: EdgeInsets.symmetric(
                   horizontal: (16 * tabletWidthScale).w,
-                  vertical: (8 * tabletHeightScale).h,
+                  vertical: (14 * tabletHeightScale).h,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Colors.white
+                          : const Color(0xff1E1E1E),
+                  borderRadius: BorderRadius.circular((18 * tabletScale).r),
+                  border: Border.all(
+                    color:
+                        Theme.of(context).brightness == Brightness.light
+                            ? Colors.grey.shade200
+                            : Colors.grey.shade800,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // ✅ مكان فاضي عشان المسافات تبقى مظبوطة
-                    SizedBox(width: (0 * tabletWidthScale).w),
-                    if (_selectedLeads.isNotEmpty)
-                      Expanded(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: (12 * tabletWidthScale).w,
-                            vertical: (10 * tabletHeightScale).h,
-                          ),
-                          decoration: BoxDecoration(
+                    /// CHECK ICON
+                    Container(
+                      width: (38 * tabletWidthScale).w,
+                      height: (38 * tabletWidthScale).w,
+                      decoration: BoxDecoration(
+                        color: Constants.mainlightmodecolor,
+                        borderRadius: BorderRadius.circular(
+                          (10 * tabletScale).r,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: (22 * tabletFontScale).sp,
+                      ),
+                    ),
+
+                    SizedBox(width: (14 * tabletWidthScale).w),
+
+                    /// SELECTED TEXT
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "${_selectedLeads.length} Leads",
+                          style: TextStyle(
+                            fontSize: (16 * tabletFontScale).sp,
+                            fontWeight: FontWeight.w700,
                             color:
                                 Theme.of(context).brightness == Brightness.light
-                                    ? Constants.maincolor
-                                    : Constants.mainDarkmodecolor,
-                            borderRadius: BorderRadius.circular(
-                              (12 * tabletScale).r,
-                            ),
+                                    ? Colors.black
+                                    : Colors.white,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              // 🧩 Assign Icon
-                              InkWell(
-                                onTap: () async {
-                                  if (_showCheckboxes &&
-                                      _selectedLeads.isNotEmpty) {
-                                    final String? selectedStageIddd =
-                                        _selectedLeadStagesIds.isNotEmpty
-                                            ? _selectedLeadStagesIds.first
-                                            : null;
+                        ),
+                        Text(
+                          "Selected",
+                          style: TextStyle(
+                            fontSize: (16 * tabletFontScale).sp,
+                            fontWeight: FontWeight.w700,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.black
+                                    : Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
 
-                                    final result = await showDialog(
-                                      context: context,
-                                      builder: (dialogContext) {
-                                        return MultiBlocProvider(
-                                          providers: [
-                                            BlocProvider(
-                                              create: (_) => AssignleadCubit(),
-                                            ),
-                                            BlocProvider(
-                                              create:
-                                                  (_) => LeadCommentsCubit(
-                                                    GetAllLeadCommentsApiService(),
-                                                  )..fetchLeadComments(
-                                                    _selectedLeads.toList()[0],
-                                                  ),
-                                            ),
-                                            BlocProvider(
-                                              create:
-                                                  (_) => SalesCubit(
-                                                    GetAllSalesApiService(),
-                                                  )..fetchAllSales(),
-                                            ),
-                                            BlocProvider(
-                                              create:
-                                                  (_) => StagesCubit(
-                                                    StagesApiService(),
-                                                  )..fetchStages(),
-                                            ),
-                                          ],
-                                          child: AssignLeadMarkterDialog(
-                                            mainColor:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Constants.maincolor
-                                                    : Constants
-                                                        .mainDarkmodecolor,
-                                            leadIds: _selectedLeads.toList(),
-                                            leadId: _selectedLeads.toList()[0],
-                                            leadStages:
-                                                _selectedLeadStagesIds.toList(),
-                                            leadSalesId:
-                                                _selectedSalesIds.toList(),
-                                            leadStage: selectedStageIddd,
-                                          ),
-                                        );
-                                      },
+                    SizedBox(width: (15 * tabletWidthScale).w),
+
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          // =========================
+                          // EXPORT / ASSIGN
+                          // =========================
+                          InkWell(
+                            onTap: () async {
+                              if (_showCheckboxes &&
+                                  _selectedLeads.isNotEmpty) {
+                                final String? selectedStageIddd =
+                                    _selectedLeadStagesIds.isNotEmpty
+                                        ? _selectedLeadStagesIds.first
+                                        : null;
+
+                                final result = await showDialog(
+                                  context: context,
+                                  builder: (dialogContext) {
+                                    return MultiBlocProvider(
+                                      providers: [
+                                        BlocProvider(
+                                          create: (_) => AssignleadCubit(),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => LeadCommentsCubit(
+                                                GetAllLeadCommentsApiService(),
+                                              )..fetchLeadComments(
+                                                _selectedLeads.toList()[0],
+                                              ),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => SalesCubit(
+                                                GetAllSalesApiService(),
+                                              )..fetchAllSales(),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => StagesCubit(
+                                                StagesApiService(),
+                                              )..fetchStages(),
+                                        ),
+                                      ],
+                                      child: AssignLeadMarkterDialog(
+                                        mainColor:
+                                            Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Constants.mainlightmodecolor
+                                                : Constants.mainDarkmodecolor,
+                                        leadIds: _selectedLeads.toList(),
+                                        leadId: _selectedLeads.toList()[0],
+                                        leadStages:
+                                            _selectedLeadStagesIds.toList(),
+                                        leadSalesId: _selectedSalesIds.toList(),
+                                        leadStage: selectedStageIddd,
+                                      ),
                                     );
+                                  },
+                                );
 
-                                    if (result == true) {
-                                      setState(() {
-                                        _showCheckboxes = false;
-                                        _selectedLeads.clear();
-                                        _selectedSalesIds.clear();
-                                        _selectedLeadStagesIds.clear();
-                                      });
-                                    }
-                                    log('Assign lead result: $result');
-                                  }
-                                },
-                                child: _ActionIcon(
-                                  icon: Image.asset(
-                                    "assets/images/right.png",
-                                    width: (20 * tabletFontScale).w,
-                                    height: (20 * tabletFontScale).h,
-                                    fit: BoxFit.cover,
-                                    color: Constants.maincolor,
+                                if (result == true) {
+                                  setState(() {
+                                    _showCheckboxes = false;
+                                    _selectedLeads.clear();
+                                    _selectedSalesIds.clear();
+                                    _selectedLeadStagesIds.clear();
+                                  });
+                                }
+
+                                log('Assign lead result: $result');
+                              }
+                            },
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.ios_share_outlined,
+                                  color: Colors.grey.shade700,
+                                  size: (25 * tabletFontScale).sp,
+                                ),
+                                SizedBox(height: (4 * tabletHeightScale).h),
+                                Text(
+                                  "ASSIGN",
+                                  style: TextStyle(
+                                    fontSize: (10 * tabletFontScale).sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.grey.shade700,
                                   ),
                                 ),
-                              ),
+                              ],
+                            ),
+                          ),
 
-                              // ✏️ Edit Icon
-                              InkWell(
-                                onTap: () async {
-                                  final leadsList =
-                                      context
-                                          .read<AllLeadsCubitWithPagination>()
-                                          .leads;
+                          /// DIVIDER
+                          Container(
+                            height: (50 * tabletHeightScale).h,
+                            width: 1,
+                            color: Colors.grey.shade300,
+                          ),
 
-                                  final selectedLead = leadsList.firstWhere(
-                                    (lead) =>
-                                        lead.id.toString() ==
-                                        _selectedLeads.first,
-                                    orElse: () => LeadDataWithPagination(),
-                                  );
-                                  print('_selectedLeads: $_selectedLeads');
-                                  print('found lead: $selectedLead');
+                          // =========================
+                          // EDIT
+                          // =========================
+                          InkWell(
+                            onTap: () async {
+                              final leadsList =
+                                  context
+                                      .read<AllLeadsCubitWithPagination>()
+                                      .leads;
 
-                                  final result = await showDialog(
-                                    context: context,
-                                    builder:
-                                        (_) => MultiBlocProvider(
-                                          providers: [
-                                            BlocProvider(
-                                              create:
-                                                  (_) => EditLeadCubit(
-                                                    EditLeadApiService(),
-                                                  ),
-                                            ),
-                                            BlocProvider(
-                                              create:
-                                                  (_) => ProjectsCubit(
-                                                    ProjectsApiService(),
-                                                  )..fetchProjects(),
-                                            ),
-                                            BlocProvider(
-                                              create:
-                                                  (_) => StagesCubit(
-                                                    StagesApiService(),
-                                                  )..fetchStages(),
-                                            ),
-                                            BlocProvider(
-                                              create:
-                                                  (
-                                                    _,
-                                                  ) => GetCommunicationWaysCubit(
-                                                    CommunicationWayApiService(),
-                                                  )..fetchCommunicationWays(),
-                                            ),
-                                            BlocProvider(
-                                              create:
-                                                  (_) => ChannelCubit(
-                                                    GetChannelsApiService(),
-                                                  )..fetchChannels(),
-                                            ),
-                                            BlocProvider(
-                                              create:
-                                                  (_) => GetCampaignsCubit(
-                                                    CampaignApiService(),
-                                                  )..fetchCampaigns(),
-                                            ),
-                                            BlocProvider(
-                                              create:
-                                                  (_) => SalesCubit(
-                                                    GetAllSalesApiService(),
-                                                  )..fetchAllSales(),
-                                            ),
-                                          ],
-                                          child: EditLeadDialog(
-                                            userId: selectedLead.id.toString(),
-                                            initialName:
-                                                selectedLead.name ?? '',
-                                            initialEmail:
-                                                selectedLead.email ?? '',
-                                            initialPhone:
-                                                selectedLead.phone ?? '',
-                                            initialProjectId:
-                                                selectedLead.project?.id
-                                                    ?.toString(),
-                                            initialStageId:
-                                                selectedLead.stage?.id
-                                                    ?.toString(),
-                                            initialChannelId:
-                                                selectedLead.chanel?.id
-                                                    ?.toString(),
-                                            initialCampaignId:
-                                                selectedLead.campaign?.id
-                                                    ?.toString(),
-                                            initialCommunicationWayId:
-                                                selectedLead
-                                                    .communicationway
-                                                    ?.id
-                                                    ?.toString(),
-                                            isCold:
-                                                selectedLead.leedtype == "Cold",
-                                            onSuccess: () {
-                                              setState(() {
-                                                _showCheckboxes = false;
-                                                _selectedLeads.clear();
-                                              });
+                              final selectedLead = leadsList.firstWhere(
+                                (lead) =>
+                                    lead.id.toString() == _selectedLeads.first,
+                                orElse: () => LeadDataWithPagination(),
+                              );
 
-                                              final leadsCubit =
-                                                  context
-                                                      .read<
-                                                        AllLeadsCubitWithPagination
-                                                      >();
-                                              leadsCubit.fetchLeads(
+                              print('_selectedLeads: $_selectedLeads');
+                              print('found lead: $selectedLead');
+
+                              final result = await showDialog(
+                                context: context,
+                                builder:
+                                    (_) => MultiBlocProvider(
+                                      providers: [
+                                        BlocProvider(
+                                          create:
+                                              (_) => EditLeadCubit(
+                                                EditLeadApiService(),
+                                              ),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => ProjectsCubit(
+                                                ProjectsApiService(),
+                                              )..fetchProjects(),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => StagesCubit(
+                                                StagesApiService(),
+                                              )..fetchStages(),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => GetCommunicationWaysCubit(
+                                                CommunicationWayApiService(),
+                                              )..fetchCommunicationWays(),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => ChannelCubit(
+                                                GetChannelsApiService(),
+                                              )..fetchChannels(),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => GetCampaignsCubit(
+                                                CampaignApiService(),
+                                              )..fetchCampaigns(),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => SalesCubit(
+                                                GetAllSalesApiService(),
+                                              )..fetchAllSales(),
+                                        ),
+                                      ],
+                                      child: EditLeadDialog(
+                                        userId: selectedLead.id.toString(),
+                                        initialName: selectedLead.name ?? '',
+                                        initialEmail: selectedLead.email ?? '',
+                                        initialPhone: selectedLead.phone ?? '',
+                                        initialProjectId:
+                                            selectedLead.project?.id
+                                                ?.toString(),
+                                        initialStageId:
+                                            selectedLead.stage?.id?.toString(),
+                                        initialChannelId:
+                                            selectedLead.chanel?.id?.toString(),
+                                        initialCampaignId:
+                                            selectedLead.campaign?.id
+                                                ?.toString(),
+                                        initialCommunicationWayId:
+                                            selectedLead.communicationway?.id
+                                                ?.toString(),
+                                        isCold: selectedLead.leedtype == "Cold",
+                                        onSuccess: () {
+                                          setState(() {
+                                            _showCheckboxes = false;
+                                            _selectedLeads.clear();
+                                          });
+
+                                          final leadsCubit =
+                                              context
+                                                  .read<
+                                                    AllLeadsCubitWithPagination
+                                                  >();
+
+                                          leadsCubit.fetchLeads(
+                                            stageIds:
+                                                _selectedStageFilter.isNotEmpty
+                                                    ? _selectedStageFilter
+                                                    : null,
+                                            duplicates: _showDuplicatesOnly,
+                                            ignoreDuplicate:
+                                                _showDuplicatesOnly,
+                                            data: widget.data,
+                                            transferefromdata:
+                                                widget.transferefromdata,
+                                            salesIds:
+                                                widget.salesIdss != null &&
+                                                        widget
+                                                            .salesIdss!
+                                                            .isNotEmpty
+                                                    ? widget.salesIdss
+                                                    : null,
+                                          );
+                                        },
+                                      ),
+                                    ),
+                              );
+
+                              if (result == true) {
+                                context
+                                    .read<AllLeadsCubitWithPagination>()
+                                    .fetchLeads(
+                                      stageIds:
+                                          _selectedStageFilter.isNotEmpty
+                                              ? _selectedStageFilter
+                                              : null,
+                                      duplicates: _showDuplicatesOnly,
+                                      ignoreDuplicate: _showDuplicatesOnly,
+                                      data: widget.data,
+                                      transferefromdata:
+                                          widget.transferefromdata,
+                                      salesIds:
+                                          widget.salesIdss != null &&
+                                                  widget.salesIdss!.isNotEmpty
+                                              ? widget.salesIdss
+                                              : null,
+                                    );
+
+                                _showCheckboxes = false;
+                                _selectedLeads.clear();
+                              }
+                            },
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.edit_outlined,
+                                  color: Colors.grey.shade700,
+                                  size: (25 * tabletFontScale).sp,
+                                ),
+                                SizedBox(height: (4 * tabletHeightScale).h),
+                                Text(
+                                  "EDIT",
+                                  style: TextStyle(
+                                    fontSize: (10 * tabletFontScale).sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          /// DIVIDER
+                          Container(
+                            height: (50 * tabletHeightScale).h,
+                            width: 1,
+                            color: Colors.grey.shade300,
+                          ),
+
+                          // =========================
+                          // STATUS
+                          // =========================
+                          if (widget.transferefromdata == true)
+                            InkWell(
+                              onTap: () {
+                                if (_selectedLeads.isEmpty) return;
+
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (_) {
+                                    return BlocProvider(
+                                      create:
+                                          (_) => EditLeadCubit(
+                                            EditLeadApiService(),
+                                          ),
+                                      child: _ChangeLeadToDataDialog(
+                                        leadIds: _selectedLeads.toList(),
+                                        onSuccess: () {
+                                          context
+                                              .read<
+                                                AllLeadsCubitWithPagination
+                                              >()
+                                              .fetchLeads(
                                                 stageIds:
                                                     _selectedStageFilter
                                                             .isNotEmpty
@@ -997,263 +1246,257 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                 data: widget.data,
                                                 transferefromdata:
                                                     widget.transferefromdata,
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                  );
-                                  if (result == true) {
-                                    context
-                                        .read<AllLeadsCubitWithPagination>()
-                                        .fetchLeads(
-                                          stageIds:
-                                              _selectedStageFilter.isNotEmpty
-                                                  ? _selectedStageFilter
-                                                  : null,
-                                          duplicates: _showDuplicatesOnly,
-                                          ignoreDuplicate: _showDuplicatesOnly,
-                                          data: widget.data,
-                                          transferefromdata:
-                                              widget.transferefromdata,
-                                        );
-                                    _showCheckboxes = false;
-                                    _selectedLeads.clear();
-                                  }
-                                },
-                                child: const _ActionIcon(
-                                  icon: Icon(Icons.edit),
-                                ),
-                              ),
-
-                              if (widget.transferefromdata == true)
-                                InkWell(
-                                  onTap: () {
-                                    if (_selectedLeads.isEmpty) return;
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (_) {
-                                        return BlocProvider(
-                                          create:
-                                              (_) => EditLeadCubit(
-                                                EditLeadApiService(),
-                                              ),
-                                          child: _ChangeLeadToDataDialog(
-                                            leadIds: _selectedLeads.toList(),
-                                            onSuccess: () {
-                                              context
-                                                  .read<
-                                                    AllLeadsCubitWithPagination
-                                                  >()
-                                                  .fetchLeads(
-                                                    stageIds:
-                                                        _selectedStageFilter
+                                                salesIds:
+                                                    widget.salesIdss != null &&
+                                                            widget
+                                                                .salesIdss!
                                                                 .isNotEmpty
-                                                            ? _selectedStageFilter
-                                                            : null,
-                                                    duplicates:
-                                                        _showDuplicatesOnly,
-                                                    ignoreDuplicate:
-                                                        _showDuplicatesOnly,
-                                                    data: widget.data,
-                                                    transferefromdata:
-                                                        widget
-                                                            .transferefromdata,
-                                                  );
+                                                        ? widget.salesIdss
+                                                        : null,
+                                              );
 
-                                              setState(() {
-                                                _showCheckboxes = false;
-                                                _selectedLeads.clear();
-                                              });
-                                            },
-                                          ),
-                                        );
-                                      },
+                                          setState(() {
+                                            _showCheckboxes = false;
+                                            _selectedLeads.clear();
+                                          });
+                                        },
+                                      ),
                                     );
                                   },
-                                  child: const _ActionIcon(
-                                    icon: Icon(Icons.swap_horiz),
+                                );
+                              },
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.logout,
+                                    color: Colors.grey.shade700,
+                                    size: (25 * tabletFontScale).sp,
                                   ),
-                                ),
+                                  SizedBox(height: (4 * tabletHeightScale).h),
+                                  Text(
+                                    "Switch",
+                                    style: TextStyle(
+                                      fontSize: (10 * tabletFontScale).sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
-                              InkWell(
-                                onTap: () async {
-                                  final leadsList =
-                                      context
-                                          .read<AllLeadsCubitWithPagination>()
-                                          .leads;
+                          /// DIVIDER
+                          Container(
+                            height: (50 * tabletHeightScale).h,
+                            width: 1,
+                            color: Colors.grey.shade300,
+                          ),
 
-                                  final selectedLead = leadsList.firstWhere(
-                                    (lead) =>
-                                        lead.id.toString() ==
-                                        _selectedLeads.first,
-                                    orElse: () => LeadDataWithPagination(),
-                                  );
+                          // =========================
+                          // DELETE
+                          // =========================
+                          InkWell(
+                            onTap: () async {
+                              final leadsList =
+                                  context
+                                      .read<AllLeadsCubitWithPagination>()
+                                      .leads;
 
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) {
-                                      return BlocProvider(
-                                        create:
-                                            (_) => EditLeadCubit(
-                                              EditLeadApiService(),
-                                            ),
-                                        child: AlertDialog(
-                                          title: Text(
-                                            "Delete Lead",
-                                            style: TextStyle(
-                                              fontSize:
-                                                  (18 * tabletFontScale).sp,
-                                            ),
-                                          ),
-                                          content: Text(
-                                            "Are you sure you want to delete this lead?",
+                              final selectedLead = leadsList.firstWhere(
+                                (lead) =>
+                                    lead.id.toString() == _selectedLeads.first,
+                                orElse: () => LeadDataWithPagination(),
+                              );
+
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) {
+                                  return BlocProvider(
+                                    create:
+                                        (_) =>
+                                            EditLeadCubit(EditLeadApiService()),
+                                    child: AlertDialog(
+                                      title: Text(
+                                        "Delete Lead",
+                                        style: TextStyle(
+                                          fontSize: (18 * tabletFontScale).sp,
+                                        ),
+                                      ),
+                                      content: Text(
+                                        "Are you sure you want to delete this lead?",
+                                        style: TextStyle(
+                                          fontSize: (14 * tabletFontScale).sp,
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context, false);
+                                          },
+                                          child: Text(
+                                            "Cancel",
                                             style: TextStyle(
                                               fontSize:
                                                   (14 * tabletFontScale).sp,
                                             ),
                                           ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context, false);
-                                              },
-                                              child: Text(
-                                                "Cancel",
-                                                style: TextStyle(
-                                                  fontSize:
-                                                      (14 * tabletFontScale).sp,
+                                        ),
+
+                                        BlocConsumer<
+                                          EditLeadCubit,
+                                          EditLeadState
+                                        >(
+                                          listener: (context, state) {
+                                            if (state is EditLeadSuccess) {
+                                              Navigator.pop(context, true);
+                                            }
+
+                                            if (state is EditLeadFailure) {
+                                              Navigator.pop(context, false);
+
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    "Failed to delete the lead. Please try again.",
+                                                    style: TextStyle(
+                                                      fontSize:
+                                                          (14 * tabletFontScale)
+                                                              .sp,
+                                                    ),
+                                                  ),
+                                                  backgroundColor: Colors.red,
                                                 ),
-                                              ),
-                                            ),
-                                            BlocConsumer<
-                                              EditLeadCubit,
-                                              EditLeadState
-                                            >(
-                                              listener: (context, state) {
-                                                if (state is EditLeadSuccess) {
-                                                  Navigator.pop(context, true);
-                                                }
-                                                if (state is EditLeadFailure) {
-                                                  Navigator.pop(context, false);
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        "Failed to delete the lead. Please try again.",
+                                              );
+                                            }
+                                          },
+                                          builder: (context, state) {
+                                            return TextButton(
+                                              onPressed:
+                                                  state is EditLeadLoading
+                                                      ? null
+                                                      : () {
+                                                        _showCheckboxes = false;
+
+                                                        _selectedLeads.clear();
+
+                                                        context
+                                                            .read<
+                                                              EditLeadCubit
+                                                            >()
+                                                            .editLead(
+                                                              userId:
+                                                                  selectedLead
+                                                                      .id ??
+                                                                  '',
+                                                              isLeadActivte:
+                                                                  false,
+                                                            );
+
+                                                        setState(() {
+                                                          _showCheckboxes =
+                                                              false;
+
+                                                          _selectedLeads
+                                                              .clear();
+                                                        });
+                                                      },
+                                              child:
+                                                  state is EditLeadLoading
+                                                      ? SizedBox(
+                                                        height:
+                                                            (18 * tabletFontScale)
+                                                                .h,
+                                                        width:
+                                                            (18 * tabletFontScale)
+                                                                .w,
+                                                        child: CircularProgressIndicator(
+                                                          strokeWidth:
+                                                              (2 * tabletScale)
+                                                                  .w,
+                                                        ),
+                                                      )
+                                                      : Text(
+                                                        "Delete",
                                                         style: TextStyle(
+                                                          color: Colors.red,
                                                           fontSize:
                                                               (14 * tabletFontScale)
                                                                   .sp,
                                                         ),
                                                       ),
-                                                      backgroundColor:
-                                                          Colors.red,
-                                                    ),
-                                                  );
-                                                }
-                                              },
-                                              builder: (context, state) {
-                                                return TextButton(
-                                                  onPressed:
-                                                      state is EditLeadLoading
-                                                          ? null
-                                                          : () {
-                                                            _showCheckboxes =
-                                                                false;
-                                                            _selectedLeads
-                                                                .clear();
-                                                            context
-                                                                .read<
-                                                                  EditLeadCubit
-                                                                >()
-                                                                .editLead(
-                                                                  userId:
-                                                                      selectedLead
-                                                                          .id ??
-                                                                      '',
-                                                                  isLeadActivte:
-                                                                      false,
-                                                                );
-                                                            setState(() {
-                                                              _showCheckboxes =
-                                                                  false;
-                                                              _selectedLeads
-                                                                  .clear();
-                                                            });
-                                                          },
-                                                  child:
-                                                      state is EditLeadLoading
-                                                          ? SizedBox(
-                                                            height:
-                                                                (18 * tabletFontScale)
-                                                                    .h,
-                                                            width:
-                                                                (18 * tabletFontScale)
-                                                                    .w,
-                                                            child: CircularProgressIndicator(
-                                                              strokeWidth:
-                                                                  (2 * tabletScale)
-                                                                      .w,
-                                                            ),
-                                                          )
-                                                          : Text(
-                                                            "Delete",
-                                                            style: TextStyle(
-                                                              color: Colors.red,
-                                                              fontSize:
-                                                                  (14 *
-                                                                          tabletFontScale)
-                                                                      .sp,
-                                                            ),
-                                                          ),
-                                                );
-                                              },
-                                            ),
-                                          ],
+                                            );
+                                          },
                                         ),
-                                      );
-                                    },
+                                      ],
+                                    ),
                                   );
-
-                                  if (confirm == true) {
-                                    final cubit =
-                                        context
-                                            .read<
-                                              AllLeadsCubitWithPagination
-                                            >();
-                                    cubit.fetchLeads(
-                                      stageIds:
-                                          _selectedStageFilter.isNotEmpty
-                                              ? _selectedStageFilter
-                                              : null,
-                                      duplicates: _showDuplicatesOnly,
-                                      ignoreDuplicate: _showDuplicatesOnly,
-                                      data: widget.data,
-                                      transferefromdata:
-                                          widget.transferefromdata,
-                                    );
-                                  }
                                 },
-                                child: const _ActionIcon(
-                                  icon: Icon(Icons.delete),
+                              );
+
+                              if (confirm == true) {
+                                final cubit =
+                                    context.read<AllLeadsCubitWithPagination>();
+
+                                cubit.fetchLeads(
+                                  stageIds:
+                                      _selectedStageFilter.isNotEmpty
+                                          ? _selectedStageFilter
+                                          : null,
+                                  duplicates: _showDuplicatesOnly,
+                                  ignoreDuplicate: _showDuplicatesOnly,
+                                  data: widget.data,
+                                  transferefromdata: widget.transferefromdata,
+                                  salesIds:
+                                      widget.salesIdss != null &&
+                                              widget.salesIdss!.isNotEmpty
+                                          ? widget.salesIdss
+                                          : null,
+                                );
+                              }
+                            },
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.grey.shade700,
+                                  size: (25 * tabletFontScale).sp,
                                 ),
-                              ),
-                            ],
+                                SizedBox(height: (4 * tabletHeightScale).h),
+                                Text(
+                                  "DELETE",
+                                  style: TextStyle(
+                                    fontSize: (10 * tabletFontScale).sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
+                    ),
                   ],
                 ),
               ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // قسم التبويبات
-                Row(
-                  children: [
-                    GestureDetector(
+
+            /// =========================
+            /// TABS
+            /// =========================
+            Container(
+              padding: EdgeInsets.only(
+                top: (4 * tabletHeightScale).h,
+                bottom: (8 * tabletHeightScale).h,
+              ),
+              child: Row(
+                children: [
+                  /// ALL LEADS
+                  Expanded(
+                    child: GestureDetector(
                       onTap: () {
                         setState(() {
                           selectedTab = 0;
@@ -1282,109 +1525,214 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                         }
                       },
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            'Manage Leads',
-                            style: TextStyle(
-                              fontSize: (14 * tabletFontScale).sp,
-                              fontWeight: FontWeight.w600,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'All Leads',
+                                style: TextStyle(
+                                  fontSize: (16 * tabletFontScale).sp,
+                                  fontWeight: FontWeight.w700,
+                                  color:
+                                      selectedTab == 0
+                                          ? Constants.mainlightmodecolor
+                                          : Colors.grey,
+                                ),
+                              ),
+
+                              SizedBox(width: (8 * tabletWidthScale).w),
+
+                              // ✅ هنا التعديل
+                              BlocBuilder<
+                                AllLeadsCubitWithPagination,
+                                AllLeadsState
+                              >(
+                                builder: (context, state) {
+                                  // ✅ بس اعرض بعد ما الـ fetch يخلص
+                                  if (state is! AllLeadsLoaded &&
+                                      state is! AllLeadsError) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  final cubit =
+                                      context
+                                          .read<AllLeadsCubitWithPagination>();
+
+                                  // ✅ لو loaded → خد totalLeads من الـ cubit مباشرة (بيكون 0 لو مفيش نتايج)
+                                  // ✅ لو error → عرض 0
+                                  final count =
+                                      state is AllLeadsLoaded
+                                          ? cubit.totalLeads
+                                          : 0;
+
+                                  return Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: (10 * tabletWidthScale).w,
+                                      vertical: (4 * tabletHeightScale).h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          selectedTab == 0
+                                              ? Constants.mainlightmodecolor
+                                                  .withOpacity(0.12)
+                                              : Colors.grey.withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(
+                                        (20 * tabletScale).r,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '$count',
+                                      style: TextStyle(
+                                        fontSize: (13 * tabletFontScale).sp,
+                                        fontWeight: FontWeight.w700,
+                                        color:
+                                            selectedTab == 0
+                                                ? Constants.mainlightmodecolor
+                                                : Colors.grey,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(height: (12 * tabletHeightScale).h),
+
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            height: (3 * tabletHeightScale).h,
+                            width: double.infinity,
+                            margin: EdgeInsets.symmetric(
+                              horizontal: (10 * tabletWidthScale).w,
+                            ),
+                            decoration: BoxDecoration(
                               color:
                                   selectedTab == 0
-                                      ? Constants.maincolor
-                                      : Colors.grey,
+                                      ? Constants.mainlightmodecolor
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(
+                                (20 * tabletScale).r,
+                              ),
                             ),
                           ),
-                          SizedBox(height: (4 * tabletHeightScale).h),
-                          if (selectedTab == 0)
-                            Container(
-                              height: (2 * tabletHeightScale).h,
-                              width: (50 * tabletWidthScale).w,
-                              color: Constants.maincolor,
-                            ),
                         ],
                       ),
                     ),
+                  ),
 
-                    SizedBox(width: (20 * tabletWidthScale).w),
+                  SizedBox(width: (8 * tabletWidthScale).w),
 
-                    GestureDetector(
+                  /// LEADS TRASH
+                  Expanded(
+                    child: GestureDetector(
                       onTap: () {
                         setState(() {
                           selectedTab = 1;
                           _searchQuery = '';
                           _nameSearchController.clear();
+                          _currentTrashPage = 1; // ← أضف
+                          _hasMoreTrashData = true; // ← أضف
+                          _isFetchingMoreTrash = false; // ← أضف
                         });
+
                         context
                             .read<AllLeadsCubitWithPagination>()
                             .fetchLeadsInTrash();
                       },
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            'Leads Trash',
-                            style: TextStyle(
-                              fontSize: (14 * tabletFontScale).sp,
-                              fontWeight: FontWeight.w600,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Leads Trash',
+                                style: TextStyle(
+                                  fontSize: (16 * tabletFontScale).sp,
+                                  fontWeight: FontWeight.w700,
+                                  color:
+                                      selectedTab == 1
+                                          ? Constants.mainlightmodecolor
+                                          : Colors.grey,
+                                ),
+                              ),
+
+                              SizedBox(width: (8 * tabletWidthScale).w),
+
+                              // ✅ هنا كمان للـ Trash
+                              BlocBuilder<
+                                AllLeadsCubitWithPagination,
+                                AllLeadsState
+                              >(
+                                builder: (context, state) {
+                                  final trashCount =
+                                      context
+                                          .read<AllLeadsCubitWithPagination>()
+                                          .totaltrashleads;
+
+                                  if (trashCount > 0) {
+                                    return Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: (10 * tabletWidthScale).w,
+                                        vertical: (4 * tabletHeightScale).h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            selectedTab == 1
+                                                ? Constants.mainlightmodecolor
+                                                    .withOpacity(0.12)
+                                                : Colors.grey.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(
+                                          (20 * tabletScale).r,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '$trashCount',
+                                        style: TextStyle(
+                                          fontSize: (13 * tabletFontScale).sp,
+                                          fontWeight: FontWeight.w700,
+                                          color:
+                                              selectedTab == 1
+                                                  ? Constants.mainlightmodecolor
+                                                  : Colors.grey,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                },
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(height: (12 * tabletHeightScale).h),
+
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            height: (3 * tabletHeightScale).h,
+                            width: double.infinity,
+                            margin: EdgeInsets.symmetric(
+                              horizontal: (10 * tabletWidthScale).w,
+                            ),
+                            decoration: BoxDecoration(
                               color:
                                   selectedTab == 1
-                                      ? Constants.maincolor
-                                      : Colors.grey,
+                                      ? Constants.mainlightmodecolor
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(
+                                (20 * tabletScale).r,
+                              ),
                             ),
                           ),
-                          SizedBox(height: (4 * tabletHeightScale).h),
-                          if (selectedTab == 1)
-                            Container(
-                              height: (2 * tabletHeightScale).h,
-                              width: (50 * tabletWidthScale).w,
-                              color: Constants.maincolor,
-                            ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-
-                // المسافة الفاصلة
-                SizedBox(width: (2 * tabletWidthScale).w),
-
-                // زر Create Lead
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular((8 * tabletScale).r),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: (10 * tabletWidthScale).w,
-                      vertical: (10 * tabletHeightScale).h,
-                    ),
                   ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreateLeadScreen(),
-                      ),
-                    );
-                  },
-                  icon: Icon(
-                    Icons.add,
-                    size: (11 * tabletFontScale).sp,
-                    color: Colors.white,
-                  ),
-                  label: Text(
-                    'Create Lead',
-                    style: TextStyle(
-                      fontSize: (11 * tabletFontScale).sp,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
             Expanded(
               child: //BlocBuilder<GetAllUsersCubit, GetAllUsersState>(
@@ -1417,21 +1765,64 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                   // else if (state is GetLeadsInTrashSuccess &&
                   //     selectedTab == 1) {
                   else if (state is AllLeadsTrashLoaded && selectedTab == 1) {
-                    final leads = state.leadsData.data;
-                    if (leads == null || leads.isEmpty) {
+                    final cubit =
+                        context.read<AllLeadsCubitWithPagination>(); // ← أضف
+                    final trashLeads =
+                        cubit.trashLeads; // ← استخدم trashLeads من الـ cubit
+                    if (trashLeads.isEmpty) {
                       return const Center(child: Text('Leads trash is empty.'));
                     }
                     return RefreshIndicator(
                       onRefresh: () async {
+                        setState(() {
+                          _currentTrashPage = 1;
+                          _hasMoreTrashData = true;
+                          _isFetchingMoreTrash = false;
+                        });
                         //   context.read<GetAllUsersCubit>().fetchLeadsInTrash();
                         context
                             .read<AllLeadsCubitWithPagination>()
-                            .fetchLeadsInTrash();
+                            .fetchLeadsInTrash(
+                              search:
+                                  _searchQuery.isNotEmpty ? _searchQuery : null,
+                            );
                       },
                       child: ListView.builder(
-                        itemCount: leads.length,
+                        controller: _trashScrollController, // ← أضف
+                        itemCount:
+                            trashLeads.length + (_isFetchingMoreTrash ? 1 : 0),
+                        // ← عدّل
                         itemBuilder: (context, index) {
-                          final lead = leads[index];
+                          if (index == trashLeads.length) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 18.w,
+                                    height: 18.w,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Constants.mainlightmodecolor,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.w),
+                                  Text(
+                                    "Loading more...",
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      color: Colors.grey.shade500,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          final lead = trashLeads[index];
                           return Card(
                             color:
                                 Theme.of(context).brightness == Brightness.light
@@ -1483,7 +1874,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                           _selectedCommunicationWayFilter = [];
                           _selectedCampaignFilter = [];
                           // ✅ خليك دايمًا ماسك الـ stage اللي دخل بيها المستخدم
-                          _selectedStageFilter = [];
+                          _selectedStageFilter =
+                              widget.stageId != null &&
+                                      widget.stageId!.isNotEmpty
+                                  ? [widget.stageId!]
+                                  : []; // ✅ رجّع الـ stageId الأصلي
                         });
 
                         if (selectedTab == 0) {
@@ -1718,6 +2113,11 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                           question5_text: lead.question5_text,
                                           question5_answer:
                                               lead.question5_answer,
+                                          salesFcmTokens:
+                                              lead.sales?.userlog?.fcmTokens
+                                                  ?.map((e) => e.token ?? '')
+                                                  .where((t) => t.isNotEmpty)
+                                                  .toList(),
                                         ),
                                   ),
                                 ).then((_) {
@@ -1731,582 +2131,779 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                             },
                             child: Column(
                               children: [
-                                Card(
-                                  color:
-                                      _selectedLeads.contains(lead.id)
-                                          ? (Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Colors
-                                                  .grey[300] // أغمق شوية لو Light Mode
-                                              : Colors
-                                                  .grey[800]) // أغمق شوية لو Dark Mode
-                                          : (Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Colors.white
-                                              : Colors.grey[900]),
+                                Container(
                                   margin: EdgeInsets.symmetric(
-                                    vertical: (8 * tabletHeightScale).h,
+                                    vertical: (10 * tabletHeightScale).h,
                                   ),
-                                  shape: RoundedRectangleBorder(
+                                  decoration: BoxDecoration(
+                                    color:
+                                        _selectedLeads.contains(lead.id)
+                                            ? (Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? const Color(0xffF3F4F6)
+                                                : const Color(0xff1F2937))
+                                            : (Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Colors.white
+                                                : const Color(0xff111827)),
                                     borderRadius: BorderRadius.circular(
-                                      (12 * tabletScale).r,
+                                      (22 * tabletScale).r,
                                     ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.04),
+                                        blurRadius: 14,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
                                   ),
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      top: (16 * tabletHeightScale).h,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                  child: IntrinsicHeight(
+                                    child: Row(
                                       children: [
-                                        // ---------- Row 1: Name and Status Icon ----------
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                            left: (8 * tabletWidthScale).w,
-                                            right: (8 * tabletWidthScale).w,
+                                        /// LEFT COLOR BAR
+                                        Container(
+                                          width: (5 * tabletWidthScale).w,
+                                          decoration: BoxDecoration(
+                                            color:
+                                                (() {
+                                                  if (leadStagetype ==
+                                                      "Fresh") {
+                                                    return Constants
+                                                        .mainlightmodecolor;
+                                                  } else if (leadStagetype ==
+                                                          "Follow Up" &&
+                                                      isOutdated) {
+                                                    return Colors.orangeAccent;
+                                                  } else if (leadStagetype ==
+                                                          "Follow" &&
+                                                      isOutdated) {
+                                                    return Colors.orangeAccent;
+                                                  } else if (leadStagetype ==
+                                                          "Follow After Meeting" &&
+                                                      isOutdated) {
+                                                    return Colors.orangeAccent;
+                                                  } else if (leadStagetype ==
+                                                          "No Answer" &&
+                                                      isOutdated) {
+                                                    return Colors.orangeAccent;
+                                                  } else if (leadStagetype ==
+                                                          "No Stage" &&
+                                                      isOutdated) {
+                                                    return Colors.orangeAccent;
+                                                  } else if (leadStagetype ==
+                                                          "Meeting" &&
+                                                      isOutdated) {
+                                                    return Colors.orangeAccent;
+                                                  } else if (leadStagetype ==
+                                                          "Interested" &&
+                                                      isOutdated) {
+                                                    return Colors.orangeAccent;
+                                                  } else if (leadStagetype ==
+                                                          "Not Interested" ||
+                                                      leadStagetype ==
+                                                          "Transfer") {
+                                                    return Colors.black;
+                                                  } else {
+                                                    return Constants
+                                                        .mainlightmodecolor;
+                                                  }
+                                                })(),
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(
+                                                (22 * tabletScale).r,
+                                              ),
+                                              bottomLeft: Radius.circular(
+                                                (22 * tabletScale).r,
+                                              ),
+                                            ),
                                           ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              // ✅ الجزء الشمال (Checkbox + Stage + SD Date)
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      if (_showCheckboxes &&
-                                                          _selectedLeads
-                                                              .isNotEmpty)
-                                                        Checkbox(
-                                                          activeColor:
-                                                              Constants
-                                                                  .maincolor,
-                                                          value: _selectedLeads
-                                                              .contains(
-                                                                lead.id,
-                                                              ),
-                                                          onChanged: (
-                                                            bool? value,
-                                                          ) {
-                                                            setState(() {
-                                                              if (value ==
-                                                                  true) {
-                                                                _selectedLeads
-                                                                    .add(
-                                                                      lead.id!,
-                                                                    );
-                                                                _selectedSalesIds.add(
-                                                                  lead
-                                                                          .sales
-                                                                          ?.id ??
-                                                                      '',
-                                                                );
-                                                                _selectedLeadStagesIds.add(
-                                                                  lead
-                                                                          .stage
-                                                                          ?.id ??
-                                                                      '',
-                                                                );
-                                                              } else {
-                                                                _selectedLeads
-                                                                    .remove(
+                                        ),
+
+                                        Expanded(
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal:
+                                                  (18 * tabletWidthScale).w,
+                                              vertical:
+                                                  (18 * tabletHeightScale).h,
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                /// =========================
+                                                /// TOP ROW
+                                                /// =========================
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Flexible(
+                                                      child: Row(
+                                                        children: [
+                                                          if (_showCheckboxes &&
+                                                              _selectedLeads
+                                                                  .isNotEmpty)
+                                                            Padding(
+                                                              padding:
+                                                                  EdgeInsets.only(
+                                                                    right:
+                                                                        (8 *
+                                                                                tabletWidthScale)
+                                                                            .w,
+                                                                  ),
+                                                              child: Checkbox(
+                                                                materialTapTargetSize:
+                                                                    MaterialTapTargetSize
+                                                                        .shrinkWrap,
+                                                                visualDensity:
+                                                                    VisualDensity
+                                                                        .compact,
+                                                                activeColor:
+                                                                    Constants
+                                                                        .mainlightmodecolor,
+                                                                value: _selectedLeads
+                                                                    .contains(
                                                                       lead.id,
-                                                                    );
-                                                                _selectedSalesIds
-                                                                    .remove(
-                                                                      lead.sales?.id ??
-                                                                          '',
-                                                                    );
-                                                                _selectedLeadStagesIds
-                                                                    .remove(
-                                                                      lead.stage?.id ??
-                                                                          '',
-                                                                    );
-                                                                _showCheckboxes =
-                                                                    false;
-                                                              }
-                                                            });
-                                                          },
-                                                        ),
-                                                      // 👇 نتحقق من الشرط الخاص باللون
-                                                      Builder(
-                                                        builder: (_) {
-                                                          final bool
-                                                          isFinalStage =
-                                                              stageUpdatedDate !=
-                                                                  null &&
-                                                              (leadStagetype ==
-                                                                      "Done Deal" ||
-                                                                  leadStagetype ==
-                                                                      "Transfer" ||
-                                                                  leadStagetype ==
-                                                                      "Fresh" ||
-                                                                  leadStagetype ==
-                                                                      "Not Interested");
-                                                          late final Color
-                                                          stageColor;
-                                                          if (leadStagetype ==
-                                                              "Not Interested") {
-                                                            stageColor =
-                                                                Colors
-                                                                    .black; // ✅ اللون الأسود
-                                                          } else {
-                                                            stageColor =
-                                                                isFinalStage
-                                                                    ? Constants
-                                                                        .maincolor
-                                                                    : isOutdated
-                                                                    ? Colors.red
-                                                                    : Colors
-                                                                        .green;
-                                                          }
-                                                          return Container(
-                                                            padding: EdgeInsets.symmetric(
-                                                              horizontal:
-                                                                  (8 *
-                                                                          tabletWidthScale)
-                                                                      .w,
-                                                              vertical:
-                                                                  (4 *
-                                                                          tabletHeightScale)
-                                                                      .h,
-                                                            ),
-                                                            decoration: BoxDecoration(
-                                                              color: stageColor
-                                                                  .withOpacity(
-                                                                    0.1,
-                                                                  ),
-                                                              border: Border.all(
-                                                                color:
-                                                                    stageColor,
-                                                                width:
-                                                                    (1 * tabletScale)
-                                                                        .w,
+                                                                    ),
+                                                                onChanged: (
+                                                                  bool? value,
+                                                                ) {
+                                                                  setState(() {
+                                                                    if (value ==
+                                                                        true) {
+                                                                      _selectedLeads
+                                                                          .add(
+                                                                            lead.id!,
+                                                                          );
+
+                                                                      _selectedSalesIds.add(
+                                                                        lead.sales?.id ??
+                                                                            '',
+                                                                      );
+
+                                                                      _selectedLeadStagesIds.add(
+                                                                        lead.stage?.id ??
+                                                                            '',
+                                                                      );
+                                                                    } else {
+                                                                      _selectedLeads
+                                                                          .remove(
+                                                                            lead.id,
+                                                                          );
+
+                                                                      _selectedSalesIds.remove(
+                                                                        lead.sales?.id ??
+                                                                            '',
+                                                                      );
+
+                                                                      _selectedLeadStagesIds.remove(
+                                                                        lead.stage?.id ??
+                                                                            '',
+                                                                      );
+
+                                                                      _showCheckboxes =
+                                                                          false;
+                                                                    }
+                                                                  });
+                                                                },
                                                               ),
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    (20 *
-                                                                            tabletScale)
-                                                                        .r,
-                                                                  ),
                                                             ),
-                                                            child: Row(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: [
-                                                                Icon(
-                                                                  Icons.circle,
-                                                                  color:
-                                                                      stageColor,
-                                                                  size:
-                                                                      (10 *
-                                                                              tabletFontScale)
-                                                                          .sp,
-                                                                ),
-                                                                SizedBox(
-                                                                  width:
-                                                                      (6 *
-                                                                              tabletWidthScale)
-                                                                          .w,
-                                                                ),
-                                                                Text(
-                                                                  lead
-                                                                          .stage
-                                                                          ?.name ??
-                                                                      "No Stage",
-                                                                  style: TextStyle(
-                                                                    fontSize:
-                                                                        (13 *
-                                                                                tabletFontScale)
-                                                                            .sp,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
+
+                                                          Builder(
+                                                            builder: (_) {
+                                                              final bool
+                                                              isFinalStage =
+                                                                  stageUpdatedDate !=
+                                                                      null &&
+                                                                  (leadStagetype ==
+                                                                          "Done Deal" ||
+                                                                      leadStagetype ==
+                                                                          "Fresh" ||
+                                                                      leadStagetype ==
+                                                                          "EOI" ||
+                                                                      leadStagetype ==
+                                                                          "Cancel Meeting" ||
+                                                                      leadStagetype ==
+                                                                          "Pending");
+
+                                                              late final Color
+                                                              stageColor;
+
+                                                              if (leadStagetype ==
+                                                                      "Not Interested" ||
+                                                                  leadStagetype ==
+                                                                      "Transfer") {
+                                                                stageColor =
+                                                                    Colors
+                                                                        .black;
+                                                              } else {
+                                                                stageColor =
+                                                                    isFinalStage
+                                                                        ? Constants
+                                                                            .mainlightmodecolor
+                                                                        : isOutdated
+                                                                        ? const Color(
+                                                                          0xffFEB300,
+                                                                        )
+                                                                        : Constants
+                                                                            .mainlightmodecolor;
+                                                              }
+
+                                                              return Flexible(
+                                                                child: Container(
+                                                                  padding: EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        (18 *
+                                                                                tabletWidthScale)
+                                                                            .w,
+                                                                    vertical:
+                                                                        (8 *
+                                                                                tabletHeightScale)
+                                                                            .h,
+                                                                  ),
+                                                                  decoration: BoxDecoration(
                                                                     color:
-                                                                        stageColor,
+                                                                        (lead.stage?.name ==
+                                                                                        "Follow Up" ||
+                                                                                    lead.stage?.name ==
+                                                                                        "Follow After Meeting" ||
+                                                                                    lead.stage?.name ==
+                                                                                        "Follow" ||
+                                                                                    lead.stage?.name ==
+                                                                                        "Meeting" ||
+                                                                                    lead.stage?.name ==
+                                                                                        "No Answer" ||
+                                                                                    lead.stage?.name ==
+                                                                                        "No Stage" ||
+                                                                                    leadStagetype ==
+                                                                                        "Interested") &&
+                                                                                isOutdated
+                                                                            ? stageColor
+                                                                            : stageColor.withOpacity(
+                                                                              0.15,
+                                                                            ),
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          (10 *
+                                                                                  tabletScale)
+                                                                              .r,
+                                                                        ),
+                                                                  ),
+                                                                  child: Text(
+                                                                    ((lead.stage?.name ??
+                                                                                    "No Stage")
+                                                                                .length >
+                                                                            10)
+                                                                        ? "${(lead.stage?.name ?? "No Stage").substring(0, 10).toUpperCase()}..."
+                                                                        : (lead.stage?.name ??
+                                                                                "No Stage")
+                                                                            .toUpperCase(),
+                                                                    maxLines: 1,
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                    style: TextStyle(
+                                                                      fontSize:
+                                                                          (10 *
+                                                                                  tabletFontScale)
+                                                                              .sp,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w800,
+                                                                      letterSpacing:
+                                                                          1,
+                                                                      color:
+                                                                          (lead.stage?.name ==
+                                                                                          "Follow Up" ||
+                                                                                      lead.stage?.name ==
+                                                                                          "Follow After Meeting" ||
+                                                                                      lead.stage?.name ==
+                                                                                          "Follow" ||
+                                                                                      lead.stage?.name ==
+                                                                                          "Meeting" ||
+                                                                                      lead.stage?.name ==
+                                                                                          "No Answer" ||
+                                                                                      lead.stage?.name ==
+                                                                                          "No Stage" ||
+                                                                                      leadStagetype ==
+                                                                                          "Interested") &&
+                                                                                  isOutdated
+                                                                              ? const Color(
+                                                                                0xff6A4800,
+                                                                              )
+                                                                              : stageColor,
+                                                                    ),
                                                                   ),
                                                                 ),
-                                                              ],
-                                                            ),
-                                                          );
-                                                        },
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
                                                       ),
-                                                    ],
-                                                  ),
-                                                  SizedBox(
-                                                    height:
-                                                        (8 * tabletHeightScale)
-                                                            .h,
-                                                  ),
-                                                  Text(
-                                                    "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!.toString()) : "N/A"}",
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          (12 * tabletFontScale)
-                                                              .sp,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color:
-                                                          Theme.of(
-                                                                    context,
-                                                                  ).brightness ==
-                                                                  Brightness
-                                                                      .light
-                                                              ? Colors.black87
-                                                              : Colors.white70,
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
-                                              // ✅ الجزء اليمين (KSA | EVENT | Skyrise أو اسم المشروع)
-                                              Expanded(
-                                                child: Text(
-                                                  lead.project?.name ?? '',
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        (12 * tabletFontScale)
-                                                            .sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                  textAlign: TextAlign.right,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  maxLines: 2,
+
+                                                    SizedBox(
+                                                      width:
+                                                          (10 * tabletWidthScale)
+                                                              .w,
+                                                    ),
+
+                                                    Text(
+                                                      lead.stagedateupdated !=
+                                                              null
+                                                          ? formatDateTimeToDubai(
+                                                            lead.stagedateupdated!
+                                                                .toString(),
+                                                          )
+                                                          : "N/A",
+                                                      style: TextStyle(
+                                                        fontSize:
+                                                            (11 * tabletFontScale)
+                                                                .sp,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color:
+                                                            Colors
+                                                                .grey
+                                                                .shade500,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
 
-                                        SizedBox(
-                                          height: (8 * tabletHeightScale).h,
-                                        ),
+                                                SizedBox(
+                                                  height:
+                                                      (12 * tabletHeightScale)
+                                                          .h,
+                                                ),
 
-                                        Divider(
-                                          height: (3 * tabletHeightScale).h,
-                                          thickness: (1.5 * tabletScale).w,
-                                        ),
-
-                                        SizedBox(
-                                          height: (20 * tabletHeightScale).h,
-                                        ),
-
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                            left: (8 * tabletWidthScale).w,
-                                            right: (8 * tabletWidthScale).w,
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                child: Text(
+                                                /// =========================
+                                                /// NAME
+                                                /// =========================
+                                                Text(
                                                   lead.name ?? "No Name",
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        (19 * tabletFontScale)
-                                                            .sp,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
                                                   maxLines: 1,
                                                   overflow:
                                                       TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-
-                                        SizedBox(
-                                          height: (12 * tabletHeightScale).h,
-                                        ),
-
-                                        // ---------- Row 2: phone | Person ----------
-                                        InkWell(
-                                          onTap: () {
-                                            final phone = lead.phone ?? '';
-                                            final formattedPhone =
-                                                phone.startsWith('0')
-                                                    ? phone
-                                                    : '+$phone';
-                                            makePhoneCall(formattedPhone);
-                                          },
-                                          child: Padding(
-                                            padding: EdgeInsets.only(
-                                              left: (8 * tabletWidthScale).w,
-                                              right: (8 * tabletWidthScale).w,
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.phone,
-                                                  color:
-                                                      Theme.of(
-                                                                context,
-                                                              ).brightness ==
-                                                              Brightness.light
-                                                          ? Colors.grey
-                                                          : Constants
-                                                              .mainDarkmodecolor,
-                                                  size:
-                                                      (20 * tabletFontScale).sp,
-                                                ),
-                                                SizedBox(
-                                                  width:
-                                                      (8 * tabletWidthScale).w,
-                                                ),
-                                                Expanded(
-                                                  child: Text(
-                                                    lead.phone ?? 'N/A',
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          (13 * tabletFontScale)
-                                                              .sp,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-
-                                        SizedBox(
-                                          height: (35 * tabletHeightScale).h,
-                                        ),
-
-                                        // ---------- Row 3: Sales Name, CD Date, and Action Icons ----------
-                                        Column(
-                                          children: [
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                left: (8 * tabletWidthScale).w,
-                                                right: (8 * tabletWidthScale).w,
-                                              ),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Icon(
-                                                    Icons.person_pin_outlined,
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        (24 * tabletFontScale)
+                                                            .sp,
+                                                    fontWeight: FontWeight.w800,
                                                     color:
                                                         Theme.of(
                                                                   context,
                                                                 ).brightness ==
                                                                 Brightness.light
-                                                            ? Colors.grey
-                                                            : Constants
-                                                                .mainDarkmodecolor,
-                                                    size:
-                                                        (20 * tabletFontScale)
-                                                            .sp,
+                                                            ? const Color(
+                                                              0xff111827,
+                                                            )
+                                                            : Colors.white,
                                                   ),
-                                                  SizedBox(
-                                                    width:
-                                                        (8 * tabletWidthScale)
-                                                            .w,
-                                                  ),
-                                                  // 👈 الجزء الشمال (Sales name)
-                                                  Expanded(
-                                                    child: Text(
-                                                      lead.assigntype == true
-                                                          ? "team: ${lead.sales?.name}"
-                                                          : lead.sales?.name ??
-                                                              'N/A',
-                                                      style: TextStyle(
-                                                        fontSize:
-                                                            (16 * tabletFontScale)
-                                                                .sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
+                                                ),
 
-                                                  // 👉 الجزء اليمين (الـ 3 أيقونات داخل خلفية)
-                                                  Row(
-                                                    children: [
-                                                      // 📞 Phone Call
-                                                      InkWell(
+                                                SizedBox(
+                                                  height:
+                                                      (4 * tabletHeightScale).h,
+                                                ),
+
+                                                /// PROJECT
+                                                Text(
+                                                  (lead.project?.name ?? "")
+                                                      .toUpperCase(),
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        (12 * tabletFontScale)
+                                                            .sp,
+                                                    fontWeight: FontWeight.w700,
+                                                    letterSpacing: 1,
+                                                    color: Color(0xff003178),
+                                                  ),
+                                                ),
+
+                                                SizedBox(
+                                                  height:
+                                                      (15 * tabletHeightScale)
+                                                          .h,
+                                                ),
+
+                                                /// =========================
+                                                /// SALESMAN + CREATED
+                                                /// =========================
+                                                Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            "SALESMAN",
+                                                            style: TextStyle(
+                                                              fontSize:
+                                                                  (10 *
+                                                                          tabletFontScale)
+                                                                      .sp,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                              letterSpacing:
+                                                                  1.2,
+                                                              color:
+                                                                  Colors
+                                                                      .grey
+                                                                      .shade500,
+                                                            ),
+                                                          ),
+
+                                                          SizedBox(
+                                                            height:
+                                                                (6 * tabletHeightScale)
+                                                                    .h,
+                                                          ),
+                                                          Text(
+                                                            lead.assigntype ==
+                                                                    true
+                                                                ? "team: ${lead.sales?.name}"
+                                                                : lead
+                                                                        .sales
+                                                                        ?.name ??
+                                                                    'N/A',
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: TextStyle(
+                                                              fontSize:
+                                                                  (16 *
+                                                                          tabletFontScale)
+                                                                      .sp,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+
+                                                    SizedBox(
+                                                      width:
+                                                          (20 * tabletWidthScale)
+                                                              .w,
+                                                    ),
+
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .end,
+                                                      children: [
+                                                        Text(
+                                                          "CREATED",
+                                                          style: TextStyle(
+                                                            fontSize:
+                                                                (10 * tabletFontScale)
+                                                                    .sp,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            letterSpacing: 1.2,
+                                                            color:
+                                                                Colors
+                                                                    .grey
+                                                                    .shade500,
+                                                          ),
+                                                        ),
+
+                                                        SizedBox(
+                                                          height:
+                                                              (6 * tabletHeightScale)
+                                                                  .h,
+                                                        ),
+
+                                                        Text(
+                                                          lead.date != null
+                                                              ? formatDateTimeToDubai(
+                                                                lead.date!
+                                                                    .toString(),
+                                                              )
+                                                              : "N/A",
+                                                          style: TextStyle(
+                                                            fontSize:
+                                                                (12 * tabletFontScale)
+                                                                    .sp,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+
+                                                SizedBox(
+                                                  height:
+                                                      (5 * tabletHeightScale).h,
+                                                ),
+
+                                                Divider(
+                                                  color: Colors.grey.shade300,
+                                                  thickness: 1,
+                                                ),
+
+                                                SizedBox(
+                                                  height:
+                                                      (5 * tabletHeightScale).h,
+                                                ),
+
+                                                /// =========================
+                                                /// PHONE + ACTIONS
+                                                /// =========================
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: InkWell(
                                                         onTap: () {
                                                           final phone =
                                                               lead.phone ?? '';
-                                                          final formattedPhone =
-                                                              phone.startsWith(
-                                                                    '0',
-                                                                  )
-                                                                  ? phone
-                                                                  : '+$phone';
+                                                          String formatted;
+                                                          if (phone.startsWith(
+                                                            '+',
+                                                          )) {
+                                                            // إذا كان الرقم يبدأ بـ + بالفعل، استخدمه كما هو
+                                                            formatted = phone;
+                                                          } else if (phone
+                                                              .startsWith(
+                                                                '0',
+                                                              )) {
+                                                            // إذا كان يبدأ بـ 0، استخدمه كما هو
+                                                            formatted = phone;
+                                                          } else {
+                                                            // إذا لم يبدأ بـ 0 أو +، أضف +
+                                                            formatted =
+                                                                '+$phone';
+                                                          }
                                                           makePhoneCall(
-                                                            formattedPhone,
+                                                            formatted,
                                                           );
                                                         },
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              (30 * tabletScale)
-                                                                  .r,
-                                                            ),
-                                                        child: Container(
-                                                          padding:
-                                                              EdgeInsets.all(
-                                                                (8 * tabletScale)
-                                                                    .r,
-                                                              ),
-                                                          margin: EdgeInsets.symmetric(
-                                                            horizontal:
-                                                                (4 * tabletWidthScale)
-                                                                    .w,
-                                                          ),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                                color:
-                                                                    Constants
-                                                                        .maincolor,
-                                                                shape:
-                                                                    BoxShape
-                                                                        .circle,
-                                                              ),
-                                                          child: Icon(
-                                                            Icons.phone,
-                                                            color: Colors.white,
-                                                            size:
-                                                                (18 * tabletFontScale)
+                                                        child: Text(
+                                                          lead.phone ?? 'N/A',
+                                                          style: TextStyle(
+                                                            fontSize:
+                                                                (16 * tabletFontScale)
                                                                     .sp,
+                                                            fontWeight:
+                                                                FontWeight.w700,
                                                           ),
                                                         ),
                                                       ),
+                                                    ),
 
-                                                      // 💬 WhatsApp
-                                                      InkWell(
-                                                        onTap: () async {
-                                                          final rawPhone =
-                                                              (lead.phone?.isNotEmpty ==
-                                                                          true
-                                                                      ? lead
-                                                                          .phone
-                                                                      : lead
-                                                                          .whatsappnumber)
-                                                                  ?.replaceAll(
-                                                                    RegExp(
-                                                                      r'\D',
+                                                    Row(
+                                                      children: [
+                                                        /// PHONE
+                                                        InkWell(
+                                                          onTap: () {
+                                                            final phone =
+                                                                lead.phone ??
+                                                                '';
+                                                            String formatted;
+                                                            if (phone
+                                                                .startsWith(
+                                                                  '+',
+                                                                )) {
+                                                              // إذا كان الرقم يبدأ بـ + بالفعل، استخدمه كما هو
+                                                              formatted = phone;
+                                                            } else if (phone
+                                                                .startsWith(
+                                                                  '0',
+                                                                )) {
+                                                              // إذا كان يبدأ بـ 0، استخدمه كما هو
+                                                              formatted = phone;
+                                                            } else {
+                                                              // إذا لم يبدأ بـ 0 أو +، أضف +
+                                                              formatted =
+                                                                  '+$phone';
+                                                            }
+                                                            makePhoneCall(
+                                                              formatted,
+                                                            );
+                                                          },
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                (40 * tabletScale)
+                                                                    .r,
+                                                              ),
+                                                          child: Container(
+                                                            width:
+                                                                (46 * tabletWidthScale)
+                                                                    .w,
+                                                            height:
+                                                                (46 * tabletWidthScale)
+                                                                    .w,
+                                                            decoration: BoxDecoration(
+                                                              color:
+                                                                  Colors
+                                                                      .grey
+                                                                      .shade200,
+                                                              shape:
+                                                                  BoxShape
+                                                                      .circle,
+                                                            ),
+                                                            child: Icon(
+                                                              Icons
+                                                                  .phone_in_talk_outlined,
+                                                              color:
+                                                                  Constants
+                                                                      .mainlightmodecolor,
+                                                              size:
+                                                                  (22 *
+                                                                          tabletFontScale)
+                                                                      .sp,
+                                                            ),
+                                                          ),
+                                                        ),
+
+                                                        SizedBox(
+                                                          width:
+                                                              (8 * tabletWidthScale)
+                                                                  .w,
+                                                        ),
+
+                                                        /// WHATSAPP
+                                                        InkWell(
+                                                          onTap: () async {
+                                                            final rawPhone =
+                                                                (lead.phone?.isNotEmpty ==
+                                                                            true
+                                                                        ? lead
+                                                                            .phone
+                                                                        : lead
+                                                                            .whatsappnumber)
+                                                                    ?.replaceAll(
+                                                                      RegExp(
+                                                                        r'\D',
+                                                                      ),
+                                                                      '',
+                                                                    ) ??
+                                                                '';
+
+                                                            final formattedPhone =
+                                                                rawPhone.startsWith(
+                                                                      '0',
+                                                                    )
+                                                                    ? rawPhone
+                                                                    : '+$rawPhone';
+
+                                                            final url =
+                                                                "https://wa.me/$formattedPhone";
+
+                                                            try {
+                                                              await launchUrl(
+                                                                Uri.parse(url),
+                                                                mode:
+                                                                    LaunchMode
+                                                                        .externalApplication,
+                                                              );
+                                                            } catch (e) {
+                                                              ScaffoldMessenger.of(
+                                                                context,
+                                                              ).showSnackBar(
+                                                                const SnackBar(
+                                                                  content: Text(
+                                                                    "Could not open WhatsApp.",
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            }
+                                                          },
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                (40 * tabletScale)
+                                                                    .r,
+                                                              ),
+                                                          child: Container(
+                                                            width:
+                                                                (46 * tabletWidthScale)
+                                                                    .w,
+                                                            height:
+                                                                (46 * tabletWidthScale)
+                                                                    .w,
+                                                            decoration: BoxDecoration(
+                                                              color:
+                                                                  const Color(
+                                                                    0xffDCFCE7,
+                                                                  ),
+                                                              shape:
+                                                                  BoxShape
+                                                                      .circle,
+                                                            ),
+                                                            child: Center(
+                                                              child: FaIcon(
+                                                                FontAwesomeIcons
+                                                                    .whatsapp,
+                                                                color:
+                                                                    Colors
+                                                                        .green,
+                                                                size:
+                                                                    (24 *
+                                                                            tabletFontScale)
+                                                                        .sp,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+
+                                                        SizedBox(
+                                                          width:
+                                                              (8 * tabletWidthScale)
+                                                                  .w,
+                                                        ),
+
+                                                        /// COMMENT ICON ✅ أضف ده
+                                                        InkWell(
+                                                          onTap: () {
+                                                            showDialog(
+                                                              context: context,
+                                                              builder: (_) {
+                                                                final lastComment =
+                                                                    lead.lastComment;
+                                                                final firstCommentText =
+                                                                    lastComment
+                                                                        ?.firstcomment
+                                                                        ?.text ??
+                                                                    'No comments available.';
+                                                                final secondCommentText =
+                                                                    lastComment
+                                                                        ?.secondcomment
+                                                                        ?.text ??
+                                                                    'No action available.';
+
+                                                                return Dialog(
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          (16 *
+                                                                                  tabletScale)
+                                                                              .r,
+                                                                        ),
+                                                                  ),
+                                                                  child: Padding(
+                                                                    padding: EdgeInsets.all(
+                                                                      (18 *
+                                                                              tabletScale)
+                                                                          .r,
                                                                     ),
-                                                                    '',
-                                                                  ) ??
-                                                              '';
-                                                          final formattedPhone =
-                                                              rawPhone.startsWith(
-                                                                    '0',
-                                                                  )
-                                                                  ? rawPhone
-                                                                  : '+$rawPhone';
-
-                                                          final url =
-                                                              "https://wa.me/$formattedPhone";
-                                                          try {
-                                                            await launchUrl(
-                                                              Uri.parse(url),
-                                                              mode:
-                                                                  LaunchMode
-                                                                      .externalApplication,
-                                                            );
-                                                          } catch (e) {
-                                                            ScaffoldMessenger.of(
-                                                              context,
-                                                            ).showSnackBar(
-                                                              const SnackBar(
-                                                                content: Text(
-                                                                  "Could not open WhatsApp.",
-                                                                ),
-                                                              ),
-                                                            );
-                                                          }
-                                                        },
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              (30 * tabletScale)
-                                                                  .r,
-                                                            ),
-                                                        child: Container(
-                                                          padding:
-                                                              EdgeInsets.all(
-                                                                (8 * tabletScale)
-                                                                    .r,
-                                                              ),
-                                                          margin: EdgeInsets.symmetric(
-                                                            horizontal:
-                                                                (4 * tabletWidthScale)
-                                                                    .w,
-                                                          ),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                                color:
-                                                                    Constants
-                                                                        .maincolor,
-                                                                shape:
-                                                                    BoxShape
-                                                                        .circle,
-                                                              ),
-                                                          child: FaIcon(
-                                                            FontAwesomeIcons
-                                                                .whatsapp,
-                                                            color: Colors.white,
-                                                            size:
-                                                                (18 * tabletFontScale)
-                                                                    .sp,
-                                                          ),
-                                                        ),
-                                                      ),
-
-                                                      // 🗨️ Last Comment
-                                                      InkWell(
-                                                        onTap: () {
-                                                          showDialog(
-                                                            context: context,
-                                                            builder: (_) {
-                                                              final lastComment =
-                                                                  lead.lastComment;
-                                                              final firstCommentText =
-                                                                  lastComment
-                                                                      ?.firstcomment
-                                                                      ?.text ??
-                                                                  'No comments available.';
-                                                              final secondCommentText =
-                                                                  lastComment
-                                                                      ?.secondcomment
-                                                                      ?.text ??
-                                                                  'No action available.';
-
-                                                              return Dialog(
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        (12 *
-                                                                                tabletScale)
-                                                                            .r,
-                                                                      ),
-                                                                ),
-                                                                child: Padding(
-                                                                  padding:
-                                                                      EdgeInsets.all(
-                                                                        (16 *
-                                                                                tabletScale)
-                                                                            .r,
-                                                                      ),
-                                                                  child: SingleChildScrollView(
                                                                     child: Column(
+                                                                      mainAxisSize:
+                                                                          MainAxisSize
+                                                                              .min,
                                                                       crossAxisAlignment:
                                                                           CrossAxisAlignment
                                                                               .start,
@@ -2315,16 +2912,16 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                           "Last Comment",
                                                                           style: TextStyle(
                                                                             fontWeight:
-                                                                                FontWeight.w600,
+                                                                                FontWeight.w700,
                                                                             fontSize:
-                                                                                (16 *
+                                                                                (18 *
                                                                                         tabletFontScale)
                                                                                     .sp,
                                                                           ),
                                                                         ),
                                                                         SizedBox(
                                                                           height:
-                                                                              (5 *
+                                                                              (12 *
                                                                                       tabletHeightScale)
                                                                                   .h,
                                                                         ),
@@ -2339,7 +2936,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                         ),
                                                                         SizedBox(
                                                                           height:
-                                                                              (10 *
+                                                                              (18 *
                                                                                       tabletHeightScale)
                                                                                   .h,
                                                                         ),
@@ -2347,18 +2944,18 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                           "Action (Plan)",
                                                                           style: TextStyle(
                                                                             color:
-                                                                                Constants.maincolor,
+                                                                                Constants.mainlightmodecolor,
                                                                             fontWeight:
-                                                                                FontWeight.w600,
+                                                                                FontWeight.w700,
                                                                             fontSize:
-                                                                                (14 *
+                                                                                (15 *
                                                                                         tabletFontScale)
                                                                                     .sp,
                                                                           ),
                                                                         ),
                                                                         SizedBox(
                                                                           height:
-                                                                              (5 *
+                                                                              (8 *
                                                                                       tabletHeightScale)
                                                                                   .h,
                                                                         ),
@@ -2374,173 +2971,51 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                       ],
                                                                     ),
                                                                   ),
-                                                                ),
-                                                              );
-                                                            },
-                                                          );
-                                                        },
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              (30 * tabletScale)
-                                                                  .r,
-                                                            ),
-                                                        child: Container(
-                                                          padding:
-                                                              EdgeInsets.all(
-                                                                (8 * tabletScale)
+                                                                );
+                                                              },
+                                                            );
+                                                          },
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                (40 * tabletScale)
                                                                     .r,
                                                               ),
-                                                          margin: EdgeInsets.symmetric(
-                                                            horizontal:
-                                                                (4 * tabletWidthScale)
+                                                          child: Container(
+                                                            width:
+                                                                (46 * tabletWidthScale)
                                                                     .w,
-                                                          ),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                                color:
-                                                                    Constants
-                                                                        .maincolor,
-                                                                shape:
-                                                                    BoxShape
-                                                                        .circle,
-                                                              ),
-                                                          child: Icon(
-                                                            Icons
-                                                                .chat_bubble_outline,
-                                                            color: Colors.white,
-                                                            size:
-                                                                (18 * tabletFontScale)
-                                                                    .sp,
+                                                            height:
+                                                                (46 * tabletWidthScale)
+                                                                    .w,
+                                                            decoration: BoxDecoration(
+                                                              color: Constants
+                                                                  .mainlightmodecolor
+                                                                  .withOpacity(
+                                                                    0.1,
+                                                                  ),
+                                                              shape:
+                                                                  BoxShape
+                                                                      .circle,
+                                                            ),
+                                                            child: Icon(
+                                                              Icons
+                                                                  .comment_outlined,
+                                                              color:
+                                                                  Constants
+                                                                      .mainlightmodecolor,
+                                                              size:
+                                                                  (22 *
+                                                                          tabletFontScale)
+                                                                      .sp,
+                                                            ),
                                                           ),
                                                         ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-
-                                            SizedBox(
-                                              height: (4 * tabletHeightScale).h,
-                                            ),
-
-                                            // ✅ CD Date (السطر اللي تحت)
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                left: (8 * tabletWidthScale).w,
-                                                right: (8 * tabletWidthScale).w,
-                                              ),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.start,
-                                                children: [
-                                                  Icon(
-                                                    Icons.date_range,
-                                                    color:
-                                                        Theme.of(
-                                                                  context,
-                                                                ).brightness ==
-                                                                Brightness.light
-                                                            ? Colors.grey
-                                                            : Constants
-                                                                .mainDarkmodecolor,
-                                                    size:
-                                                        (20 * tabletFontScale)
-                                                            .sp,
-                                                  ),
-                                                  SizedBox(
-                                                    width:
-                                                        (6 * tabletWidthScale)
-                                                            .w,
-                                                  ),
-                                                  Text(
-                                                    " ${lead.date != null ? formatDateTimeToDubai(lead.date!.toString()) : "N/A"}",
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          (12 * tabletFontScale)
-                                                              .sp,
-                                                      fontWeight:
-                                                          FontWeight.w500,
+                                                      ],
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
+                                                  ],
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-
-                                        SizedBox(
-                                          height: (20 * tabletHeightScale).h,
-                                        ),
-
-                                        Container(
-                                          width: double.infinity,
-                                          height: (22 * tabletHeightScale).h,
-                                          decoration: BoxDecoration(
-                                            color:
-                                                (() {
-                                                  if (leadassign == false &&
-                                                      lead.stage?.name !=
-                                                          'Fresh') {
-                                                    return Colors
-                                                        .green
-                                                        .shade200;
-                                                  } else if (lead.stage?.name ==
-                                                      'Fresh') {
-                                                    return Colors.grey.shade300;
-                                                  } else {
-                                                    return Constants.maincolor
-                                                        .withOpacity(0.25);
-                                                  }
-                                                })(),
-                                            borderRadius: BorderRadius.circular(
-                                              (200 * tabletScale).r,
-                                            ),
-                                          ),
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal:
-                                                (12 * tabletWidthScale).w,
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
-                                            children: [
-                                              Builder(
-                                                builder: (_) {
-                                                  String statusText = '';
-                                                  Color textColor =
-                                                      Colors.grey.shade700;
-
-                                                  if (leadassign == false &&
-                                                      lead.stage?.name !=
-                                                          'Fresh') {
-                                                    statusText = 'Approved';
-                                                    textColor =
-                                                        Colors.green.shade800;
-                                                  } else if (lead.stage?.name ==
-                                                      'Fresh') {
-                                                    statusText = 'Not Assigned';
-                                                    textColor =
-                                                        Colors.grey.shade700;
-                                                  } else {
-                                                    statusText = 'Assigned';
-                                                    textColor =
-                                                        Constants.maincolor;
-                                                  }
-                                                  return Text(
-                                                    statusText,
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          (11 * tabletFontScale)
-                                                              .sp,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                      color: textColor,
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ],
                                           ),
                                         ),
                                       ],
@@ -2681,7 +3156,7 @@ class _ActionIcon extends StatelessWidget {
       child: IconTheme(
         data: IconThemeData(
           size: 22,
-          color: isDark ? Colors.white : Constants.maincolor,
+          color: isDark ? Colors.white : Constants.mainlightmodecolor,
         ),
         child: icon,
       ),

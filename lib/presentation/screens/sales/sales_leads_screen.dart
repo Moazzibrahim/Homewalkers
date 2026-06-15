@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, library_private_types_in_public_api, unused_field
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,6 +29,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_filter_dialog.dart';
+import 'package:homewalkers_app/presentation/widgets/custom_show_assign_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/team_leader_widgets/edit_lead_sales_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
@@ -292,13 +294,14 @@ class SalesLeadsScreen extends StatefulWidget {
   final bool? data; // true for Data Center, false for Sales, null for all
   final bool?
   transferfromdata; // true for transferred from data center, false for not transferred, null for all
-
+  final bool showNavBar;
   const SalesLeadsScreen({
     super.key,
     this.stageName,
     this.stageId,
     this.data,
     this.transferfromdata,
+    this.showNavBar = true,
   });
 
   @override
@@ -313,6 +316,55 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
   late ResponsiveSalesValues _responsive;
   final nameController = TextEditingController();
   Timer? _debounceTimer;
+  bool _isSearchVisible = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  Set<String> _selectedLeadIds = {}; // ✅ تغيير لـ Set
+  List<LeadPagination> _selectedLeads = []; // ✅ قائمة الـ leads المختارة
+  // ✅ أضف هذه المتغيرات لتخزين الفلاتر الحالية
+  String? _currentFilterName;
+  String? _currentFilterDeveloperId;
+  String? _currentFilterProjectId;
+  String? _currentFilterStageId;
+  String? _currentFilterChannelId;
+  DateTime? _currentFilterCreationDateFrom;
+  DateTime? _currentFilterCreationDateTo;
+  DateTime? _currentFilterStageDateFrom;
+  DateTime? _currentFilterStageDateTo;
+  bool _isFetchingMore = false;
+
+  // ✅ دالة لتحديث الفلاتر من الـ Dialog
+  void _updateFilters({
+    String? name,
+    String? developerId,
+    String? projectId,
+    String? stageId,
+    String? channelId,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+  }) {
+    setState(() {
+      _currentFilterName = name;
+      _currentFilterDeveloperId = developerId;
+      _currentFilterProjectId = projectId;
+      _currentFilterStageId = stageId;
+      _currentFilterChannelId = channelId;
+      _currentFilterCreationDateFrom = creationDateFrom;
+      _currentFilterCreationDateTo = creationDateTo;
+      _currentFilterStageDateFrom = stageDateFrom;
+      _currentFilterStageDateTo = stageDateTo;
+    });
+
+    // للتأكد
+    log("=== FILTERS UPDATED ===");
+    log("Name: $_currentFilterName");
+    log("DeveloperId: $_currentFilterDeveloperId");
+    log("ProjectId: $_currentFilterProjectId");
+    log("StageId: $_currentFilterStageId");
+    log("ChannelId: $_currentFilterChannelId");
+  }
 
   @override
   void initState() {
@@ -340,19 +392,21 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
 
   void _onScroll() {
     final cubit = context.read<GetLeadsCubit>();
-
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      if (cubit.hasMoreData && !cubit.isFetchingMore) {
-        log("📜 Loading more data... Page: ${cubit.currentPage}");
-
-        cubit.fetchSalesLeadsWithPagination(
-          isLoadMore: true,
-          limit: 10,
-          data: widget.data,
-          transferefromdata: widget.transferfromdata,
-          stageId: widget.stageId,
-        );
+      if (cubit.hasMoreData && !cubit.isFetchingMore && !_isFetchingMore) {
+        setState(() => _isFetchingMore = true);
+        cubit
+            .fetchSalesLeadsWithPagination(
+              isLoadMore: true,
+              limit: 10,
+              data: widget.data,
+              transferefromdata: widget.transferfromdata,
+              stageId: widget.stageId,
+            )
+            .then((_) {
+              if (mounted) setState(() => _isFetchingMore = false);
+            });
       }
     }
   }
@@ -398,15 +452,40 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
   Widget build(BuildContext context) {
     _responsive = ResponsiveSalesValues.fromContext(context);
 
+    final bool isTabletDevice = () {
+      final data = MediaQuery.of(context);
+      final physicalSize = data.size;
+      final diagonal = math.sqrt(
+        math.pow(physicalSize.width, 2) + math.pow(physicalSize.height, 2),
+      );
+      final inches = diagonal / (data.devicePixelRatio * 160);
+      return inches >= 7.0;
+    }();
+
+    // ✅ عوامل التصغير حسب الجهاز
+    final double tabletScale = isTabletDevice ? 0.85 : 1.0;
+    final double tabletFontScale = isTabletDevice ? 0.9 : 1.0;
+    final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
+    final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
+
     return BlocBuilder<GetLeadsCubit, GetLeadsState>(
       builder: (context, state) {
         return Scaffold(
+          bottomNavigationBar:
+              widget.transferfromdata == true
+                  ? widget.showNavBar
+                      ? SharedSalesNavBar(currentIndex: 1)
+                      : null
+                  : null,
           backgroundColor:
               Theme.of(context).brightness == Brightness.light
                   ? Constants.backgroundlightmode
                   : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
-            //  title: 'Leads',
+            title:
+                _isSearchVisible
+                    ? null // إذا كان البحث ظاهراً، لا نريد عرض النص
+                    : "Leads",
             onBack: () {
               if (widget.transferfromdata == true) {
                 Navigator.pushReplacement(
@@ -444,242 +523,452 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
   }
 
   Widget _buildSearchAndFilter() {
-    return SizedBox(
-      width: (_responsive.screenWidth * 0.7).clamp(220.0, 360.0),
-      // margin: EdgeInsets.symmetric(vertical: 8.h),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: nameController,
-              onChanged: (value) {
-                final cubit = context.read<GetLeadsCubit>();
-                _debounceTimer?.cancel();
-                _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-                  cubit.fetchSalesLeadsWithPagination(
-                    search: value.trim(),
-                    data: widget.data,
-                    transferefromdata: widget.transferfromdata,
-                    stageId: widget.stageId,
-                  );
-                });
-              },
-              style: TextStyle(
-                // 🔹 إضافة هذه الخاصية
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Colors.black
-                        : Colors.white,
-                fontSize: _responsive.fontSizeMedium.sp,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search',
-                hintStyle: TextStyle(
-                  color: const Color(0xff969696),
-                  fontSize: _responsive.fontSizeMedium.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  size: _responsive.iconSizeMedium.sp,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                  ),
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Constants.maincolor
-                            : Constants.mainDarkmodecolor,
-                  ),
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                contentPadding: EdgeInsets.symmetric(
-                  vertical: _responsive.buttonHeight * 0.3,
-                  horizontal: _responsive.horizontalPadding.w * 0.5,
-                ),
-                filled: true,
-                fillColor:
-                    Theme.of(context).brightness ==
-                            Brightness
-                                .light // 🔹 تغيير لون الخلفية
-                        ? Colors.white
-                        : const Color(0xFF2C2C2C), // لون غامق للوضع الليلي
-                isDense: true,
-              ),
-            ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // ✅ زر البحث المتغير
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          width: _isSearchVisible ? 200.w : 45.w,
+          height: 45.h,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12.r),
+            border:
+                _isSearchVisible
+                    ? Border.all(
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.mainlightmodecolor
+                              : Constants.mainDarkmodecolor,
+                      width: 1.5.w,
+                    )
+                    : null,
           ),
-          SizedBox(width: _responsive.horizontalPadding.w * 0.6),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F1F2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: IconButton(
-              icon: Icon(
-                Icons.filter_list,
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
-                        : Constants.mainDarkmodecolor,
-              ),
-              onPressed: () {
-                showFilterDialog(
-                  context,
-                  widget.data ?? false,
-                  widget.transferfromdata ?? false,
+          child:
+              _isSearchVisible
+                  ? Row(
+                    children: [
+                      SizedBox(width: 8.w),
+                      Icon(Icons.search, size: 20.sp, color: Colors.grey),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: TextField(
+                          controller: nameController,
+                          focusNode: _searchFocusNode,
+                          autofocus: true,
+                          onChanged: (value) {
+                            final cubit = context.read<GetLeadsCubit>();
+                            _debounceTimer?.cancel();
+                            _debounceTimer = Timer(
+                              const Duration(milliseconds: 500),
+                              () {
+                                cubit.fetchSalesLeadsWithPagination(
+                                  search: value.trim(),
+                                  data: widget.data,
+                                  transferefromdata: widget.transferfromdata,
+                                  stageId: widget.stageId,
+                                );
+                              },
+                            );
+                          },
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.black
+                                    : Colors.white,
+                            fontSize: _responsive.fontSizeMedium.sp,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Search...',
+                            hintStyle: TextStyle(
+                              color: const Color(0xff969696),
+                              fontSize: _responsive.fontSizeMedium.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 0,
+                              horizontal: 0,
+                            ),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          nameController.clear();
+                          setState(() {
+                            _isSearchVisible = false;
+                          });
+                          _searchFocusNode.unfocus();
+
+                          // إعادة تحميل البيانات بدون بحث
+                          final cubit = context.read<GetLeadsCubit>();
+                          cubit.fetchSalesLeadsWithPagination(
+                            search: null,
+                            data: widget.data,
+                            transferefromdata: widget.transferfromdata,
+                            stageId: widget.stageId,
+                          );
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.only(right: 8.w),
+                          child: Icon(
+                            Icons.clear,
+                            size: 18.sp,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.black
+                                    : Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                    ],
+                  )
+                  : IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _isSearchVisible = true;
+                      });
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        _searchFocusNode.requestFocus();
+                      });
+                    },
+                    icon: Icon(
+                      Icons.search,
+                      size: 22.sp,
+                      color:
+                          Theme.of(context).brightness == Brightness.light
+                              ? Constants.mainlightmodecolor
+                              : Constants.mainDarkmodecolor,
+                    ),
+                  ),
+        ),
+
+        SizedBox(width: _responsive.horizontalPadding.w * 0.6),
+
+        // ✅ زر الفلتر
+        IconButton(
+          icon: Icon(
+            Icons.filter_list,
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Constants.mainlightmodecolor
+                    : Constants.mainDarkmodecolor,
+          ),
+          onPressed: () {
+            showFilterDialog(
+              context,
+              widget.data ?? false,
+              widget.transferfromdata ?? false,
+              (filters) {
+                // ✅ استقبال الفلاتر
+                log("=== FILTERS FROM SALES DIALOG ===");
+                log("filters: $filters");
+
+                _updateFilters(
+                  name: filters['name'],
+                  developerId: filters['developerId'],
+                  projectId: filters['projectId'],
+                  stageId: filters['stageId'],
+                  channelId: filters['channelId'],
+                  creationDateFrom: filters['creationDateFrom'],
+                  creationDateTo: filters['creationDateTo'],
+                  stageDateFrom: filters['stageDateFrom'],
+                  stageDateTo: filters['stageDateTo'],
                 );
               },
-            ),
-          ),
-          SizedBox(width: _responsive.horizontalPadding.w * 0.1),
-        ],
-      ),
+            );
+          },
+        ),
+
+        SizedBox(width: _responsive.horizontalPadding.w * 0.1),
+      ],
     );
   }
 
   Widget _buildActionButtons() {
-    // إذا كانت الشيكات غير ظاهرة، لا نضيف أي شيء (لا Padding ولا Row)
-    if (!_showCheckboxes) {
+    // إذا كانت الشيكات غير ظاهرة أو مفيش حاجة مختارة
+    if (!_showCheckboxes || _selectedLeads.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    return Padding(
+    return Container(
+      margin: EdgeInsets.only(bottom: _responsive.verticalPadding.h * 0.5),
       padding: EdgeInsets.symmetric(
         horizontal: _responsive.horizontalPadding.w,
-        vertical: _responsive.verticalPadding.h * 0.5,
+        vertical: _responsive.verticalPadding.h * 0.7,
+      ),
+      decoration: BoxDecoration(
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors.white
+                : const Color(0xff1E1E1E),
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.grey.shade200
+                  : Colors.grey.shade800,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
+          /// CHECK ICON
           Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: _responsive.horizontalPadding.w * 0.5,
-              vertical: _responsive.verticalPadding.h * 0.2,
-            ),
+            width: 38.w,
+            height: 38.w,
             decoration: BoxDecoration(
               color:
                   Theme.of(context).brightness == Brightness.light
-                      ? Constants.maincolor
+                      ? Constants.mainlightmodecolor
                       : Constants.mainDarkmodecolor,
-              borderRadius: BorderRadius.circular(16.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(10.r),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                /// 🔹 Edit Icon
-                GestureDetector(
-                  onTap: () async {
-                    log("_selectedLead ID: ${_selectedLead?.id}");
-                    if (_selectedLead != null) {
-                      final result = await showDialog(
-                        context: context,
-                        builder:
-                            (_) => MultiBlocProvider(
-                              providers: [
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          EditLeadCubit(EditLeadApiService()),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          ProjectsCubit(ProjectsApiService())
-                                            ..fetchProjects(),
-                                ),
-                                BlocProvider(
-                                  create:
-                                      (_) =>
-                                          SalesCubit(GetAllSalesApiService())
-                                            ..fetchAllSales(),
-                                ),
-                              ],
-                              child: EditLeadSalesDialog(
-                                userId: _selectedLead!.id ?? '',
-                                initialName: _selectedLead!.name ?? '',
-                                initialPhone2:
-                                    _selectedLead!.phonenumber2 ?? '',
-                                initialWhatsappNumber:
-                                    _selectedLead!.whatsappnumber ?? '',
-                                initialNotes: '',
-                                initialProjectId: _selectedLead!.project?.id,
-                                salesID: _selectedLead!.sales?.id ?? '',
-                                onSuccess: () {
-                                  context
-                                      .read<GetLeadsCubit>()
-                                      .fetchSalesLeadsWithPagination(
-                                        data: widget.data,
-                                        transferefromdata:
-                                            widget.transferfromdata,
-                                        stageId: widget.stageId,
-                                      );
-                                },
-                              ),
-                            ),
-                      );
+            child: Icon(Icons.check, color: Colors.white, size: 22.sp),
+          ),
 
-                      if (result == true) {
-                        context
-                            .read<GetLeadsCubit>()
-                            .fetchSalesLeadsWithPagination(
-                              data: widget.data,
-                              transferefromdata: widget.transferfromdata,
-                              stageId: widget.stageId,
-                            );
-                      }
-                    }
+          SizedBox(width: 14.w),
+
+          /// SELECTED TEXT - ديناميكي
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "${_selectedLeads.length} ${_selectedLeads.length == 1 ? 'Lead' : 'Leads'}",
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Colors.black
+                          : Colors.white,
+                ),
+              ),
+              Text(
+                "Selected",
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Colors.black
+                          : Colors.white,
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(width: 15.w),
+
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                /// DIVIDER
+                //  Container(height: 50.h, width: 1, color: Colors.grey.shade300),
+                // =========================
+                // ASSIGN
+                // =========================
+                InkWell(
+                  onTap: () async {
+                    if (_selectedLeads.isEmpty) return;
+
+                    await showDialog(
+                      context: context,
+                      builder:
+                          (context) => BlocProvider(
+                            create: (_) => SalesCubit(GetAllSalesApiService()),
+                            child: AssignDialog(
+                              leadIds:
+                                  _selectedLeads
+                                      .map((e) => e.id ?? '')
+                                      .toList(),
+
+                              leadId: _selectedLeads.first.id,
+                              leadResponse: _selectedLeads,
+                              mainColor:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Constants.maincolor
+                                      : Constants.mainDarkmodecolor,
+                              onSuccess: () {
+                                setState(() {
+                                  _showCheckboxes = false;
+                                  _selectedLeads.clear();
+                                  _selectedLeadIds.clear();
+                                });
+                                context
+                                    .read<GetLeadsCubit>()
+                                    .fetchSalesLeadsWithPagination(
+                                      data: widget.data,
+                                      transferefromdata:
+                                          widget.transferfromdata,
+                                      stageId:
+                                          _currentFilterStageId ??
+                                          widget.stageId, // ✅ استخدم الفلتر
+                                      search:
+                                          nameController.text.isNotEmpty
+                                              ? nameController.text.trim()
+                                              : null,
+                                      developerId: _currentFilterDeveloperId,
+                                      projectId: _currentFilterProjectId,
+                                      channelId: _currentFilterChannelId,
+                                      creationDateFrom:
+                                          _currentFilterCreationDateFrom,
+                                      creationDateTo:
+                                          _currentFilterCreationDateTo,
+                                      stageDateFrom:
+                                          _currentFilterStageDateFrom,
+                                      stageDateTo: _currentFilterStageDateTo,
+                                    );
+                              },
+                            ),
+                          ),
+                    );
                   },
-                  child: Container(
-                    padding: EdgeInsets.all(_responsive.cardPadding.w * 0.4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Icon(
-                      Icons.edit,
-                      color: Colors.white,
-                      size: _responsive.iconSizeMedium.sp,
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.ios_share_outlined,
+                        color: Colors.grey.shade700,
+                        size: 25.sp,
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        "ASSIGN",
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
-                SizedBox(width: _responsive.horizontalPadding.w * 3.5),
+                /// DIVIDER
+                Container(height: 50.h, width: 1, color: Colors.grey.shade300),
 
-                /// 🔹 Add Meeting Icon
-                GestureDetector(
-                  onTap: () {
-                    if (_selectedLead != null) {
-                      _showAddMeetingSheet(context, _selectedLead!.id!);
-                    }
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(_responsive.cardPadding.w * 0.4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Icon(
-                      Icons.event,
-                      color: Colors.white,
-                      size: _responsive.iconSizeMedium.sp,
+                // =========================
+                // EDIT - يشتغل بس لو مختار 1
+                // =========================
+                InkWell(
+                  onTap:
+                      _selectedLeads.length == 1
+                          ? () async {
+                            final selectedLead = _selectedLeads.first;
+                            final result = await showDialog(
+                              context: context,
+                              builder:
+                                  (_) => MultiBlocProvider(
+                                    providers: [
+                                      BlocProvider(
+                                        create:
+                                            (_) => EditLeadCubit(
+                                              EditLeadApiService(),
+                                            ),
+                                      ),
+                                      BlocProvider(
+                                        create:
+                                            (_) => ProjectsCubit(
+                                              ProjectsApiService(),
+                                            )..fetchProjects(),
+                                      ),
+                                      BlocProvider(
+                                        create:
+                                            (_) => SalesCubit(
+                                              GetAllSalesApiService(),
+                                            )..fetchAllSales(),
+                                      ),
+                                    ],
+                                    child: EditLeadSalesDialog(
+                                      userId: selectedLead.id ?? '',
+                                      initialName: selectedLead.name ?? '',
+                                      initialPhone2:
+                                          selectedLead.phonenumber2 ?? '',
+                                      initialWhatsappNumber:
+                                          selectedLead.whatsappnumber ?? '',
+                                      initialNotes: '',
+                                      initialProjectId:
+                                          selectedLead.project?.id,
+                                      salesID: selectedLead.sales?.id ?? '',
+                                      onSuccess: () {
+                                        context
+                                            .read<GetLeadsCubit>()
+                                            .fetchSalesLeadsWithPagination(
+                                              data: widget.data,
+                                              transferefromdata:
+                                                  widget.transferfromdata,
+                                              stageId: widget.stageId,
+                                            );
+                                      },
+                                    ),
+                                  ),
+                            );
+
+                            if (result == true) {
+                              setState(() {
+                                _showCheckboxes = false;
+                                _selectedLeads.clear();
+                                _selectedLeadIds.clear();
+                              });
+
+                              context
+                                  .read<GetLeadsCubit>()
+                                  .fetchSalesLeadsWithPagination(
+                                    data: widget.data,
+                                    transferefromdata: widget.transferfromdata,
+                                    stageId:
+                                        _currentFilterStageId ??
+                                        widget.stageId, // ✅ استخدم الفلتر
+                                    search:
+                                        nameController.text.isNotEmpty
+                                            ? nameController.text.trim()
+                                            : null,
+                                    developerId: _currentFilterDeveloperId,
+                                    projectId: _currentFilterProjectId,
+                                    channelId: _currentFilterChannelId,
+                                    creationDateFrom:
+                                        _currentFilterCreationDateFrom,
+                                    creationDateTo:
+                                        _currentFilterCreationDateTo,
+                                    stageDateFrom: _currentFilterStageDateFrom,
+                                    stageDateTo: _currentFilterStageDateTo,
+                                  );
+                            }
+                          }
+                          : null,
+                  child: Opacity(
+                    opacity: _selectedLeads.length == 1 ? 1.0 : 0.5,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.edit_outlined,
+                          color: Colors.grey.shade700,
+                          size: 25.sp,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          "EDIT",
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1056,12 +1345,38 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
         },
         child: ListView.builder(
           controller: _scrollController,
-          itemCount: leads.length + 1,
+          itemCount: leads.length + (_isFetchingMore ? 1 : 0),
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.all(_responsive.horizontalPadding.w),
           itemBuilder: (context, index) {
-            if (index >= leads.length) {
-              return const SizedBox();
+            if (index == leads.length) {
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 20.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 18.w,
+                      height: 18.w,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Constants.mainlightmodecolor,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10.w),
+                    Text(
+                      "Loading more...",
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              );
             }
             final lead = leads[index];
             return _buildLeadCard(lead);
@@ -1123,406 +1438,633 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
       }
     }
 
-    return InkWell(
-      onLongPress: () {
-        setState(() {
-          _showCheckboxes = true;
-          _selectedLead = lead;
-          _selectedLeadId = lead.id;
-        });
-      },
-      onTap: () async {
-        if (leadassign == false) {
-          final updatedStageName = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => BlocProvider(
-                    create:
-                        (_) =>
-                            LeadCommentsCubit(GetAllLeadCommentsApiService()),
-                    child: SalesLeadsDetailsScreen(
-                      leedId: lead.id!,
-                      leadName: lead.name ?? '',
-                      leadPhone: lead.phone ?? '',
-                      leadEmail: lead.email ?? '',
-                      leadStage: lead.stage?.name ?? '',
-                      leadStageId: lead.stage?.id ?? '',
-                      leadChannel: lead.chanel?.name ?? '',
-                      leadCreationDate:
-                          lead.createdAt != null
-                              ? formatDateTimeToDubai(lead.createdAt!)
-                              : '',
-                      leadProject: lead.project?.name ?? '',
-                      leadLastComment: lead.lastcommentdate ?? '',
-                      leadcampaign: lead.campaign?.campainName ?? "campaign",
-                      leadNotes: "",
-                      leaddeveloper:
-                          lead.project?.developer?.name ?? "no developer",
-                      fcmtoken: salesfcmtoken,
-                      managerfcmtoken: lead.sales?.manager?.fcmToken,
-                      teamleaderfcmtoken: lead.sales?.teamleader?.fcmToken,
-                      leadwhatsappnumber:
-                          lead.whatsappnumber ?? 'no whatsapp number',
-                      jobdescription:
-                          lead.jobdescription ?? 'no job description',
-                      secondphonenumber:
-                          lead.phonenumber2 ?? 'no second phone number',
-                      laststageupdated: lead.stagedateupdated,
-                      stageId: lead.stage?.id,
-                      leadLastDateAssigned: lead.lastdateassign,
-                      isleadAssigned: lead.assign,
-                      resetcreationdate: lead.resetcreationdate,
-                      question1_text: lead.question1_text,
-                      question1_answer: lead.question1_answer,
-                      question2_text: lead.question2_text,
-                      question2_answer: lead.question2_answer,
-                      question3_text: lead.question3_text,
-                      question3_answer: lead.question3_answer,
-                      question4_text: lead.question4_text,
-                      question4_answer: lead.question4_answer,
-                      question5_text: lead.question5_text,
-                      question5_answer: lead.question5_answer,
-                    ),
-                  ),
-            ),
-          );
-          final cubit = context.read<GetLeadsCubit>();
-          await cubit.fetchSalesLeadsWithPagination(
-            data: widget.data,
-            transferefromdata: widget.transferfromdata,
-            stageId: widget.stageId,
-          );
-        } else {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text(
-                  "Attention",
-                  style: TextStyle(fontSize: _responsive.fontSizeLarge.sp),
-                ),
-                content: Text(
-                  "You must receive this lead first.",
-                  style: TextStyle(fontSize: _responsive.fontSizeMedium.sp),
-                ),
-                actions: [
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      "OK",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: _responsive.fontSizeMedium.sp,
+    // ── Left bar color logic (same as Admin) ──────────────────────────
+    Color leftBarColor;
+    if (leadStagetype == "Not Interested" || leadStagetype == "Transfer") {
+      leftBarColor = Colors.black;
+    } else if ((leadStagetype == "Follow Up" ||
+            leadStagetype == "Follow" ||
+            leadStagetype == "Follow After Meeting" ||
+            leadStagetype == "No Answer" ||
+            leadStagetype == "Meeting" ||
+            leadStagetype == "No Stage" ||
+            leadStagetype == "Interested") &&
+        isOutdated) {
+      leftBarColor = Colors.orangeAccent;
+    } else {
+      leftBarColor = Constants.mainlightmodecolor;
+    }
+
+    // ── Stage badge color logic ───────────────────────────────────────
+    final bool isFinalStage =
+        stageUpdatedDate != null &&
+        (leadStagetype == "Done Deal" ||
+            leadStagetype == "Fresh" ||
+            leadStagetype == "EOI" ||
+            leadStagetype == "Cancel Meeting" ||
+            leadStagetype == "Pending");
+
+    Color stageColor;
+    if (leadStagetype == "Not Interested" || leadStagetype == "Transfer") {
+      stageColor = Colors.black;
+    } else {
+      stageColor =
+          isFinalStage
+              ? Constants.mainlightmodecolor
+              : isOutdated
+              ? const Color(0xffFEB300)
+              : Constants.mainlightmodecolor;
+    }
+
+    final bool isOutdatedStage =
+        (leadStagetype == "Follow Up" ||
+            leadStagetype == "Follow After Meeting" ||
+            leadStagetype == "Follow" ||
+            leadStagetype == "No Stage" ||
+            leadStagetype == "Meeting" ||
+            leadStagetype == "No Answer" ||
+            leadStagetype == "Interested") &&
+        isOutdated;
+
+    return BlocProvider(
+      create:
+          (context) =>
+              LeadCommentsCubit(GetAllLeadCommentsApiService())
+                ..fetchNewComments(leadId: lead.id!, page: 1, limit: 10),
+
+      child: InkWell(
+        onLongPress: () {
+          setState(() {
+            _showCheckboxes = true;
+            if (!_selectedLeadIds.contains(lead.id)) {
+              _selectedLeadIds.add(lead.id!);
+              _selectedLeads.add(lead);
+            }
+          });
+        },
+        onTap: () async {
+          if (_showCheckboxes) {
+            setState(() {
+              if (_selectedLeadIds.contains(lead.id)) {
+                _selectedLeadIds.remove(lead.id);
+                _selectedLeads.removeWhere((l) => l.id == lead.id);
+                if (_selectedLeadIds.isEmpty) _showCheckboxes = false;
+              } else {
+                _selectedLeadIds.add(lead.id!);
+                _selectedLeads.add(lead);
+              }
+            });
+            return;
+          }
+
+          if (leadassign == false) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => BlocProvider(
+                      create:
+                          (_) =>
+                              LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                      child: SalesLeadsDetailsScreen(
+                        leedId: lead.id!,
+                        leadName: lead.name ?? '',
+                        leadPhone: lead.phone ?? '',
+                        leadEmail: lead.email ?? '',
+                        leadStage: lead.stage?.name ?? '',
+                        leadStageId: lead.stage?.id ?? '',
+                        leadChannel: lead.chanel?.name ?? '',
+                        leadCreationDate:
+                            lead.createdAt != null
+                                ? formatDateTimeToDubai(lead.createdAt!)
+                                : '',
+                        leadProject: lead.project?.name ?? '',
+                        leadLastComment: lead.lastcommentdate ?? '',
+                        leadcampaign: lead.campaign?.campainName ?? "campaign",
+                        leadNotes: "",
+                        leaddeveloper:
+                            lead.project?.developer?.name ?? "no developer",
+                        fcmtoken: salesfcmtoken,
+                        managerfcmtoken: lead.sales?.manager?.fcmToken,
+                        teamleaderfcmtoken: lead.sales?.teamleader?.fcmToken,
+                        leadwhatsappnumber:
+                            lead.whatsappnumber ?? 'no whatsapp number',
+                        jobdescription:
+                            lead.jobdescription ?? 'no job description',
+                        secondphonenumber:
+                            lead.phonenumber2 ?? 'no second phone number',
+                        laststageupdated: lead.stagedateupdated,
+                        stageId: lead.stage?.id,
+                        leadLastDateAssigned: lead.lastdateassign,
+                        isleadAssigned: lead.assign,
+                        resetcreationdate: lead.resetcreationdate,
+                        question1_text: lead.question1_text,
+                        question1_answer: lead.question1_answer,
+                        question2_text: lead.question2_text,
+                        question2_answer: lead.question2_answer,
+                        question3_text: lead.question3_text,
+                        question3_answer: lead.question3_answer,
+                        question4_text: lead.question4_text,
+                        question4_answer: lead.question4_answer,
+                        question5_text: lead.question5_text,
+                        question5_answer: lead.question5_answer,
+                        selectedLeads: _selectedLeads,
+                        salesFcmTokens:
+                            lead.sales?.userlog?.fcmTokens
+                                ?.map((e) => e.token ?? '')
+                                .where((t) => t.isNotEmpty)
+                                .toList(),
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
-          );
-        }
-      },
-      child: Card(
-        color:
-            Theme.of(context).brightness == Brightness.light
-                ? Colors.white
-                : Colors.grey[900],
-        margin: EdgeInsets.symmetric(
-          horizontal: _responsive.cardMarginHorizontal.w,
-          vertical: _responsive.cardMarginVertical.h,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(_responsive.cardPadding.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Stage and Date Row
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildStageContainer(lead, isOutdated),
-                        SizedBox(height: _responsive.verticalPadding.h * 1.2),
-                        Text(
-                          "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!) : "N/A"}",
-                          style: TextStyle(
-                            fontSize: _responsive.fontSizeSmall.sp,
-                            fontWeight: FontWeight.w500,
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Colors.black87
-                                    : Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_showCheckboxes)
-                    Checkbox(
-                      value: _selectedLeadId == lead.id,
-                      onChanged: (val) {
-                        setState(() {
-                          if (val == true) {
-                            _selectedLeadId = lead.id;
-                          } else {
-                            _selectedLeadId = null;
-                            _showCheckboxes = false;
-                          }
-                        });
-                      },
-                    ),
-                  if (leadassign == true) _buildDownloadButton(lead),
-                ],
               ),
-
-              if (leadassign == true)
-                Padding(
-                  padding: EdgeInsets.only(
-                    top: _responsive.verticalPadding.h * 0.3,
+            );
+            final cubit = context.read<GetLeadsCubit>();
+            await cubit.fetchSalesLeadsWithPagination(
+              data: widget.data,
+              transferefromdata: widget.transferfromdata,
+              stageId: widget.stageId,
+            );
+          } else {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text(
+                    "Attention",
+                    style: TextStyle(fontSize: _responsive.fontSizeLarge.sp),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [DotLoading()],
+                  content: Text(
+                    "You must receive this lead first.",
+                    style: TextStyle(fontSize: _responsive.fontSizeMedium.sp),
                   ),
-                ),
-
-              SizedBox(height: _responsive.verticalPadding.h),
-              const Divider(thickness: 1.5),
-              SizedBox(height: _responsive.verticalPadding.h),
-
-              // Name and Project
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      lead.name ?? "No Name",
-                      style: TextStyle(
-                        fontSize: _responsive.fontSizeXLarge.sp,
-                        fontWeight: FontWeight.bold,
+                  actions: [
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Constants.mainDarkmodecolor,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Flexible(
-                    child: Text(
-                      lead.project?.name ?? "N/A",
-                      style: TextStyle(
-                        fontSize: _responsive.fontSizeMedium.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: _responsive.verticalPadding.h * 0.5),
-
-              // Phone
-              InkWell(
-                onTap: () {
-                  final phone = lead.phone ?? '';
-                  final formattedPhone =
-                      phone.startsWith('0') ? phone : '+$phone';
-                  makePhoneCall(formattedPhone);
-                },
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.phone,
-                      color:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Colors.grey
-                              : Constants.mainDarkmodecolor,
-                      size: _responsive.iconSizeMedium.sp,
-                    ),
-                    SizedBox(width: _responsive.horizontalPadding.w * 0.3),
-                    Expanded(
+                      onPressed: () => Navigator.of(context).pop(),
                       child: Text(
-                        lead.phone ?? 'N/A',
+                        "OK",
                         style: TextStyle(
+                          color: Colors.white,
                           fontSize: _responsive.fontSizeMedium.sp,
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ],
-                ),
-              ),
-
-              SizedBox(height: _responsive.verticalPadding.h * 2.5),
-
-              // Sales Person and Actions
-              Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.person_pin_outlined,
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Colors.grey
-                                : Constants.mainDarkmodecolor,
-                        size: _responsive.iconSizeMedium.sp,
-                      ),
-                      SizedBox(width: _responsive.horizontalPadding.w * 0.3),
-                      Expanded(
-                        child: Text(
-                          lead.sales?.name ?? "none",
-                          style: TextStyle(
-                            fontSize: _responsive.fontSizeLarge.sp,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          _buildActionButton(
-                            icon: Icons.phone,
-                            onTap: () {
-                              final phone = lead.phone ?? '';
-                              final formattedPhone =
-                                  phone.startsWith('0') ? phone : '+$phone';
-                              makePhoneCall(formattedPhone);
-                            },
-                          ),
-                          _buildActionButton(
-                            icon: FontAwesomeIcons.whatsapp,
-                            isFaIcon: true,
-                            onTap: () async {
-                              final rawPhone =
-                                  (lead.phone?.isNotEmpty == true
-                                          ? lead.phone
-                                          : lead.whatsappnumber)
-                                      ?.replaceAll(RegExp(r'\D'), '') ??
-                                  '';
-                              final formattedPhone =
-                                  rawPhone.startsWith('0')
-                                      ? rawPhone
-                                      : '+$rawPhone';
-                              final url = "https://wa.me/$formattedPhone";
-                              try {
-                                await launchUrl(
-                                  Uri.parse(url),
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Could not open WhatsApp."),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                          _buildActionButton(
-                            icon: Icons.chat_bubble_outline,
-                            onTap: () => _showCommentsDialog(lead),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: _responsive.verticalPadding.h * 0.25),
-
-                  // Creation Date
-                  if (lead.resetcreationdate == false)
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.date_range,
-                          color:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? Colors.grey
-                                  : Constants.mainDarkmodecolor,
-                          size: _responsive.iconSizeMedium.sp,
-                        ),
-                        SizedBox(width: _responsive.horizontalPadding.w * 0.3),
-                        Text(
-                          " ${lead.date != null ? formatDateTimeToDubai(lead.date!) : "N/A"}",
-                          style: TextStyle(
-                            fontSize: _responsive.fontSizeSmall.sp,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
+                );
+              },
+            );
+          }
+        },
+        borderRadius: BorderRadius.circular(22.r),
+        child: Container(
+          margin: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
+          decoration: BoxDecoration(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.white
+                    : const Color(0xff111827),
+            borderRadius: BorderRadius.circular(22.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                // ── LEFT COLOR BAR ──────────────────────────────────
+                Container(
+                  width: 5.w,
+                  decoration: BoxDecoration(
+                    color: leftBarColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(22.r),
+                      bottomLeft: Radius.circular(22.r),
+                    ),
+                  ),
+                ),
 
-  Widget _buildStageContainer(LeadPagination lead, bool isOutdated) {
-    final leadStagetype = lead.stage?.name ?? "";
-    final bool isFinalStage =
-        leadStagetype == "Done Deal" ||
-        leadStagetype == "Transfer" ||
-        leadStagetype == "Fresh" ||
-        leadStagetype == "Not Interested";
+                // ── CARD CONTENT ────────────────────────────────────
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 18.w,
+                      vertical: 18.h,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── TOP ROW: Stage badge + Date + Checkbox ──
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Row(
+                                children: [
+                                  if (_showCheckboxes)
+                                    Padding(
+                                      padding: EdgeInsets.only(right: 8.w),
+                                      child: Checkbox(
+                                        materialTapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        visualDensity: VisualDensity.compact,
+                                        activeColor:
+                                            Constants.mainlightmodecolor,
+                                        value: _selectedLeadIds.contains(
+                                          lead.id,
+                                        ),
+                                        onChanged: (val) {
+                                          setState(() {
+                                            if (val == true) {
+                                              _selectedLeadIds.add(lead.id!);
+                                              _selectedLeads.add(lead);
+                                            } else {
+                                              _selectedLeadIds.remove(lead.id);
+                                              _selectedLeads.removeWhere(
+                                                (l) => l.id == lead.id,
+                                              );
+                                              if (_selectedLeadIds.isEmpty) {
+                                                _showCheckboxes = false;
+                                              }
+                                            }
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  Flexible(
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 14.w,
+                                        vertical: 7.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isOutdatedStage
+                                                ? stageColor
+                                                : stageColor.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(
+                                          10.r,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        ((lead.stage?.name ?? "No Stage")
+                                                    .length >
+                                                10)
+                                            ? "${(lead.stage?.name ?? "No Stage").substring(0, 10).toUpperCase()}..."
+                                            : (lead.stage?.name ?? "No Stage")
+                                                .toUpperCase(),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 10.sp,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 1,
+                                          color:
+                                              isOutdatedStage
+                                                  ? const Color(0xff6A4800)
+                                                  : stageColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            Text(
+                              lead.stagedateupdated != null
+                                  ? formatDateTimeToDubai(
+                                    lead.stagedateupdated!,
+                                  )
+                                  : "N/A",
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
 
-    final Color stageColor =
-        isFinalStage
-            ? Constants.maincolor
-            : isOutdated
-            ? Colors.red
-            : Colors.green;
+                        if (leadassign == true)
+                          Padding(
+                            padding: EdgeInsets.only(top: 6.h),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [DotLoading()],
+                            ),
+                          ),
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: _responsive.stageContainerHPadding.w,
-        vertical: _responsive.stageContainerVPadding.h,
-      ),
-      decoration: BoxDecoration(
-        color: stageColor.withOpacity(0.1),
-        border: Border.all(color: stageColor),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.circle,
-            color: stageColor,
-            size: _responsive.iconSizeSmall.sp,
-          ),
-          SizedBox(width: _responsive.horizontalPadding.w * 0.2),
-          Flexible(
-            child: Text(
-              lead.stage?.name ?? "Unknown",
-              style: TextStyle(
-                fontSize: _responsive.fontSizeSmall.sp,
-                fontWeight: FontWeight.bold,
-                color: stageColor,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
+                        SizedBox(height: 12.h),
+
+                        // ── NAME ──────────────────────────────────────
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                lead.name ?? "No Name",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 22.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? const Color(0xff111827)
+                                          : Colors.white,
+                                ),
+                              ),
+                            ),
+                            if (leadassign == true) _buildDownloadButton(lead),
+                          ],
+                        ),
+
+                        SizedBox(height: 4.h),
+
+                        // ── PROJECT ───────────────────────────────────
+                        Text(
+                          (lead.project?.name ?? "").toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                            color: const Color(0xff003178),
+                          ),
+                        ),
+
+                        SizedBox(height: 16.h),
+
+                        // ── SALESMAN + CREATED DATE ───────────────────
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "SALESMAN",
+                                    style: TextStyle(
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.2,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4.h),
+                                  Text(
+                                    lead.sales?.name ?? "None",
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 16.w),
+                            if (lead.resetcreationdate == false)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    "CREATED",
+                                    style: TextStyle(
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.2,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4.h),
+                                  Text(
+                                    lead.date != null
+                                        ? formatDateTimeToDubai(lead.date!)
+                                        : "N/A",
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+
+                        SizedBox(height: 10.h),
+                        Divider(color: Colors.grey.shade300, thickness: 1),
+                        SizedBox(height: 10.h),
+
+                        // ── PHONE + ACTION BUTTONS ────────────────────
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  final phone = lead.phone ?? '';
+                                  String formatted;
+                                  if (phone.startsWith('+')) {
+                                    // إذا كان الرقم يبدأ بـ + بالفعل، استخدمه كما هو
+                                    formatted = phone;
+                                  } else if (phone.startsWith('0')) {
+                                    // إذا كان يبدأ بـ 0، استخدمه كما هو
+                                    formatted = phone;
+                                  } else {
+                                    // إذا لم يبدأ بـ 0 أو +، أضف +
+                                    formatted = '+$phone';
+                                  }
+                                  makePhoneCall(formatted);
+                                },
+                                child: Text(
+                                  lead.phone ?? 'N/A',
+                                  style: TextStyle(
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                // Phone button
+                                InkWell(
+                                  onTap: () {
+                                    final phone = lead.phone ?? '';
+                                    String formatted;
+                                    if (phone.startsWith('+')) {
+                                      // إذا كان الرقم يبدأ بـ + بالفعل، استخدمه كما هو
+                                      formatted = phone;
+                                    } else if (phone.startsWith('0')) {
+                                      // إذا كان يبدأ بـ 0، استخدمه كما هو
+                                      formatted = phone;
+                                    } else {
+                                      // إذا لم يبدأ بـ 0 أو +، أضف +
+                                      formatted = '+$phone';
+                                    }
+                                    makePhoneCall(formatted);
+                                  },
+                                  borderRadius: BorderRadius.circular(40.r),
+                                  child: Container(
+                                    width: 44.w,
+                                    height: 44.w,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade200,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.phone_in_talk_outlined,
+                                      color: Constants.mainlightmodecolor,
+                                      size: 20.sp,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 10.w),
+                                // WhatsApp button
+                                InkWell(
+                                  onTap: () async {
+                                    final rawPhone =
+                                        (lead.phone?.isNotEmpty == true
+                                                ? lead.phone
+                                                : lead.whatsappnumber)
+                                            ?.replaceAll(RegExp(r'\D'), '') ??
+                                        '';
+                                    final formatted =
+                                        rawPhone.startsWith('0')
+                                            ? rawPhone
+                                            : '+$rawPhone';
+                                    final url = "https://wa.me/$formatted";
+                                    try {
+                                      await launchUrl(
+                                        Uri.parse(url),
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Could not open WhatsApp.",
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.circular(40.r),
+                                  child: Container(
+                                    width: 44.w,
+                                    height: 44.w,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xffDCFCE7),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: FaIcon(
+                                        FontAwesomeIcons.whatsapp,
+                                        color: Colors.green,
+                                        size: 22.sp,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 10.w),
+
+                                // 💬 COMMENT ICON
+                                InkWell(
+                                  onTap: () => _showCommentsDialog(lead),
+                                  borderRadius: BorderRadius.circular(40.r),
+                                  child: Container(
+                                    width: 44.w,
+                                    height: 44.w,
+                                    decoration: BoxDecoration(
+                                      color: Constants.maincolor.withOpacity(
+                                        0.1,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.comment_outlined,
+                                      color: Constants.maincolor,
+                                      size: 20.sp,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        // SizedBox(height: 12.h),
+
+                        // // ── COMMENT BOX ───────────────────────────────
+                        // InkWell(
+                        //   onTap: () => _showCommentsDialog(lead),
+                        //   borderRadius: BorderRadius.circular(14.r),
+                        //   child: Container(
+                        //     width: double.infinity,
+                        //     padding: EdgeInsets.symmetric(
+                        //       horizontal: 14.w,
+                        //       vertical: 14.h,
+                        //     ),
+                        //     decoration: BoxDecoration(
+                        //       color:
+                        //           Theme.of(context).brightness ==
+                        //                   Brightness.light
+                        //               ? const Color(0xffF3F4F6)
+                        //               : Colors.grey.shade800,
+                        //       borderRadius: BorderRadius.circular(14.r),
+                        //     ),
+                        //     child: BlocBuilder<
+                        //       LeadCommentsCubit,
+                        //       LeadCommentsState
+                        //     >(
+                        //       builder: (context, commentState) {
+                        //         String commentText = "No comments available.";
+
+                        //         if (commentState is NewCommentsLoaded) {
+                        //           final comments =
+                        //               commentState.newComments.comments;
+                        //           if (comments != null && comments.isNotEmpty) {
+                        //             commentText =
+                        //                 comments.first.firstcomment?.text ??
+                        //                 "No comments available.";
+                        //           }
+                        //         }
+
+                        //         return Text(
+                        //           commentText,
+                        //           maxLines: 3,
+                        //           overflow: TextOverflow.ellipsis,
+                        //           style: TextStyle(
+                        //             fontSize: 13.sp,
+                        //             height: 1.6,
+                        //             color: Colors.grey.shade700,
+                        //           ),
+                        //         );
+                        //       },
+                        //     ),
+                        //   ),
+                        // ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1597,7 +2139,30 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                               data: widget.data,
                                               transferefromdata:
                                                   widget.transferfromdata,
-                                              stageId: widget.stageId,
+                                              stageId:
+                                                  _currentFilterStageId ??
+                                                  widget.stageId,
+                                              // ✅ البحث الحالي
+                                              search:
+                                                  nameController.text.isNotEmpty
+                                                      ? nameController.text
+                                                          .trim()
+                                                      : null,
+                                              // ✅ جميع الفلاتر المخزنة
+                                              developerId:
+                                                  _currentFilterDeveloperId,
+                                              projectId:
+                                                  _currentFilterProjectId,
+                                              channelId:
+                                                  _currentFilterChannelId,
+                                              creationDateFrom:
+                                                  _currentFilterCreationDateFrom,
+                                              creationDateTo:
+                                                  _currentFilterCreationDateTo,
+                                              stageDateFrom:
+                                                  _currentFilterStageDateFrom,
+                                              stageDateTo:
+                                                  _currentFilterStageDateTo,
                                             );
                                       } finally {
                                         if (context.mounted) {
@@ -1641,39 +2206,6 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
           color: Constants.maincolor,
           size: _responsive.iconSizeLarge.sp,
         ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required dynamic icon,
-    required VoidCallback onTap,
-    bool isFaIcon = false,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(30.r),
-      child: Container(
-        padding: EdgeInsets.all(_responsive.cardPadding.w * 0.3),
-        margin: EdgeInsets.symmetric(
-          horizontal: _responsive.horizontalPadding.w * 0.15,
-        ),
-        decoration: BoxDecoration(
-          color: Constants.maincolor,
-          shape: BoxShape.circle,
-        ),
-        child:
-            isFaIcon
-                ? FaIcon(
-                  icon,
-                  color: Colors.white,
-                  size: _responsive.iconSizeSmall.sp,
-                )
-                : Icon(
-                  icon,
-                  color: Colors.white,
-                  size: _responsive.iconSizeSmall.sp,
-                ),
       ),
     );
   }

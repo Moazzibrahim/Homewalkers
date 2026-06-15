@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FetchAdminSalesApiService {
-  static final String _baseUrl =
+  String get _baseUrl =>
       '${Constants.baseUrl}/users/admin/sales-Leads-count';
 
   Future<AdminSalesModel> getSalesLeadsCount() async {

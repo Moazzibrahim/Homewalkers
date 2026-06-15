@@ -1,6 +1,6 @@
 // lib/presentation/screens/requests/requests_history_screen.dart
 
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, avoid_print
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -30,6 +30,9 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
   String _selectedFilter = 'all';
   SalesData? _selectedSales;
   String _userRole = ''; // Add this to store user role
+  // أضف المتغير ده في أول الـ State class مع باقي المتغيرات
+  final TextEditingController _salesSearchController = TextEditingController();
+  String _salesSearchQuery = '';
 
   final Map<String, String> _filterOptions = {
     'all': 'All',
@@ -90,6 +93,7 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
     _scrollController.dispose();
     _requestLeadsCubit.close();
     _salesCubit.close();
+    _salesSearchController.dispose();
     super.dispose();
   }
 
@@ -198,62 +202,27 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
       child: BlocBuilder<SalesCubit, SalesState>(
         builder: (context, state) {
           if (state is SalesLoading) {
-            return Container(
-              height: 50.h,
-              padding: EdgeInsets.symmetric(horizontal: 12.w),
-              decoration: BoxDecoration(
-                border: Border.all(color: Constants.maincolor.withOpacity(0.3)),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 20.w,
-                    height: 20.h,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Constants.maincolor,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Text(
-                    'Loading sales...',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: isDark ? Colors.white54 : Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            );
+            return _buildSalesFilterLoading(isDark);
           }
 
           if (state is SalesLoaded) {
             final salesList = state.salesData.data ?? [];
 
-            // ✅ الحل الكامل للمشكلة
-            // التحقق من وجود الـ _selectedSales في اللستة الجديدة
-            // لو مش موجود، نرجعه null
             if (_selectedSales != null) {
               final isStillValid = salesList.any(
                 (s) => s.userlog?.id == _selectedSales?.userlog?.id,
               );
               if (!isStillValid) {
-                // استخدام addPostFrameCallback لتجنب setState أثناء البناء
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    setState(() {
-                      _selectedSales = null;
-                    });
-                  }
+                  if (mounted) setState(() => _selectedSales = null);
                 });
               }
             }
 
-            if (salesList.isEmpty) {
-              return Container(
+            return GestureDetector(
+              onTap:
+                  () => _showSalesSearchBottomSheet(context, salesList, isDark),
+              child: Container(
                 height: 50.h,
                 padding: EdgeInsets.symmetric(horizontal: 12.w),
                 decoration: BoxDecoration(
@@ -264,207 +233,402 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.people_outline,
-                      size: 20.sp,
-                      color: Constants.maincolor,
-                    ),
-                    SizedBox(width: 12.w),
-                    Text(
-                      'No sales available',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: isDark ? Colors.white54 : Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            // ✅ تحديد القيمة الحالية الصحيحة للـ DropdownButton
-            // نتأكد إن القيمة موجودة في اللستة الجديدة
-            final currentValue =
-                (_selectedSales != null &&
-                        salesList.any(
-                          (s) => s.userlog?.id == _selectedSales?.userlog?.id,
-                        ))
-                    ? _selectedSales
-                    : null;
-
-            // لو القيمة اتغيرت، نحدث المتغير الفعلي
-            if (currentValue != _selectedSales) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  setState(() {
-                    _selectedSales = currentValue;
-                  });
-                }
-              });
-            }
-
-            return Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Constants.maincolor.withOpacity(0.3)),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<SalesData?>(
-                  isExpanded: true,
-                  hint: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 20.sp,
-                          color: Constants.maincolor,
-                        ),
-                        SizedBox(width: 12.w),
-                        Text(
-                          'Filter by Sales Person',
+                    // Avatar أو Icon
+                    if (_selectedSales != null)
+                      CircleAvatar(
+                        radius: 14.r,
+                        backgroundColor: Constants.maincolor.withOpacity(0.1),
+                        child: Text(
+                          _selectedSales!.name?.substring(0, 1).toUpperCase() ??
+                              'S',
                           style: TextStyle(
-                            fontSize: 14.sp,
-                            color:
-                                isDark ? Colors.white54 : Colors.grey.shade600,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Constants.maincolor,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  // ✅ استخدام currentValue بدل _selectedSales مباشرة
-                  value: currentValue,
-                  items: [
-                    // Add "All Sales" option
-                    DropdownMenuItem<SalesData?>(
-                      value: null,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.all_inclusive,
-                              size: 20.sp,
-                              color: Constants.maincolor,
-                            ),
-                            SizedBox(width: 12.w),
-                            Text(
-                              'All Sales',
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                                color:
-                                    isDark
-                                        ? Colors.white
-                                        : const Color(0xFF0D1B2A),
-                              ),
-                            ),
-                          ],
+                      )
+                    else
+                      Icon(
+                        Icons.people_outline,
+                        size: 20.sp,
+                        color: Constants.maincolor,
+                      ),
+
+                    SizedBox(width: 10.w),
+
+                    Expanded(
+                      child: Text(
+                        _selectedSales?.name ?? 'Filter by Sales Person',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight:
+                              _selectedSales != null
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                          color:
+                              _selectedSales != null
+                                  ? (isDark
+                                      ? Colors.white
+                                      : const Color(0xFF0D1B2A))
+                                  : (isDark
+                                      ? Colors.white54
+                                      : Colors.grey.shade600),
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    ...salesList.map((sales) {
-                      return DropdownMenuItem<SalesData?>(
-                        value: sales,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 16.r,
-                                backgroundColor: Constants.maincolor
-                                    .withOpacity(0.1),
-                                child: Text(
-                                  sales.name?.substring(0, 1).toUpperCase() ??
-                                      'S',
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: Constants.maincolor,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 12.w),
-                              Expanded(
-                                child: Text(
-                                  sales.name ?? 'Unknown',
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color:
-                                        isDark
-                                            ? Colors.white
-                                            : const Color(0xFF0D1B2A),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                  ],
-                  onChanged: (SalesData? newValue) {
-                    setState(() {
-                      _selectedSales = newValue;
-                    });
 
-                    final userId = newValue?.userlog?.id;
-                    if (userId != null && userId.isNotEmpty) {
-                      _requestLeadsCubit.filterByUserId(userId);
-                    } else {
-                      _requestLeadsCubit.clearFilters();
-                    }
-                  },
-                  dropdownColor:
-                      isDark ? const Color(0xff1e1e1e) : Colors.white,
-                  icon: Icon(
-                    Icons.arrow_drop_down,
-                    color: Constants.maincolor,
-                    size: 24.sp,
-                  ),
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: isDark ? Colors.white : const Color(0xFF0D1B2A),
-                  ),
+                    // Clear button لو فيه سيلز مختار
+                    if (_selectedSales != null)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() => _selectedSales = null);
+                          _requestLeadsCubit.clearFilters();
+                        },
+                        child: Icon(
+                          Icons.close,
+                          size: 18.sp,
+                          color: Colors.grey,
+                        ),
+                      )
+                    else
+                      Icon(
+                        Icons.arrow_drop_down,
+                        color: Constants.maincolor,
+                        size: 24.sp,
+                      ),
+                  ],
                 ),
               ),
             );
           }
 
           if (state is SalesError) {
-            return Container(
-              height: 50.h,
-              padding: EdgeInsets.symmetric(horizontal: 12.w),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.red.withOpacity(0.3)),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, size: 20.sp, color: Colors.red),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Text(
-                      'Failed to load sales',
-                      style: TextStyle(fontSize: 14.sp, color: Colors.red),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.refresh,
-                      size: 20.sp,
-                      color: Constants.maincolor,
-                    ),
-                    onPressed: () => _salesCubit.fetchAllSales(),
-                  ),
-                ],
-              ),
-            );
+            return _buildSalesFilterError(isDark);
           }
 
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+
+  // Bottom Sheet مع Search
+  void _showSalesSearchBottomSheet(
+    BuildContext context,
+    List<SalesData> salesList,
+    bool isDark,
+  ) {
+    _salesSearchController.clear();
+    _salesSearchQuery = '';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => StatefulBuilder(
+            builder: (context, setSheetState) {
+              // الفلترة
+              final filtered =
+                  salesList.where((s) {
+                    final name = s.name?.toLowerCase() ?? '';
+                    return name.contains(_salesSearchQuery.toLowerCase());
+                  }).toList();
+
+              return Container(
+                height: MediaQuery.of(context).size.height * 0.75,
+                decoration: BoxDecoration(
+                  color: isDark ? Constants.backgroundDarkmode : Colors.white,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(20.r),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // Handle
+                    Container(
+                      margin: EdgeInsets.symmetric(vertical: 12.h),
+                      height: 4.h,
+                      width: 40.w,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white24 : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                    ),
+
+                    // Title
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Text(
+                        'Select Sales Person',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                          color:
+                              isDark ? Colors.white : const Color(0xFF0D1B2A),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+
+                    // Search Field
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: TextField(
+                        controller: _salesSearchController,
+                        autofocus: true,
+                        onChanged: (val) {
+                          setSheetState(() => _salesSearchQuery = val);
+                        },
+                        style: TextStyle(fontSize: 14.sp),
+                        decoration: InputDecoration(
+                          hintText: 'Search sales person...',
+                          hintStyle: TextStyle(
+                            fontSize: 14.sp,
+                            color:
+                                isDark ? Colors.white38 : Colors.grey.shade400,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Constants.maincolor,
+                            size: 20.sp,
+                          ),
+                          suffixIcon:
+                              _salesSearchQuery.isNotEmpty
+                                  ? IconButton(
+                                    icon: Icon(Icons.close, size: 18.sp),
+                                    onPressed: () {
+                                      _salesSearchController.clear();
+                                      setSheetState(
+                                        () => _salesSearchQuery = '',
+                                      );
+                                    },
+                                  )
+                                  : null,
+                          filled: true,
+                          fillColor:
+                              isDark
+                                  ? const Color(0xff2a2a2a)
+                                  : Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 12.h,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+
+                    // القائمة
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 4.h,
+                        ),
+                        children: [
+                          // "All Sales" option
+                          if (_salesSearchQuery.isEmpty)
+                            _buildSalesItem(
+                              context: context,
+                              isDark: isDark,
+                              isSelected: _selectedSales == null,
+                              leading: Icon(
+                                Icons.all_inclusive,
+                                size: 20.sp,
+                                color: Constants.maincolor,
+                              ),
+                              name: 'All Sales',
+                              onTap: () {
+                                setState(() => _selectedSales = null);
+                                _requestLeadsCubit.clearFilters();
+                                Navigator.pop(context);
+                              },
+                            ),
+
+                          // النتائج
+                          if (filtered.isEmpty)
+                            Padding(
+                              padding: EdgeInsets.symmetric(vertical: 32.h),
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.search_off,
+                                      size: 40.sp,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    Text(
+                                      'No results for "$_salesSearchQuery"',
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        color: Colors.grey.shade500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            ...filtered.map(
+                              (sales) => _buildSalesItem(
+                                context: context,
+                                isDark: isDark,
+                                isSelected:
+                                    _selectedSales?.userlog?.id ==
+                                    sales.userlog?.id,
+                                leading: CircleAvatar(
+                                  radius: 16.r,
+                                  backgroundColor: Constants.maincolor
+                                      .withOpacity(0.1),
+                                  child: Text(
+                                    sales.name?.substring(0, 1).toUpperCase() ??
+                                        'S',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Constants.maincolor,
+                                    ),
+                                  ),
+                                ),
+                                name: sales.name ?? 'Unknown',
+                                onTap: () {
+                                  setState(() => _selectedSales = sales);
+                                  final userId = sales.userlog?.id;
+                                  if (userId != null && userId.isNotEmpty) {
+                                    _requestLeadsCubit.filterByUserId(userId);
+                                  }
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+    );
+  }
+
+  // Helper: كل item في الـ list
+  Widget _buildSalesItem({
+    required BuildContext context,
+    required bool isDark,
+    required bool isSelected,
+    required Widget leading,
+    required String name,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+        margin: EdgeInsets.only(bottom: 4.h),
+        decoration: BoxDecoration(
+          color:
+              isSelected
+                  ? Constants.maincolor.withOpacity(0.08)
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color:
+                isSelected
+                    ? Constants.maincolor.withOpacity(0.3)
+                    : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          children: [
+            leading,
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color:
+                      isSelected
+                          ? Constants.maincolor
+                          : (isDark ? Colors.white : const Color(0xFF0D1B2A)),
+                ),
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check, size: 18.sp, color: Constants.maincolor),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Loading state
+  Widget _buildSalesFilterLoading(bool isDark) {
+    return Container(
+      height: 50.h,
+      padding: EdgeInsets.symmetric(horizontal: 12.w),
+      decoration: BoxDecoration(
+        border: Border.all(color: Constants.maincolor.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20.w,
+            height: 20.h,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Constants.maincolor),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Text(
+            'Loading sales...',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: isDark ? Colors.white54 : Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Error state
+  Widget _buildSalesFilterError(bool isDark) {
+    return Container(
+      height: 50.h,
+      padding: EdgeInsets.symmetric(horizontal: 12.w),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.red.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, size: 20.sp, color: Colors.red),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Text(
+              'Failed to load sales',
+              style: TextStyle(fontSize: 14.sp, color: Colors.red),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.refresh, size: 20.sp, color: Constants.maincolor),
+            onPressed: () => _salesCubit.fetchAllSales(),
+          ),
+        ],
       ),
     );
   }
@@ -508,23 +672,50 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
             color: Constants.maincolor,
             size: 20.sp,
           ),
+          // في onSelected للـ PopupMenuButton
           onSelected: (value) {
             setState(() => _selectedFilter = value);
+
+            // ✅ جلب userId المحدد إذا وجد
+            final selectedUserId = _selectedSales?.userlog?.id;
+
             switch (value) {
               case 'all':
                 _requestLeadsCubit.clearFilters();
+                // إذا كان فيه سيلز محدد، نطبق الفلتر عليه
+                if (selectedUserId != null && selectedUserId.isNotEmpty) {
+                  _requestLeadsCubit.filterByUserId(selectedUserId);
+                }
                 break;
               case 'completed':
-                _requestLeadsCubit.getCompletedRequests();
+                if (selectedUserId != null && selectedUserId.isNotEmpty) {
+                  _requestLeadsCubit.getCompletedRequests(
+                    userId: selectedUserId,
+                  );
+                } else {
+                  _requestLeadsCubit.getCompletedRequests();
+                }
                 break;
               case 'failed':
-                _requestLeadsCubit.getFailedRequests();
+                if (selectedUserId != null && selectedUserId.isNotEmpty) {
+                  _requestLeadsCubit.getFailedRequests(userId: selectedUserId);
+                } else {
+                  _requestLeadsCubit.getFailedRequests();
+                }
                 break;
               case 'pending':
-                _requestLeadsCubit.getPendingRequests();
+                if (selectedUserId != null && selectedUserId.isNotEmpty) {
+                  _requestLeadsCubit.getPendingRequests(userId: selectedUserId);
+                } else {
+                  _requestLeadsCubit.getPendingRequests();
+                }
                 break;
               case 'recent':
-                _requestLeadsCubit.getRecentRequests();
+                if (selectedUserId != null && selectedUserId.isNotEmpty) {
+                  _requestLeadsCubit.getRecentRequests(userId: selectedUserId);
+                } else {
+                  _requestLeadsCubit.getRecentRequests();
+                }
                 break;
             }
           },
@@ -583,15 +774,58 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
               return FilterChip(
                 label: Text(filter['label'] as String),
                 selected: isSelected,
-                onSelected: (_) {
+                onSelected: (_) async {
                   final value = filter['value'] as String;
+                  final prefs = await SharedPreferences.getInstance();
+                  final salesIdFromPrefs = prefs.getString('salesId');
+
+                  final selectedUserId =
+                      _selectedSales?.userlog?.id ?? salesIdFromPrefs;
+
+                  print(
+                    "🔍 FilterChip clicked: $value, Selected Sales ID: $selectedUserId",
+                  );
+
                   if (value == 'all') {
                     _requestLeadsCubit.clearFilters();
+                    // إذا كان فيه سيلز محدد، نطبق الفلتر عليه بعد المسح
+                    if (selectedUserId != null && selectedUserId.isNotEmpty) {
+                      _requestLeadsCubit.filterByUserId(selectedUserId);
+                    }
                   } else {
-                    _requestLeadsCubit.getAllRequests(
-                      isRefresh: true,
-                      status: value,
-                    );
+                    // ✅ استخدام الدوال المخصصة مع تمرير userId
+                    switch (value) {
+                      case 'completed':
+                        if (selectedUserId != null &&
+                            selectedUserId.isNotEmpty) {
+                          _requestLeadsCubit.getCompletedRequests(
+                            userId: selectedUserId,
+                          );
+                        } else {
+                          _requestLeadsCubit.getCompletedRequests();
+                        }
+                        break;
+                      case 'failed':
+                        if (selectedUserId != null &&
+                            selectedUserId.isNotEmpty) {
+                          _requestLeadsCubit.getFailedRequests(
+                            userId: selectedUserId,
+                          );
+                        } else {
+                          _requestLeadsCubit.getFailedRequests();
+                        }
+                        break;
+                      case 'pending':
+                        if (selectedUserId != null &&
+                            selectedUserId.isNotEmpty) {
+                          _requestLeadsCubit.getPendingRequests(
+                            userId: selectedUserId,
+                          );
+                        } else {
+                          _requestLeadsCubit.getPendingRequests();
+                        }
+                        break;
+                    }
                   }
                 },
                 avatar: Icon(
@@ -672,9 +906,13 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
     );
 
     if (picked != null && mounted) {
+      final prefs = await SharedPreferences.getInstance();
+      final salesIdFromPrefs = prefs.getString('salesId');
+      final selectedUserId = _selectedSales?.userlog?.id ?? salesIdFromPrefs;
       _requestLeadsCubit.filterByDateRange(
         fromDate: picked.start,
         toDate: picked.end,
+        userId: selectedUserId, // ✅ أضف userId
       );
     }
   }

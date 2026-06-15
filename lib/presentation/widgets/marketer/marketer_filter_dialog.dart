@@ -23,18 +23,17 @@ class SelectItem {
 // ✅ ويدجت جديد للـ Multi-Select Dropdown
 class MultiSelectDropdown extends StatefulWidget {
   final String hint;
-  final List<SelectItem> items; // 🔥 بدل String
-  final List<String> selectedItems; // 🔥 دي IDs
+  final List<SelectItem> items;
+  final List<String> selectedItems;
   final Function(List<String>) onChanged;
 
-  // ignore: use_super_parameters
   const MultiSelectDropdown({
-    Key? key,
+    super.key,
     required this.hint,
     required this.items,
     required this.selectedItems,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<MultiSelectDropdown> createState() => _MultiSelectDropdownState();
@@ -104,11 +103,11 @@ class MultiSelectDialog extends StatefulWidget {
   final List<String> selectedItems;
 
   const MultiSelectDialog({
-    Key? key,
+    super.key,
     required this.title,
     required this.items,
     required this.selectedItems,
-  }) : super(key: key);
+  });
 
   @override
   State<MultiSelectDialog> createState() => _MultiSelectDialogState();
@@ -116,11 +115,31 @@ class MultiSelectDialog extends StatefulWidget {
 
 class _MultiSelectDialogState extends State<MultiSelectDialog> {
   late List<String> _tempSelectedItems;
+  final TextEditingController _searchController = TextEditingController();
+  List<SelectItem> _filteredItems = [];
 
   @override
   void initState() {
     super.initState();
     _tempSelectedItems = List.from(widget.selectedItems);
+    _filteredItems = widget.items;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearch(String query) {
+    setState(() {
+      _filteredItems = query.isEmpty
+          ? widget.items
+          : widget.items
+              .where((item) =>
+                  item.name.toLowerCase().contains(query.toLowerCase()))
+              .toList();
+    });
   }
 
   @override
@@ -130,40 +149,85 @@ class _MultiSelectDialogState extends State<MultiSelectDialog> {
       content: SizedBox(
         width: double.maxFinite,
         height: 400,
-        child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: widget.items.length,
-          itemBuilder: (context, index) {
-            final item = widget.items[index];
-            final isSelected = _tempSelectedItems.contains(item.id);
-            return CheckboxListTile(
-              title: Text(item.name),
-              value: isSelected,
-              activeColor: Constants.maincolor,
-              onChanged: (bool? value) {
-                setState(() {
-                  if (value == true) {
-                    _tempSelectedItems.add(item.id);
-                  } else {
-                    _tempSelectedItems.remove(item.id);
-                  }
-                });
-              },
-            );
-          },
+        child: Column(
+          children: [
+            // ── Search field ──────────────────────────────
+            TextField(
+              controller: _searchController,
+              onChanged: _onSearch,
+              decoration: InputDecoration(
+                hintText: 'Search...',
+                hintStyle: const TextStyle(
+                  fontSize: 14,
+                  color: Color.fromRGBO(143, 146, 146, 1),
+                ),
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearch('');
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xffE1E1E1)),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // ── List ──────────────────────────────────────
+            Expanded(
+              child: _filteredItems.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No results found',
+                        style: TextStyle(
+                          color: Color.fromRGBO(143, 146, 146, 1),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _filteredItems.length,
+                      itemBuilder: (context, index) {
+                        final item = _filteredItems[index];
+                        final isSelected =
+                            _tempSelectedItems.contains(item.id);
+                        return CheckboxListTile(
+                          title: Text(item.name),
+                          value: isSelected,
+                          activeColor: Constants.maincolor,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              if (value == true) {
+                                _tempSelectedItems.add(item.id);
+                              } else {
+                                _tempSelectedItems.remove(item.id);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () {
-            Navigator.pop(context, null);
-          },
+          onPressed: () => Navigator.pop(context, null),
           child: const Text('Cancel'),
         ),
         TextButton(
-          onPressed: () {
-            Navigator.pop(context, _tempSelectedItems);
-          },
+          onPressed: () => Navigator.pop(context, _tempSelectedItems),
           child: const Text('OK'),
         ),
       ],
@@ -172,7 +236,6 @@ class _MultiSelectDialogState extends State<MultiSelectDialog> {
 }
 
 class MarketerFilterDialog extends StatefulWidget {
-  // تعديل الأنواع لتصبح List<String> بدلاً من String?
   final List<String>? initialCountry;
   final List<String>? initialDeveloper;
   final List<String>? initialProject;
@@ -211,7 +274,6 @@ class MarketerFilterDialog extends StatefulWidget {
 class _FilterDialogState extends State<MarketerFilterDialog> {
   late TextEditingController _nameController;
 
-  // تعديل الأنواع لتصبح List<String>
   List<String> _selectedCountry = [];
   List<String> _selectedDeveloper = [];
   List<String> _selectedProject = [];
@@ -230,7 +292,6 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialSearchName);
 
-    // تهيئة القوائم بالقيم الأولية
     _selectedCountry = widget.initialCountry ?? [];
     _selectedDeveloper = widget.initialDeveloper ?? [];
     _selectedProject = widget.initialProject ?? [];
@@ -342,7 +403,8 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                 controller: _nameController,
               ),
               const SizedBox(height: 12),
-              // ✅ Sales Multi-Select
+
+              // Sales Multi-Select
               BlocBuilder<SalesCubit, SalesState>(
                 builder: (context, state) {
                   if (state is SalesLoaded) {
@@ -379,7 +441,7 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
               ),
               const SizedBox(height: 12),
 
-              // ✅ Developer Multi-Select
+              // Developer Multi-Select
               BlocBuilder<DevelopersCubit, DevelopersState>(
                 builder: (context, state) {
                   if (state is DeveloperSuccess) {
@@ -412,7 +474,7 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
               ),
               const SizedBox(height: 12),
 
-              // ✅ Channel Multi-Select
+              // Channel Multi-Select
               BlocBuilder<ChannelCubit, ChannelState>(
                 builder: (context, state) {
                   if (state is ChannelLoaded) {
@@ -445,7 +507,7 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
               ),
               const SizedBox(height: 12),
 
-              // ✅ Project Multi-Select
+              // Project Multi-Select
               BlocBuilder<ProjectsCubit, ProjectsState>(
                 builder: (context, state) {
                   if (state is ProjectsSuccess) {
@@ -478,7 +540,7 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
               ),
               const SizedBox(height: 12),
 
-              // ✅ Campaign Multi-Select
+              // Campaign Multi-Select
               BlocBuilder<GetCampaignsCubit, GetCampaignsState>(
                 builder: (context, state) {
                   if (state is GetCampaignsSuccess) {
@@ -511,7 +573,7 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
               ),
               const SizedBox(height: 12),
 
-              // ✅ Communication Way Multi-Select
+              // Communication Way Multi-Select
               BlocBuilder<GetCommunicationWaysCubit, GetCommunicationWaysState>(
                 builder: (context, state) {
                   if (state is GetCommunicationWaysLoaded) {
@@ -544,7 +606,7 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
               ),
               const SizedBox(height: 12),
 
-              // ✅ Stage Multi-Select
+              // Stage Multi-Select
               BlocBuilder<StagesCubit, StagesState>(
                 builder: (context, state) {
                   if (state is StagesLoaded) {
@@ -618,6 +680,7 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                         ),
                       ),
                       onPressed: () {
+                        // ✅ Reset all filters to null (not empty lists)
                         setState(() {
                           _nameController.clear();
                           _selectedCountry = [];
@@ -633,17 +696,18 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                           _lastStageUpdateStart = null;
                           _lastStageUpdateEnd = null;
                         });
-                        // Return all filters as null or empty lists
+
+                        // ✅ IMPORTANT: Return null for all filter values to indicate "no filter"
                         Navigator.pop(context, {
                           'name': null,
-                          'country': [],
-                          'developer': [],
-                          'project': [],
-                          'stage': [],
-                          'channel': [],
-                          'sales': [],
-                          'communicationWay': [],
-                          'campaign': [],
+                          'country': null, // ✅ Changed from [] to null
+                          'developer': null, // ✅ Changed from [] to null
+                          'project': null, // ✅ Changed from [] to null
+                          'stage': null, // ✅ Changed from [] to null
+                          'channel': null, // ✅ Changed from [] to null
+                          'sales': null, // ✅ Changed from [] to null
+                          'communicationWay': null, // ✅ Changed from [] to null
+                          'campaign': null, // ✅ Changed from [] to null
                           'startDate': null,
                           'endDate': null,
                           'lastStageUpdateStart': null,
@@ -705,20 +769,40 @@ class _FilterDialogState extends State<MarketerFilterDialog> {
                           return;
                         }
 
-                        // Return all filters with Lists
+                        // ✅ When applying, return null for empty lists (no filter)
                         Navigator.pop(context, {
                           'name':
                               _nameController.text.trim().isEmpty
                                   ? null
                                   : _nameController.text.trim(),
-                          'country': _selectedCountry,
-                          'developer': _selectedDeveloper,
-                          'project': _selectedProject,
-                          'stage': _selectedStage,
-                          'channel': _selectedChannel,
-                          'sales': _selectedSales,
-                          'communicationWay': _selectedCommunicationWay,
-                          'campaign': _selectedCampaign,
+                          'country':
+                              _selectedCountry.isEmpty
+                                  ? null
+                                  : _selectedCountry,
+                          'developer':
+                              _selectedDeveloper.isEmpty
+                                  ? null
+                                  : _selectedDeveloper,
+                          'project':
+                              _selectedProject.isEmpty
+                                  ? null
+                                  : _selectedProject,
+                          'stage':
+                              _selectedStage.isEmpty ? null : _selectedStage,
+                          'channel':
+                              _selectedChannel.isEmpty
+                                  ? null
+                                  : _selectedChannel,
+                          'sales':
+                              _selectedSales.isEmpty ? null : _selectedSales,
+                          'communicationWay':
+                              _selectedCommunicationWay.isEmpty
+                                  ? null
+                                  : _selectedCommunicationWay,
+                          'campaign':
+                              _selectedCampaign.isEmpty
+                                  ? null
+                                  : _selectedCampaign,
                           'startDate': _startDate,
                           'endDate': _endDate,
                           'lastStageUpdateStart': _lastStageUpdateStart,

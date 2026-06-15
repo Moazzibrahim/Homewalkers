@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class EditLeadApiService {
-  final String baseUrl = '${Constants.baseUrl}/users';
+  String get baseUrl => '${Constants.baseUrl}/users';
 
   Future<void> editLead({
     required String userId,

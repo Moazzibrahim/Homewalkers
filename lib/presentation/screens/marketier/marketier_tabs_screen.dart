@@ -1,4 +1,5 @@
 // ignore_for_file: avoid_print
+// ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,6 +17,7 @@ import 'package:homewalkers_app/presentation/viewModels/sales/notifications/noti
 
 class MarketierTabsScreen extends StatefulWidget {
   final String? name;
+
   const MarketierTabsScreen({super.key, this.name});
 
   @override
@@ -24,17 +26,20 @@ class MarketierTabsScreen extends StatefulWidget {
 
 class _MarketierTabsScreenState extends State<MarketierTabsScreen> {
   int _currentIndex = 0;
+
   final PageController _pageController = PageController();
 
   @override
   void initState() {
     super.initState();
+
     context.read<NotificationCubit>().initNotifications();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+
     super.dispose();
   }
 
@@ -42,182 +47,204 @@ class _MarketierTabsScreenState extends State<MarketierTabsScreen> {
     setState(() {
       _currentIndex = index;
     });
+
     _pageController.jumpToPage(index);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-
-    /// ✅ Detect Tablet
-    final width = MediaQuery.of(context).size.width;
-    final isTablet = width >= 600;
-
-    final navHeight = isTablet ? 90.0 : 70.0;
-    final fabSpacing = isTablet ? 110.0 : 75.0;
-    final fabSize = isTablet ? 70.0 : 56.0;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor:
-          isLight
-              ? Constants.backgroundlightmode
-              : Constants.backgroundDarkmode,
+          isDarkMode
+              ? Constants.backgroundDarkmode
+              : Constants.backgroundlightmode,
 
       body: WillPopScope(
         onWillPop: () async => false,
-        child: PageView(
-          physics: const NeverScrollableScrollPhysics(),
-          controller: _pageController,
-          onPageChanged: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
+        child: Stack(
           children: [
-            MarketerDashboardScreen(),
-            BlocProvider(
-              create: (_) => GetLeadsMarketerCubit(GetLeadsService()),
-              child: LeadsMarketierScreen(
-                showDuplicatesOnly: true,
-                data: false,
-                transferefromdata: true,
-              ),
+            Column(
+              children: [
+                Expanded(
+                  child: PageView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                    children: [
+                      /// DASHBOARD
+                      MarketerDashboardScreen(),
+
+                      /// LEADS
+                      BlocProvider(
+                        create: (_) => GetLeadsMarketerCubit(GetLeadsService()),
+                        child: LeadsMarketierScreen(
+                          showDuplicatesOnly: true,
+                          data: false,
+                          transferefromdata: true,
+                        ),
+                      ),
+
+                      /// PROFILE
+                      MarketerProfileScreen(),
+
+                      /// MENU
+                      BlocProvider(
+                        create: (context) => AuthCubit(LoginApiService()),
+                        child: MarketierMenuScreen(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            MarketerProfileScreen(),
-            BlocProvider(
-              create: (context) => AuthCubit(LoginApiService()),
-              child: MarketierMenuScreen(),
+
+            /// ================= FAB =================
+            Positioned(
+              bottom: 12,
+              right: 16,
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Constants.maincolor.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateLeadScreen(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add, size: 28, color: Colors.white),
+                ),
+              ),
             ),
           ],
         ),
       ),
 
-      /// ================= BOTTOM NAV =================
-      bottomNavigationBar: BottomAppBar(
-        color: isLight ? Colors.white : Colors.black,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        elevation: 12,
-        child: SizedBox(
-          height: navHeight,
-          child: Row(
-            children: [
-              /// LEFT SIDE
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    GestureDetector(
-                      onTap: () => _onTap(0),
-                      child: _bottomBarItem(
-                        'Dashboard',
-                        _currentIndex == 0,
-                        imagePath: 'assets/images/analytics.png',
-                        isTablet: isTablet,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _onTap(1),
-                      child: _bottomBarItem(
-                        'Leads',
-                        _currentIndex == 1,
-                        imagePath: 'assets/images/leads.png',
-                        isTablet: isTablet,
-                      ),
-                    ),
-                  ],
+      /// ================= BOTTOM NAVIGATION =================
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.black : Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Container(
+            height: 66,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(
+                  index: 0,
+                  icon: Icons.dashboard_outlined,
+                  activeIcon: Icons.dashboard,
+                  label: 'DASHBOARD',
                 ),
-              ),
 
-              /// SPACE FOR FAB
-              SizedBox(width: fabSpacing),
-
-              /// RIGHT SIDE
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    GestureDetector(
-                      onTap: () => _onTap(2),
-                      child: _bottomBarItem(
-                        'Profile',
-                        _currentIndex == 2,
-                        imagePath: 'assets/images/profile.png',
-                        isTablet: isTablet,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _onTap(3),
-                      child: _bottomBarItem(
-                        'Menu',
-                        _currentIndex == 3,
-                        imagePath: 'assets/images/menu.png',
-                        isTablet: isTablet,
-                      ),
-                    ),
-                  ],
+                _buildNavItem(
+                  index: 1,
+                  icon: Icons.people_outline,
+                  activeIcon: Icons.people,
+                  label: 'LEADS',
                 ),
-              ),
-            ],
+
+                _buildNavItem(
+                  index: 2,
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: 'PROFILE',
+                ),
+
+                _buildNavItem(
+                  index: 3,
+                  icon: Icons.menu_outlined,
+                  activeIcon: Icons.menu,
+                  label: 'MENU',
+                ),
+              ],
+            ),
           ),
         ),
       ),
-
-      /// ================= FAB =================
-      floatingActionButton: SizedBox(
-        height: fabSize,
-        width: fabSize,
-        child: FloatingActionButton(
-          backgroundColor:
-              isLight ? Constants.maincolor : Constants.mainDarkmodecolor,
-          elevation: 6,
-          shape: const CircleBorder(),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const CreateLeadScreen()),
-            );
-          },
-          child: Icon(Icons.add, size: isTablet ? 36 : 30, color: Colors.white),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
-  /// ================= ITEM =================
-  Widget _bottomBarItem(
-    String label,
-    bool active, {
-    required String imagePath,
-    required bool isTablet,
+  /// ================= NAV ITEM =================
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
   }) {
-    final color =
-        active
-            ? (Theme.of(context).brightness == Brightness.light
-                ? Constants.maincolor
-                : Constants.mainDarkmodecolor)
-            : Colors.grey;
+    final bool isActive = _currentIndex == index;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset(
-          imagePath,
-          height: isTablet ? 32 : 24,
-          width: isTablet ? 32 : 24,
-          color: color,
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: () => _onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isActive ? activeIcon : icon,
+              color:
+                  isActive
+                      ? Constants.mainlightmodecolor
+                      : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+              size: 24,
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              label,
+              style: TextStyle(
+                color:
+                    isActive
+                        ? Constants.mainlightmodecolor
+                        : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
-        SizedBox(height: isTablet ? 6 : 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontWeight: active ? FontWeight.bold : FontWeight.normal,
-            fontSize: isTablet ? 15 : 12,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

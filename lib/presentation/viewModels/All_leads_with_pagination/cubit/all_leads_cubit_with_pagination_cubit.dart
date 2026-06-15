@@ -8,6 +8,8 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
 
   /// ✅ Active leads (متراكمة مع pagination)
   final List<LeadDataWithPagination> leads = [];
+  num totalLeads = 0;
+  num totaltrashleads = 0;
 
   /// 🗑️ Trash leads
   final List<LeadDataWithPagination> trashLeads = [];
@@ -86,6 +88,7 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
 
       if (response != null) {
         final newData = response.data ?? [];
+        totalLeads = response.pagination?.totalItems ?? 0;
 
         /// ⭐ pagination accumulation
         leads.addAll(newData);
@@ -127,6 +130,7 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
 
         final newData = response.data ?? [];
         trashLeads.addAll(newData);
+        totaltrashleads = response.pagination?.totalLeadsInactive ?? 0;
 
         emit(AllLeadsTrashLoaded(response));
       } else {
@@ -135,5 +139,15 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
     } catch (e) {
       emit(AllLeadsTrashError("Error: $e"));
     }
+  }
+
+  Future<void> fetchTrashCountOnly() async {
+    try {
+      final response = await apiService.fetchLeadsInTrash(page: 1, limit: 1);
+      if (response != null) {
+        totaltrashleads = response.pagination?.totalLeadsInactive ?? 0;
+        // ✅ مفيش emit — الـ screen هتعمل setState بعدها
+      }
+    } catch (_) {}
   }
 }

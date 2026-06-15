@@ -15,7 +15,8 @@ import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GetLeadsService {
-  final String baseUrl = "${Constants.baseUrl}/users/filter-by-email-advanced";
+  String get _filterByEmailUrl =>
+      "${Constants.baseUrl}/users/filter-by-email-advanced";
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
@@ -203,7 +204,9 @@ class GetLeadsService {
       }
 
       // بناء URL مع query parameters
-      final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        _filterByEmailUrl,
+      ).replace(queryParameters: queryParams);
       print("Request URL: $uri");
       final response = await HttpClient.get(
         uri,
@@ -864,10 +867,10 @@ class GetLeadsService {
     }
   }
 
-  static  final String _baseUrl =
+  String get _marketerDashboardUrl =>
       "${Constants.baseUrl}/users/stages-with-duplicate-by-addedby/";
 
-  static  final String _leadsBaseUrl =
+  String get _leadsBaseUrl =>
       "${Constants.baseUrl}/users/stages-crm-data-with-duplicate-by-addedby/";
 
   Future<MarketerDashboardModel> fetchMarketerDashboard() async {
@@ -881,7 +884,7 @@ class GetLeadsService {
         throw Exception("User ID or Token not found in SharedPreferences");
       }
 
-      final url = Uri.parse("$_baseUrl$userId");
+      final url = Uri.parse("$_marketerDashboardUrl$userId");
 
       final response = await HttpClient.get(
         url,

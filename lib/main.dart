@@ -152,22 +152,14 @@ class MyApp extends StatelessWidget {
           create: (_) => GetLeadsTeamLeaderCubit(GetLeadsService()),
         ),
         BlocProvider(create: (_) => GetManagerLeadsCubit(GetLeadsService())),
+        BlocProvider(create: (_) => GetLeadsMarketerCubit(GetLeadsService())),
         BlocProvider(
-          create:
-              (_) =>
-                  GetLeadsMarketerCubit(GetLeadsService())
-                    ..getLeadsByMarketer(),
-        ),
-        BlocProvider(
-          create:
-              (_) => GetAllUsersCubit(GetAllUsersApiService())..fetchAllUsers(),
+          create: (_) => GetAllUsersCubit(GetAllUsersApiService()),
           //  ..fetchLeadsInTrash(),
         ),
         BlocProvider(
           create:
-              (_) =>
-                  GetalluserssignupCubit(GetAllUsersForSignupApiService())
-                    ..fetchUsers(),
+              (_) => GetalluserssignupCubit(GetAllUsersForSignupApiService()),
         ),
         BlocProvider<SalesCubit>(
           create:

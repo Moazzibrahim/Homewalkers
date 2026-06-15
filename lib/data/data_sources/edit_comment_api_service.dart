@@ -5,7 +5,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:http/http.dart' as http;
 
 class EditCommentApiService {
-  final String baseUrl = '${Constants.baseUrl}/Action/comment';
+  String get baseUrl => '${Constants.baseUrl}/Action/comment';
 
   Future<bool> editComment({
     required String commentId,
@@ -14,17 +14,12 @@ class EditCommentApiService {
   }) async {
     final url = Uri.parse('$baseUrl/$commentId');
 
-    final body = jsonEncode({
-      "firstText": firstText,
-      "secondText": secondText,
-    });
+    final body = jsonEncode({"firstText": firstText, "secondText": secondText});
 
     try {
       final response = await http.put(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: body,
       );
       if (response.statusCode == 200 || response.statusCode == 201) {

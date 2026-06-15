@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, unused_local_variable
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, unused_local_variable, deprecated_member_use
 import 'dart:developer';
 import 'dart:math' as math; // ✅ للكشف عن التابلت
 import 'package:flutter/material.dart';
@@ -62,6 +62,7 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
   bool isSearching = false;
   String selectedOption = 'same';
   String? selectedStageId;
+  List<String> selectedSalesFcmTokens = []; // ✅ أضف ده
 
   @override
   void initState() {
@@ -311,10 +312,10 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                                               val == true
                                                   ? sale.salesID.toString()
                                                   : null;
+
                                           if (val == true) {
                                             selectedSalesId = sale.salesID;
 
-                                            // ✅ نجيب أول lead ونطلع منه fcmToken
                                             if (sale.stages != null &&
                                                 sale.stages!.isNotEmpty &&
                                                 sale.stages!.first.leads !=
@@ -324,21 +325,44 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                                                     .first
                                                     .leads!
                                                     .isNotEmpty) {
-                                              selectedSalesFcm =
+                                              final userlog =
                                                   sale
                                                       .stages!
                                                       .first
                                                       .leads!
                                                       .first
                                                       .sales
-                                                      ?.userlog
-                                                      ?.fcmToken;
+                                                      ?.userlog;
+                                              selectedSalesFcm =
+                                                  userlog?.fcmToken;
+
+                                              // ✅ اجمع كل الـ tokens
+                                              final tokens =
+                                                  userlog?.fcmTokens
+                                                      ?.map(
+                                                        (e) => e.token ?? '',
+                                                      )
+                                                      .where(
+                                                        (t) => t.isNotEmpty,
+                                                      )
+                                                      .toList() ??
+                                                  [];
+
+                                              selectedSalesFcmTokens =
+                                                  tokens.isNotEmpty
+                                                      ? tokens
+                                                      : (selectedSalesFcm !=
+                                                              null
+                                                          ? [selectedSalesFcm!]
+                                                          : []);
                                             } else {
                                               selectedSalesFcm = null;
+                                              selectedSalesFcmTokens = [];
                                             }
                                           } else {
                                             selectedSalesId = null;
                                             selectedSalesFcm = null;
+                                            selectedSalesFcmTokens = [];
                                           }
                                         });
                                       },
@@ -553,12 +577,23 @@ class _AssignDialogState extends State<CustomAssignDialogTeamLeaderWidget> {
                         );
 
                         // ✅ ابعت notifications
-                        notificationCubit.sendNotificationToToken(
-                          title: "Lead",
-                          body: "Lead assigned successfully ✅",
-                          fcmtokennnn: selectedSalesFcm ?? widget.fcmyoken,
-                        );
+                        // ✅ بعت للـ sales على كل أجهزته
+                        if (selectedSalesFcmTokens.isNotEmpty) {
+                          notificationCubit.sendNotificationToTokens(
+                            title: "Lead",
+                            body: "Lead assigned successfully ✅",
+                            fcmTokens: selectedSalesFcmTokens,
+                          );
+                        } else if (selectedSalesFcm != null ||
+                            widget.fcmyoken.isNotEmpty) {
+                          notificationCubit.sendNotificationToToken(
+                            title: "Lead",
+                            body: "Lead assigned successfully ✅",
+                            fcmtokennnn: selectedSalesFcm ?? widget.fcmyoken,
+                          );
+                        }
 
+                        // ✅ manager notification زي ما هو
                         if (widget.managerfcm != null) {
                           notificationCubit.sendNotificationToToken(
                             title: "Lead",

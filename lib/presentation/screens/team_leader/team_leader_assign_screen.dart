@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
@@ -68,32 +67,88 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   TextEditingController searchController = TextEditingController();
   String? salesfcmtoken;
   String? managerfcmtoken;
-  // bool? leadassign; // <--- تم حذف هذا المتغير لأنه كان سبب المشكلة
   String? teamleadname;
   String? teamleadid;
   bool isLoading = false;
   bool isSelectionMode = false;
   String? _selectedLeadId;
-  LeadDataPagination? _selectedLead; // لو حابب تخزن آخر ليد مختارة
+  LeadDataPagination? _selectedLead;
   List<LeadDataPagination> selectedLeadsData = [];
   late ScrollController _scrollController;
-  bool _selectAll = false; // متغير لتتبع حالة تحديد الكل
-  int _selectedCount = 0; // عدد العناصر المختارة
+  bool _selectAll = false;
+  int _selectedCount = 0;
   late ResponsiveSalesValues _responsive;
   Timer? _debounce;
+  bool _isSearchVisible = false;
+  final FocusNode _searchFocusNode = FocusNode();
+  late GetLeadsTeamLeaderCubit _cubit;
+  String? _currentFilterName;
+  String? _currentFilterDeveloperId;
+  String? _currentFilterProjectId;
+  String? _currentFilterStageId;
+  String? _currentFilterChannelId;
+  String? _currentFilterSalesId;
+  DateTime? _currentFilterCreationDateFrom;
+  DateTime? _currentFilterCreationDateTo;
+  DateTime? _currentFilterStageDateFrom;
+  DateTime? _currentFilterStageDateTo;
+  bool _isFetchingMore = false;
 
-  void init() async {
-    final prefs = await SharedPreferences.getInstance();
-    //print("stage name: ${widget.stageName}");
-    if (!mounted) return;
+  // ✅ دالة لتحديث الفلاتر من الـ Dialog
+  void _updateFilters({
+    String? name,
+    String? developerId,
+    String? projectId,
+    String? stageId,
+    String? channelId,
+    String? salesId,
+    DateTime? creationDateFrom,
+    DateTime? creationDateTo,
+    DateTime? stageDateFrom,
+    DateTime? stageDateTo,
+  }) {
     setState(() {
-      teamleadname = prefs.getString('name');
-      teamleadid = prefs.getString('salesId');
+      _currentFilterName = name;
+      _currentFilterDeveloperId = developerId;
+      _currentFilterProjectId = projectId;
+      _currentFilterStageId = stageId;
+      _currentFilterChannelId = channelId;
+      _currentFilterSalesId = salesId;
+      _currentFilterCreationDateFrom = creationDateFrom;
+      _currentFilterCreationDateTo = creationDateTo;
+      _currentFilterStageDateFrom = stageDateFrom;
+      _currentFilterStageDateTo = stageDateTo;
     });
-    // context.read<GetLeadsTeamLeaderCubit>().getLeadsByTeamLeader();
   }
 
-  late GetLeadsTeamLeaderCubit _cubit;
+  // ✅ دالة لجلب الفلاتر الحالية كـ Map (اختياري)
+  Map<String, dynamic> _getCurrentFilters() {
+    return {
+      if (_currentFilterName != null && _currentFilterName!.isNotEmpty)
+        'name': _currentFilterName,
+      if (_currentFilterDeveloperId != null &&
+          _currentFilterDeveloperId!.isNotEmpty)
+        'developerId': _currentFilterDeveloperId,
+      if (_currentFilterProjectId != null &&
+          _currentFilterProjectId!.isNotEmpty)
+        'projectId': _currentFilterProjectId,
+      if (_currentFilterStageId != null && _currentFilterStageId!.isNotEmpty)
+        'stageId': _currentFilterStageId,
+      if (_currentFilterChannelId != null &&
+          _currentFilterChannelId!.isNotEmpty)
+        'channelId': _currentFilterChannelId,
+      if (_currentFilterSalesId != null && _currentFilterSalesId!.isNotEmpty)
+        'salesId': _currentFilterSalesId,
+      if (_currentFilterCreationDateFrom != null)
+        'creationDateFrom': _currentFilterCreationDateFrom,
+      if (_currentFilterCreationDateTo != null)
+        'creationDateTo': _currentFilterCreationDateTo,
+      if (_currentFilterStageDateFrom != null)
+        'stageDateFrom': _currentFilterStageDateFrom,
+      if (_currentFilterStageDateTo != null)
+        'stageDateTo': _currentFilterStageDateTo,
+    };
+  }
 
   void _updateSelectedCount() {
     setState(() {
@@ -104,21 +159,14 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
 
   void _toggleSelectAll(bool? value) {
     if (value == null) return;
-
     setState(() {
       _selectAll = value;
-
-      // تحديث كل الـ checkboxes
       for (int i = 0; i < selected.length; i++) {
         final lead = _leads[i];
         final bool hasDownloadIcon =
             (lead.assign == true && lead.sales?.userlog?.name == teamleadname);
-
-        // لا نحدد الليدات التي لها أيقونة download
         if (!hasDownloadIcon) {
           selected[i] = _selectAll;
-
-          // إضافة أو إزالة من selectedLeadsData
           final leadIdStr = lead.id.toString();
           if (_selectAll) {
             if (!selectedLeadsData.any((l) => l.id.toString() == leadIdStr)) {
@@ -129,7 +177,6 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           }
         }
       }
-
       isSelectionMode = selected.contains(true);
       _selectedCount = _selectAll ? selected.where((s) => s).length : 0;
     });
@@ -145,15 +192,9 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     log("transferfromdata in Assign Screen: ${widget.transferfromdata}");
 
     _cubit = GetLeadsTeamLeaderCubit(GetLeadsService());
-
-    // ✅ امسح الـ search controller
-    searchController.clear(); // 👈 مهم جداً
-
-    _loadLeads(); // ✅ دي بتعمل resetPagination: true
-
+    searchController.clear();
+    _loadLeads();
     context.read<SalesCubit>().fetchAllSales();
-
-    // ✅ استبدل init() بالكود ده
     _initUserData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -161,7 +202,6 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     });
   }
 
-  // ✅ دالة جديدة لتحميل بيانات المستخدم بدون تحميل الليدز تاني
   Future<void> _initUserData() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
@@ -172,40 +212,40 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   }
 
   Future<void> _loadLeads() async {
-    // ✅ تأكد إن searchController فاضي
     searchController.clear();
-
     await _cubit.fetchTeamLeaderLeadsWithPagination(
       data: widget.data,
       transferefromdata: widget.transferfromdata,
       stageId: widget.stageId,
-      resetPagination: true, // ✅ مهم جداً
+      resetPagination: true,
       salesId: widget.salesName,
     );
   }
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
-
-    // Load more when user scrolls to 80% of the way
-    if (currentScroll >= maxScroll * 0.8) {
-      if (_cubit.hasMoreData && !_cubit.isFetchingMore) {
-        log(
-          "📜 Loading more data at scroll position: $currentScroll/$maxScroll",
-        );
-        _cubit.fetchTeamLeaderLeadsWithPagination(
-          isLoadMore: true,
-          limit: 10, // Adjust limit as needed
-          data: widget.data,
-          transferefromdata: widget.transferfromdata,
-          stageId: widget.stageId,
-          salesId: widget.salesName,
-          search:
-              searchController.text.isNotEmpty ? searchController.text : null,
-        );
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (_cubit.hasMoreData && !_cubit.isFetchingMore && !_isFetchingMore) {
+        setState(() => _isFetchingMore = true);
+        _cubit
+            .fetchTeamLeaderLeadsWithPagination(
+              isLoadMore: true,
+              limit: 10,
+              data: widget.data,
+              transferefromdata: widget.transferfromdata,
+              stageId: widget.stageId,
+              salesId: _currentFilterSalesId ?? widget.salesName,
+              search:
+                  searchController.text.isNotEmpty
+                      ? searchController.text
+                      : null,
+            )
+            .then((_) {
+              if (mounted) setState(() => _isFetchingMore = false);
+            });
       }
     }
   }
@@ -214,80 +254,48 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    searchController.dispose(); // ✅ مهم جداً
+    searchController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
 
   String formatDateTimeToDubai(String dateStr) {
     try {
-      // Parse and ensure UTC base
       final utcTime = DateTime.parse(dateStr).toUtc();
-
-      // Convert to Dubai timezone (UTC+4)
       final dubaiTime = utcTime.add(const Duration(hours: 4));
-
-      // Format the output
       final day = dubaiTime.day.toString().padLeft(2, '0');
       final month = dubaiTime.month.toString().padLeft(2, '0');
       final year = dubaiTime.year;
-
-      // Convert to 12-hour format with AM/PM
       int hour = dubaiTime.hour;
       final minute = dubaiTime.minute.toString().padLeft(2, '0');
       final ampm = hour >= 12 ? 'PM' : 'AM';
       if (hour > 12) hour -= 12;
       if (hour == 0) hour = 12;
-
       return '$day/$month/$year - ${hour.toString().padLeft(2, '0')}:$minute $ampm';
     } catch (e) {
-      return dateStr; // fallback في حال كان التاريخ مش صحيح
+      return dateStr;
     }
   }
 
-  // ✅ دالة للكشف عن نوع الجهاز
   bool get isTablet {
     final data = MediaQuery.of(context);
     final physicalSize = data.size;
     final diagonal = math.sqrt(
       math.pow(physicalSize.width, 2) + math.pow(physicalSize.height, 2),
     );
-    final inches = diagonal / (data.devicePixelRatio * 160); // تقريبي
-
-    // ✅ أصغر تابلت هو iPad Mini 7.9 بوصة
+    final inches = diagonal / (data.devicePixelRatio * 160);
     return inches >= 7.0;
   }
 
-  // ✅ دالة للحصول على عامل التصغير للتابلت
-  double get tabletFactor => isTablet ? 0.85 : 1.0;
-
-  // ✅ دالة للخطوط المتجاوبة مع التابلت
-  double responsiveFont(double size) => size.sp * (isTablet ? 0.9 : 1.0);
-
-  // ✅ دالة للأبعاد المتجاوبة مع التابلت
-  double responsiveW(double width) => width.w * (isTablet ? 0.8 : 1.0);
-  double responsiveH(double height) => height.h * (isTablet ? 0.9 : 1.0);
-  double responsiveR(double radius) => radius.r * (isTablet ? 0.85 : 1.0);
   @override
   Widget build(BuildContext context) {
     _responsive = ResponsiveSalesValues.fromContext(context);
+
     return BlocProvider.value(
       value: _cubit,
       child: Builder(
         builder: (context) {
-          // ✅ الكشف عن نوع الجهاز
-          final bool isTabletDevice = () {
-            final data = MediaQuery.of(context);
-            final physicalSize = data.size;
-            final diagonal = math.sqrt(
-              math.pow(physicalSize.width, 2) +
-                  math.pow(physicalSize.height, 2),
-            );
-            final inches = diagonal / (data.devicePixelRatio * 160);
-            return inches >= 7.0;
-          }();
-
-          // ✅ عوامل التصغير للتابلت
+          final bool isTabletDevice = isTablet;
           final double tabletScale = isTabletDevice ? 0.85 : 1.0;
           final double tabletFontScale = isTabletDevice ? 0.9 : 1.0;
           final double tabletWidthScale = isTabletDevice ? 0.8 : 1.0;
@@ -299,7 +307,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                     ? Constants.backgroundlightmode
                     : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
-              //  title: "Leads",
+              title: _isSearchVisible ? null : "Leads",
               onBack: () {
                 if (widget.transferfromdata == true) {
                   Navigator.pushReplacement(
@@ -324,113 +332,170 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   );
                 }
               },
-
               extraActions: [
                 BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
                   builder: (context, state) {
                     return Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        /// search
-                        SizedBox(
-                          width: (200 * tabletWidthScale).w,
-                          height: (50 * tabletHeightScale).h,
-                          child: TextField(
-                            controller: searchController,
-                            onChanged: (value) {
-                              final cubit =
-                                  context.read<GetLeadsTeamLeaderCubit>();
-                              _debounce?.cancel();
-                              _debounce = Timer(
-                                const Duration(milliseconds: 500),
-                                () {
-                                  cubit.fetchTeamLeaderLeadsWithPagination(
-                                    search: value,
-                                    stageId: widget.stageId,
-                                    data: widget.data,
-                                    transferefromdata: widget.transferfromdata,
-                                  );
-                                },
-                              );
-                            },
-                            style: TextStyle(
-                              fontSize: (14 * tabletFontScale).sp,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Search',
-                              hintStyle: TextStyle(
-                                fontSize: (14 * tabletFontScale).sp,
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: (16 * tabletWidthScale).w,
-                                vertical: 0,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  (12 * tabletScale).r,
-                                ),
-                                borderSide: BorderSide(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                  width: (1 * tabletScale).r,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  (12 * tabletScale).r,
-                                ),
-                                borderSide: BorderSide(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                  width: (1.5 * tabletScale).r,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  (12 * tabletScale).r,
-                                ),
-                                borderSide: BorderSide(
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Constants.maincolor
-                                          : Constants.mainDarkmodecolor,
-                                  width: (1 * tabletScale).r,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        SizedBox(width: (10 * tabletWidthScale).w),
-
-                        /// filter
-                        Container(
-                          //   height: (50 * tabletHeightScale).h,
-                          // width: (50 * tabletWidthScale).w,
+                        // ✅ زر البحث المتغير
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          width: _isSearchVisible ? 200.w : 45.w,
+                          height: 45.h,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F1F2),
-                            // border: Border.all(
-                            //   color:
-                            //       Theme.of(context).brightness ==
-                            //               Brightness.light
-                            //           ? Constants.maincolor
-                            //           : Constants.mainDarkmodecolor,
-                            //   width: (1 * tabletScale).r,
-                            // ),
-                            borderRadius: BorderRadius.circular(
-                              (8 * tabletScale).r,
-                            ),
+                            borderRadius: BorderRadius.circular(12.r),
+                            border:
+                                _isSearchVisible
+                                    ? Border.all(
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                      width: 1.5.w,
+                                    )
+                                    : null,
+                          ),
+                          child:
+                              _isSearchVisible
+                                  ? Row(
+                                    children: [
+                                      SizedBox(width: 8.w),
+                                      Icon(
+                                        Icons.search,
+                                        size: 20.sp,
+                                        color: Colors.grey,
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Expanded(
+                                        child: TextField(
+                                          controller: searchController,
+                                          focusNode: _searchFocusNode,
+                                          autofocus: true,
+                                          onChanged: (value) {
+                                            final cubit =
+                                                context
+                                                    .read<
+                                                      GetLeadsTeamLeaderCubit
+                                                    >();
+                                            _debounce?.cancel();
+                                            _debounce = Timer(
+                                              const Duration(milliseconds: 500),
+                                              () {
+                                                cubit
+                                                    .fetchTeamLeaderLeadsWithPagination(
+                                                      search: value.trim(),
+                                                      stageId: widget.stageId,
+                                                      data: widget.data,
+                                                      transferefromdata:
+                                                          widget
+                                                              .transferfromdata,
+                                                    );
+                                              },
+                                            );
+                                          },
+                                          style: TextStyle(
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.light
+                                                    ? Colors.black
+                                                    : Colors.white,
+                                            fontSize: 14.sp,
+                                          ),
+                                          decoration: InputDecoration(
+                                            hintText: 'Search...',
+                                            hintStyle: TextStyle(
+                                              color: const Color(0xff969696),
+                                              fontSize: 14.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            border: InputBorder.none,
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                  vertical: 0,
+                                                  horizontal: 0,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          searchController.clear();
+                                          setState(() {
+                                            _isSearchVisible = false;
+                                          });
+                                          _searchFocusNode.unfocus();
+
+                                          // إعادة تحميل البيانات بدون بحث
+                                          final cubit =
+                                              context
+                                                  .read<
+                                                    GetLeadsTeamLeaderCubit
+                                                  >();
+                                          cubit
+                                              .fetchTeamLeaderLeadsWithPagination(
+                                                search: null,
+                                                data: widget.data,
+                                                transferefromdata:
+                                                    widget.transferfromdata,
+                                                stageId:
+                                                    _currentFilterStageId ??
+                                                    widget.stageId, // ✅
+                                                salesId:
+                                                    _currentFilterSalesId ??
+                                                    widget.salesName, // ✅
+                                              );
+                                        },
+                                        child: Padding(
+                                          padding: EdgeInsets.only(right: 8.w),
+                                          child: Icon(
+                                            Icons.clear,
+                                            size: 18.sp,
+                                            color:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.light
+                                                    ? Colors.black
+                                                    : Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 8.w),
+                                    ],
+                                  )
+                                  : IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _isSearchVisible = true;
+                                      });
+                                      Future.delayed(
+                                        const Duration(milliseconds: 100),
+                                        () {
+                                          _searchFocusNode.requestFocus();
+                                        },
+                                      );
+                                    },
+                                    icon: Icon(
+                                      Icons.search,
+                                      size: 22.sp,
+                                      color:
+                                          Theme.of(context).brightness ==
+                                                  Brightness.light
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                  ),
+                        ),
+                        SizedBox(width: 10.w),
+                        // ✅ زر الفلتر
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8.r),
                           ),
                           child: IconButton(
                             icon: Icon(
                               Icons.filter_list,
-                              //    size: (24 * tabletFontScale).sp,
                               color:
                                   Theme.of(context).brightness ==
                                           Brightness.light
@@ -439,12 +504,29 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             ),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
+                            // في build method داخل IconButton الفلتر
                             onPressed: () {
                               showFilterDialogTeamLeader(
                                 context,
                                 context.read<GetLeadsTeamLeaderCubit>(),
                                 widget.data,
                                 widget.transferfromdata,
+                                (filters) {
+                                  // ✅ استقبال الفلاتر من الـ Dialog
+                                  _updateFilters(
+                                    name: filters['name'],
+                                    developerId: filters['developerId'],
+                                    projectId: filters['projectId'],
+                                    stageId: filters['stageId'],
+                                    channelId: filters['channelId'],
+                                    salesId: filters['salesId'],
+                                    creationDateFrom:
+                                        filters['creationDateFrom'],
+                                    creationDateTo: filters['creationDateTo'],
+                                    stageDateFrom: filters['stageDateFrom'],
+                                    stageDateTo: filters['stageDateTo'],
+                                  );
+                                },
                               );
                             },
                           ),
@@ -457,738 +539,192 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
             ),
             body: Column(
               children: [
-                if (isSelectionMode)
-                  Padding(
-                    padding: EdgeInsets.all((8 * tabletScale).r),
-                    child: buildAssignButtons(),
-                  ),
-                // BlocBuilder<GetLeadsTeamLeaderCubit, GetLeadsTeamLeaderState>(
-                //   builder: (context, state) {
-                //     return Padding(
-                //       padding: EdgeInsets.all((8 * tabletScale).r),
-                //       child: Column(
-                //         children: [
-                //           if (isSelectionMode) buildAssignButtons(),
-                //           // SizedBox(height: (10 * tabletScale).h),
-                //           // Row(
-                //           //   children: [
-                //           //     Expanded(
-                //           //       child: TextField(
-                //           //         controller: searchController,
-                //           //         onChanged: (value) {
-                //           //           final cubit =
-                //           //               context
-                //           //                   .read<GetLeadsTeamLeaderCubit>();
+                // ── ACTION BAR (assign / edit / meeting) ──
+                if (isSelectionMode) _buildActionBar(isTabletDevice),
 
-                //           //           cubit.fetchTeamLeaderLeadsWithPagination(
-                //           //             search: value,
-                //           //             stageId: widget.stageId,
-                //           //             data: widget.data,
-                //           //             transferefromdata:
-                //           //                 widget.transferfromdata,
-                //           //           );
-                //           //         },
-                //           //         style: TextStyle(
-                //           //           fontSize: (14 * tabletFontScale).sp,
-                //           //         ),
-                //           //         decoration: InputDecoration(
-                //           //           hintText: 'Search',
-                //           //           hintStyle: TextStyle(
-                //           //             fontSize: (14 * tabletFontScale).sp,
-                //           //           ),
-                //           //           contentPadding: EdgeInsets.symmetric(
-                //           //             horizontal: (16 * tabletWidthScale).w,
-                //           //             vertical: 0,
-                //           //           ),
-                //           //           border: OutlineInputBorder(
-                //           //             borderRadius: BorderRadius.circular(
-                //           //               (12 * tabletScale).r,
-                //           //             ),
-                //           //             borderSide: BorderSide(
-                //           //               color:
-                //           //                   Theme.of(context).brightness ==
-                //           //                           Brightness.light
-                //           //                       ? Constants.maincolor
-                //           //                       : Constants.mainDarkmodecolor,
-                //           //               width: (1 * tabletScale).r,
-                //           //             ),
-                //           //           ),
-                //           //           focusedBorder: OutlineInputBorder(
-                //           //             borderRadius: BorderRadius.circular(
-                //           //               (12 * tabletScale).r,
-                //           //             ),
-                //           //             borderSide: BorderSide(
-                //           //               color:
-                //           //                   Theme.of(context).brightness ==
-                //           //                           Brightness.light
-                //           //                       ? Constants.maincolor
-                //           //                       : Constants.mainDarkmodecolor,
-                //           //               width: (1.5 * tabletScale).r,
-                //           //             ),
-                //           //           ),
-                //           //           enabledBorder: OutlineInputBorder(
-                //           //             borderRadius: BorderRadius.circular(
-                //           //               (12 * tabletScale).r,
-                //           //             ),
-                //           //             borderSide: BorderSide(
-                //           //               color:
-                //           //                   Theme.of(context).brightness ==
-                //           //                           Brightness.light
-                //           //                       ? Constants.maincolor
-                //           //                       : Constants.mainDarkmodecolor,
-                //           //               width: (1 * tabletScale).r,
-                //           //             ),
-                //           //           ),
-                //           //         ),
-                //           //       ),
-                //           //     ),
-                //           //     SizedBox(width: (10 * tabletWidthScale).w),
-                //           //     Container(
-                //           //       height: (50 * tabletHeightScale).h,
-                //           //       width: (50 * tabletWidthScale).w,
-                //           //       decoration: BoxDecoration(
-                //           //         color: const Color(0xFFE8F1F2),
-                //           //         border: Border.all(
-                //           //           color:
-                //           //               Theme.of(context).brightness ==
-                //           //                       Brightness.light
-                //           //                   ? Constants.maincolor
-                //           //                   : Constants.mainDarkmodecolor,
-                //           //           width: (1 * tabletScale).r,
-                //           //         ),
-                //           //         borderRadius: BorderRadius.circular(
-                //           //           (8 * tabletScale).r,
-                //           //         ),
-                //           //       ),
-                //           //       child: IconButton(
-                //           //         icon: Icon(
-                //           //           Icons.filter_list,
-                //           //           size: (24 * tabletFontScale).sp,
-                //           //           color:
-                //           //               Theme.of(context).brightness ==
-                //           //                       Brightness.light
-                //           //                   ? Constants.maincolor
-                //           //                   : Constants.mainDarkmodecolor,
-                //           //         ),
-                //           //         padding: EdgeInsets.zero,
-                //           //         constraints: const BoxConstraints(),
-                //           //         onPressed: () {
-                //           //           showFilterDialogTeamLeader(
-                //           //             context,
-                //           //             context.read<GetLeadsTeamLeaderCubit>(),
-                //           //             widget.data,
-                //           //             widget.transferfromdata,
-                //           //           );
-                //           //         },
-                //           //       ),
-                //           //     ),
-                //           //     SizedBox(width: (10 * tabletWidthScale).w),
-                //           //   ],
-                //           // ),
-                //         ],
-                //       ),
-                //     );
-                //   },
-                // ),
-                // ... بعد الـ Column الأول
+                // ── SELECT ALL HEADER ──
+                // if (_leads.isNotEmpty) _buildSelectAllHeader(isTabletDevice),
+
+                // ── LEADS LIST ──
                 Expanded(
-                  child: Column(
-                    children: [
-                      // ✅ Header لتحديد الكل
-                      if (_leads.isNotEmpty)
-                        Container(
-                          margin: EdgeInsets.symmetric(
-                            horizontal: (16 * tabletWidthScale).w,
-                            vertical: (8 * tabletHeightScale).h,
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: (16 * tabletWidthScale).w,
-                            vertical: (12 * tabletHeightScale).h,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Colors.white
-                                    : Colors.grey[900],
-                            borderRadius: BorderRadius.circular(
-                              (12 * tabletScale).r,
-                            ),
-                            border: Border.all(
-                              color:
-                                  _selectAll
-                                      ? Constants.maincolor
-                                      : Colors.grey.withOpacity(0.3),
-                              width: (1.5 * tabletScale).r,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Checkbox(
-                                value: _selectAll,
-                                onChanged:
-                                    _leads.isEmpty ? null : _toggleSelectAll,
-                                activeColor: Constants.maincolor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    (5 * tabletScale).r,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: (8 * tabletWidthScale).w),
-                              Expanded(
-                                child: Text(
-                                  "Select All",
-                                  style: TextStyle(
-                                    fontSize: (16 * tabletFontScale).sp,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: (12 * tabletWidthScale).w,
-                                  vertical: (6 * tabletHeightScale).h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Constants.maincolor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(
-                                    (20 * tabletScale).r,
-                                  ),
-                                ),
-                                child: Text(
-                                  _selectedCount > 0
-                                      ? "$_selectedCount selected"
-                                      : "0 selected",
-                                  style: TextStyle(
-                                    fontSize: (14 * tabletFontScale).sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: Constants.maincolor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                  child: BlocBuilder<
+                    GetLeadsTeamLeaderCubit,
+                    GetLeadsTeamLeaderState
+                  >(
+                    builder: (context, state) {
+                      if (state is GetLeadsTeamLeaderPaginationLoading) {
+                        return _buildShimmerLoading();
+                      } else if (state is GetLeadsTeamLeaderPaginationSuccess) {
+                        _leads =
+                            _cubit
+                                .paginatedLeads; // ← من الـ cubit مش من الـ state
 
-                      // ✅ باقي الكود - الـ Expanded الثاني للـ BlocBuilder
-                      Expanded(
-                        child: BlocBuilder<
-                          GetLeadsTeamLeaderCubit,
-                          GetLeadsTeamLeaderState
-                        >(
-                          builder: (context, state) {
-                            if (state is GetLeadsTeamLeaderPaginationLoading) {
-                              return Shimmer.fromColors(
-                                baseColor: Colors.grey.shade300,
-                                highlightColor: Colors.grey.shade100,
-                                child: ListView.builder(
-                                  padding: EdgeInsets.all((16 * tabletScale).r),
-                                  itemCount: 6,
-                                  itemBuilder: (context, index) {
-                                    return Container(
-                                      margin: EdgeInsets.only(
-                                        bottom: (16 * tabletHeightScale).h,
-                                      ),
-                                      height: (80 * tabletHeightScale).h,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(
-                                          (12 * tabletScale).r,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            } else if (state
-                                is GetLeadsTeamLeaderPaginationSuccess) {
-                              print('✅ Received ${_leads.length} leads total');
-                              print(
-                                '✅ hasMoreData from Cubit: ${context.read<GetLeadsTeamLeaderCubit>().hasMoreData}',
-                              );
-                              _leads = state.model.data ?? [];
-                              if (selected.length != _leads.length) {
-                                selected = List.generate(
-                                  _leads.length,
-                                  (index) => false,
+                        // ✅ فقط extend الـ selected list لو اتضافت عناصر جديدة
+                        while (selected.length < _leads.length) {
+                          selected.add(false);
+                        }
+
+                        final int crossAxisCount = isTabletDevice ? 2 : 1;
+
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            await context
+                                .read<GetLeadsTeamLeaderCubit>()
+                                .fetchTeamLeaderLeadsWithPagination(
+                                  data: widget.data,
+                                  transferefromdata: widget.transferfromdata,
+                                  stageId:
+                                      _currentFilterStageId ??
+                                      widget.stageId, // ✅
+                                  salesId:
+                                      _currentFilterSalesId ??
+                                      widget.salesName, // ✅
+                                  // ✅ مهم عشان يبدأ من الأول
                                 );
-                              }
-
-                              // ✅ حساب عدد الأعمدة للتابلت (Grid View)
-                              final int crossAxisCount = isTabletDevice ? 2 : 1;
-
-                              return RefreshIndicator(
-                                onRefresh: () async {
-                                  final cubit =
-                                      context.read<GetLeadsTeamLeaderCubit>();
-                                  await cubit
-                                      .fetchTeamLeaderLeadsWithPagination(
-                                        data: widget.data,
-                                        transferefromdata:
-                                            widget.transferfromdata,
-                                        stageId: widget.stageId,
-                                      );
-                                },
-                                color: Constants.maincolor,
-                                backgroundColor:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Colors.white
-                                        : Constants.backgroundDarkmode,
-                                strokeWidth: (3 * tabletScale).r,
-                                displacement: (40 * tabletHeightScale).h,
-                                child:
-                                    crossAxisCount == 1
-                                        ? ListView.builder(
-                                          controller: _scrollController,
-                                          physics:
-                                              const AlwaysScrollableScrollPhysics(),
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal:
-                                                (10 * tabletWidthScale).w,
-                                            vertical: (2 * tabletHeightScale).h,
-                                          ),
-                                          itemCount:
-                                              _leads.length +
-                                              1, // +1 to account for the loading indicator
-                                          itemBuilder: (context, index) {
-                                            if (index >= _leads.length) {
-                                              // Show loading indicator only if there's more data
-                                              if (context
-                                                  .read<
-                                                    GetLeadsTeamLeaderCubit
-                                                  >()
-                                                  .hasMoreData) {
-                                                return Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    vertical:
-                                                        (20 * tabletHeightScale)
-                                                            .h,
-                                                  ),
-                                                  child: Center(
-                                                    child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        const CircularProgressIndicator(),
-                                                        SizedBox(
-                                                          height:
-                                                              (8 * tabletHeightScale)
-                                                                  .h,
-                                                        ),
-                                                        Text(
-                                                          "Loading more leads...",
-                                                          style: TextStyle(
-                                                            fontSize:
-                                                                (14 * tabletFontScale)
-                                                                    .sp,
-                                                            color: Colors.grey,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                );
-                                              } else if (_leads.isNotEmpty) {
-                                                // Show end of list message
-                                                return Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    vertical:
-                                                        (20 * tabletHeightScale)
-                                                            .h,
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      "✓ All leads loaded (${_leads.length} total)",
-                                                      style: TextStyle(
-                                                        fontSize:
-                                                            (14 * tabletFontScale)
-                                                                .sp,
-                                                        color: Colors.green,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                              return const SizedBox();
-                                            }
-                                            // if (index >= _leads.length) {
-                                            //   // ✅ عرض مؤشر التحميل فقط إذا كان هناك المزيد من البيانات للتحميل
-                                            //   return context
-                                            //           .read<
-                                            //             GetLeadsTeamLeaderCubit
-                                            //           >()
-                                            //           .hasMoreData
-                                            //       ? Padding(
-                                            //         padding: EdgeInsets.symmetric(
-                                            //           vertical:
-                                            //               (12 * tabletHeightScale)
-                                            //                   .h,
-                                            //         ),
-                                            //         child: const Center(
-                                            //           child:
-                                            //               CircularProgressIndicator(),
-                                            //         ),
-                                            //       )
-                                            //       : const SizedBox(); // إذا لم تكن هناك بيانات أخرى، لا تظهر شيئًا
-                                            // }
-                                            final lead = _leads[index];
-                                            print(
-                                              "assign of lead: ${lead.assign}",
-                                            );
-                                            salesfcmtoken =
-                                                lead.sales?.userlog?.fcmToken;
-                                            final prefs =
-                                                SharedPreferences.getInstance();
-                                            final fcmToken = prefs.then(
-                                              (prefs) => prefs.setString(
-                                                'fcm_token_sales',
-                                                salesfcmtoken ?? '',
-                                              ),
-                                            );
-                                            log(
-                                              "fcmToken of sales: $salesfcmtoken",
-                                            );
-                                            leadIdd = lead.id.toString();
-                                            managerfcmtoken =
-                                                lead.sales?.manager?.fcmToken;
-                                            final leadstageupdated =
-                                                lead.stagedateupdated;
-                                            final leadStagetype =
-                                                lead.stage?.name ?? "";
-                                            DateTime? stageUpdatedDate;
-                                            bool isOutdatedLocal = false;
-                                            if (leadstageupdated != null) {
-                                              try {
-                                                stageUpdatedDate =
-                                                    DateTime.parse(
-                                                      leadstageupdated,
-                                                    );
-                                                log(
-                                                  "stageUpdatedDate: $stageUpdatedDate",
-                                                );
-                                                log(
-                                                  "stage type: $leadStagetype",
-                                                );
-                                              } catch (_) {
-                                                stageUpdatedDate = null;
-                                              }
-                                            }
-                                            if (stageUpdatedDate != null) {
-                                              final now =
-                                                  DateTime.now().toUtc();
-                                              print("now: $now");
-                                              final difference =
-                                                  now
-                                                      .difference(
-                                                        stageUpdatedDate,
-                                                      )
-                                                      .inMinutes;
-                                              print("difference: $difference");
-                                              isOutdatedLocal = difference > 1;
-                                              print(
-                                                "isOutdated: $isOutdatedLocal",
-                                              );
-                                            }
-                                            return Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom:
-                                                    (8 * tabletHeightScale).h,
-                                              ),
-                                              child: buildUserTile(
-                                                parentContext: context,
-                                                name: lead.name ?? 'No Name',
-                                                status:
-                                                    lead.stage?.name ??
-                                                    'No Status',
-                                                index: index,
-                                                id: lead.id.toString(),
-                                                leadsalesName:
-                                                    lead.sales?.name ??
-                                                    'No Sales',
-                                                phone: lead.phone ?? 'No Phone',
-                                                email: lead.email ?? 'No Email',
-                                                stage:
-                                                    lead.stage?.name ??
-                                                    'No Stage',
-                                                stageid:
-                                                    lead.stage?.id.toString() ??
-                                                    'No Stage ID',
-                                                channel:
-                                                    lead.chanel?.name ??
-                                                    'No Channel',
-                                                creationdate:
-                                                    lead.createdAt != null
-                                                        ? formatDateTimeToDubai(
-                                                          lead.createdAt!,
-                                                        )
-                                                        : '',
-                                                project:
-                                                    lead.project?.name ??
-                                                    'No Project',
-                                                lastcomment:
-                                                    lead.lastcommentdate ??
-                                                    'No Last Comment',
-                                                leadcampaign:
-                                                    lead
-                                                        .campaign
-                                                        ?.campainName ??
-                                                    'No Campaign',
-                                                leadNotes: 'No Notes',
-                                                leaddeveloper:
-                                                    lead
-                                                        .project
-                                                        ?.developer
-                                                        ?.name ??
-                                                    'No Developer',
-                                                userlogname:
-                                                    lead.sales?.userlog?.name ??
-                                                    'No User',
-                                                teamleadername:
-                                                    lead
-                                                        .sales
-                                                        ?.teamleader
-                                                        ?.name ??
-                                                    'No Team Leader',
-                                                salesName:
-                                                    lead.sales?.name ??
-                                                    'No Sales',
-                                                lead: lead,
-                                                stageUpdatedDate:
-                                                    stageUpdatedDate,
-                                                leadStagetype: leadStagetype,
-                                                isOutdated: isOutdatedLocal,
-                                                fcmtoken: salesfcmtoken ?? '',
-                                                managerFcmtoken:
-                                                    lead
-                                                        .sales
-                                                        ?.manager
-                                                        ?.fcmToken ??
-                                                    '',
-                                                assign: lead.assign ?? false,
-                                                userlogteamleadername:
-                                                    lead.sales?.userlog?.name ??
-                                                    'No Userlog Team Leader',
-                                                leadwhatsappnumber:
-                                                    lead.whatsappnumber ??
-                                                    lead.phone ??
-                                                    '',
-                                                jobdescription:
-                                                    lead.jobdescription ??
-                                                    'no job description',
-                                                secondphonenumber:
-                                                    lead.phonenumber2 ??
-                                                    'no second phone number',
-                                                laststageupdated:
-                                                    leadstageupdated!,
-                                                stageId:
-                                                    lead.stage?.id ??
-                                                    'No Stage ID',
-                                                leadLastDateAssigned:
-                                                    lead.lastdateassign ?? '',
-                                                resetCreationDate:
-                                                    lead.resetcreationdate ??
-                                                    false,
-                                              ),
-                                            );
-                                          },
-                                        )
-                                        : GridView.builder(
-                                          padding: EdgeInsets.all(
-                                            (16 * tabletScale).r,
-                                          ),
-                                          gridDelegate:
-                                              SliverGridDelegateWithFixedCrossAxisCount(
-                                                crossAxisCount: crossAxisCount,
-                                                childAspectRatio: 0.85,
-                                                crossAxisSpacing:
-                                                    (16 * tabletWidthScale).w,
-                                                mainAxisSpacing:
-                                                    (16 * tabletHeightScale).h,
-                                              ),
-                                          itemCount: _leads.length,
-                                          itemBuilder: (context, index) {
-                                            final lead = _leads[index];
-                                            // ✅ نفس الكود لكن مع تعديل الفهرس
-                                            salesfcmtoken =
-                                                lead.sales?.userlog?.fcmToken;
-                                            final prefs =
-                                                SharedPreferences.getInstance();
-                                            final fcmToken = prefs.then(
-                                              (prefs) => prefs.setString(
-                                                'fcm_token_sales',
-                                                salesfcmtoken ?? '',
-                                              ),
-                                            );
-                                            leadIdd = lead.id.toString();
-                                            managerfcmtoken =
-                                                lead.sales?.manager?.fcmToken;
-                                            final leadstageupdated =
-                                                lead.stagedateupdated;
-                                            final leadStagetype =
-                                                lead.stage?.name ?? "";
-                                            DateTime? stageUpdatedDate;
-                                            bool isOutdatedLocal = false;
-                                            if (leadstageupdated != null) {
-                                              try {
-                                                stageUpdatedDate =
-                                                    DateTime.parse(
-                                                      leadstageupdated,
-                                                    );
-                                              } catch (_) {
-                                                stageUpdatedDate = null;
-                                              }
-                                            }
-                                            if (stageUpdatedDate != null) {
-                                              final now =
-                                                  DateTime.now().toUtc();
-                                              final difference =
-                                                  now
-                                                      .difference(
-                                                        stageUpdatedDate,
-                                                      )
-                                                      .inMinutes;
-                                              isOutdatedLocal = difference > 1;
-                                            }
-                                            return buildUserTile(
-                                              parentContext: context,
-                                              name: lead.name ?? 'No Name',
-                                              status:
-                                                  lead.stage?.name ??
-                                                  'No Status',
-                                              index: index,
-                                              id: lead.id.toString(),
-                                              leadsalesName:
-                                                  lead.sales?.name ??
-                                                  'No Sales',
-                                              phone: lead.phone ?? 'No Phone',
-                                              email: lead.email ?? 'No Email',
-                                              stage:
-                                                  lead.stage?.name ??
-                                                  'No Stage',
-                                              stageid:
-                                                  lead.stage?.id.toString() ??
-                                                  'No Stage ID',
-                                              channel:
-                                                  lead.chanel?.name ??
-                                                  'No Channel',
-                                              creationdate:
-                                                  lead.createdAt != null
-                                                      ? formatDateTimeToDubai(
-                                                        lead.createdAt!,
-                                                      )
-                                                      : '',
-                                              project:
-                                                  lead.project?.name ??
-                                                  'No Project',
-                                              lastcomment:
-                                                  lead.lastcommentdate ??
-                                                  'No Last Comment',
-                                              leadcampaign:
-                                                  lead.campaign?.campainName ??
-                                                  'No Campaign',
-                                              leadNotes: 'No Notes',
-                                              leaddeveloper:
-                                                  lead
-                                                      .project
-                                                      ?.developer
-                                                      ?.name ??
-                                                  'No Developer',
-                                              userlogname:
-                                                  lead.sales?.userlog?.name ??
-                                                  'No User',
-                                              teamleadername:
-                                                  lead
-                                                      .sales
-                                                      ?.teamleader
-                                                      ?.name ??
-                                                  'No Team Leader',
-                                              salesName:
-                                                  lead.sales?.name ??
-                                                  'No Sales',
-                                              lead: lead,
-                                              stageUpdatedDate:
-                                                  stageUpdatedDate,
-                                              leadStagetype: leadStagetype,
-                                              isOutdated: isOutdatedLocal,
-                                              fcmtoken: salesfcmtoken ?? '',
-                                              managerFcmtoken:
-                                                  lead
-                                                      .sales
-                                                      ?.manager
-                                                      ?.fcmToken ??
-                                                  '',
-                                              assign: lead.assign ?? false,
-                                              userlogteamleadername:
-                                                  lead.sales?.userlog?.name ??
-                                                  'No Userlog Team Leader',
-                                              leadwhatsappnumber:
-                                                  lead.whatsappnumber ??
-                                                  lead.phone ??
-                                                  '',
-                                              jobdescription:
-                                                  lead.jobdescription ??
-                                                  'no job description',
-                                              secondphonenumber:
-                                                  lead.phonenumber2 ??
-                                                  'no second phone number',
-                                              laststageupdated:
-                                                  leadstageupdated!,
-                                              stageId:
-                                                  lead.stage?.id ??
-                                                  'No Stage ID',
-                                              leadLastDateAssigned:
-                                                  lead.lastdateassign ?? '',
-                                              resetCreationDate:
-                                                  lead.resetcreationdate ??
-                                                  false,
-                                            );
-                                          },
-                                        ),
-                              );
-                            } else if (state
-                                is GetLeadsTeamLeaderPaginationError) {
-                              return Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all((16 * tabletScale).r),
-                                  child: Text(
-                                    " ${state.message}",
-                                    style: TextStyle(
-                                      fontSize: (16 * tabletFontScale).sp,
-                                      color:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Colors.black87
-                                              : Colors.white70,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              );
-                            } else {
-                              return Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all((16 * tabletScale).r),
-                                  child: Text(
-                                    "No leads found.",
-                                    style: TextStyle(
-                                      fontSize: (16 * tabletFontScale).sp,
-                                      color:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Colors.black87
-                                              : Colors.white70,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
                           },
-                        ),
-                      ),
-                    ],
+                          color: Constants.maincolor,
+                          child:
+                              crossAxisCount == 1
+                                  ? ListView.builder(
+                                    controller: _scrollController,
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal:
+                                          _responsive.cardMarginHorizontal.w,
+                                      vertical:
+                                          _responsive.cardMarginVertical.h,
+                                    ),
+                                    itemCount: _leads.length + 1,
+                                    itemBuilder: (context, index) {
+                                      if (index >= _leads.length) {
+                                        if (context
+                                            .read<GetLeadsTeamLeaderCubit>()
+                                            .hasMoreData) {
+                                          return Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 20.h,
+                                            ),
+                                            child: Center(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const CircularProgressIndicator(),
+                                                  SizedBox(height: 8.h),
+                                                  Text(
+                                                    "Loading more leads...",
+                                                    style: TextStyle(
+                                                      fontSize: 14.sp,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        } else if (_leads.isNotEmpty) {
+                                          return Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: 20.h,
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                "✓ All leads loaded (${_leads.length} total)",
+                                                style: TextStyle(
+                                                  fontSize: 14.sp,
+                                                  color: Colors.green,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        return const SizedBox();
+                                      }
+
+                                      final lead = _leads[index];
+                                      return _buildLeadCard(
+                                        lead: lead,
+                                        index: index,
+                                        parentContext: context,
+                                      );
+                                    },
+                                  )
+                                  : GridView.builder(
+                                    padding: EdgeInsets.all(16.r),
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: crossAxisCount,
+                                          childAspectRatio: 0.85,
+                                          crossAxisSpacing: 16.w,
+                                          mainAxisSpacing: 16.h,
+                                        ),
+                                    itemCount:
+                                        _leads.length +
+                                        (_isFetchingMore ? 1 : 0),
+                                    itemBuilder: (context, index) {
+                                      if (index == _leads.length) {
+                                        return Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: 20.h,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                width: 18.w,
+                                                height: 18.w,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2.5,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Constants.maincolor),
+                                                ),
+                                              ),
+                                              SizedBox(width: 10.w),
+                                              Text(
+                                                "Loading more...",
+                                                style: TextStyle(
+                                                  fontSize: 13.sp,
+                                                  color: Colors.grey.shade500,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }
+                                      final lead = _leads[index];
+                                      return _buildLeadCard(
+                                        lead: lead,
+                                        index: index,
+                                        parentContext: context,
+                                      );
+                                    },
+                                  ),
+                        );
+                      } else if (state is GetLeadsTeamLeaderPaginationError) {
+                        return Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.r),
+                            child: Text(
+                              state.message,
+                              style: TextStyle(fontSize: 16.sp),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        );
+                      } else {
+                        return Center(
+                          child: Text(
+                            "No leads found.",
+                            style: TextStyle(fontSize: 16.sp),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ),
               ],
@@ -1199,9 +735,1368 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // SELECT ALL HEADER
+  // ─────────────────────────────────────────────────────────────
+  // Widget _buildSelectAllHeader(bool isTabletDevice) {
+  //   return Container(
+  //     margin: EdgeInsets.symmetric(
+  //       horizontal: _responsive.cardMarginHorizontal.w,
+  //       vertical: 8.h,
+  //     ),
+  //     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+  //     decoration: BoxDecoration(
+  //       color:
+  //           Theme.of(context).brightness == Brightness.light
+  //               ? Colors.white
+  //               : Colors.grey[900],
+  //       borderRadius: BorderRadius.circular(12.r),
+  //       border: Border.all(
+  //         color:
+  //             _selectAll ? Constants.maincolor : Colors.grey.withOpacity(0.3),
+  //         width: 1.5.r,
+  //       ),
+  //     ),
+  //     child: Row(
+  //       children: [
+  //         Checkbox(
+  //           value: _selectAll,
+  //           onChanged: _leads.isEmpty ? null : _toggleSelectAll,
+  //           activeColor: Constants.maincolor,
+  //           shape: RoundedRectangleBorder(
+  //             borderRadius: BorderRadius.circular(5.r),
+  //           ),
+  //         ),
+  //         SizedBox(width: 8.w),
+  //         Expanded(
+  //           child: Text(
+  //             "Select All",
+  //             style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+  //           ),
+  //         ),
+  //         Container(
+  //           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+  //           decoration: BoxDecoration(
+  //             color: Constants.maincolor.withOpacity(0.1),
+  //             borderRadius: BorderRadius.circular(20.r),
+  //           ),
+  //           child: Text(
+  //             _selectedCount > 0 ? "$_selectedCount selected" : "0 selected",
+  //             style: TextStyle(
+  //               fontSize: 14.sp,
+  //               fontWeight: FontWeight.w600,
+  //               color: Constants.maincolor,
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  // ─────────────────────────────────────────────────────────────
+  // ACTION BAR  (same logic as buildAssignButtons, new design)
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildActionBar(bool isTabletDevice) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // إذا كانت الشيكات غير ظاهرة أو مفيش حاجة مختارة
+    if (!isSelectionMode || selectedLeadsData.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: EdgeInsets.only(
+        bottom: 8.h,
+        left: _responsive.cardMarginHorizontal.w,
+        right: _responsive.cardMarginHorizontal.w,
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xff1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          /// CHECK ICON
+          Container(
+            width: 38.w,
+            height: 38.w,
+            decoration: BoxDecoration(
+              color: Constants.maincolor,
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Icon(Icons.check, color: Colors.white, size: 22.sp),
+          ),
+
+          SizedBox(width: 14.w),
+
+          /// SELECTED TEXT - ديناميكي
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "${selectedLeadsData.length} ${selectedLeadsData.length == 1 ? 'Lead' : 'Leads'}",
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+              Text(
+                "Selected",
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(width: 15.w),
+
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                /// DIVIDER
+                Container(height: 50.h, width: 1, color: Colors.grey.shade300),
+
+                // =========================
+                // ASSIGN
+                // =========================
+                InkWell(
+                  onTap: () {
+                    if (selectedLeadsData.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please select at least one lead"),
+                        ),
+                      );
+                      return;
+                    }
+                    _showAssignDialog(widget.data!, widget.transferfromdata!);
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.ios_share_outlined,
+                        color: Colors.grey.shade700,
+                        size: 25.sp,
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        "ASSIGN",
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                /// DIVIDER
+                Container(height: 50.h, width: 1, color: Colors.grey.shade300),
+
+                // =========================
+                // EDIT - يشتغل بس لو مختار 1
+                // =========================
+                InkWell(
+                  onTap:
+                      selectedLeadsData.length == 1
+                          ? () async {
+                            if (_selectedLead != null) {
+                              final result = await showDialog(
+                                context: context,
+                                builder:
+                                    (_) => MultiBlocProvider(
+                                      providers: [
+                                        BlocProvider(
+                                          create:
+                                              (_) => EditLeadCubit(
+                                                EditLeadApiService(),
+                                              ),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => ProjectsCubit(
+                                                ProjectsApiService(),
+                                              )..fetchProjects(),
+                                        ),
+                                        BlocProvider(
+                                          create:
+                                              (_) => SalesCubit(
+                                                GetAllSalesApiService(),
+                                              )..fetchAllSales(),
+                                        ),
+                                      ],
+                                      child: EditLeadSalesDialog(
+                                        userId: _selectedLead!.id ?? '',
+                                        initialName: _selectedLead!.name ?? '',
+                                        initialPhone2:
+                                            _selectedLead!.phonenumber2 ?? '',
+                                        initialWhatsappNumber:
+                                            _selectedLead!.whatsappnumber ?? '',
+                                        initialNotes: '',
+                                        initialProjectId:
+                                            _selectedLead!.project?.id,
+                                        salesID: _selectedLead!.sales?.id ?? '',
+                                        onSuccess: () async {
+                                          setState(() {
+                                            selected.clear();
+                                            selectedLeadsData.clear();
+                                            _selectedLead = null;
+                                            isSelectionMode = false;
+                                          });
+                                          await _cubit
+                                              .fetchTeamLeaderLeadsWithPagination(
+                                                data: widget.data,
+                                                transferefromdata:
+                                                    widget.transferfromdata,
+                                                stageId: widget.stageId,
+                                              );
+                                          setState(() {});
+                                        },
+                                      ),
+                                    ),
+                              );
+                              if (result == true) {
+                                setState(() {
+                                  selected.clear();
+                                  selectedLeadsData.clear();
+                                  _selectedLead = null;
+                                  isSelectionMode = false;
+                                });
+                                await _cubit.fetchTeamLeaderLeadsWithPagination(
+                                  data: widget.data,
+                                  transferefromdata: widget.transferfromdata,
+                                  stageId:
+                                      _currentFilterStageId ?? widget.stageId,
+                                  // ✅ البحث الحالي
+                                  search:
+                                      searchController.text.isNotEmpty
+                                          ? searchController.text
+                                          : null,
+                                  // ✅ جميع الفلاتر المخزنة
+                                  developerId: _currentFilterDeveloperId,
+                                  projectId:
+                                      _currentFilterProjectId, // استخدم stageId من الفلتر إذا وجد
+                                  channelId: _currentFilterChannelId,
+                                  salesId:
+                                      _currentFilterSalesId ?? widget.salesName,
+                                  creationDateFrom:
+                                      _currentFilterCreationDateFrom,
+                                  creationDateTo: _currentFilterCreationDateTo,
+                                  stageDateFrom: _currentFilterStageDateFrom,
+                                  stageDateTo: _currentFilterStageDateTo,
+                                );
+                                setState(() {});
+                              }
+                            }
+                          }
+                          : null,
+                  child: Opacity(
+                    opacity: selectedLeadsData.length == 1 ? 1.0 : 0.5,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.edit_outlined,
+                          color: Colors.grey.shade700,
+                          size: 25.sp,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          "EDIT",
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                /// DIVIDER
+                // Container(height: 50.h, width: 1, color: Colors.grey.shade300),
+
+                // // =========================
+                // // MEETING
+                // // =========================
+                // InkWell(
+                //   onTap:
+                //       selectedLeadsData.length == 1
+                //           ? () {
+                //             if (_selectedLead != null) {
+                //               _showAddMeetingSheet(context, _selectedLead!.id!);
+                //             }
+                //           }
+                //           : null,
+                //   child: Opacity(
+                //     opacity: selectedLeadsData.length == 1 ? 1.0 : 0.5,
+                //     child: Column(
+                //       mainAxisSize: MainAxisSize.min,
+                //       children: [
+                //         Icon(
+                //           Icons.event_outlined,
+                //           color: Colors.grey.shade700,
+                //           size: 25.sp,
+                //         ),
+                //         SizedBox(height: 4.h),
+                //         Text(
+                //           "MEETING",
+                //           style: TextStyle(
+                //             fontSize: 10.sp,
+                //             fontWeight: FontWeight.w700,
+                //             color: Colors.grey.shade700,
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SHIMMER
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildShimmerLoading() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: ListView.builder(
+        padding: EdgeInsets.all(_responsive.horizontalPadding.w),
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          return Container(
+            margin: EdgeInsets.only(bottom: _responsive.verticalPadding.h),
+            height: _responsive.isTablet ? 180.h : 140.h,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22.r),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // LEAD CARD  (Sales-style design + TL logic)
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildLeadCard({
+    required LeadDataPagination lead,
+    required int index,
+    required BuildContext parentContext,
+  }) {
+    final String leadStagetype = lead.stage?.name ?? "";
+    final String? leadstageupdated = lead.stagedateupdated;
+    final bool assign = lead.assign ?? false;
+    final String userlogteamleadername = lead.sales?.userlog?.name ?? '';
+
+    DateTime? stageUpdatedDate;
+    bool isOutdated = false;
+    if (leadstageupdated != null) {
+      try {
+        stageUpdatedDate = DateTime.parse(leadstageupdated);
+        final now = DateTime.now().toUtc();
+        final diff = now.difference(stageUpdatedDate).inMinutes;
+        isOutdated = diff > 1;
+      } catch (_) {
+        stageUpdatedDate = null;
+      }
+    }
+
+    // ── Left bar color (same logic as SalesLeadsScreen) ──
+    Color leftBarColor;
+    if (leadStagetype == "Not Interested" || leadStagetype == "Transfer") {
+      leftBarColor = Colors.black;
+    } else if ((leadStagetype == "Follow Up" ||
+            leadStagetype == "Follow" ||
+            leadStagetype == "Follow After Meeting" ||
+            leadStagetype == "No Answer" ||
+            leadStagetype == "No Stage" ||
+            leadStagetype == "Meeting" ||
+            leadStagetype == "Interested") &&
+        isOutdated) {
+      leftBarColor = Colors.orangeAccent;
+    } else {
+      leftBarColor = Constants.maincolor;
+    }
+
+    // ── Stage badge color ──
+    final bool isFinalStage =
+        stageUpdatedDate != null &&
+        (leadStagetype == "Done Deal" ||
+            leadStagetype == "Fresh" ||
+            leadStagetype == "EOI" ||
+            leadStagetype == "Cancel Meeting" ||
+            leadStagetype == "Pending");
+
+    Color stageColor;
+    if (leadStagetype == "Not Interested" || leadStagetype == "Transfer") {
+      stageColor = Colors.black;
+    } else {
+      stageColor =
+          isFinalStage
+              ? Constants.maincolor
+              : isOutdated
+              ? const Color(0xffFEB300)
+              : Constants.maincolor;
+    }
+
+    final bool isOutdatedStage =
+        (leadStagetype == "Follow Up" ||
+            leadStagetype == "Follow After Meeting" ||
+            leadStagetype == "Follow" ||
+            leadStagetype == "Meeting" ||
+            leadStagetype == "No Answer" ||
+            leadStagetype == "No Stage" ||
+            leadStagetype == "Interested") &&
+        isOutdated;
+
+    final bool hasDownloadIcon =
+        assign == true && userlogteamleadername == teamleadname;
+
+    salesfcmtoken = lead.sales?.userlog?.fcmToken;
+    leadIdd = lead.id.toString();
+    managerfcmtoken = lead.sales?.manager?.fcmToken;
+
+    return BlocProvider(
+      create:
+          (_) =>
+              LeadCommentsCubit(GetAllLeadCommentsApiService())
+                ..fetchNewComments(leadId: lead.id!, page: 1, limit: 10),
+      child: InkWell(
+        onLongPress: () {
+          if (hasDownloadIcon) return;
+          setState(() {
+            selected[index] = true;
+            isSelectionMode = selected.contains(true);
+            _selectedLead = lead;
+            final leadIdStr = lead.id.toString();
+            if (!selectedLeadsData.any((l) => l.id.toString() == leadIdStr)) {
+              selectedLeadsData.add(lead);
+            }
+          });
+        },
+        onTap: () async {
+          final bool isPendingStage =
+              (lead.stage?.name ?? '').toLowerCase() == 'pending';
+
+          if (isSelectionMode) {
+            if (hasDownloadIcon) return;
+            setState(() {
+              selected[index] = !selected[index];
+              if (!selected.contains(true)) isSelectionMode = false;
+              _updateSelectedCount();
+              final leadIdStr = lead.id.toString();
+              if (selected[index]) {
+                if (!selectedLeadsData.any(
+                  (l) => l.id.toString() == leadIdStr,
+                )) {
+                  selectedLeadsData.add(lead);
+                }
+              } else {
+                selectedLeadsData.removeWhere(
+                  (l) => l.id.toString() == leadIdStr,
+                );
+              }
+            });
+            return;
+          }
+
+          if (assign == false || isPendingStage) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => BlocProvider(
+                      create:
+                          (_) =>
+                              LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                      child: LeadsDetailsTeamLeaderScreen(
+                        leedId: lead.id.toString(),
+                        leadName: lead.name ?? 'No Name',
+                        leadPhone: lead.phone ?? 'No Phone',
+                        leadEmail: lead.email ?? 'No Email',
+                        leadStage: lead.stage?.name ?? 'No Stage',
+                        leadStageId: lead.stage?.id.toString() ?? '',
+                        leadChannel: lead.chanel?.name ?? 'No Channel',
+                        leadSalesName: lead.sales?.name ?? 'No Sales',
+                        leadCreationDate:
+                            lead.createdAt != null
+                                ? formatDateTimeToDubai(lead.createdAt!)
+                                : '',
+                        leadProject: lead.project?.name ?? 'No Project',
+                        leadLastComment:
+                            lead.lastcommentdate ?? 'No Last Comment',
+                        leadcampaign:
+                            lead.campaign?.campainName ?? 'No Campaign',
+                        leadNotes: 'No Notes',
+                        leaddeveloper:
+                            lead.project?.developer?.name ?? 'No Developer',
+                        userlogname: lead.sales?.userlog?.name ?? 'No User',
+                        teamleadername:
+                            lead.sales?.teamleader?.name ?? 'No Team Leader',
+                        fcmtoken: salesfcmtoken ?? '',
+                        managerfcmtoken: lead.sales?.manager?.fcmToken ?? '',
+                        leadwhatsappnumber:
+                            lead.whatsappnumber ?? lead.phone ?? '',
+                        jobdescription:
+                            lead.jobdescription ?? 'no job description',
+                        secondphonenumber:
+                            lead.phonenumber2 ?? 'no second phone number',
+                        laststageupdated: leadstageupdated ?? '',
+                        stageId: lead.stage?.id ?? 'No Stage ID',
+                        leadLastDateAssigned: lead.lastdateassign ?? '',
+                        isresetcreationdate: lead.resetcreationdate ?? false,
+                        question1_text: lead.question1_text,
+                        question1_answer: lead.question1_answer,
+                        question2_text: lead.question2_text,
+                        question2_answer: lead.question2_answer,
+                        question3_text: lead.question3_text,
+                        question3_answer: lead.question3_answer,
+                        question4_text: lead.question4_text,
+                        question4_answer: lead.question4_answer,
+                        question5_text: lead.question5_text,
+                        question5_answer: lead.question5_answer,
+                        salesFcmTokens:
+                            lead.sales?.userlog?.fcmTokens
+                                ?.map((e) => e.token ?? '')
+                                .where((t) => t.isNotEmpty)
+                                .toList(),
+                      ),
+                    ),
+              ),
+            );
+          } else if (assign == true && userlogteamleadername == teamleadname) {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text("Attention", style: TextStyle(fontSize: 18.sp)),
+                  content: Text(
+                    "You must receive this lead first.",
+                    style: TextStyle(fontSize: 14.sp),
+                  ),
+                  actions: [
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Constants.maincolor
+                                : Constants.mainDarkmodecolor,
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        "OK",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          } else if (assign == true && userlogteamleadername != teamleadname) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => BlocProvider(
+                      create:
+                          (_) =>
+                              LeadCommentsCubit(GetAllLeadCommentsApiService()),
+                      child: LeadsDetailsTeamLeaderScreen(
+                        leedId: lead.id.toString(),
+                        leadName: lead.name ?? 'No Name',
+                        leadPhone: lead.phone ?? 'No Phone',
+                        leadEmail: lead.email ?? 'No Email',
+                        leadStage: lead.stage?.name ?? 'No Stage',
+                        leadStageId: lead.stage?.id.toString() ?? '',
+                        leadChannel: lead.chanel?.name ?? 'No Channel',
+                        leadSalesName: lead.sales?.name ?? 'No Sales',
+                        leadCreationDate:
+                            lead.createdAt != null
+                                ? formatDateTimeToDubai(lead.createdAt!)
+                                : '',
+                        leadProject: lead.project?.name ?? 'No Project',
+                        leadLastComment:
+                            lead.lastcommentdate ?? 'No Last Comment',
+                        leadcampaign:
+                            lead.campaign?.campainName ?? 'No Campaign',
+                        leadNotes: 'No Notes',
+                        leaddeveloper:
+                            lead.project?.developer?.name ?? 'No Developer',
+                        userlogname: lead.sales?.userlog?.name ?? 'No User',
+                        teamleadername:
+                            lead.sales?.teamleader?.name ?? 'No Team Leader',
+                        fcmtoken: salesfcmtoken ?? '',
+                        managerfcmtoken: lead.sales?.manager?.fcmToken ?? '',
+                        leadwhatsappnumber:
+                            lead.whatsappnumber ?? lead.phone ?? '',
+                        jobdescription:
+                            lead.jobdescription ?? 'no job description',
+                        secondphonenumber:
+                            lead.phonenumber2 ?? 'no second phone number',
+                        laststageupdated: leadstageupdated ?? '',
+                        stageId: lead.stage?.id ?? 'No Stage ID',
+                        leadLastDateAssigned: lead.lastdateassign ?? '',
+                        isresetcreationdate: lead.resetcreationdate ?? false,
+                        question1_text: lead.question1_text,
+                        question1_answer: lead.question1_answer,
+                        question2_text: lead.question2_text,
+                        question2_answer: lead.question2_answer,
+                        question3_text: lead.question3_text,
+                        question3_answer: lead.question3_answer,
+                        question4_text: lead.question4_text,
+                        question4_answer: lead.question4_answer,
+                        question5_text: lead.question5_text,
+                        question5_answer: lead.question5_answer,
+                      ),
+                    ),
+              ),
+            );
+          }
+        },
+        borderRadius: BorderRadius.circular(22.r),
+        child: Container(
+          margin: EdgeInsets.symmetric(vertical: 14.h, horizontal: 14.w),
+          decoration: BoxDecoration(
+            color:
+                selected[index]
+                    ? Constants.maincolor.withOpacity(0.08)
+                    : (Theme.of(context).brightness == Brightness.light
+                        ? Colors.white
+                        : const Color(0xff111827)),
+            borderRadius: BorderRadius.circular(22.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                // ── LEFT COLOR BAR ──
+                Container(
+                  width: 5.w,
+                  decoration: BoxDecoration(
+                    color: leftBarColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(22.r),
+                      bottomLeft: Radius.circular(22.r),
+                    ),
+                  ),
+                ),
+
+                // ── CARD CONTENT ──
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 22.w,
+                      vertical: 22.h,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── TOP ROW: stage badge + date + checkbox ──
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Row(
+                                children: [
+                                  // CHECKBOX
+                                  if (isSelectionMode)
+                                    Padding(
+                                      padding: EdgeInsets.only(right: 8.w),
+                                      child: Checkbox(
+                                        materialTapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        visualDensity: VisualDensity.compact,
+                                        activeColor: Constants.maincolor,
+                                        value: selected[index],
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            5.r,
+                                          ),
+                                        ),
+                                        onChanged: (val) {
+                                          if (hasDownloadIcon) return;
+                                          setState(() {
+                                            selected[index] = val!;
+                                            isSelectionMode = selected.contains(
+                                              true,
+                                            );
+                                            _updateSelectedCount();
+                                            _selectedLead = lead;
+                                            final leadIdStr =
+                                                lead.id.toString();
+                                            if (val) {
+                                              if (!selectedLeadsData.any(
+                                                (l) =>
+                                                    l.id.toString() ==
+                                                    leadIdStr,
+                                              )) {
+                                                selectedLeadsData.add(lead);
+                                              }
+                                            } else {
+                                              selectedLeadsData.removeWhere(
+                                                (l) =>
+                                                    l.id.toString() ==
+                                                    leadIdStr,
+                                              );
+                                            }
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  // STAGE BADGE
+                                  Flexible(
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 14.w,
+                                        vertical: 7.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isOutdatedStage
+                                                ? stageColor
+                                                : stageColor.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(
+                                          10.r,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        ((lead.stage?.name ?? "No Stage")
+                                                    .length >
+                                                10)
+                                            ? "${(lead.stage?.name ?? "No Stage").substring(0, 10).toUpperCase()}..."
+                                            : (lead.stage?.name ?? "No Stage")
+                                                .toUpperCase(),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 10.sp,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 1,
+                                          color:
+                                              isOutdatedStage
+                                                  ? const Color(0xff6A4800)
+                                                  : stageColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            // STAGE DATE
+                            Text(
+                              lead.stagedateupdated != null
+                                  ? formatDateTimeToDubai(
+                                    lead.stagedateupdated!,
+                                  )
+                                  : "N/A",
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // DOT LOADING (if assigned to this TL)
+                        if (hasDownloadIcon)
+                          Padding(
+                            padding: EdgeInsets.only(top: 6.h),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [DotLoading()],
+                            ),
+                          ),
+
+                        SizedBox(height: 12.h),
+
+                        // ── NAME + DOWNLOAD BUTTON ──
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                lead.name ?? "No Name",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 22.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                              Brightness.light
+                                          ? const Color(0xff111827)
+                                          : Colors.white,
+                                ),
+                              ),
+                            ),
+                            if (hasDownloadIcon)
+                              _buildDownloadButton(lead, parentContext),
+                          ],
+                        ),
+
+                        SizedBox(height: 4.h),
+
+                        // ── PROJECT ──
+                        Text(
+                          (lead.project?.name ?? "").toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                            color: const Color(0xff003178),
+                          ),
+                        ),
+
+                        SizedBox(height: 16.h),
+
+                        // ── SALESMAN + CREATED DATE ──
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "SALESMAN",
+                                    style: TextStyle(
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.2,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4.h),
+                                  Text(
+                                    lead.assigntype == true
+                                        ? "team: ${lead.sales?.name ?? 'N/A'}"
+                                        : lead.sales?.name ?? "None",
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 16.w),
+                            if (lead.resetcreationdate == false)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    "CREATED",
+                                    style: TextStyle(
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.2,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4.h),
+                                  Text(
+                                    lead.date != null
+                                        ? formatDateTimeToDubai(lead.date!)
+                                        : "N/A",
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+
+                        SizedBox(height: 10.h),
+                        Divider(color: Colors.grey.shade300, thickness: 1),
+                        SizedBox(height: 10.h),
+
+                        // ── PHONE + ACTION BUTTONS ──
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  final phone = lead.phone ?? '';
+                                  String formatted;
+                                  if (phone.startsWith('+')) {
+                                    // إذا كان الرقم يبدأ بـ + بالفعل، استخدمه كما هو
+                                    formatted = phone;
+                                  } else if (phone.startsWith('0')) {
+                                    // إذا كان يبدأ بـ 0، استخدمه كما هو
+                                    formatted = phone;
+                                  } else {
+                                    // إذا لم يبدأ بـ 0 أو +، أضف +
+                                    formatted = '+$phone';
+                                  }
+                                  makePhoneCall(formatted);
+                                },
+                                child: Text(
+                                  lead.phone ?? 'N/A',
+                                  style: TextStyle(
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                // PHONE
+                                InkWell(
+                                  onTap: () {
+                                    final phone = lead.phone ?? '';
+                                    String formatted;
+                                    if (phone.startsWith('+')) {
+                                      // إذا كان الرقم يبدأ بـ + بالفعل، استخدمه كما هو
+                                      formatted = phone;
+                                    } else if (phone.startsWith('0')) {
+                                      // إذا كان يبدأ بـ 0، استخدمه كما هو
+                                      formatted = phone;
+                                    } else {
+                                      // إذا لم يبدأ بـ 0 أو +، أضف +
+                                      formatted = '+$phone';
+                                    }
+                                    makePhoneCall(formatted);
+                                  },
+                                  borderRadius: BorderRadius.circular(40.r),
+                                  child: Container(
+                                    width: 44.w,
+                                    height: 44.w,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade200,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.phone_in_talk_outlined,
+                                      color: Constants.maincolor,
+                                      size: 20.sp,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 10.w),
+                                // WHATSAPP
+                                InkWell(
+                                  onTap: () async {
+                                    final rawPhone =
+                                        (lead.phone?.isNotEmpty == true
+                                                ? lead.phone
+                                                : lead.whatsappnumber)
+                                            ?.replaceAll(RegExp(r'\D'), '') ??
+                                        '';
+                                    final formatted =
+                                        rawPhone.startsWith('0')
+                                            ? rawPhone
+                                            : '+$rawPhone';
+                                    final url = "https://wa.me/$formatted";
+                                    try {
+                                      await launchUrl(
+                                        Uri.parse(url),
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Could not open WhatsApp.",
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.circular(40.r),
+                                  child: Container(
+                                    width: 44.w,
+                                    height: 44.w,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xffDCFCE7),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: FaIcon(
+                                        FontAwesomeIcons.whatsapp,
+                                        color: Colors.green,
+                                        size: 22.sp,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 10.w),
+
+                                // 💬 COMMENT ICON
+                                InkWell(
+                                  onTap: () => _showCommentsDialog(lead),
+                                  borderRadius: BorderRadius.circular(40.r),
+                                  child: Container(
+                                    width: 44.w,
+                                    height: 44.w,
+                                    decoration: BoxDecoration(
+                                      color: Constants.maincolor.withOpacity(
+                                        0.1,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.comment_outlined,
+                                      color: Constants.maincolor,
+                                      size: 20.sp,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // DOWNLOAD BUTTON  (same TL logic)
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildDownloadButton(
+    LeadDataPagination lead,
+    BuildContext parentContext,
+  ) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(40.r),
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (dialogContext) {
+            return MultiBlocProvider(
+              providers: [
+                BlocProvider.value(value: _cubit),
+                BlocProvider(
+                  create: (_) => EditLeadCubit(EditLeadApiService()),
+                ),
+              ],
+              child: Builder(
+                builder: (innerContext) {
+                  bool isLoadingLocal = false;
+                  return StatefulBuilder(
+                    builder: (ctx, setS) {
+                      return AlertDialog(
+                        title: Text(
+                          "Confirmation",
+                          style: TextStyle(fontSize: 18.sp),
+                        ),
+                        content: Text(
+                          "Are you sure to receive this lead?",
+                          style: TextStyle(fontSize: 14.sp),
+                        ),
+                        actions: [
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor:
+                                  Theme.of(ctx).brightness == Brightness.light
+                                      ? Constants.maincolor
+                                      : Constants.mainDarkmodecolor,
+                            ),
+                            onPressed: () => Navigator.of(innerContext).pop(),
+                            child: const Text(
+                              "Cancel",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor:
+                                  Theme.of(ctx).brightness == Brightness.light
+                                      ? Constants.maincolor
+                                      : Constants.mainDarkmodecolor,
+                            ),
+                            onPressed:
+                                isLoadingLocal
+                                    ? null
+                                    : () async {
+                                      setS(() => isLoadingLocal = true);
+                                      try {
+                                        await innerContext
+                                            .read<EditLeadCubit>()
+                                            .editLeadAssignvalue(
+                                              userId: lead.id!,
+                                              assign: false,
+                                            );
+                                        if (mounted) {
+                                          Navigator.of(innerContext).pop();
+                                          parentContext
+                                              .read<GetLeadsTeamLeaderCubit>()
+                                              .fetchTeamLeaderLeadsWithPagination(
+                                                data: widget.data,
+                                                transferefromdata:
+                                                    widget.transferfromdata,
+                                                stageId:
+                                                    _currentFilterStageId ??
+                                                    widget.stageId,
+                                                // ✅ البحث الحالي
+                                                search:
+                                                    searchController
+                                                            .text
+                                                            .isNotEmpty
+                                                        ? searchController.text
+                                                        : null,
+                                                // ✅ جميع الفلاتر المخزنة
+                                                developerId:
+                                                    _currentFilterDeveloperId,
+                                                projectId:
+                                                    _currentFilterProjectId, // استخدم stageId من الفلتر إذا وجد
+                                                channelId:
+                                                    _currentFilterChannelId,
+                                                salesId:
+                                                    _currentFilterSalesId ??
+                                                    widget.salesName,
+                                                creationDateFrom:
+                                                    _currentFilterCreationDateFrom,
+                                                creationDateTo:
+                                                    _currentFilterCreationDateTo,
+                                                stageDateFrom:
+                                                    _currentFilterStageDateFrom,
+                                                stageDateTo:
+                                                    _currentFilterStageDateTo,
+                                              );
+                                        }
+                                      } finally {
+                                        if (mounted) {
+                                          setS(() => isLoadingLocal = false);
+                                        }
+                                      }
+                                    },
+                            child:
+                                isLoadingLocal
+                                    ? SizedBox(
+                                      height: 20.h,
+                                      width: 20.w,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                    : const Text(
+                                      "OK",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+      child: CircleAvatar(
+        radius: _responsive.avatarRadius.r,
+        backgroundColor: Constants.maincolor.withOpacity(0.15),
+        child: Icon(
+          Icons.download,
+          color: Constants.maincolor,
+          size: _responsive.iconSizeLarge.sp,
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // COMMENTS DIALOG
+  // ─────────────────────────────────────────────────────────────
+  void _showCommentsDialog(LeadDataPagination lead) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return Dialog(
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: _responsive.dialogHorizontalPadding.w,
+            vertical: _responsive.dialogVerticalPadding.h,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: BlocProvider(
+            create:
+                (_) =>
+                    LeadCommentsCubit(GetAllLeadCommentsApiService())
+                      ..fetchNewComments(leadId: lead.id!, page: 1, limit: 10),
+            child: Padding(
+              padding: EdgeInsets.all(_responsive.cardPadding.w),
+              child: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
+                builder: (context, commentState) {
+                  if (commentState is LeadCommentsLoading) {
+                    return SizedBox(
+                      height: _responsive.isTablet ? 300.h : 200.h,
+                      child: Center(
+                        child: Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: ListView.builder(
+                            padding: EdgeInsets.all(_responsive.cardPadding.w),
+                            itemCount: 3,
+                            itemBuilder: (context, index) {
+                              return Container(
+                                margin: EdgeInsets.only(
+                                  bottom: _responsive.verticalPadding.h,
+                                ),
+                                height: _responsive.isTablet ? 120.h : 80.h,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  } else if (commentState is LeadCommentsError) {
+                    return SizedBox(
+                      height: _responsive.isTablet ? 200.h : 150.h,
+                      child: Center(
+                        child: Text(
+                          "No comments available",
+                          style: TextStyle(
+                            fontSize: _responsive.fontSizeMedium.sp,
+                          ),
+                        ),
+                      ),
+                    );
+                  } else if (commentState is NewCommentsLoaded) {
+                    final newCommentsData = commentState.newComments;
+                    if (newCommentsData.comments == null ||
+                        newCommentsData.comments!.isEmpty) {
+                      return Text(
+                        'No comments available.',
+                        style: TextStyle(
+                          fontSize: _responsive.fontSizeMedium.sp,
+                        ),
+                      );
+                    }
+                    final firstComment = newCommentsData.comments!.first;
+                    final String firstCommentText =
+                        firstComment.firstcomment?.text ??
+                        "No comment available.";
+                    final String secondCommentText =
+                        firstComment.secondcomment?.text ??
+                        'No action available.';
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Last Comment",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: _responsive.fontSizeLarge.sp,
+                          ),
+                        ),
+                        SizedBox(height: _responsive.verticalPadding.h * 0.3),
+                        Text(
+                          firstCommentText,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: _responsive.fontSizeMedium.sp,
+                          ),
+                        ),
+                        SizedBox(height: _responsive.verticalPadding.h),
+                        Text(
+                          "Action (Plan)",
+                          style: TextStyle(
+                            color: Constants.maincolor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: _responsive.fontSizeLarge.sp,
+                          ),
+                        ),
+                        SizedBox(height: _responsive.verticalPadding.h * 0.3),
+                        Text(
+                          secondCommentText,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: _responsive.fontSizeMedium.sp,
+                          ),
+                        ),
+                      ],
+                    );
+                  } else {
+                    return SizedBox(
+                      height: _responsive.isTablet ? 200.h : 150.h,
+                      child: Center(
+                        child: Text(
+                          "No comments",
+                          style: TextStyle(
+                            fontSize: _responsive.fontSizeMedium.sp,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // ASSIGN DIALOG  (same TL logic unchanged)
+  // ─────────────────────────────────────────────────────────────
   void _showAssignDialog(bool data, bool transferfromdata) async {
     final parentContext = context;
-
     final selectedIndices =
         selected
             .asMap()
@@ -1220,12 +2115,9 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     final selectedLeads = selectedIndices.map((i) => _leads[i]).toList();
     final selectedLeadStageIds =
         selectedLeads.map((lead) => lead.stage?.id?.toString() ?? "").toList();
-
-    /// ✅ هات آخر Stage مسجل لل Leads المختارة
     final lastStage =
         selectedLeadStageIds.isNotEmpty ? selectedLeadStageIds.last : "";
 
-    /// ✅ افتح الديالوج النهائي مباشرة
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1249,13 +2141,26 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   _selectedLead = null;
                   isSelectionMode = false;
                 });
-
                 await _cubit.fetchTeamLeaderLeadsWithPagination(
                   data: widget.data,
                   transferefromdata: widget.transferfromdata,
-                  stageId: widget.stageId,
+                  stageId: _currentFilterStageId ?? widget.stageId,
+                  // ✅ البحث الحالي
+                  search:
+                      searchController.text.isNotEmpty
+                          ? searchController.text
+                          : null,
+                  // ✅ جميع الفلاتر المخزنة
+                  developerId: _currentFilterDeveloperId,
+                  projectId:
+                      _currentFilterProjectId, // استخدم stageId من الفلتر إذا وجد
+                  channelId: _currentFilterChannelId,
+                  salesId: _currentFilterSalesId ?? widget.salesName,
+                  creationDateFrom: _currentFilterCreationDateFrom,
+                  creationDateTo: _currentFilterCreationDateTo,
+                  stageDateFrom: _currentFilterStageDateFrom,
+                  stageDateTo: _currentFilterStageDateTo,
                 );
-
                 ScaffoldMessenger.of(parentContext).showSnackBar(
                   const SnackBar(
                     content: Text("Lead assigned successfully! ✅"),
@@ -1267,10 +2172,12 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // ADD MEETING SHEET  (unchanged from original)
+  // ─────────────────────────────────────────────────────────────
   void _showAddMeetingSheet(BuildContext context, String leadId) {
     final commentController = TextEditingController();
-    final salesDeveloperController =
-        TextEditingController(); // 🔹 حقل Sales Developer Name
+    final salesDeveloperController = TextEditingController();
     DateTime? selectedDate;
     StageDatas? selectedStage;
 
@@ -1292,23 +2199,22 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
               BlocListener<GetLeadsCubit, GetLeadsState>(
                 listener: (context, state) {
                   if (state is PostMeetingCommentSuccess) {
-                    final parentContext =
-                        context; // أفضل طريقة: تمرر الـ context الأساسي للـ Scaffold عند فتح الـ BottomSheet
-                    Navigator.pop(context); // تقفل الـ BottomSheet أولاً
-                    // بعد الإغلاق، نستخدم parent context للـ Snackbar
+                    final parentContext = context;
+                    Navigator.pop(context);
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       ScaffoldMessenger.of(parentContext).showSnackBar(
                         const SnackBar(
                           content: Text("Meeting comment added successfully"),
                         ),
                       );
-                      final cubit = context.read<GetLeadsCubit>();
-                      cubit.fetchSalesLeadsWithPagination(
-                        data: widget.data,
-                        transferefromdata: widget.transferfromdata,
-                        stageId: widget.stageId,
-                        resetPagination: true,
-                      );
+                      context
+                          .read<GetLeadsCubit>()
+                          .fetchSalesLeadsWithPagination(
+                            data: widget.data,
+                            transferefromdata: widget.transferfromdata,
+                            stageId: widget.stageId,
+                            resetPagination: true,
+                          );
                     });
                   }
                 },
@@ -1327,15 +2233,12 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        /// 🔹 Stage Dropdown
                         BlocBuilder<StagesCubit, StagesState>(
                           builder: (context, state) {
                             if (state is StagesLoading) {
                               return const CircularProgressIndicator();
                             }
-
                             if (state is StagesLoaded) {
-                              // فلتر على الثلاث مراحل المطلوبة فقط
                               final stages =
                                   state.stages
                                       .where(
@@ -1346,7 +2249,6 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                             s.name?.toLowerCase() == "meeting",
                                       )
                                       .toList();
-
                               return DropdownButtonFormField<StageDatas>(
                                 decoration: const InputDecoration(
                                   labelText: "Stage",
@@ -1367,18 +2269,13 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 },
                               );
                             }
-
                             if (state is StagesError) {
                               return Text("Error: ${state.message}");
                             }
-
                             return const SizedBox();
                           },
                         ),
-
                         const SizedBox(height: 12),
-
-                        /// 🔹 Stage Date + Time
                         InkWell(
                           onTap: () async {
                             final date = await showDatePicker(
@@ -1387,13 +2284,11 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                               lastDate: DateTime(2100),
                               initialDate: DateTime.now(),
                             );
-
                             if (date != null) {
                               final time = await showTimePicker(
                                 context: context,
                                 initialTime: TimeOfDay.now(),
                               );
-
                               if (time != null) {
                                 setState(() {
                                   selectedDate = DateTime(
@@ -1422,10 +2317,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
-                        /// 🔹 Comment
                         TextField(
                           controller: commentController,
                           decoration: const InputDecoration(
@@ -1433,10 +2325,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             border: OutlineInputBorder(),
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
-                        /// 🔹 Sales Developer Name
                         TextField(
                           controller: salesDeveloperController,
                           decoration: const InputDecoration(
@@ -1444,15 +2333,11 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                             border: OutlineInputBorder(),
                           ),
                         ),
-
                         const SizedBox(height: 20),
-
-                        /// 🔹 Buttons
                         BlocBuilder<GetLeadsCubit, GetLeadsState>(
                           builder: (context, state) {
-                            final isLoading =
+                            final isLoadingMeeting =
                                 state is PostMeetingCommentLoading;
-
                             return Row(
                               children: [
                                 Expanded(
@@ -1461,10 +2346,9 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                       backgroundColor: Constants.maincolor,
                                     ),
                                     onPressed:
-                                        isLoading
+                                        isLoadingMeeting
                                             ? null
                                             : () {
-                                              // ✅ تحقق من الحقول المطلوبة
                                               if (selectedStage == null) {
                                                 ScaffoldMessenger.of(
                                                   context,
@@ -1517,8 +2401,6 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                                 );
                                                 return;
                                               }
-
-                                              // تحويل التاريخ لتوقيت دبي
                                               final dubaiDate = selectedDate!
                                                   .toUtc()
                                                   .add(
@@ -1539,7 +2421,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                                   );
                                             },
                                     child:
-                                        isLoading
+                                        isLoadingMeeting
                                             ? const SizedBox(
                                               height: 18,
                                               width: 18,
@@ -1583,7 +2465,6 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                               ),
                                         ),
                                       );
-                                      // هنا هتحدد وجهة All Comments بعدين
                                     },
                                     child: const Text(
                                       "All Comments",
@@ -1608,1314 +2489,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     );
   }
 
-  Widget buildAssignButtons() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      margin: const EdgeInsets.only(bottom: 8, right: 8, left: 8),
-      decoration: BoxDecoration(
-        color: isDark ? Constants.mainDarkmodecolor : Constants.maincolor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          /// 🔹 Assign Button
-          _buildCircleButton(
-            child: Image.asset(
-              "assets/images/right.png",
-              width: 22,
-              height: 22,
-              color: Constants.maincolor,
-            ),
-            onTap: () {
-              if (selectedLeadsData.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Please select at least one lead"),
-                  ),
-                );
-                return;
-              }
-
-              _showAssignDialog(widget.data!, widget.transferfromdata!);
-            },
-          ),
-
-          /// 🔹 Edit Button
-          _buildCircleButton(
-            child: Icon(Icons.edit, color: Constants.maincolor, size: 22),
-            onTap: () async {
-              if (_selectedLead != null) {
-                final result = await showDialog(
-                  context: context,
-                  builder:
-                      (_) => MultiBlocProvider(
-                        providers: [
-                          BlocProvider(
-                            create: (_) => EditLeadCubit(EditLeadApiService()),
-                          ),
-                          BlocProvider(
-                            create:
-                                (_) =>
-                                    ProjectsCubit(ProjectsApiService())
-                                      ..fetchProjects(),
-                          ),
-                          BlocProvider(
-                            create:
-                                (_) =>
-                                    SalesCubit(GetAllSalesApiService())
-                                      ..fetchAllSales(),
-                          ),
-                        ],
-                        child: EditLeadSalesDialog(
-                          userId: _selectedLead!.id ?? '',
-                          initialName: _selectedLead!.name ?? '',
-                          initialPhone2: _selectedLead!.phonenumber2 ?? '',
-                          initialWhatsappNumber:
-                              _selectedLead!.whatsappnumber ?? '',
-                          initialNotes: '',
-                          initialProjectId: _selectedLead!.project?.id,
-                          salesID: _selectedLead!.sales?.id ?? '',
-                          onSuccess: () async {
-                            setState(() {
-                              selected.clear();
-                              selectedLeadsData.clear();
-                              _selectedLead = null;
-                              isSelectionMode = false;
-                            });
-
-                            await _cubit.fetchTeamLeaderLeadsWithPagination(
-                              data: widget.data,
-                              transferefromdata: widget.transferfromdata,
-                              stageId: widget.stageId,
-                            );
-
-                            setState(() {});
-                          },
-                        ),
-                      ),
-                );
-
-                if (result == true) {
-                  setState(() {
-                    selected.clear();
-                    selectedLeadsData.clear();
-                    _selectedLead = null;
-                    isSelectionMode = false;
-                  });
-
-                  await _cubit.fetchTeamLeaderLeadsWithPagination(
-                    data: widget.data,
-                    transferefromdata: widget.transferfromdata,
-                    stageId: widget.stageId,
-                  );
-
-                  setState(() {});
-                }
-              }
-            },
-          ),
-
-          /// 🔹 Add Meeting Button
-          _buildCircleButton(
-            child: Icon(Icons.event, color: Constants.maincolor, size: 22),
-            onTap: () {
-              if (_selectedLead != null) {
-                _showAddMeetingSheet(context, _selectedLead!.id!);
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// ✅ Circle Button Widget موحد لكل الأزرار
-  Widget _buildCircleButton({
-    required Widget child,
-    required VoidCallback? onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 48, // 👈 نفس المقاس للجميع
-        height: 48,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.10) : Colors.grey[100],
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: child,
-      ),
-    );
-  }
-
-  Widget buildUserTile({
-    required String name,
-    required BuildContext parentContext,
-    required String status,
-    required int index,
-    required String id,
-    required String leadsalesName,
-    required String phone,
-    required String email,
-    required String stage,
-    required String stageid,
-    required String channel,
-    required String creationdate,
-    required String project,
-    required String lastcomment,
-    required String leadcampaign,
-    required String leadNotes,
-    required String leaddeveloper,
-    required String userlogname,
-    required String teamleadername,
-    required String salesName,
-    required dynamic lead,
-    DateTime? stageUpdatedDate,
-    required String leadStagetype,
-    required bool isOutdated,
-    required String fcmtoken,
-    required String managerFcmtoken,
-    required bool assign,
-    required String userlogteamleadername,
-    required String leadwhatsappnumber,
-    required String jobdescription,
-    required String secondphonenumber,
-    required String laststageupdated,
-    required String stageId,
-    required String leadLastDateAssigned,
-    required bool resetCreationDate,
-  }) {
-    // ✅ كشف نوع الجهاز داخل الويدجت
-    final bool isTabletDevice = () {
-      final data = MediaQuery.of(context);
-      final physicalSize = data.size;
-      final diagonal = math.sqrt(
-        math.pow(physicalSize.width, 2) + math.pow(physicalSize.height, 2),
-      );
-      final inches = diagonal / (data.devicePixelRatio * 160);
-      return inches >= 7.0;
-    }();
-
-    // ✅ عوامل التصغير حسب الجهاز
-    final double tabletScale = isTabletDevice ? 0.85 : 1.0;
-    final double tabletFontScale = isTabletDevice ? 0.9 : 1.0;
-    final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
-    final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
-
-    return InkWell(
-      onTap: () async {
-        final bool hasDownloadIcon =
-            assign == true && userlogteamleadername == teamleadname;
-        final bool isPendingStage = stage.toLowerCase() == 'pending';
-
-        if (isSelectionMode) {
-          if (hasDownloadIcon) return;
-          setState(() {
-            selected[index] = !selected[index];
-
-            if (!selected.contains(true)) {
-              isSelectionMode = false;
-            }
-          });
-          return;
-        }
-        log("userlogteamleadername: $userlogteamleadername");
-        log("teamleadname: $teamleadname");
-        log("leadassign: $assign");
-        if (assign == false || isPendingStage) {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => BlocProvider(
-                    create:
-                        (_) =>
-                            LeadCommentsCubit(GetAllLeadCommentsApiService()),
-                    child: LeadsDetailsTeamLeaderScreen(
-                      leedId: id,
-                      leadName: name,
-                      leadPhone: phone,
-                      leadEmail: email,
-                      leadStage: stage,
-                      leadStageId: stageid,
-                      leadChannel: channel,
-                      leadSalesName: leadsalesName,
-                      leadCreationDate: creationdate,
-                      leadProject: project,
-                      leadLastComment: lastcomment,
-                      leadcampaign: leadcampaign,
-                      leadNotes: leadNotes,
-                      leaddeveloper: leaddeveloper,
-                      userlogname: userlogname,
-                      teamleadername: teamleadername,
-                      fcmtoken: fcmtoken,
-                      managerfcmtoken: managerFcmtoken,
-                      leadwhatsappnumber: leadwhatsappnumber,
-                      jobdescription: jobdescription,
-                      secondphonenumber: secondphonenumber,
-                      laststageupdated: laststageupdated,
-                      stageId: stageId,
-                      leadLastDateAssigned: leadLastDateAssigned,
-                      isresetcreationdate: resetCreationDate,
-                      question1_text: lead.question1_text,
-                      question1_answer: lead.question1_answer,
-                      question2_text: lead.question2_text,
-                      question2_answer: lead.question2_answer,
-                      question3_text: lead.question3_text,
-                      question3_answer: lead.question3_answer,
-                      question4_text: lead.question4_text,
-                      question4_answer: lead.question4_answer,
-                      question5_text: lead.question5_text,
-                      question5_answer: lead.question5_answer,
-                    ),
-                  ),
-            ),
-          );
-        } else if (assign == true && userlogteamleadername == teamleadname) {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text(
-                  "Attention",
-                  style: TextStyle(fontSize: (18 * tabletFontScale).sp),
-                ),
-                content: Text(
-                  "You must receive this lead first.",
-                  style: TextStyle(fontSize: (14 * tabletFontScale).sp),
-                ),
-                actions: [
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: (16 * tabletWidthScale).w,
-                        vertical: (8 * tabletHeightScale).h,
-                      ),
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      "OK",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: (14 * tabletFontScale).sp,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
-        } else if (assign == true && userlogteamleadername != teamleadname) {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => BlocProvider(
-                    create:
-                        (_) =>
-                            LeadCommentsCubit(GetAllLeadCommentsApiService()),
-                    child: LeadsDetailsTeamLeaderScreen(
-                      leedId: id,
-                      leadName: name,
-                      leadPhone: phone,
-                      leadEmail: email,
-                      leadStage: stage,
-                      leadStageId: stageid,
-                      leadChannel: channel,
-                      leadSalesName: leadsalesName,
-                      leadCreationDate: creationdate,
-                      leadProject: project,
-                      leadLastComment: lastcomment,
-                      leadcampaign: leadcampaign,
-                      leadNotes: leadNotes,
-                      leaddeveloper: leaddeveloper,
-                      userlogname: userlogname,
-                      teamleadername: teamleadername,
-                      fcmtoken: fcmtoken,
-                      managerfcmtoken: managerFcmtoken,
-                      leadwhatsappnumber: leadwhatsappnumber,
-                      jobdescription: jobdescription,
-                      secondphonenumber: secondphonenumber,
-                      laststageupdated: laststageupdated,
-                      stageId: stageId,
-                      leadLastDateAssigned: leadLastDateAssigned,
-                      isresetcreationdate: resetCreationDate,
-                      question1_text: lead.question1_text,
-                      question1_answer: lead.question1_answer,
-                      question2_text: lead.question2_text,
-                      question2_answer: lead.question2_answer,
-                      question3_text: lead.question3_text,
-                      question3_answer: lead.question3_answer,
-                      question4_text: lead.question4_text,
-                      question4_answer: lead.question4_answer,
-                      question5_text: lead.question5_text,
-                      question5_answer: lead.question5_answer,
-                    ),
-                  ),
-            ),
-          );
-        }
-      },
-      onLongPress: () {
-        final bool hasDownloadIcon =
-            assign == true && userlogteamleadername == teamleadname;
-        if (hasDownloadIcon) return;
-        setState(() {
-          selected[index] = true;
-          isSelectionMode = selected.contains(true);
-          _selectedLead = lead;
-
-          final leadIdStr = lead.id.toString();
-
-          if (selected[index] = true) {
-            if (!selectedLeadsData.any((l) => l.id.toString() == leadIdStr)) {
-              selectedLeadsData.add(lead);
-            }
-          } else {
-            selectedLeadsData.removeWhere((l) => l.id.toString() == leadIdStr);
-          }
-        });
-      },
-      child: Container(
-        margin: EdgeInsets.symmetric(
-          vertical: (4 * tabletHeightScale).h,
-          horizontal: (2 * tabletWidthScale).w,
-        ),
-        padding: EdgeInsets.all((16 * tabletScale).r),
-        decoration: BoxDecoration(
-          color:
-              selected[index]
-                  ? Colors.grey.withOpacity(0.3)
-                  : (Theme.of(context).brightness == Brightness.light
-                      ? Colors.white
-                      : Colors.grey[900]),
-          borderRadius: BorderRadius.circular((15 * tabletScale).r),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Colors.grey.withOpacity(0.2)
-                      : Colors.black.withOpacity(0.5),
-              spreadRadius: (2 * tabletScale).r,
-              blurRadius: (5 * tabletScale).r,
-              offset: Offset(0, (3 * tabletHeightScale).h),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: isTabletDevice ? 8 : 7,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Builder(
-                            builder: (_) {
-                              final bool isFinalStage =
-                                  stageUpdatedDate != null &&
-                                  (leadStagetype == "Done Deal" ||
-                                      leadStagetype == "Transfer" ||
-                                      leadStagetype == "Fresh" ||
-                                      leadStagetype == "Not Interested");
-
-                              final Color stageColor =
-                                  isFinalStage
-                                      ? Constants.maincolor
-                                      : isOutdated
-                                      ? Colors.red
-                                      : Colors.green;
-
-                              return Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: (10 * tabletWidthScale).w,
-                                  vertical: (5 * tabletHeightScale).h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: stageColor.withOpacity(0.1),
-                                  border: Border.all(
-                                    color: stageColor,
-                                    width: (1 * tabletScale).r,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    (20 * tabletScale).r,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.circle,
-                                      color: stageColor,
-                                      size: (10 * tabletFontScale).sp,
-                                    ),
-                                    SizedBox(width: (6 * tabletWidthScale).w),
-                                    Flexible(
-                                      child: Text(
-                                        lead.stage?.name ?? "Unknown",
-                                        style: TextStyle(
-                                          fontSize: (13 * tabletFontScale).sp,
-                                          fontWeight: FontWeight.bold,
-                                          color: stageColor,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                          SizedBox(height: (8 * tabletHeightScale).h),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: (4 * tabletWidthScale).w,
-                            ),
-                            child: Text(
-                              "SD: ${lead.stagedateupdated != null ? formatDateTimeToDubai(lead.stagedateupdated!) : "N/A"}",
-                              style: TextStyle(
-                                fontSize: (12 * tabletFontScale).sp,
-                                fontWeight: FontWeight.w500,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Colors.black87
-                                        : Colors.white70,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (assign == true && userlogteamleadername == teamleadname)
-                      Padding(
-                        padding: EdgeInsets.only(
-                          right: (8 * tabletWidthScale).w,
-                        ),
-                        child: InkWell(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (dialogContext) {
-                                return MultiBlocProvider(
-                                  providers: [
-                                    BlocProvider.value(
-                                      value:
-                                          context
-                                              .read<GetLeadsTeamLeaderCubit>(),
-                                    ),
-                                    BlocProvider(
-                                      create:
-                                          (_) => EditLeadCubit(
-                                            EditLeadApiService(),
-                                          ),
-                                    ),
-                                  ],
-                                  child: Builder(
-                                    builder: (innerContext) {
-                                      bool isLoading = false;
-
-                                      return StatefulBuilder(
-                                        builder: (context, setState) {
-                                          return AlertDialog(
-                                            title: Text(
-                                              "Confirmation",
-                                              style: TextStyle(
-                                                fontSize:
-                                                    (18 * tabletFontScale).sp,
-                                              ),
-                                            ),
-                                            content: Text(
-                                              "Are you sure to receive this lead?",
-                                              style: TextStyle(
-                                                fontSize:
-                                                    (14 * tabletFontScale).sp,
-                                              ),
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                style: TextButton.styleFrom(
-                                                  backgroundColor:
-                                                      Theme.of(
-                                                                context,
-                                                              ).brightness ==
-                                                              Brightness.light
-                                                          ? Constants.maincolor
-                                                          : Constants
-                                                              .mainDarkmodecolor,
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal:
-                                                        (16 * tabletWidthScale)
-                                                            .w,
-                                                    vertical:
-                                                        (8 * tabletHeightScale)
-                                                            .h,
-                                                  ),
-                                                ),
-                                                onPressed: () {
-                                                  Navigator.of(
-                                                    innerContext,
-                                                  ).pop();
-                                                },
-                                                child: Text(
-                                                  "Cancel",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize:
-                                                        (14 * tabletFontScale)
-                                                            .sp,
-                                                  ),
-                                                ),
-                                              ),
-                                              TextButton(
-                                                style: TextButton.styleFrom(
-                                                  backgroundColor:
-                                                      Theme.of(
-                                                                context,
-                                                              ).brightness ==
-                                                              Brightness.light
-                                                          ? Constants.maincolor
-                                                          : Constants
-                                                              .mainDarkmodecolor,
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal:
-                                                        (16 * tabletWidthScale)
-                                                            .w,
-                                                    vertical:
-                                                        (8 * tabletHeightScale)
-                                                            .h,
-                                                  ),
-                                                ),
-                                                onPressed:
-                                                    isLoading
-                                                        ? null
-                                                        : () async {
-                                                          setState(() {
-                                                            isLoading = true;
-                                                          });
-                                                          try {
-                                                            await innerContext
-                                                                .read<
-                                                                  EditLeadCubit
-                                                                >()
-                                                                .editLeadAssignvalue(
-                                                                  userId:
-                                                                      lead.id!,
-                                                                  assign: false,
-                                                                );
-                                                            if (mounted) {
-                                                              Navigator.of(
-                                                                innerContext,
-                                                              ).pop();
-                                                              parentContext
-                                                                  .read<
-                                                                    GetLeadsTeamLeaderCubit
-                                                                  >()
-                                                                  .fetchTeamLeaderLeadsWithPagination(
-                                                                    data:
-                                                                        widget
-                                                                            .data,
-                                                                    transferefromdata:
-                                                                        widget
-                                                                            .transferfromdata,
-                                                                    stageId:
-                                                                        widget
-                                                                            .stageId,
-                                                                  );
-                                                            }
-                                                          } finally {
-                                                            if (mounted) {
-                                                              setState(() {
-                                                                isLoading =
-                                                                    false;
-                                                              });
-                                                            }
-                                                          }
-                                                        },
-                                                child:
-                                                    isLoading
-                                                        ? SizedBox(
-                                                          height:
-                                                              (20 * tabletHeightScale)
-                                                                  .h,
-                                                          width:
-                                                              (20 * tabletWidthScale)
-                                                                  .w,
-                                                          child: CircularProgressIndicator(
-                                                            strokeWidth:
-                                                                (2 * tabletScale)
-                                                                    .r,
-                                                            color: Colors.white,
-                                                          ),
-                                                        )
-                                                        : Text(
-                                                          "OK",
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize:
-                                                                (14 * tabletFontScale)
-                                                                    .sp,
-                                                          ),
-                                                        ),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    },
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          child: CircleAvatar(
-                            radius: (18 * tabletScale).r,
-                            backgroundColor:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Colors.grey
-                                    : Constants.mainDarkmodecolor,
-                            child: Icon(
-                              Icons.download,
-                              color: Colors.white,
-                              size: (20 * tabletFontScale).sp,
-                            ),
-                          ),
-                        ),
-                      ),
-                    Checkbox(
-                      value: selected[index],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          (5 * tabletScale).r,
-                        ),
-                      ),
-                      activeColor:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      onChanged: (val) {
-                        final bool hasDownloadIcon =
-                            assign == true &&
-                            userlogteamleadername == teamleadname;
-
-                        if (hasDownloadIcon) return;
-
-                        setState(() {
-                          selected[index] = val!;
-                          isSelectionMode = selected.contains(true);
-                          _updateSelectedCount();
-                          _selectedLead = lead;
-                          final leadIdStr = lead.id.toString();
-
-                          if (val) {
-                            if (!selectedLeadsData.any(
-                              (l) => l.id.toString() == leadIdStr,
-                            )) {
-                              selectedLeadsData.add(lead);
-                            }
-                          } else {
-                            selectedLeadsData.removeWhere(
-                              (l) => l.id.toString() == leadIdStr,
-                            );
-                          }
-                        });
-                      },
-                    ),
-                  ],
-                ),
-                SizedBox(height: (5 * tabletHeightScale).h),
-                if (assign == true && userlogteamleadername == teamleadname)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      SizedBox(
-                        height: (20 * tabletHeightScale).h,
-                        width: (44 * tabletWidthScale).w,
-                        child: const DotLoading(),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-            SizedBox(height: (12 * tabletHeightScale).h),
-            Divider(thickness: (1.5 * tabletScale).h),
-            SizedBox(height: (20 * tabletHeightScale).h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  flex: isTabletDevice ? 7 : 6,
-                  child: Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: (19 * tabletFontScale).sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Expanded(
-                  flex: isTabletDevice ? 5 : 4,
-                  child: Text(
-                    lead.project?.name ?? "N/A",
-                    style: TextStyle(
-                      fontSize: (12 * tabletFontScale).sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.right,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: (12 * tabletHeightScale).h),
-            InkWell(
-              onTap: () {
-                final formattedPhone =
-                    phone.startsWith('0') ? phone : '+$phone';
-                makePhoneCall(formattedPhone);
-              },
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.phone,
-                    color:
-                        Theme.of(context).brightness == Brightness.light
-                            ? Colors.grey
-                            : Constants.mainDarkmodecolor,
-                    size: (18 * tabletFontScale).sp,
-                  ),
-                  SizedBox(width: (8 * tabletWidthScale).w),
-                  Expanded(
-                    child: Text(
-                      phone,
-                      style: TextStyle(
-                        fontSize: (13 * tabletFontScale).sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: (35 * tabletHeightScale).h),
-            Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.person_pin_outlined,
-                      color:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Colors.grey
-                              : Constants.mainDarkmodecolor,
-                      size: (20 * tabletFontScale).sp,
-                    ),
-                    SizedBox(width: (8 * tabletWidthScale).w),
-                    Expanded(
-                      flex: isTabletDevice ? 6 : 5,
-                      child: Text(
-                        lead.assigntype == true
-                            ? "team: ${lead.sales?.name}"
-                            : lead.sales?.name ?? 'N/A',
-                        style: TextStyle(
-                          fontSize: (16 * tabletFontScale).sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                    Flexible(
-                      flex: isTabletDevice ? 5 : 4,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              final phone = lead.phone ?? '';
-                              final formattedPhone =
-                                  phone.startsWith('0') ? phone : '+$phone';
-                              makePhoneCall(formattedPhone);
-                            },
-                            borderRadius: BorderRadius.circular(
-                              (30 * tabletScale).r,
-                            ),
-                            child: Container(
-                              padding: EdgeInsets.all((8 * tabletScale).r),
-                              margin: EdgeInsets.symmetric(
-                                horizontal: (4 * tabletWidthScale).w,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Constants.maincolor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.phone,
-                                color: Colors.white,
-                                size: (18 * tabletFontScale).sp,
-                              ),
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () async {
-                              final rawPhone =
-                                  (lead.phone?.isNotEmpty == true
-                                          ? lead.phone
-                                          : lead.whatsappnumber)
-                                      ?.replaceAll(RegExp(r'\D'), '') ??
-                                  '';
-                              final formattedPhone =
-                                  rawPhone.startsWith('0')
-                                      ? rawPhone
-                                      : '+$rawPhone';
-                              final url = "https://wa.me/$formattedPhone";
-                              try {
-                                await launchUrl(
-                                  Uri.parse(url),
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Could not open WhatsApp."),
-                                  ),
-                                );
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(
-                              (30 * tabletScale).r,
-                            ),
-                            child: Container(
-                              padding: EdgeInsets.all((8 * tabletScale).r),
-                              margin: EdgeInsets.symmetric(
-                                horizontal: (4 * tabletWidthScale).w,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Constants.maincolor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: FaIcon(
-                                FontAwesomeIcons.whatsapp,
-                                color: Colors.white,
-                                size: (18 * tabletFontScale).sp,
-                              ),
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (_) {
-                                  return Dialog(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        (12 * tabletScale).r,
-                                      ),
-                                    ),
-                                    child: BlocProvider(
-                                      create:
-                                          (_) => LeadCommentsCubit(
-                                            GetAllLeadCommentsApiService(),
-                                          )..fetchNewComments(
-                                            leadId: lead.id!,
-                                            page: 1,
-                                            limit: 10,
-                                          ),
-                                      child: Padding(
-                                        padding: EdgeInsets.all(
-                                          (16 * tabletScale).r,
-                                        ),
-                                        child: BlocBuilder<
-                                          LeadCommentsCubit,
-                                          LeadCommentsState
-                                        >(
-                                          builder: (context, commentState) {
-                                            if (commentState
-                                                is LeadCommentsLoading) {
-                                              return SizedBox(
-                                                height:
-                                                    (100 * tabletHeightScale).h,
-                                                child: Center(
-                                                  child: Shimmer.fromColors(
-                                                    baseColor:
-                                                        Colors.grey.shade300,
-                                                    highlightColor:
-                                                        Colors.grey.shade100,
-                                                    child: ListView.builder(
-                                                      padding: EdgeInsets.all(
-                                                        (16 * tabletScale).r,
-                                                      ),
-                                                      itemCount: 6,
-                                                      itemBuilder: (
-                                                        context,
-                                                        index,
-                                                      ) {
-                                                        return Container(
-                                                          margin: EdgeInsets.only(
-                                                            bottom:
-                                                                (16 *
-                                                                        tabletHeightScale)
-                                                                    .h,
-                                                          ),
-                                                          height:
-                                                              (80 * tabletHeightScale)
-                                                                  .h,
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.white,
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  (12 *
-                                                                          tabletScale)
-                                                                      .r,
-                                                                ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            } else if (commentState
-                                                is LeadCommentsError) {
-                                              return SizedBox(
-                                                height:
-                                                    (100 * tabletHeightScale).h,
-                                                child: Center(
-                                                  child: Text(
-                                                    "No comments available",
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          (14 * tabletFontScale)
-                                                              .sp,
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            } else if (commentState
-                                                is NewCommentsLoaded) {
-                                              final newCommentsData =
-                                                  commentState.newComments;
-
-                                              if (newCommentsData.comments ==
-                                                      null ||
-                                                  newCommentsData
-                                                      .comments!
-                                                      .isEmpty) {
-                                                return Text(
-                                                  'No comments available.',
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        (14 * tabletFontScale)
-                                                            .sp,
-                                                  ),
-                                                );
-                                              }
-
-                                              final firstComment =
-                                                  newCommentsData
-                                                      .comments!
-                                                      .first;
-
-                                              final String firstCommentText =
-                                                  firstComment
-                                                      .firstcomment
-                                                      ?.text ??
-                                                  "No comment available.";
-
-                                              final String secondCommentText =
-                                                  firstComment
-                                                      .secondcomment
-                                                      ?.text ??
-                                                  'No action available.';
-
-                                              return Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    "Last Comment",
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize:
-                                                          (15 * tabletFontScale)
-                                                              .sp,
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                    height:
-                                                        (5 * tabletHeightScale)
-                                                            .h,
-                                                  ),
-                                                  Text(
-                                                    firstCommentText,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          (13 * tabletFontScale)
-                                                              .sp,
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                    height:
-                                                        (10 * tabletHeightScale)
-                                                            .h,
-                                                  ),
-                                                  Text(
-                                                    "Action (Plan)",
-                                                    style: TextStyle(
-                                                      color:
-                                                          Constants.maincolor,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize:
-                                                          (15 * tabletFontScale)
-                                                              .sp,
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                    height:
-                                                        (5 * tabletHeightScale)
-                                                            .h,
-                                                  ),
-                                                  Text(
-                                                    secondCommentText,
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          (13 * tabletFontScale)
-                                                              .sp,
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            } else {
-                                              return SizedBox(
-                                                height:
-                                                    (100 * tabletHeightScale).h,
-                                                child: Center(
-                                                  child: Text(
-                                                    "No comments",
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          (14 * tabletFontScale)
-                                                              .sp,
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(
-                              (30 * tabletScale).r,
-                            ),
-                            child: Container(
-                              padding: EdgeInsets.all((7 * tabletScale).r),
-                              margin: EdgeInsets.symmetric(
-                                horizontal: (2 * tabletWidthScale).w,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Constants.maincolor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.chat_bubble_outline,
-                                color: Colors.white,
-                                size: (18 * tabletFontScale).sp,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: (4 * tabletHeightScale).h),
-                if (resetCreationDate == false)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.date_range,
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Colors.grey
-                                : Constants.mainDarkmodecolor,
-                        size: (20 * tabletFontScale).sp,
-                      ),
-                      SizedBox(width: (6 * tabletWidthScale).w),
-                      Flexible(
-                        child: Text(
-                          " ${lead.date != null ? formatDateTimeToDubai(lead.date!) : "N/A"}",
-                          style: TextStyle(
-                            fontSize: (12 * tabletFontScale).sp,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget getStatusIcon(String status) {
-    switch (status) {
-      case 'Follow Up':
-      case 'Follow After Meeting':
-      case 'Follow':
-        return Icon(
-          Icons.mark_email_unread_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Meeting':
-        return Icon(
-          Icons.chat_bubble_outline,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Done Deal':
-        return Icon(
-          Icons.check_box_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Interested':
-        return Icon(
-          FontAwesomeIcons.check,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Not Interested':
-        return Icon(
-          FontAwesomeIcons.timesCircle,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Fresh':
-        return Icon(
-          Icons.new_releases,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Transfer':
-        return Icon(
-          Icons.no_transfer,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'EOI':
-        return Icon(
-          Icons.event_outlined,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'Reservation':
-        return Icon(
-          Icons.task,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'assigned':
-        return Icon(
-          Icons.check,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      case 'delivered':
-        return Icon(
-          Icons.done_all,
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.grey
-                  : Constants.mainDarkmodecolor,
-        );
-      default:
-        return const Icon(Icons.info_outline, color: Colors.grey);
-    }
-  }
-
   void makePhoneCall(String phoneNumber) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
-
     if (await canLaunchUrl(phoneUri)) {
       await launchUrl(phoneUri, mode: LaunchMode.platformDefault);
     } else {
@@ -2924,6 +2499,9 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// DOT LOADING WIDGET  (same as SalesLeadsScreen)
+// ─────────────────────────────────────────────────────────────
 class DotLoading extends StatefulWidget {
   const DotLoading({super.key});
 
@@ -2939,7 +2517,6 @@ class _DotLoadingState extends State<DotLoading>
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -2963,49 +2540,33 @@ class _DotLoadingState extends State<DotLoading>
 
   @override
   Widget build(BuildContext context) {
-    // ✅ كشف نوع الجهاز داخل الـ build
-    final bool isTabletDevice = () {
-      final data = MediaQuery.of(context);
-      final physicalSize = data.size;
-      final diagonal = math.sqrt(
-        math.pow(physicalSize.width, 2) + math.pow(physicalSize.height, 2),
-      );
-      final inches = diagonal / (data.devicePixelRatio * 160);
-      return inches >= 7.0;
-    }();
-
-    // ✅ عوامل التصغير حسب الجهاز
-    final double tabletScale = isTabletDevice ? 0.85 : 1.0;
-    final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
-    final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
-
+    final responsive = ResponsiveSalesValues.fromContext(context);
     return SizedBox(
-      height: (20 * tabletHeightScale).h,
+      height: responsive.iconSizeSmall.h,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: List.generate(3, (index) {
           return Padding(
-            padding: EdgeInsets.symmetric(horizontal: (3 * tabletWidthScale).w),
-            child: _buildDot(_animations[index], isTabletDevice, tabletScale),
+            padding: EdgeInsets.symmetric(
+              horizontal: responsive.horizontalPadding.w * 0.1,
+            ),
+            child: _buildDot(_animations[index]),
           );
         }),
       ),
     );
   }
 
-  Widget _buildDot(
-    Animation<double> animation,
-    bool isTabletDevice,
-    double tabletScale,
-  ) {
+  Widget _buildDot(Animation<double> animation) {
+    final responsive = ResponsiveSalesValues.fromContext(context);
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
         return Transform.translate(
-          offset: Offset(0, -(animation.value * (isTabletDevice ? 0.85 : 1.0))),
+          offset: Offset(0, -animation.value),
           child: Container(
-            width: (8 * tabletScale).r,
-            height: (8 * tabletScale).r,
+            width: responsive.iconSizeSmall * 0.3,
+            height: responsive.iconSizeSmall * 0.3,
             decoration: BoxDecoration(
               color:
                   Theme.of(context).brightness == Brightness.light

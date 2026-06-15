@@ -33,19 +33,52 @@ class TeamLeaderResponse {
       );
 }
 
+// ✅ أضف هذا الكلاس
+class FcmToken {
+  final String? id;
+  final String? token;
+  final String? deviceId;
+  final String? platform;
+  final String? createdAt;
+  final String? lastUsed;
+
+  FcmToken({
+    this.id,
+    this.token,
+    this.deviceId,
+    this.platform,
+    this.createdAt,
+    this.lastUsed,
+  });
+
+  factory FcmToken.fromJson(Map<String, dynamic> json) {
+    return FcmToken(
+      id: json['_id'],
+      token: json['token'],
+      deviceId: json['deviceId'],
+      platform: json['platform'],
+      createdAt: json['createdAt'],
+      lastUsed: json['lastUsed'],
+    );
+  }
+}
+
 class User {
   final String? id;
   final String? name;
   final String? email;
   final String? fcmToken;
+  final List<FcmToken>? fcmTokens;
 
-  User({this.id, this.name, this.email, this.fcmToken});
+  User({this.id, this.name, this.email, this.fcmToken, this.fcmTokens});
 
   factory User.fromJson(Map<String, dynamic> json) => User(
     id: json['_id'] ?? json['id'],
     name: json['name'],
     email: json['email'],
     fcmToken: json['fcmToken'],
+    fcmTokens:
+        (json['fcmTokens'] as List?)?.map((e) => FcmToken.fromJson(e)).toList(),
   );
 }
 

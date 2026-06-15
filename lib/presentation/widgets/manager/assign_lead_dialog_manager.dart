@@ -48,6 +48,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
   String selectedOption = 'same';
   String? selectedStageId;
   String? selectedFcmToken;
+  List<String> selectedFcmTokens = []; // ✅ أضف ده
 
   @override
   void initState() {
@@ -194,6 +195,14 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                     'role': sale.userlog?.role ?? 'Sales',
                                     'email': sale.userlog?.email,
                                     'fcmtoken': sale.userlog?.fcmToken,
+                                    'fcmTokens':
+                                        sale
+                                            .userlog
+                                            ?.fcmTokens // ✅ أضف ده
+                                            ?.map((e) => e.token ?? '')
+                                            .where((t) => t.isNotEmpty)
+                                            .toList() ??
+                                        [],
                                     'originalId': sale.id,
                                   });
                                   for (var u in displayUsers) {
@@ -227,6 +236,14 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                           teamLeader.teamLeaderInfo!.id,
                                       'fcmtoken':
                                           teamLeader.teamLeaderInfo?.fcmToken,
+                                      'fcmTokens':
+                                          teamLeader
+                                              .teamLeaderInfo
+                                              ?.fcmTokens // ✅ أضف ده
+                                              ?.map((e) => e.token ?? '')
+                                              .where((t) => t.isNotEmpty)
+                                              .toList() ??
+                                          [],
                                       'salesId': salesIdForTeamLeader,
                                     });
                                   }
@@ -249,6 +266,14 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                       'role': sale.userlog?.role ?? 'Sales',
                                       'email': sale.userlog?.email,
                                       'fcmtoken': sale.userlog?.fcmToken,
+                                      'fcmTokens':
+                                          sale
+                                              .userlog
+                                              ?.fcmTokens // ✅ أضف ده
+                                              ?.map((e) => e.token ?? '')
+                                              .where((t) => t.isNotEmpty)
+                                              .toList() ??
+                                          [],
                                       'originalId': sale.id,
                                     });
                                   }
@@ -320,25 +345,25 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                               val == true
                                                   ? user['fcmtoken']
                                                   : null;
-                                          log(
-                                            "Selected FCM TOKEN: $selectedFcmToken",
-                                          );
+
+                                          // ✅ اجمع الـ fcmTokens
                                           if (val == true) {
-                                            log(
-                                              "📤 Selected user for assignment:",
-                                            );
-                                            log("   - Name: $name");
-                                            log("   - Role: $role");
-                                            log(
-                                              "   - Display ID (will be sent): $displayId",
-                                            );
-                                            if (user.containsKey(
-                                              'originalId',
-                                            )) {
-                                              log(
-                                                "   - Original ID: ${user['originalId']}",
-                                              );
-                                            }
+                                            final tokensList =
+                                                (user['fcmTokens']
+                                                        as List<dynamic>?)
+                                                    ?.map((e) => e.toString())
+                                                    .where((t) => t.isNotEmpty)
+                                                    .toList() ??
+                                                [];
+
+                                            selectedFcmTokens =
+                                                tokensList.isNotEmpty
+                                                    ? tokensList
+                                                    : (selectedFcmToken != null
+                                                        ? [selectedFcmToken!]
+                                                        : []);
+                                          } else {
+                                            selectedFcmTokens = [];
                                           }
                                         });
                                       },
@@ -470,13 +495,15 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                           ),
                         );
 
-                        context
-                            .read<NotificationCubit>()
-                            .sendNotificationToToken(
-                              title: "Lead",
-                              body: "New Lead assigned successfully ✅",
-                              fcmtokennnn: selectedFcmToken ?? "",
-                            );
+                        if (selectedFcmTokens.isNotEmpty) {
+                          context
+                              .read<NotificationCubit>()
+                              .sendNotificationToTokens(
+                                title: "Lead",
+                                body: "New Lead assigned successfully ✅",
+                                fcmTokens: selectedFcmTokens,
+                              );
+                        }
                       } else if (state is AssignFailure) {
                         ScaffoldMessenger.of(dialogContext).showSnackBar(
                           SnackBar(

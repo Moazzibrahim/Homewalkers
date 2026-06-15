@@ -48,7 +48,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 style: TextStyle(
                   color:
                       Theme.of(context).brightness == Brightness.light
-                          ? const Color(0xff080719)
+                          ? Constants.mainlightmodecolor
                           : const Color(0xffFFFFFF),
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -61,16 +61,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
         Container(
           margin: const EdgeInsets.only(right: 10, left: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE8F1F2),
-            borderRadius: BorderRadius.circular(8),
-          ),
           child: IconButton(
             icon: Icon(
               Icons.notifications_none,
               color:
                   Theme.of(context).brightness == Brightness.light
-                      ? Constants.maincolor
+                      ? Constants.mainlightmodecolor
                       : Constants.mainDarkmodecolor,
             ),
             onPressed: () {

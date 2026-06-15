@@ -6,8 +6,7 @@ import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SalesDashboardApiService {
-  static final String _baseUrl =
-      '${Constants.baseUrl}/users/sales/dashboard/fast';
+  String get _baseUrl => '${Constants.baseUrl}/users/sales/dashboard/fast';
 
   /// Get token from SharedPreferences
   Future<String?> _getToken() async {

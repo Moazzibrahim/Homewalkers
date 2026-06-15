@@ -156,6 +156,7 @@ class UserLogsModel {
   final String? profileImg;
   final String? role;
   final String? fcmtoken;
+  final List<FcmToken>? fcmTokens;
 
   UserLogsModel({
     this.id,
@@ -165,6 +166,7 @@ class UserLogsModel {
     this.profileImg,
     this.role,
     this.fcmtoken,
+    this.fcmTokens,
   });
 
   factory UserLogsModel.fromJson(Map<String, dynamic> json) {
@@ -176,6 +178,10 @@ class UserLogsModel {
       profileImg: json['profileImg'],
       role: json['role'],
       fcmtoken: json['fcmToken'],
+      fcmTokens:
+          (json['fcmTokens'] as List?)
+              ?.map((e) => FcmToken.fromJson(e))
+              .toList(),
     );
   }
 
@@ -188,6 +194,35 @@ class UserLogsModel {
     'role': role,
     'fcmToken': fcmtoken,
   };
+}
+
+class FcmToken {
+  final String? id;
+  final String? token;
+  final String? deviceId;
+  final String? platform;
+  final String? createdAt;
+  final String? lastUsed;
+
+  FcmToken({
+    this.id,
+    this.token,
+    this.deviceId,
+    this.platform,
+    this.createdAt,
+    this.lastUsed,
+  });
+
+  factory FcmToken.fromJson(Map<String, dynamic> json) {
+    return FcmToken(
+      id: json['_id'],
+      token: json['token'],
+      deviceId: json['deviceId'],
+      platform: json['platform'],
+      createdAt: json['createdAt'],
+      lastUsed: json['lastUsed'],
+    );
+  }
 }
 
 class TeamLeaderModel {

@@ -15,7 +15,8 @@ import 'package:homewalkers_app/presentation/widgets/custom_show_assign_dialog.d
 class SalesAssignLeadsScreen extends StatefulWidget {
   final bool? data;
   final bool? transferfromdata;
-  const SalesAssignLeadsScreen({super.key, this.data, this.transferfromdata});
+  final bool showNavBar;
+  const SalesAssignLeadsScreen({super.key, this.data, this.transferfromdata, this.showNavBar = true});
 
   @override
   _SalesAssignLeadsScreenState createState() => _SalesAssignLeadsScreenState();
@@ -74,6 +75,8 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
+                    bottomNavigationBar:
+          widget.showNavBar ? SharedSalesNavBar(currentIndex: 2) : null,
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
               ? Constants.backgroundlightmode

@@ -135,29 +135,36 @@ class _AssignDialogState extends State<AssignDialog> {
                             ),
                           );
 
-                          context
-                              .read<NotificationCubit>()
-                              .sendNotificationToToken(
-                                title: "Lead",
-                                body: "Lead assigned successfully ✅",
-                                fcmtokennnn:
-                                    _LeadData?.sales?.teamleader?.fcmToken ??
-                                    '',
-                              );
-                          context
-                              .read<NotificationCubit>()
-                              .sendNotificationToToken(
-                                title: "Lead",
-                                body: "Lead assigned successfully ✅",
-                                fcmtokennnn:
-                                    _LeadData?.sales?.teamleader?.fcmToken ??
-                                    '',
-                              );
-                          log(
-                            "Notification sent to token: ${_LeadData?.sales?.teamleader?.fcmToken}",
-                          );
+                          // ✅ teamleader fcmTokens
+                          final teamleaderTokens =
+                              _LeadData?.sales?.teamleader?.fcmTokens
+                                  ?.map((e) => e.token ?? '')
+                                  .where((t) => t.isNotEmpty)
+                                  .toList() ??
+                              [];
 
-                          // 👇 هنا استدعاء الـ callback لتحديث الصفحة
+                          final finalTokens =
+                              teamleaderTokens.isNotEmpty
+                                  ? teamleaderTokens
+                                  : (_LeadData?.sales?.teamleader?.fcmToken !=
+                                          null
+                                      ? [
+                                        _LeadData!.sales!.teamleader!.fcmToken!,
+                                      ]
+                                      : <String>[]);
+
+                          if (finalTokens.isNotEmpty) {
+                            context
+                                .read<NotificationCubit>()
+                                .sendNotificationToTokens(
+                                  title: "Lead",
+                                  body: "Lead assigned successfully ✅",
+                                  fcmTokens: finalTokens,
+                                );
+                          }
+
+                          log("Notification sent to tokens: $finalTokens");
+
                           if (widget.onSuccess != null) {
                             widget.onSuccess!();
                           }

@@ -4,8 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http; // استبدل your_project بمسار مشروعك
 
 class ProjectsApiService {
-  final String baseUrl =
-      '${Constants.baseUrl}/Projectss?isprojectactivate=true';
+  String get baseUrl => '${Constants.baseUrl}/Projectss?isprojectactivate=true';
 
   Future<ProjectsModel> fetchProjects() async {
     final response = await http.get(Uri.parse(baseUrl));

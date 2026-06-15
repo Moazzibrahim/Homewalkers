@@ -12,11 +12,13 @@ import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GetAllUsersApiService {
-  static  final String _baseUrl =
-      '${Constants.baseUrl}/users/leads-with-stages?leadisactive=true';
+  // ❌ شيل الـ static final fields دول
+// ✅ حولهم لـ getters
+String get _baseUrl =>
+    '${Constants.baseUrl}/users/leads-with-stages?leadisactive=true';
 
-  static  final String _stagesStatsUrl =
-      '${Constants.baseUrl}/users/mobile/stages-stats';
+String get _stagesStatsUrl =>
+    '${Constants.baseUrl}/users/mobile/stages-stats';
 
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();

@@ -156,7 +156,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
       child: Scaffold(
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
-                ? Constants.backgroundlightmode
+                ? Colors.white
                 : Constants.backgroundDarkmode,
         appBar: CustomAppBar(
           title: "comments",
@@ -229,15 +229,10 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
   }
 
   Widget buildCommentCard(BuildContext context, DataItem dataItem) {
-    final TextStyle commentTitleStyle = TextStyle(
-      fontWeight: FontWeight.bold,
-      color:
-          Theme.of(context).brightness == Brightness.light
-              ? Constants.maincolor
-              : Constants.mainDarkmodecolor,
-    );
+    final bool isLight = Theme.of(context).brightness == Brightness.light;
+    final dateFormat = DateFormat('d MMM yyyy, hh:mm a');
+    final dateOnlyFormat = DateFormat('d MMM yyyy');
 
-    final dateFormat = DateFormat('d MMMM yyyy, hh:mm a');
     final firstComment = dataItem.comments?.first.firstcomment;
     final secondComment = dataItem.comments?.first.secondcomment;
     final reply = dataItem.comments?.first.replies;
@@ -264,311 +259,316 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
         firstDate != null ? dateFormat.format(firstDate) : 'N/A';
     final secondDateString =
         secondDate != null ? dateFormat.format(secondDate) : 'N/A';
+    final cardDateString =
+        firstDate != null ? dateOnlyFormat.format(firstDate) : '';
 
     if (!isFirstValid && !isSecondValid) {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// 🔹 Header (Avatar + Name + Date)
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: Constants.maincolor.withOpacity(0.1),
-                child: Text(
-                  salesName.isNotEmpty ? salesName[0] : "U",
-                  style: TextStyle(
-                    color: Constants.maincolor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
+    final cardBg = isLight ? Color(0xffF0F2F5) : const Color(0xFF1E1E2C);
+    final replyBg = isLight ? const Color(0xFFF2F3F5) : const Color(0xFF2A2A3A);
+    final textColor = isLight ? const Color(0xFF0D0D1A) : Colors.white;
+    final subColor = isLight ? Colors.grey.shade500 : Colors.grey.shade400;
 
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      salesName,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color:
-                            Theme.of(context).brightness == Brightness.light
-                                ? const Color(0xff080719)
-                                : Colors.white,
-                      ),
-                    ),
-                    Text(
-                      leadName,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    // initials helper
+    String initials(String name) {
+      final parts = name.trim().split(' ');
+      if (parts.length >= 2) {
+        return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      }
+      return name.isNotEmpty ? name[0].toUpperCase() : 'U';
+    }
 
-              Text(
-                firstDateString,
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Main Card ──────────────────────────────────────
+        Container(
+          margin: const EdgeInsets.only(bottom: 0),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-
-          const SizedBox(height: 12),
-
-          /// 🔹 First Action
-          if (isFirstValid) ...[
-            Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: Constants.maincolor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text('First Action', style: commentTitleStyle),
-              ],
-            ),
-            const SizedBox(height: 6),
-            SelectableText(
-              firstComment?.text ?? 'No Comment',
-              style: const TextStyle(fontSize: 14),
-            ),
-            if (firstComment?.date != null)
-              Text(
-                "comment at : $firstDateString",
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-          ],
-
-          const SizedBox(height: 10),
-
-          /// 🔹 Second Action
-          if (isSecondValid) ...[
-            Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.orange,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text('Second Action', style: commentTitleStyle),
-              ],
-            ),
-            const SizedBox(height: 6),
-            SelectableText(
-              secondComment?.text ?? 'No Comment',
-              style: const TextStyle(fontSize: 14),
-            ),
-            if (secondComment?.date != null)
-              Text(
-                "next action at : $secondDateString",
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-          ],
-
-          const SizedBox(height: 12),
-
-          /// 🔹 Replies
-          if (reply != null && reply.isNotEmpty)
-            Column(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children:
-                  reply.map((r) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(10),
+              children: [
+                // Header: Avatar + Name + Lead name
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: const Color(0xFFE8EAF6),
+                      child: Text(
+                        initials(salesName),
+                        style: TextStyle(
+                          color: Constants.maincolor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            r.text ?? 'No Reply Text',
-                            style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          salesName,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
                           ),
-                          const SizedBox(height: 4),
-                          if (r.date != null)
-                            Text(
-                              "replied at: ${formatDate(r.date)}",
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 11,
+                        ),
+                        Text(
+                          leadName,
+                          style: TextStyle(color: subColor, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 14),
+
+                // First Action
+                if (isFirstValid) ...[
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          width: 3,
+                          decoration: BoxDecoration(
+                            color: Constants.maincolor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Comment',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Constants.maincolor,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                            ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-            )
-          else
-            const Text('No Replies'),
+                              const SizedBox(height: 4),
+                              SelectableText(
+                                firstComment?.text ?? '',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                firstDateString,
+                                style: TextStyle(color: subColor, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
-          const SizedBox(height: 10),
+                // Second Action
+                if (isSecondValid) ...[
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          width: 3,
+                          decoration: BoxDecoration(
+                            color: Colors.orange,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Next Plan',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              SelectableText(
+                                secondComment?.text ?? '',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'next: $secondDateString',
+                                style: TextStyle(color: subColor, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
 
-          /// 🔹 Actions Row
-          Row(
+        // ── Footer row: date + Edit + Reply ────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Row(
             children: [
-              const Spacer(),
+              Text(
+                cardDateString,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(width: 16),
 
-              /// Edit (كامل زي ما كان)
+              // Edit button (Admin only)
               FutureBuilder(
                 future: checkRoleName(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const SizedBox();
-                  }
-
                   if (snapshot.hasData && snapshot.data == "Admin") {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.edit, color: Colors.white),
-                        label: const Text(
-                          "Edit",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).brightness == Brightness.light
-                                  ? Constants.maincolor
-                                  : Constants.mainDarkmodecolor,
-                        ),
-                        onPressed: () {
-                          final firstTextController = TextEditingController(
-                            text: firstComment?.text ?? '',
-                          );
-                          final secondTextController = TextEditingController(
-                            text: secondComment?.text ?? '',
-                          );
-
-                          showDialog(
-                            context: context,
-                            builder: (ctx) {
-                              return AlertDialog(
-                                title: const Text('Edit Comment'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    TextField(
-                                      controller: firstTextController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'First Comment',
-                                      ),
+                    return GestureDetector(
+                      onTap: () {
+                        final firstTextController = TextEditingController(
+                          text: firstComment?.text ?? '',
+                        );
+                        final secondTextController = TextEditingController(
+                          text: secondComment?.text ?? '',
+                        );
+                        showDialog(
+                          context: context,
+                          builder: (ctx) {
+                            return AlertDialog(
+                              title: const Text('Edit Comment'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextField(
+                                    controller: firstTextController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'First Comment',
                                     ),
-                                    const SizedBox(height: 10),
-                                    TextField(
-                                      controller: secondTextController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Second Comment',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx),
-                                    child: const Text('Cancel'),
                                   ),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.light
-                                              ? Constants.maincolor
-                                              : Constants.mainDarkmodecolor,
-                                    ),
-                                    onPressed: () {
-                                      final firstText =
-                                          firstTextController.text.trim();
-                                      final secondText =
-                                          secondTextController.text.trim();
-
-                                      Navigator.pop(ctx);
-
-                                      context
-                                          .read<EditCommentCubit>()
-                                          .editComment(
-                                            commentId:
-                                                dataItem.comments?.first.id ??
-                                                '',
-                                            firstText: firstText,
-                                            secondText: secondText,
-                                          )
-                                          .then((isSuccess) {
-                                            if (isSuccess) {
-                                              context
-                                                  .read<LeadCommentsCubit>()
-                                                  .fetchAllLeadData(
-                                                    widget.leedId,
-                                                  );
-                                            } else {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    " Failed to edit comment ❌",
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                          });
-                                    },
-                                    child: const Text(
-                                      'Save',
-                                      style: TextStyle(color: Colors.white),
+                                  const SizedBox(height: 10),
+                                  TextField(
+                                    controller: secondTextController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Second Comment',
                                     ),
                                   ),
                                 ],
-                              );
-                            },
-                          );
-                        },
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        isLight
+                                            ? Constants.maincolor
+                                            : Constants.mainDarkmodecolor,
+                                  ),
+                                  onPressed: () {
+                                    final firstText =
+                                        firstTextController.text.trim();
+                                    final secondText =
+                                        secondTextController.text.trim();
+                                    Navigator.pop(ctx);
+                                    context
+                                        .read<EditCommentCubit>()
+                                        .editComment(
+                                          commentId:
+                                              dataItem.comments?.first.id ?? '',
+                                          firstText: firstText,
+                                          secondText: secondText,
+                                        )
+                                        .then((isSuccess) {
+                                          if (isSuccess) {
+                                            context
+                                                .read<LeadCommentsCubit>()
+                                                .fetchAllLeadData(
+                                                  widget.leedId,
+                                                );
+                                          } else {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "Failed to edit comment ❌",
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        });
+                                  },
+                                  child: const Text(
+                                    'Save',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      child: Text(
+                        'Edit',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
                       ),
                     );
                   }
-
                   return const SizedBox();
                 },
               ),
 
-              /// Reply (كامل زي ما كان)
-              ElevatedButton.icon(
-                onPressed: () async {
+              const SizedBox(width: 16),
+
+              // Reply button
+              GestureDetector(
+                onTap: () async {
                   final TextEditingController replyController =
                       TextEditingController();
-
                   showDialog(
                     context: context,
                     builder: (ctx) {
@@ -591,9 +591,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                             onPressed: () async {
                               final replyText = replyController.text.trim();
                               if (replyText.isEmpty) return;
-
                               Navigator.pop(ctx);
-
                               context
                                   .read<LeadCommentsCubit>()
                                   .sendReplyToComment(
@@ -601,7 +599,6 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                         dataItem.comments?.first.id ?? '',
                                     replyText: replyText,
                                   );
-
                               context
                                   .read<LeadCommentsCubit>()
                                   .fetchAllLeadData(widget.leedId);
@@ -613,22 +610,135 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                     },
                   );
                 },
-                icon: const Icon(Icons.reply, size: 18, color: Colors.white),
-                label: const Text(
-                  "Reply",
-                  style: TextStyle(color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Constants.maincolor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                child: Text(
+                  'Reply',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
                   ),
                 ),
               ),
             ],
           ),
-        ],
-      ),
+        ),
+
+        // ── Replies ────────────────────────────────────────
+        // ── Replies ────────────────────────────────────────
+        if (reply != null && reply.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 16, bottom: 16),
+            child: FutureBuilder<String>(
+              future:
+                  checkAuthName(), // ✅ جيب اسم الـ Admin من SharedPreferences
+              builder: (context, snapshot) {
+                final adminName = snapshot.data ?? 'Admin';
+
+                return Column(
+                  children:
+                      reply.map((r) {
+                        return IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment:
+                                CrossAxisAlignment
+                                    .stretch, // ✅ stretch مش start
+
+                            children: [
+                              // ── Vertical Line ──
+                              Container(
+                                width: 3,
+                                margin: const EdgeInsets.only(
+                                  left: 3,
+                                  right: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: replyBg,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              SizedBox(width: 3),
+                              Expanded(
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: replyBg,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 16,
+                                        backgroundColor: const Color(
+                                          0xFFDDE1F0,
+                                        ),
+                                        child: Text(
+                                          initials(
+                                            adminName,
+                                          ), // ✅ initials من اسم الادمن
+                                          style: TextStyle(
+                                            color: Constants.maincolor,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              adminName, // ✅ اسم الادمن
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                                color: textColor,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              r.text ?? '',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: textColor,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            if (r.date != null)
+                                              Text(
+                                                formatDate(
+                                                  r.date,
+                                                ), // ✅ استخدم الـ formatDate الموجودة أصلاً
+                                                style: TextStyle(
+                                                  color: subColor,
+                                                  fontSize: 11,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                );
+              },
+            ),
+          )
+        else
+          const SizedBox(height: 16),
+      ],
     );
   }
 }

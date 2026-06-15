@@ -1,10 +1,11 @@
-// To parse this JSON data, do
 //
 // final Salesleadsmodelwithpagination = SalesleadsmodelwithpaginationFromJson(jsonString);
 
 // ignore_for_file: non_constant_identifier_names
 
 import 'dart:convert';
+
+import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
 
 Salesleadsmodelwithpagination SalesleadsmodelwithpaginationFromJson(
   String str,
@@ -658,8 +659,36 @@ class LeadPagination {
     "emailVerification": emailVerification?.toJson(),
     "leadType": leadType,
     "transferStatus": transferStatus,
-    
   };
+}
+
+class FcmToken {
+  final String? id;
+  final String? token;
+  final String? deviceId;
+  final String? platform;
+  final String? createdAt;
+  final String? lastUsed;
+
+  FcmToken({
+    this.id,
+    this.token,
+    this.deviceId,
+    this.platform,
+    this.createdAt,
+    this.lastUsed,
+  });
+
+  factory FcmToken.fromJson(Map<String, dynamic> json) {
+    return FcmToken(
+      id: json['_id'],
+      token: json['token'],
+      deviceId: json['deviceId'],
+      platform: json['platform'],
+      createdAt: json['createdAt'],
+      lastUsed: json['lastUsed'],
+    );
+  }
 }
 
 class Addby {
@@ -672,6 +701,7 @@ class Addby {
   String? phone;
   String? profileImg;
   String? fcmToken;
+  List<FcmToken>? fcmTokens;
 
   Addby({
     this.channels,
@@ -683,6 +713,7 @@ class Addby {
     this.phone,
     this.profileImg,
     this.fcmToken,
+    this.fcmTokens,
   });
 
   factory Addby.fromJson(Map<String, dynamic> json) => Addby(
@@ -698,6 +729,8 @@ class Addby {
     phone: json["phone"],
     profileImg: json["profileImg"],
     fcmToken: json["fcmToken"],
+    fcmTokens:
+        (json['fcmTokens'] as List?)?.map((e) => FcmToken.fromJson(e)).toList(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -954,6 +987,7 @@ class Teamleader {
   String? profileImg;
   String? role;
   String? fcmToken;
+  List<FcmTokens>? fcmTokens;
   bool? isMarketer;
 
   Teamleader({
@@ -964,6 +998,7 @@ class Teamleader {
     this.profileImg,
     this.role,
     this.fcmToken,
+    this.fcmTokens,
     this.isMarketer,
   });
 
@@ -978,6 +1013,10 @@ class Teamleader {
     profileImg: json["profileImg"],
     role: json["role"],
     fcmToken: json["fcmToken"],
+    fcmTokens:
+          (json['fcmTokens'] as List?)
+              ?.map((e) => FcmTokens.fromJson(e))
+              .toList(),
     isMarketer: json["isMarketer"],
   );
 
@@ -992,6 +1031,34 @@ class Teamleader {
     "fcmToken": fcmToken,
     "isMarketer": isMarketer,
   };
+}
+class FcmTokens {
+  final String? id;
+  final String? token;
+  final String? deviceId;
+  final String? platform;
+  final String? createdAt;
+  final String? lastUsed;
+
+  FcmTokens({
+    this.id,
+    this.token,
+    this.deviceId,
+    this.platform,
+    this.createdAt,
+    this.lastUsed,
+  });
+
+  factory FcmTokens.fromJson(Map<String, dynamic> json) {
+    return FcmTokens(
+      id: json['_id'],
+      token: json['token'],
+      deviceId: json['deviceId'],
+      platform: json['platform'],
+      createdAt: json['createdAt'],
+      lastUsed: json['lastUsed'],
+    );
+  }
 }
 
 class Stage {

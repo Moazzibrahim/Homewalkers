@@ -199,27 +199,31 @@ class RequestLeadsCubit extends Cubit<RequestLeadsState> {
   }
 
   /// Filter by status
-  Future<void> filterByStatus(String? status) async {
-    log("🏷️ Filtering by status: $status");
+  Future<void> filterByStatus(String? status, {String? userId}) async {
+    log("🏷️ Filtering by status: $status, userId: $userId");
     _currentPage = 1;
     _totalPages = 0;
-    await getAllRequests(isRefresh: true, status: status);
+    await getAllRequests(isRefresh: true, status: status, userId: userId);
   }
 
   /// Filter by date range
   Future<void> filterByDateRange({
     required DateTime fromDate,
     required DateTime toDate,
+    String? userId,
   }) async {
     final fromDateStr = _formatDate(fromDate);
     final toDateStr = _formatDate(toDate);
-    log("📅 Filtering by date range: $fromDateStr to $toDateStr");
+    log(
+      "📅 Filtering by date range: $fromDateStr to $toDateStr, userId: $userId",
+    );
     _currentPage = 1;
     _totalPages = 0;
     await getAllRequests(
       isRefresh: true,
       fromDate: fromDateStr,
       toDate: toDateStr,
+      userId: userId,
     );
   }
 
@@ -244,25 +248,29 @@ class RequestLeadsCubit extends Cubit<RequestLeadsState> {
   }
 
   /// Get completed requests only
-  Future<void> getCompletedRequests() async {
-    await filterByStatus('completed');
+  Future<void> getCompletedRequests({String? userId}) async {
+    await filterByStatus('completed', userId: userId);
   }
 
   /// Get failed requests only
-  Future<void> getFailedRequests() async {
-    await filterByStatus('failed');
+  Future<void> getFailedRequests({String? userId}) async {
+    await filterByStatus('failed', userId: userId);
   }
 
   /// Get pending requests only
-  Future<void> getPendingRequests() async {
-    await filterByStatus('pending');
+  Future<void> getPendingRequests({String? userId}) async {
+    await filterByStatus('pending', userId: userId);
   }
 
   /// Get requests from last 30 days
-  Future<void> getRecentRequests() async {
+  Future<void> getRecentRequests({String? userId}) async {
     final endDate = DateTime.now();
     final startDate = endDate.subtract(const Duration(days: 30));
-    await filterByDateRange(fromDate: startDate, toDate: endDate);
+    await filterByDateRange(
+      fromDate: startDate,
+      toDate: endDate,
+      userId: userId,
+    );
   }
 
   /// Reset to initial state

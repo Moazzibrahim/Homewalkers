@@ -100,11 +100,18 @@ class HttpClientWithInterceptor {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
+    // 🔥 اطبع التوكين كاملاً عشان نتأكد
+    log("🔑 FULL TOKEN BEING SENT: $token");
+    log("🔑 Token length: ${token?.length ?? 0}");
+
     final headers = Map<String, String>.from(existingHeaders ?? {});
     headers['Content-Type'] = 'application/json';
 
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
+      log("✅ Authorization header added");
+    } else {
+      log("❌ NO TOKEN FOUND!");
     }
 
     return headers;
@@ -116,6 +123,7 @@ class HttpClientWithInterceptor {
   ) async {
     try {
       var response = await requestFn();
+      log("📡 RESPONSE BODY: ${response.body}");
 
       // If 401, try to refresh token
       final prefs = await SharedPreferences.getInstance();
@@ -203,6 +211,13 @@ class HttpClientWithInterceptor {
     } catch (e) {
       log("❌ Error during force logout: $e");
     }
+  }
+
+  // في ملف HttpClientWithInterceptor
+  void reset() {
+    _isRefreshing = false;
+    _queuedRequests.clear();
+    log("🔄 HTTP Interceptor has been reset");
   }
 }
 

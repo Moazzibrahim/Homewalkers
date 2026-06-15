@@ -1,4 +1,5 @@
 // ignore_for_file: file_names, camel_case_types, deprecated_member_use, avoid_print, unnecessary_brace_in_string_interps, unused_local_variable
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -13,7 +14,197 @@ import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_s
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 
+// ─────────────────────────────────────────────
+//  Helper: icon bg / icon color / progress color
+// ─────────────────────────────────────────────
+Color _getIconBgColor(String title) {
+  switch (title.toLowerCase()) {
+    case 'leads':
+      return const Color(0xFFE8F0FE);
+    case 'duplicates':
+      return const Color(0xFFFFF3E0);
+    default:
+      return const Color(0xFFE8F0FE);
+  }
+}
+
+Color _getIconColor(String title) {
+  switch (title.toLowerCase()) {
+    case 'leads':
+      return const Color(0xFF2563EB);
+    case 'duplicates':
+      return const Color(0xFFF59E0B);
+    default:
+      return const Color(0xFF003178);
+  }
+}
+
+Color _getProgressColor(String title) {
+  switch (title.toLowerCase()) {
+    case 'leads':
+      return const Color(0xFF2563EB);
+    case 'duplicates':
+      return const Color(0xFFF59E0B);
+    case 'fresh':
+    case 'no answer':
+    case 'cancel meeting':
+      return const Color(0xFF003178);
+    case 'follow after meeting':
+    case 'long follow':
+    case 'meeting':
+    case 'assigned':
+    case 'delivered':
+      return const Color(0xFF003178);
+    case 'not interested':
+      return Colors.black;
+    default:
+      return const Color(0xFF003178);
+  }
+}
+
+IconData _getStageIcon(String title) {
+  switch (title.toLowerCase()) {
+    case 'leads':
+      return Icons.group_rounded;
+    case 'duplicates':
+      return Icons.copy_all_rounded;
+    case 'fresh':
+      return Icons.fiber_new_rounded;
+    case 'follow':
+    case 'follow up':
+    case 'long follow':
+      return Icons.call;
+    case 'no answer':
+      return Icons.phone_missed_rounded;
+    case 'transfer':
+      return Icons.sync_alt_rounded;
+    case 'interested':
+      return Icons.favorite;
+    case 'not interested':
+      return Icons.thumb_down_alt_rounded;
+    case 'follow after meeting':
+      return Icons.history;
+    case 'pending':
+      return Icons.hourglass_empty_rounded;
+    case 'done deal':
+    case 'eoi':
+      return Icons.celebration;
+    case 'cancel meeting':
+      return Icons.cancel_rounded;
+    case 'meeting':
+      return Icons.people_alt_rounded;
+    case 'assigned':
+      return Icons.check;
+    case 'delivered':
+      return Icons.done_all;
+    default:
+      return Icons.timeline;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Shimmer
+// ─────────────────────────────────────────────
+class MarketerDashboardShimmer extends StatelessWidget {
+  const MarketerDashboardShimmer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isTabletDevice = () {
+      final data = MediaQuery.of(context);
+      final physicalSize = data.size;
+      final diagonal = math.sqrt(
+        math.pow(physicalSize.width, 2) + math.pow(physicalSize.height, 2),
+      );
+      final inches = diagonal / (data.devicePixelRatio * 160);
+      return inches >= 7.0;
+    }();
+
+    final double tabletScale = isTabletDevice ? 0.85 : 1.0;
+    final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
+    final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GridView.builder(
+      padding: EdgeInsets.only(top: (8 * tabletHeightScale).h),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isTabletDevice ? 3 : 2,
+        crossAxisSpacing: (16 * tabletWidthScale).w,
+        mainAxisSpacing: (16 * tabletHeightScale).h,
+        childAspectRatio: isTabletDevice ? 2.0 : 1.8,
+      ),
+      itemCount: isTabletDevice ? 9 : 6,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemBuilder: (_, __) {
+        return Shimmer.fromColors(
+          baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+          highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+          child: Container(
+            padding: EdgeInsets.all((14 * tabletScale).r),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular((16 * tabletScale).r),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      height: (44 * tabletHeightScale).h,
+                      width: (44 * tabletWidthScale).w,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(
+                          (12 * tabletScale).r,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: (10 * tabletWidthScale).w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: (10 * tabletHeightScale).h,
+                            width: (60 * tabletWidthScale).w,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: (6 * tabletHeightScale).h),
+                          Container(
+                            height: (22 * tabletHeightScale).h,
+                            width: (40 * tabletWidthScale).w,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  height: (5 * tabletHeightScale).h,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular((6 * tabletScale).r),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Main Screen
+// ─────────────────────────────────────────────
 class MarketerDashboardScreen extends StatefulWidget {
   const MarketerDashboardScreen({super.key});
 
@@ -21,64 +212,159 @@ class MarketerDashboardScreen extends StatefulWidget {
   State<MarketerDashboardScreen> createState() =>
       _MarketerDashboardScreenState();
 
-  static Widget _iconBox(IconData icon, void Function() onPressed) {
+  // ── Icon Box ──────────────────────────────────
+  static Widget _iconBox(
+    IconData icon,
+    void Function() onPressed,
+    BuildContext context, {
+    required bool isTabletDevice,
+    required double tabletScale,
+    required double tabletFontScale,
+    required double tabletWidthScale,
+    required double tabletHeightScale,
+  }) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFFE8F1F2),
-        borderRadius: BorderRadius.circular(8),
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular((12 * tabletScale).r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            spreadRadius: (1 * tabletScale).r,
+            blurRadius: (10 * tabletScale).r,
+          ),
+        ],
       ),
       child: IconButton(
-        icon: Icon(icon, color: Constants.maincolor),
+        icon: Icon(
+          icon,
+          size: (24 * tabletFontScale).sp,
+          color:
+              Theme.of(context).brightness == Brightness.light
+                  ? Constants.mainlightmodecolor
+                  : Constants.mainDarkmodecolor,
+        ),
         onPressed: onPressed,
+        padding: EdgeInsets.all((8 * tabletScale).r),
+        constraints: BoxConstraints(
+          minWidth: (40 * tabletWidthScale).w,
+          minHeight: (40 * tabletHeightScale).h,
+        ),
       ),
     );
   }
 
+  // ── Dashboard Card ────────────────────────────
   static Widget _dashboardCard(
     String title,
     String number,
-    IconData icon,
     BuildContext context, {
     void Function()? onTap,
+    required int totalCount,
+    required bool isTabletDevice,
+    required double tabletScale,
+    required double tabletFontScale,
+    required double tabletWidthScale,
+    required double tabletHeightScale,
   }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final count = int.tryParse(number) ?? 0;
+    final progress =
+        totalCount == 0 ? 0.0 : (count / totalCount).clamp(0.0, 1.0);
+
+    final IconData selectedIcon = _getStageIcon(title);
+    final Color iconBg = _getIconBgColor(title);
+    final Color iconColor = _getIconColor(title);
+    final Color progressColor = _getProgressColor(title);
+
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular((14 * tabletScale).r),
       child: Container(
-        height: 100,
+        padding: EdgeInsets.fromLTRB(
+          (10 * tabletScale).r,
+          (10 * tabletScale).r,
+          (10 * tabletScale).r,
+          (8 * tabletScale).r,
+        ),
         decoration: BoxDecoration(
-          color:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.white
-                  : Color(0xff1e1e1e),
-          borderRadius: BorderRadius.circular(16),
+          color: isDarkMode ? const Color(0xff1e1e1e) : Colors.white,
+          borderRadius: BorderRadius.circular((14 * tabletScale).r),
+          boxShadow: [
+            BoxShadow(
+              color:
+                  isDarkMode
+                      ? Colors.black.withOpacity(0.2)
+                      : Colors.black.withOpacity(0.05),
+              blurRadius: (6 * tabletScale).r,
+              offset: Offset(0, (2 * tabletHeightScale).h),
+            ),
+          ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Constants.maincolor, size: 30),
-            SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Color(0xff080719)
-                        : Colors.white,
-                fontWeight: FontWeight.w400,
-              ),
-              textAlign: TextAlign.center,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  height: (40 * tabletHeightScale).h,
+                  width: (40 * tabletWidthScale).w,
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? iconColor.withOpacity(0.15) : iconBg,
+                    borderRadius: BorderRadius.circular((10 * tabletScale).r),
+                  ),
+                  child: Icon(
+                    selectedIcon,
+                    color: iconColor,
+                    size: (20 * tabletFontScale).sp,
+                  ),
+                ),
+                SizedBox(width: (8 * tabletWidthScale).w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: (9 * tabletFontScale).sp,
+                          color: isDarkMode ? Colors.white54 : Colors.blueGrey,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.4,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      SizedBox(height: (2 * tabletHeightScale).h),
+                      Text(
+                        number.isEmpty ? '0' : number,
+                        style: TextStyle(
+                          fontSize: (20 * tabletFontScale).sp,
+                          color:
+                              isDarkMode
+                                  ? Colors.white
+                                  : const Color(0xFF1a2f5e),
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 4),
-            Text(
-              number,
-              style: TextStyle(
-                fontSize: 20,
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Color(0xff080719)
-                        : Colors.white,
-                fontWeight: FontWeight.bold,
+            SizedBox(height: (18 * tabletHeightScale).h),
+            ClipRRect(
+              borderRadius: BorderRadius.circular((4 * tabletScale).r),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: (4 * tabletHeightScale).h,
+                backgroundColor: Colors.grey.withOpacity(0.15),
+                valueColor: AlwaysStoppedAnimation<Color>(progressColor),
               ),
             ),
           ],
@@ -88,42 +374,50 @@ class MarketerDashboardScreen extends StatefulWidget {
   }
 }
 
+// ─────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────
 class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
     with WidgetsBindingObserver {
   late GetLeadsMarketerCubit _marketerCubit;
-  // ignore: unused_field
-  final String _userName = 'User';
+  String _userName = 'User';
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // 👈 مراقبة حالة التطبيق
-    checkAuth();
+    WidgetsBinding.instance.addObserver(this);
+    _loadUserName();
 
-    // إنشاء Cubit مرة واحدة فقط
     _marketerCubit = GetLeadsMarketerCubit(GetLeadsService())
       ..fetchMarketerDashboard();
 
-    // تهيئة الإشعارات
     context.read<NotificationCubit>().initNotifications();
     print("init notifications called");
   }
 
-  Future<String> checkAuth() async {
+  Future<void> _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
-    final name = prefs.getString('name');
-    return name ?? 'User';
+    setState(() {
+      _userName = prefs.getString('name') ?? 'User';
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       print("App resumed — refreshing marketer dashboard...");
-      _marketerCubit.fetchMarketerDashboard(); // 👈 تحديث البيانات عند الرجوع
+      _marketerCubit.fetchMarketerDashboard();
     }
   }
 
-  // ✅ زر Data Centre الجديد
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _marketerCubit.close();
+    super.dispose();
+  }
+
+  // ── Data Centre Button ─────────────────────────
   Widget _dataCentreButton({
     required bool isTabletDevice,
     required double tabletScale,
@@ -146,61 +440,47 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
           horizontal:
               isTabletDevice
                   ? (16 * tabletWidthScale).w
-                  : (12 * tabletWidthScale).w,
+                  : (14 * tabletWidthScale).w,
           vertical:
               isTabletDevice
                   ? (12 * tabletHeightScale).h
-                  : (8 * tabletHeightScale).h,
+                  : (10 * tabletHeightScale).h,
         ),
         decoration: BoxDecoration(
-          color: Constants.maincolor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular((12 * tabletScale).r),
-          border: Border.all(
-            color: Constants.maincolor.withOpacity(0.2),
-            width: 1,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
+          borderRadius: BorderRadius.circular((12 * tabletScale).r),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.dashboard_customize_rounded,
-              color: Constants.maincolor,
+              Icons.storage_rounded,
+              color: Colors.white,
               size:
                   isTabletDevice
-                      ? (20 * tabletFontScale).sp
-                      : (18 * tabletFontScale).sp,
+                      ? (18 * tabletFontScale).sp
+                      : (16 * tabletFontScale).sp,
             ),
             SizedBox(
               width:
                   isTabletDevice
                       ? (8 * tabletWidthScale).w
-                      : (4 * tabletWidthScale).w,
+                      : (6 * tabletWidthScale).w,
             ),
             Text(
               'Data Centre',
               style: TextStyle(
-                color: Constants.maincolor,
+                color: Colors.white,
                 fontSize:
                     isTabletDevice
-                        ? (16 * tabletFontScale).sp
-                        : (14 * tabletFontScale).sp,
-                fontWeight: FontWeight.w500,
+                        ? (15 * tabletFontScale).sp
+                        : (13 * tabletFontScale).sp,
+                fontWeight: FontWeight.w600,
               ),
-            ),
-            SizedBox(
-              width:
-                  isTabletDevice
-                      ? (4 * tabletWidthScale).w
-                      : (2 * tabletWidthScale).w,
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Constants.maincolor,
-              size:
-                  isTabletDevice
-                      ? (16 * tabletFontScale).sp
-                      : (14 * tabletFontScale).sp,
             ),
           ],
         ),
@@ -208,13 +488,7 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
     );
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _marketerCubit.close(); // 👈 قفل الكيوبت لتفادي memory leaks
-    super.dispose();
-  }
-
+  // ── Build ──────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final bool isTabletDevice = () {
@@ -227,167 +501,172 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
       return inches >= 7.0;
     }();
 
-    // ✅ عوامل التصغير حسب الجهاز
     final double tabletScale = isTabletDevice ? 0.85 : 1.0;
     final double tabletFontScale = isTabletDevice ? 0.9 : 1.0;
     final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
     final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
-
-    // ✅ عدد الأعمدة في GridView
     final int crossAxisCount = isTabletDevice ? 3 : 2;
-    // ✅ نسبة العرض إلى الارتفاع
-    final double childAspectRatio = isTabletDevice ? 1.6 : 1.4;
+    final double childAspectRatio = isTabletDevice ? 2.1 : 2.0;
     return BlocProvider.value(
-      // 👈 نستخدم value عشان نمرر نفس نسخة الكيوبت اللي أنشأناها في initState
       value: _marketerCubit,
       child: Scaffold(
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
                 ? Constants.backgroundlightmode
                 : Constants.backgroundDarkmode,
-        appBar: AppBar(
-          backgroundColor:
-              Theme.of(context).brightness == Brightness.light
-                  ? Colors.white
-                  : Constants.backgroundDarkmode,
-          elevation: 0,
-          toolbarHeight: 100,
-          automaticallyImplyLeading: false,
-          title: Row(
-            children: [
-              FutureBuilder<String>(
-                future: checkAuth(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  } else {
-                    final name = snapshot.data ?? 'User';
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(
+            isTabletDevice ? (105 * tabletHeightScale).h : 131.h,
+          ),
+          child: Container(
+            color:
+                Theme.of(context).brightness == Brightness.light
+                    ? Colors.white
+                    : Constants.backgroundDarkmode,
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: (16 * tabletWidthScale).w,
+                  right: (16 * tabletWidthScale).w,
+                  top: (8 * tabletHeightScale).h,
+                  bottom: (8 * tabletHeightScale).h,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // ── Row 1: Logo + Notifications ──────────────
+                    Row(
                       children: [
-                        Text(
-                          name,
-                          style: TextStyle(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? const Color(0xff080719)
-                                    : Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
+                        Container(
+                          width: (30 * tabletWidthScale).w,
+                          height: (30 * tabletHeightScale).h,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              (7 * tabletScale).r,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.business,
+                            color: Colors.white,
+                            size: (16 * tabletFontScale).sp,
                           ),
                         ),
-                        const Text(
-                          'Marketer',
+                        SizedBox(width: (7 * tabletWidthScale).w),
+                        Text(
+                          'REALATIX',
                           style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
+                            fontSize: (14 * tabletFontScale).sp,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF1a2f5e),
+                            letterSpacing: 1,
                           ),
+                        ),
+                        const Spacer(),
+                        MarketerDashboardScreen._iconBox(
+                          Icons.notifications_none,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
+                                        const SalesNotificationsScreen(),
+                              ),
+                            );
+                          },
+                          context,
+                          isTabletDevice: isTabletDevice,
+                          tabletScale: tabletScale,
+                          tabletFontScale: tabletFontScale,
+                          tabletWidthScale: tabletWidthScale,
+                          tabletHeightScale: tabletHeightScale,
                         ),
                       ],
-                    );
-                  }
-                },
+                    ),
+
+                    SizedBox(height: (8 * tabletHeightScale).h),
+                    const Divider(),
+
+                    // ── Row 2: Welcome + Name + Data Centre ─
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Welcome back',
+                              style: TextStyle(
+                                fontSize: (11 * tabletFontScale).sp,
+                                color: Colors.blueGrey,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            Text(
+                              _userName,
+                              style: TextStyle(
+                                fontSize: (20 * tabletFontScale).sp,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF1a2f5e),
+                                height: 1.15,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        _dataCentreButton(
+                          isTabletDevice: isTabletDevice,
+                          tabletScale: tabletScale,
+                          tabletFontScale: tabletFontScale,
+                          tabletWidthScale: tabletWidthScale,
+                          tabletHeightScale: tabletHeightScale,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              const Spacer(),
-              MarketerDashboardScreen._iconBox(Icons.notifications_none, () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SalesNotificationsScreen(),
-                  ),
-                );
-              }),
-            ],
+            ),
           ),
         ),
         body: RefreshIndicator(
           onRefresh: () async {
-            _marketerCubit.fetchMarketerDashboard(); // 👈 هنا التحديث
-            await Future.delayed(Duration(milliseconds: 500));
+            _marketerCubit.fetchMarketerDashboard();
+            await Future.delayed(const Duration(milliseconds: 500));
           },
+          color: Constants.maincolor,
+          backgroundColor:
+              Theme.of(context).brightness == Brightness.light
+                  ? Colors.white
+                  : Constants.backgroundDarkmode,
+          strokeWidth: (3 * tabletScale).r,
+          displacement: (40 * tabletHeightScale).h,
           child: SingleChildScrollView(
-            physics: AlwaysScrollableScrollPhysics(), // 👈 مهم لتفعيل السحب
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: EdgeInsets.symmetric(
+                horizontal: (16 * tabletWidthScale).w,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      FutureBuilder(
-                        future: checkAuth(),
-                        builder: (
-                          BuildContext context,
-                          AsyncSnapshot snapshot,
-                        ) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Text("hello ....");
-                          } else if (snapshot.hasError) {
-                            return const Text('Hello');
-                          } else {
-                            return Text(
-                              'Hello ${snapshot.data}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color:
-                                    Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? const Color(0xff080719)
-                                        : Colors.white,
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      const Spacer(),
-                      // 🗄️ Data Centre Button
-                      _dataCentreButton(
-                        isTabletDevice: isTabletDevice,
-                        tabletScale: tabletScale,
-                        tabletFontScale: tabletFontScale,
-                        tabletWidthScale: tabletWidthScale,
-                        tabletHeightScale: tabletHeightScale,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  // تم استبدال PieChart بـ BarChart في هذا التعديل
-                  // ... (نفس الكود السابق حتى BlocBuilder)
+                  SizedBox(height: (16 * tabletHeightScale).h),
+
+                  // ── Stats Grid ───────────────────────
                   BlocBuilder<GetLeadsMarketerCubit, GetLeadsMarketerState>(
                     builder: (context, state) {
                       if (state is GetMarketerDashboardLoading) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: MarketerDashboardScreen._dashboardCard(
-                                    'Leads',
-                                    '...',
-                                    Icons.group,
-                                    context,
-                                  ),
-                                ),
-                                // SizedBox(width: 12),
-                                // Expanded(
-                                //   child: _dashboardCard(
-                                //     'Deals',
-                                //     '...',
-                                //     Icons.work_outline,
-                                //     context,
-                                //   ),
-                                // ),
-                              ],
-                            ),
-                            SizedBox(height: 24),
-                            Center(child: CircularProgressIndicator()),
-                          ],
-                        );
-                      } else if (state is GetMarketerDashboardSuccess) {
+                        return const MarketerDashboardShimmer();
+                      }
+
+                      if (state is GetMarketerDashboardSuccess) {
                         final allLeads = state.dashboardModel.data ?? [];
                         final totalLeads = state.dashboardModel.totalLeads ?? 0;
                         final duplicatesCount =
@@ -398,148 +677,162 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                                 )
                                 .leadCount ??
                             0;
+
                         final Map<String, StageData> stageMap = {
                           for (var stage in allLeads)
                             if ((stage.stageName ?? '').isNotEmpty &&
                                 stage.stageName != "Duplicate")
-                              stage.stageName!:
-                                  stage, // بدل ما نخزن بس العدد نخزن StageData كاملة
+                              stage.stageName!: stage,
                         };
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: MarketerDashboardScreen._dashboardCard(
-                                    'Leads',
-                                    '${totalLeads}',
-                                    Icons.group,
-                                    context,
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (context) => BlocProvider(
-                                                create:
-                                                    (_) =>
-                                                        GetLeadsMarketerCubit(
-                                                          GetLeadsService(),
-                                                        ),
-                                                child:
-                                                    const LeadsMarketierScreen(
-                                                      data: false,
-                                                      transferefromdata: true,
-                                                    ),
-                                              ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 18),
-
-                            GridView.count(
-                              crossAxisCount: 2,
-                              shrinkWrap: true,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                              childAspectRatio: 1.5,
-                              physics: NeverScrollableScrollPhysics(),
-                              children: [
-                                if (duplicatesCount > 0)
-                                  MarketerDashboardScreen._dashboardCard(
-                                    'Duplicates',
-                                    '$duplicatesCount',
-                                    Icons.copy_all,
-                                    context,
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (context) => BlocProvider(
-                                                create:
-                                                    (_) =>
-                                                        GetLeadsMarketerCubit(
-                                                          GetLeadsService(),
-                                                        ),
-                                                child:
-                                                    const LeadsMarketierScreen(
-                                                      showDuplicatesOnly: false,
-                                                      data: false,
-                                                      transferefromdata: true,
-                                                    ),
-                                              ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ...stageMap.entries.map((entry) {
-                                  final stageData = entry.value;
-                                  return MarketerDashboardScreen._dashboardCard(
-                                    entry.key, // هنا الاسم يفضل للعرض
-                                    (stageData.leadCount ?? 0).toString(),
-                                    Icons.timeline,
-                                    context,
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (context) => BlocProvider(
-                                                create:
-                                                    (_) =>
-                                                        GetLeadsMarketerCubit(
-                                                          GetLeadsService(),
-                                                        ),
-                                                child: LeadsMarketierScreen(
-                                                  stageName:
-                                                      stageData
-                                                          .stageId, // هنا تبعت الـ stageId
-                                                  showDuplicatesOnly: true,
-                                                  data: false,
-                                                  transferefromdata: true,
-                                                ),
-                                              ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                }),
-                              ],
-                            ),
-                          ],
-                        );
-                      } else {
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: MarketerDashboardScreen._dashboardCard(
-                                'Leads',
-                                '0',
-                                Icons.group,
+                        final List<Widget> statCards = [
+                          // Leads card
+                          MarketerDashboardScreen._dashboardCard(
+                            'Leads',
+                            '$totalLeads',
+                            context,
+                            totalCount: totalLeads.toInt(),
+                            isTabletDevice: isTabletDevice,
+                            tabletScale: tabletScale,
+                            tabletFontScale: tabletFontScale,
+                            tabletWidthScale: tabletWidthScale,
+                            tabletHeightScale: tabletHeightScale,
+                            onTap: () {
+                              Navigator.push(
                                 context,
-                              ),
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => BlocProvider(
+                                        create:
+                                            (_) => GetLeadsMarketerCubit(
+                                              GetLeadsService(),
+                                            ),
+                                        child: LeadsMarketierScreen(
+                                          showDuplicatesOnly: true,
+                                          data: false,
+                                          transferefromdata: true,
+                                          leadsCount:
+                                              totalLeads
+                                                  .toInt(), // ✅ بعت الـ count
+                                        ),
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+
+                          // Duplicates card (only if count > 0)
+                          if (duplicatesCount > 0)
+                            MarketerDashboardScreen._dashboardCard(
+                              'Duplicates',
+                              '$duplicatesCount',
+                              context,
+                              totalCount: totalLeads.toInt(),
+                              isTabletDevice: isTabletDevice,
+                              tabletScale: tabletScale,
+                              tabletFontScale: tabletFontScale,
+                              tabletWidthScale: tabletWidthScale,
+                              tabletHeightScale: tabletHeightScale,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => BlocProvider(
+                                          create:
+                                              (_) => GetLeadsMarketerCubit(
+                                                GetLeadsService(),
+                                              ),
+                                          child: LeadsMarketierScreen(
+                                            showDuplicatesOnly: false,
+                                            data: false,
+                                            transferefromdata: true,
+                                            leadsCount:
+                                                duplicatesCount
+                                                    .toInt(), // ✅ بعت الـ count
+                                          ),
+                                        ),
+                                  ),
+                                );
+                              },
                             ),
-                            // SizedBox(width: 12),
-                            // Expanded(
-                            //   child: _dashboardCard(
-                            //     'Deals',
-                            //     '0',
-                            //     Icons.work_outline,
-                            //     context,
-                            //   ),
-                            // ),
-                          ],
+
+                          // Stage cards
+                          ...stageMap.entries.map((entry) {
+                            final stageData = entry.value;
+                            return MarketerDashboardScreen._dashboardCard(
+                              entry.key,
+                              (stageData.leadCount ?? 0).toString(),
+                              context,
+                              totalCount: totalLeads.toInt(),
+                              isTabletDevice: isTabletDevice,
+                              tabletScale: tabletScale,
+                              tabletFontScale: tabletFontScale,
+                              tabletWidthScale: tabletWidthScale,
+                              tabletHeightScale: tabletHeightScale,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => BlocProvider(
+                                          create:
+                                              (_) => GetLeadsMarketerCubit(
+                                                GetLeadsService(),
+                                              ),
+                                          child: LeadsMarketierScreen(
+                                            stageName: stageData.stageId,
+                                            showDuplicatesOnly: true,
+                                            data: false,
+                                            transferefromdata: true,
+                                            leadsCount:
+                                                stageData.leadCount
+                                                    ?.toInt(), // ✅ بعت الـ count
+                                          ),
+                                        ),
+                                  ),
+                                );
+                              },
+                            );
+                          }),
+                        ];
+
+                        return GridView.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                crossAxisSpacing: (10 * tabletWidthScale).w,
+                                mainAxisSpacing: (10 * tabletHeightScale).h,
+                                childAspectRatio: childAspectRatio,
+                              ),
+                          itemCount: statCards.length,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemBuilder: (_, i) => statCards[i],
                         );
                       }
+
+                      // Error / empty state
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.all((16 * tabletScale).r),
+                          child: Text(
+                            "Couldn't load data.",
+                            style: TextStyle(
+                              fontSize: (16 * tabletFontScale).sp,
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Colors.black87
+                                      : Colors.white70,
+                            ),
+                          ),
+                        ),
+                      );
                     },
                   ),
+
+                  SizedBox(height: (20 * tabletHeightScale).h),
                 ],
               ),
             ),

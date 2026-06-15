@@ -17,6 +17,7 @@ import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/cubit/
 
 class TeamLeaderTabsScreen extends StatefulWidget {
   final String? name;
+
   const TeamLeaderTabsScreen({super.key, this.name});
 
   @override
@@ -49,144 +50,187 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor:
-          Theme.of(context).brightness == Brightness.light
-              ? Constants.backgroundlightmode
-              : Constants.backgroundDarkmode,
+          isDarkMode
+              ? Constants.backgroundDarkmode
+              : Constants.backgroundlightmode,
       body: WillPopScope(
         onWillPop: () async {
-          // منع الرجوع إلى الشاشة السابقة
           return false;
         },
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: PageView(
-                physics: const NeverScrollableScrollPhysics(),
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                children: [
-                  BlocProvider(
-                    create:
-                        (context) => TeamleaderDashboardCubit(
-                          TeamleaderDashboardApiService(),
-                        ),
-                    child: TeamLeaderDashboardScreen(),
+            Column(
+              children: [
+                Expanded(
+                  child: PageView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                    children: [
+                      BlocProvider(
+                        create:
+                            (context) => TeamleaderDashboardCubit(
+                              TeamleaderDashboardApiService(),
+                            ),
+                        child: TeamLeaderDashboardScreen(),
+                      ),
+                      TeamLeaderAssignScreen(
+                        data: false,
+                        transferfromdata: true,
+                      ),
+                      TeamLeaderSalesScreen(),
+                      BlocProvider(
+                        create: (context) => AuthCubit(LoginApiService()),
+                        child: TeamLeaderProfileScreen(),
+                      ),
+                    ],
                   ),
-                  TeamLeaderAssignScreen(data: false, transferfromdata: true),
-                  TeamLeaderSalesScreen(),
-                  BlocProvider(
-                    create: (context) => AuthCubit(LoginApiService()),
-                    child: TeamLeaderProfileScreen(),
+                ),
+              ],
+            ),
+
+            /// Floating Button نفس تصميم الادمن
+            Positioned(
+              bottom: 12,
+              right: 16,
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Constants.maincolor.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateLeadScreen(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add, size: 28, color: Colors.white),
+                ),
               ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        color:
-            Theme.of(context).brightness == Brightness.light
-                ? Colors
-                    .white // لون الخلفية
-                : Colors.black,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        child: Container(
-          height: 70,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () => _onTap(0),
-                child: _bottomBarItem(
-                  Icons.dashboard,
-                  'Dashboard',
-                  _currentIndex == 0,
+
+      /// Bottom Navigation نفس تصميم الادمن
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.black : Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Container(
+            height: 66,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(
+                  index: 0,
+                  icon: Icons.dashboard_outlined,
+                  activeIcon: Icons.dashboard,
+                  label: 'DASHBOARD',
                 ),
-              ),
-              GestureDetector(
-                onTap: () => _onTap(1),
-                child: _bottomBarItem(
-                  Icons.groups,
-                  'Leads',
-                  _currentIndex == 1,
+                _buildNavItem(
+                  index: 1,
+                  icon: Icons.people_outline,
+                  activeIcon: Icons.people,
+                  label: 'LEADS',
                 ),
-              ),
-              const SizedBox(width: 40), // للمساحة الخاصة بزر الفلوتينج
-              GestureDetector(
-                onTap: () => _onTap(2),
-                child: _bottomBarItem(
-                  Icons.assignment,
-                  'Sales',
-                  _currentIndex == 2,
+                _buildNavItem(
+                  index: 2,
+                  icon: Icons.business,
+                  activeIcon: Icons.business,
+                  label: 'SALES',
                 ),
-              ),
-              GestureDetector(
-                onTap: () => _onTap(3),
-                child: _bottomBarItem(
-                  Icons.person_outline,
-                  'Profile',
-                  _currentIndex == 3,
+                _buildNavItem(
+                  index: 3,
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: 'PROFILE',
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor:
-            Theme.of(context).brightness == Brightness.light
-                ? Constants.maincolor
-                : Constants.mainDarkmodecolor,
-        elevation: 6,
-        shape: const CircleBorder(),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreateLeadScreen()),
-          );
-        },
-        child: const Icon(Icons.add, size: 32, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
-  Widget _bottomBarItem(IconData icon, String label, bool active) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color:
-              active
-                  ? Theme.of(context).brightness == Brightness.light
-                      ? Constants.maincolor
-                      : Constants.mainDarkmodecolor
-                  : Colors.grey,
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+  }) {
+    final bool isActive = _currentIndex == index;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: () => _onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isActive ? activeIcon : icon,
+              color:
+                  isActive
+                      ? Constants.mainlightmodecolor
+                      : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color:
+                    isActive
+                        ? Constants.mainlightmodecolor
+                        : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
-        Text(
-          label,
-          style: TextStyle(
-            color:
-                active
-                    ? Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
-                        : Constants.mainDarkmodecolor
-                    : Colors.grey,
-            fontWeight: active ? FontWeight.bold : FontWeight.normal,
-            fontSize: 12,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

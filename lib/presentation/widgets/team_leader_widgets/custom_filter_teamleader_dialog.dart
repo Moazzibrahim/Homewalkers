@@ -12,7 +12,6 @@ import 'package:homewalkers_app/data/data_sources/team_leader/get_leads_count.da
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/channels/channels_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/developers/developers_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_count_in_team_leader_cubit.dart';
@@ -27,6 +26,7 @@ void showFilterDialogTeamLeader(
   GetLeadsTeamLeaderCubit leadsCubit,
   bool? data,
   bool? transferedData,
+  Function(Map<String, dynamic>)? onFiltersApplied// ✅ أضف هذا الـ parameter
 ) {
   showDialog(
     context: context,
@@ -57,7 +57,11 @@ void showFilterDialogTeamLeader(
                         ..fetchLeadsCount(),
             ),
           ],
-          child: FilterDialog(data: data, transferedData: transferedData),
+          child: FilterDialog(
+            data: data,
+            transferedData: transferedData,
+            onFiltersApplied: onFiltersApplied, // ✅ تمرير الـ callback
+          ),
         ),
   );
 }
@@ -65,7 +69,14 @@ void showFilterDialogTeamLeader(
 class FilterDialog extends StatefulWidget {
   final bool? data;
   final bool? transferedData;
-  const FilterDialog({super.key, this.data, this.transferedData});
+  final Function(Map<String, dynamic>)? onFiltersApplied; // ✅ أضف هذا
+
+  const FilterDialog({
+    super.key,
+    this.data,
+    this.transferedData,
+    this.onFiltersApplied, // ✅ أضف هذا
+  });
 
   @override
   State<FilterDialog> createState() => _FilterDialogState();
@@ -648,6 +659,25 @@ class _FilterDialogState extends State<FilterDialog> {
 
                           log("selectedDeveloper: $selectedDeveloper");
                           log("selectedsales: $selectedSales");
+                          // ✅ جمع قيم الفلاتر
+                          final appliedFilters = {
+                            'name':
+                                nameController.text.trim().isEmpty
+                                    ? null
+                                    : nameController.text.trim(),
+                            'developerId': selectedDeveloper,
+                            'projectId': selectedProject,
+                            'stageId': selectedStage,
+                            'channelId': selectedChannel,
+                            'salesId': selectedSalesId,
+                            'creationDateFrom': _startDate,
+                            'creationDateTo': _endDate,
+                            'stageDateFrom': _lastStageUpdateStart,
+                            'stageDateTo': _lastStageUpdateEnd,
+                          };
+
+                          // ✅ استدعاء الـ callback قبل إغلاق الـ Dialog
+                          widget.onFiltersApplied?.call(appliedFilters);
 
                           context
                               .read<GetLeadsTeamLeaderCubit>()
@@ -656,7 +686,6 @@ class _FilterDialogState extends State<FilterDialog> {
                                     nameController.text.trim().isEmpty
                                         ? null
                                         : nameController.text.trim(),
-
                                 developerId: selectedDeveloper,
                                 projectId: selectedProject,
                                 stageId: selectedStage,
@@ -669,7 +698,30 @@ class _FilterDialogState extends State<FilterDialog> {
                                 data: widget.data,
                                 transferefromdata: widget.transferedData,
                               );
+
                           Navigator.pop(context);
+
+                          // context
+                          //     .read<GetLeadsTeamLeaderCubit>()
+                          //     .fetchTeamLeaderLeadsWithPagination(
+                          //       search:
+                          //           nameController.text.trim().isEmpty
+                          //               ? null
+                          //               : nameController.text.trim(),
+
+                          //       developerId: selectedDeveloper,
+                          //       projectId: selectedProject,
+                          //       stageId: selectedStage,
+                          //       channelId: selectedChannel,
+                          //       salesId: selectedSalesId,
+                          //       creationDateFrom: _startDate,
+                          //       creationDateTo: _endDate,
+                          //       stageDateFrom: _lastStageUpdateStart,
+                          //       stageDateTo: _lastStageUpdateEnd,
+                          //       data: widget.data,
+                          //       transferefromdata: widget.transferedData,
+                          //     );
+                          // Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor:

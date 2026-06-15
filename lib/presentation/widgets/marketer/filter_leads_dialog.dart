@@ -1245,130 +1245,292 @@ class _MultiSelectDropdownState extends State<MultiSelectDropdown> {
   void _showMultiSelectDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // نسخة محلية من التحديدات
-    List<String> tempSelectedIds = List.from(widget.selectedIds);
-    List<String> tempSelectedNames = List.from(widget.selectedNames);
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            widget.hint,
-            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
-          ),
-          content: Container(
-            width: double.maxFinite,
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.6,
-            ),
-            child: StatefulBuilder(
-              builder: (context, setState) {
-                return ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: widget.items.length,
-                  itemBuilder: (context, index) {
-                    final item = widget.items[index];
-                    final isSelected = tempSelectedIds.contains(item.id);
+        return _MultiSelectDialogContent(
+          hint: widget.hint,
+          items: widget.items,
+          initialSelectedIds: widget.selectedIds,
+          initialSelectedNames: widget.selectedNames,
+          isDark: isDark,
+          onConfirm: (ids, names) {
+            widget.onSelectionChanged(ids, names);
+          },
+        );
+      },
+    );
+  }
+}
 
-                    return InkWell(
-                      onTap: () {
-                        setState(() {
-                          if (isSelected) {
-                            tempSelectedIds.remove(item.id);
-                            tempSelectedNames.remove(item.name);
-                          } else {
-                            tempSelectedIds.add(item.id);
-                            tempSelectedNames.add(item.name);
-                          }
-                        });
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 8.h,
-                          horizontal: 8.w,
-                        ),
-                        child: Row(
+// ضيف الـ class ده في آخر الملف
+class _MultiSelectDialogContent extends StatefulWidget {
+  final String hint;
+  final List<MultiSelectItem> items;
+  final List<String> initialSelectedIds;
+  final List<String> initialSelectedNames;
+  final bool isDark;
+  final Function(List<String>, List<String>) onConfirm;
+
+  const _MultiSelectDialogContent({
+    required this.hint,
+    required this.items,
+    required this.initialSelectedIds,
+    required this.initialSelectedNames,
+    required this.isDark,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_MultiSelectDialogContent> createState() =>
+      _MultiSelectDialogContentState();
+}
+
+class _MultiSelectDialogContentState extends State<_MultiSelectDialogContent> {
+  late List<String> tempSelectedIds;
+  late List<String> tempSelectedNames;
+  late TextEditingController searchController;
+  String searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    tempSelectedIds = List.from(widget.initialSelectedIds);
+    tempSelectedNames = List.from(widget.initialSelectedNames);
+    searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredItems =
+        widget.items.where((item) {
+          return item.name.toLowerCase().contains(searchQuery.toLowerCase());
+        }).toList();
+
+    return AlertDialog(
+      title: Text(
+        widget.hint,
+        style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+      ),
+      content: Container(
+        width: double.maxFinite,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.6,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Search Field
+            TextField(
+              controller: searchController,
+              onChanged: (val) => setState(() => searchQuery = val),
+              style: TextStyle(fontSize: 14.sp),
+              decoration: InputDecoration(
+                hintText: 'Search...',
+                hintStyle: TextStyle(
+                  fontSize: 13.sp,
+                  color: widget.isDark ? Colors.white38 : Colors.grey.shade400,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 20.sp,
+                  color:
+                      widget.isDark
+                          ? Constants.mainDarkmodecolor
+                          : Constants.maincolor,
+                ),
+                suffixIcon:
+                    searchQuery.isNotEmpty
+                        ? IconButton(
+                          icon: Icon(Icons.close, size: 18.sp),
+                          onPressed: () {
+                            searchController.clear();
+                            setState(() => searchQuery = '');
+                          },
+                        )
+                        : null,
+                filled: true,
+                fillColor:
+                    widget.isDark
+                        ? const Color(0xff2a2a2a)
+                        : Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 10.h,
+                ),
+                isDense: true,
+              ),
+            ),
+            SizedBox(height: 8.h),
+
+            // Counter
+            if (tempSelectedIds.isNotEmpty)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${tempSelectedIds.length} selected',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color:
+                        widget.isDark
+                            ? Constants.mainDarkmodecolor
+                            : Constants.maincolor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            if (tempSelectedIds.isNotEmpty) SizedBox(height: 4.h),
+
+            // List
+            Flexible(
+              child:
+                  filteredItems.isEmpty
+                      ? Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24.h),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              width: 24.w,
-                              height: 24.w,
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color:
-                                      isSelected
-                                          ? (isDark
-                                              ? Constants.mainDarkmodecolor
-                                              : Constants.maincolor)
-                                          : Colors.grey,
-                                  width: 2,
-                                ),
-                                borderRadius: BorderRadius.circular(4.r),
-                                color:
-                                    isSelected
-                                        ? (isDark
-                                            ? Constants.mainDarkmodecolor
-                                            : Constants.maincolor)
-                                        : Colors.transparent,
-                              ),
-                              child:
-                                  isSelected
-                                      ? Icon(
-                                        Icons.check,
-                                        size: 18.sp,
-                                        color: Colors.white,
-                                      )
-                                      : null,
+                            Icon(
+                              Icons.search_off,
+                              size: 36.sp,
+                              color: Colors.grey.shade400,
                             ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: Text(
-                                item.name,
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontWeight:
-                                      isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
-                                ),
+                            SizedBox(height: 8.h),
+                            Text(
+                              'No results for "$searchQuery"',
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: Colors.grey.shade500,
                               ),
                             ),
                           ],
                         ),
+                      )
+                      : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          final isSelected = tempSelectedIds.contains(item.id);
+
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                if (isSelected) {
+                                  tempSelectedIds.remove(item.id);
+                                  tempSelectedNames.remove(item.name);
+                                } else {
+                                  tempSelectedIds.add(item.id);
+                                  tempSelectedNames.add(item.name);
+                                }
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(6.r),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: 8.h,
+                                horizontal: 8.w,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 24.w,
+                                    height: 24.w,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color:
+                                            isSelected
+                                                ? (widget.isDark
+                                                    ? Constants
+                                                        .mainDarkmodecolor
+                                                    : Constants.maincolor)
+                                                : Colors.grey,
+                                        width: 2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(4.r),
+                                      color:
+                                          isSelected
+                                              ? (widget.isDark
+                                                  ? Constants.mainDarkmodecolor
+                                                  : Constants.maincolor)
+                                              : Colors.transparent,
+                                    ),
+                                    child:
+                                        isSelected
+                                            ? Icon(
+                                              Icons.check,
+                                              size: 16.sp,
+                                              color: Colors.white,
+                                            )
+                                            : null,
+                                  ),
+                                  SizedBox(width: 12.w),
+                                  Expanded(
+                                    child: Text(
+                                      item.name,
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight:
+                                            isSelected
+                                                ? FontWeight.w600
+                                                : FontWeight.normal,
+                                        color:
+                                            isSelected
+                                                ? (widget.isDark
+                                                    ? Constants
+                                                        .mainDarkmodecolor
+                                                    : Constants.maincolor)
+                                                : (widget.isDark
+                                                    ? Colors.white
+                                                    : const Color(0xFF0D1B2A)),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text(
-                'Cancel',
-                style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                widget.onSelectionChanged(tempSelectedIds, tempSelectedNames);
-                Navigator.pop(context);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor:
-                    isDark ? Constants.mainDarkmodecolor : Constants.maincolor,
-              ),
-              child: Text(
-                'OK',
-                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-              ),
             ),
           ],
-        );
-      },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Cancel',
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            widget.onConfirm(tempSelectedIds, tempSelectedNames);
+            Navigator.pop(context);
+          },
+          style: TextButton.styleFrom(
+            foregroundColor:
+                widget.isDark
+                    ? Constants.mainDarkmodecolor
+                    : Constants.maincolor,
+          ),
+          child: Text(
+            'OK',
+            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -166,8 +166,16 @@ class TeamLeaderInfo {
   String? email;
   String? role;
   String? fcmToken;
+  List<FcmToken>? fcmTokens;
 
-  TeamLeaderInfo({this.id, this.name, this.email, this.role, this.fcmToken});
+  TeamLeaderInfo({
+    this.id,
+    this.name,
+    this.email,
+    this.role,
+    this.fcmToken,
+    this.fcmTokens,
+  });
 
   factory TeamLeaderInfo.fromJson(Map<String, dynamic> json) {
     return TeamLeaderInfo(
@@ -176,6 +184,10 @@ class TeamLeaderInfo {
       email: json['email'],
       role: json['role'],
       fcmToken: json['fcmToken'],
+      fcmTokens:
+          (json['fcmTokens'] as List?)
+              ?.map((e) => FcmToken.fromJson(e))
+              .toList(),
     );
   }
 }
@@ -203,8 +215,16 @@ class UserLog {
   String? email;
   String? role;
   String? fcmToken;
+  List<FcmToken>? fcmTokens;
 
-  UserLog({this.id, this.name, this.email, this.role, this.fcmToken});
+  UserLog({
+    this.id,
+    this.name,
+    this.email,
+    this.role,
+    this.fcmToken,
+    this.fcmTokens,
+  });
 
   factory UserLog.fromJson(Map<String, dynamic> json) {
     return UserLog(
@@ -213,6 +233,39 @@ class UserLog {
       email: json['email'],
       role: json['role'],
       fcmToken: json['fcmToken'],
+      fcmTokens:
+          (json['fcmTokens'] as List?)
+              ?.map((e) => FcmToken.fromJson(e))
+              .toList(),
+    );
+  }
+}
+
+class FcmToken {
+  final String? id;
+  final String? token;
+  final String? deviceId;
+  final String? platform;
+  final String? createdAt;
+  final String? lastUsed;
+
+  FcmToken({
+    this.id,
+    this.token,
+    this.deviceId,
+    this.platform,
+    this.createdAt,
+    this.lastUsed,
+  });
+
+  factory FcmToken.fromJson(Map<String, dynamic> json) {
+    return FcmToken(
+      id: json['_id'],
+      token: json['token'],
+      deviceId: json['deviceId'],
+      platform: json['platform'],
+      createdAt: json['createdAt'],
+      lastUsed: json['lastUsed'],
     );
   }
 }

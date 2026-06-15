@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
+import 'package:homewalkers_app/data/models/salesLeadsModelWithPagination.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
@@ -55,6 +56,8 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
   final String? question4_answer;
   final String? question5_text;
   final String? question5_answer;
+  final List<LeadPagination>? selectedLeads;
+  final List<String>? salesFcmTokens; // ✅ أضف ده
 
   SalesLeadsDetailsScreen({
     super.key,
@@ -93,6 +96,8 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
     this.question4_answer,
     this.question5_text,
     this.question5_answer,
+    this.selectedLeads,
+    this.salesFcmTokens,
   });
 
   @override
@@ -327,12 +332,19 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // ── Hero Header Card ──────────────────────────────
+                      // في الـ body Column children:
                       _buildHeroHeaderCard(isDark, primaryColor),
-                      SizedBox(height: 10.h),
-
-                      // ── Last Comment Section (BlocBuilder) ────────────
-                      _buildLastCommentSection(isDark, primaryColor),
+                      SizedBox(height: 7.h),
+                      _buildInfoSection(isDark, primaryColor), // ← Info الأول
                       SizedBox(height: 16.h),
+                      _buildLastCommentSection(
+                        isDark,
+                        primaryColor,
+                      ), // ← ثم Comments
+                      SizedBox(height: 16.h),
+                      _buildNotesSection(isDark, primaryColor),
+                      SizedBox(height: 20.h),
+                      // Action Buttons في الأسفل
 
                       // ── Action Buttons Row ────────────────────────────
                       Row(
@@ -341,7 +353,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                             child: _buildStyledButton(
                               label: "All Comments",
                               icon: Icons.comment,
-                              isOutlined: true,
+                              isOutlined: false,
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -371,7 +383,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                   ),
                                 );
                               },
-                              primaryColor: primaryColor,
+                              primaryColor: Colors.white,
                               isDark: isDark,
                             ),
                           ),
@@ -380,7 +392,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                             child: _buildStyledButton(
                               label: "Add Comment",
                               icon: Icons.add_comment,
-                              isOutlined: false,
+                              isOutlined: true,
                               onPressed: () async {
                                 final result = await showModalBottomSheet(
                                   context: context,
@@ -414,23 +426,21 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                       .read<LeadCommentsCubit>()
                                       .fetchLeadComments(widget.leedId);
 
-                                  if (widget.fcmtoken != null) {
+                                  final tokens =
+                                      (widget.salesFcmTokens?.isNotEmpty ==
+                                              true)
+                                          ? widget.salesFcmTokens!
+                                          : (widget.fcmtoken != null
+                                              ? [widget.fcmtoken!]
+                                              : <String>[]);
+                                  if (tokens.isNotEmpty) {
                                     context
                                         .read<NotificationCubit>()
-                                        .sendNotificationToToken(
+                                        .sendNotificationToTokens(
                                           title: "Lead Comment",
                                           body:
-                                              "${widget.leadName} تم إضافة تعليق جديد ✅",
-                                          fcmtokennnn: widget.fcmtoken!,
-                                        );
-
-                                    context
-                                        .read<NotificationCubit>()
-                                        .sendNotificationToToken(
-                                          title: "Lead Comment",
-                                          body:
-                                              "${widget.leadName} تم إضافة تعليق جديد ✅",
-                                          fcmtokennnn: widget.managerfcmtoken!,
+                                              "New comment added on ${widget.leadName} ✅",
+                                          fcmTokens: tokens,
                                         );
                                   }
                                 }
@@ -441,15 +451,6 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 16.h),
-
-                      // ── Lead Information Section ──────────────────────
-                      _buildInfoSection(isDark, primaryColor),
-                      SizedBox(height: 16.h),
-
-                      // ── Notes Section ─────────────────────────────────
-                      _buildNotesSection(isDark, primaryColor),
-                      SizedBox(height: 20.h),
                     ],
                   ),
                 ),
@@ -466,68 +467,85 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   // ═══════════════════════════════════════════════════════════════
   Widget _buildHeroHeaderCard(bool isDark, Color primaryColor) {
     return Container(
-      padding: EdgeInsets.all(20.h),
+      padding: EdgeInsets.all(15.h),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors:
               isDark
-                  ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
-                  : [const Color(0xFFF8F9FA), const Color(0xFFE9ECEF)],
+                  ? [Color(0xFF1A1A2E), Color(0xFF16213E)]
+                  : [Colors.white, Colors.white],
         ),
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
-          // Name + Stage badge
-          Text(
-            widget.leadName ?? 'No Name',
-            style: TextStyle(
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-            ),
+          // NAME ROW
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.leadName ?? 'No Name',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 21.sp,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 8.h),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20.r),
-            ),
-            child: Text(
-              widget.leadStage ?? 'No Stage',
-              style: TextStyle(
-                color: primaryColor,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          SizedBox(height: 20.h),
-
-          // Phone + Email chips
+          // STAGE BADGE
           Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: Constants.mainlightmodecolor,
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Text(
+                  widget.leadStage ?? 'No Stage',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 13.h),
+          // CONTACT CHIPS
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               _buildContactChip(
                 icon: Icons.phone,
-                label: widget.leadPhone ?? 'No Phone',
+                label: "Call",
                 onTap:
                     widget.leadPhone != null
-                        ? () => makePhoneCall("+${widget.leadPhone}")
+                        ? () => makePhoneCall(
+                          widget.leadPhone!.startsWith('+')
+                              ? widget.leadPhone!
+                              : "+${widget.leadPhone}",
+                        )
                         : null,
                 isDark: isDark,
                 primaryColor: primaryColor,
               ),
-              SizedBox(width: 12.w),
+              SizedBox(width: 14.w),
               _buildContactChip(
                 icon: Icons.email,
                 label:
@@ -535,59 +553,55 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                             widget.leadEmail!.trim().isNotEmpty)
                         ? widget.leadEmail!
                         : 'No Email',
+                onTap: () async {
+                  final email = widget.leadEmail?.trim();
+
+                  if (email == null || email.isEmpty) return;
+
+                  final uri = Uri(scheme: 'mailto', path: email);
+
+                  await launchUrl(uri);
+                },
                 isDark: isDark,
                 primaryColor: primaryColor,
               ),
-            ],
-          ),
-          SizedBox(height: 16.h),
+              SizedBox(width: 14.w),
+              _buildActionChip(
+                icon: FontAwesomeIcons.whatsapp,
+                label: "WhatsApp",
+                onTap: () async {
+                  final phone =
+                      (widget.leadwhatsappnumber?.trim().isNotEmpty ?? false)
+                          ? widget.leadwhatsappnumber!
+                          : (widget.leadPhone ?? '');
 
-          // WhatsApp + Second Phone action chips
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (widget.leadwhatsappnumber != null &&
-                  widget.leadwhatsappnumber!.isNotEmpty)
-                _buildActionChip(
-                  icon: FontAwesomeIcons.whatsapp,
-                  label: "WhatsApp",
-                  onTap: () async {
-                    final normalizedPhone = normalizePhoneNumber(
-                      widget.leadwhatsappnumber!,
+                  final cleanedPhone = phone.replaceAll(RegExp(r'\D'), '');
+
+                  if (cleanedPhone.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("No phone number available."),
+                      ),
                     );
-                    final waPhone = normalizedPhone.replaceAll(
-                      RegExp(r'\D'),
-                      '',
+                    return;
+                  }
+
+                  final url = "https://wa.me/$cleanedPhone";
+
+                  try {
+                    await launchUrl(
+                      Uri.parse(url),
+                      mode: LaunchMode.externalApplication,
                     );
-                    final url = "https://wa.me/$waPhone";
-                    try {
-                      await launchUrl(
-                        Uri.parse(url),
-                        mode: LaunchMode.externalApplication,
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Could not open WhatsApp."),
-                        ),
-                      );
-                    }
-                  },
-                  isDark: isDark,
-                  primaryColor: primaryColor,
-                ),
-              if (widget.leadwhatsappnumber != null &&
-                  widget.leadwhatsappnumber!.isNotEmpty)
-                SizedBox(width: 12.w),
-              if (widget.secondphonenumber != null &&
-                  widget.secondphonenumber!.isNotEmpty)
-                _buildActionChip(
-                  icon: Icons.phone_forwarded,
-                  label: "Second Phone",
-                  onTap: () => makePhoneCall("+${widget.secondphonenumber}"),
-                  isDark: isDark,
-                  primaryColor: primaryColor,
-                ),
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Could not open WhatsApp.")),
+                    );
+                  }
+                },
+                isDark: isDark,
+                primaryColor: Colors.green,
+              ),
             ],
           ),
         ],
@@ -602,129 +616,145 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
     return Container(
       padding: EdgeInsets.all(20.h),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: BlocBuilder<LeadCommentsCubit, LeadCommentsState>(
         builder: (context, state) {
-          if (state is LeadCommentsLoading) {
-            return Center(
-              child: SizedBox(
-                width: 24.w,
-                height: 24.w,
-                child: const CircularProgressIndicator(),
-              ),
-            );
-          } else if (state is LeadCommentsError) {
-            return Center(
-              child: Text(
-                'Error: ${state.message}',
-                style: TextStyle(fontSize: 12.sp),
-              ),
-            );
-          } else if (state is NewCommentsLoaded) {
-            final newCommentsData = state.newComments;
+          String firstText = 'No comment available.';
+          String secondText = 'No action available.';
+          String dateStr = '';
 
-            if (newCommentsData.comments == null ||
-                newCommentsData.comments!.isEmpty) {
-              return _buildNoComments(primaryColor);
+          if (state is NewCommentsLoaded) {
+            final comments = state.newComments.comments;
+            if (comments != null && comments.isNotEmpty) {
+              final last = comments.first;
+              firstText = last.firstcomment?.text ?? 'No comment available.';
+              secondText = last.secondcomment?.text ?? 'No action available.';
+              dateStr = last.firstcomment?.date?.toString() ?? '';
             }
-
-            final lastComment = newCommentsData.comments!.first;
-
-            final firstCommentDate = DateTime.tryParse(
-              lastComment.firstcomment?.date.toString() ?? '',
-            )?.toUtc().add(const Duration(hours: 4));
-
-            final secondCommentDate = DateTime.tryParse(
-              lastComment.secondcomment?.date.toString() ?? '',
-            )?.toUtc().add(const Duration(hours: 4));
-
-            print('firstCommentDate Dubai: $firstCommentDate');
-            print('secondCommentDate Dubai: $secondCommentDate');
-            print('clearHistoryDubai: $clearHistoryTimee');
-
-            final bool hasFirstComment =
-                lastComment.firstcomment?.text?.isNotEmpty ?? false;
-            final bool hasSecondComment =
-                lastComment.secondcomment?.text?.isNotEmpty ?? false;
-
-            if (!hasFirstComment && !hasSecondComment) {
-              return _buildNoComments(primaryColor);
-            }
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSectionHeader(
-                  Icons.chat_bubble_outline,
-                  "Last Comment",
-                  primaryColor,
-                ),
-                SizedBox(height: 16.h),
-                if (hasFirstComment)
-                  _buildCommentBubble(
-                    title: "Comment",
-                    content:
-                        lastComment.firstcomment?.text ??
-                        'No comment available.',
-                    primaryColor: primaryColor,
-                  ),
-                if (hasFirstComment && hasSecondComment) SizedBox(height: 16.h),
-                if (hasSecondComment)
-                  _buildCommentBubble(
-                    title: "Action Plan",
-                    content:
-                        lastComment.secondcomment?.text ??
-                        'No action available.',
-                    primaryColor: primaryColor,
-                  ),
-              ],
-            );
           }
 
-          return _buildNoComments(primaryColor);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "LAST ACTIVITY",
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                  color: isDark ? Colors.white70 : const Color(0xFF4A4A57),
+                ),
+              ),
+              SizedBox(height: 18.h),
+              _buildCommentBubble(
+                title: widget.leadStage ?? '',
+                content: firstText,
+                dateStr: dateStr,
+                primaryColor: const Color(0xFF9C6B00),
+                icon: Icons.history_toggle_off,
+                isDark: isDark,
+              ),
+              SizedBox(height: 28.h),
+              Text(
+                "ACTION PLAN",
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                  color: isDark ? Colors.white70 : const Color(0xFF4A4A57),
+                ),
+              ),
+              SizedBox(height: 18.h),
+              _buildCommentBubble(
+                title: widget.leadStage ?? '',
+                content: secondText,
+                dateStr: '',
+                primaryColor: primaryColor,
+                icon: Icons.notifications_none,
+                isDark: isDark,
+                isTimeline: true,
+              ),
+            ],
+          );
         },
       ),
-    );
-  }
-
-  Widget _buildNoComments(Color primaryColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader(
-          Icons.chat_bubble_outline,
-          "Last Comment",
-          primaryColor,
-        ),
-        SizedBox(height: 16.h),
-        Center(
-          child: Text(
-            'No comments available',
-            style: TextStyle(fontSize: 12.sp, color: const Color(0xFF6A6A75)),
-          ),
-        ),
-      ],
     );
   }
 
   // ═══════════════════════════════════════════════════════════════
   //  LEAD INFORMATION SECTION
   // ═══════════════════════════════════════════════════════════════
+  bool _showMoreDetails = false;
+
   Widget _buildInfoSection(bool isDark, Color primaryColor) {
+    final basicTiles = [
+      _buildInfoTile(
+        Icons.phone_outlined,
+        "Phone",
+        widget.leadPhone ?? 'No Phone',
+        showActions: true,
+      ),
+      if (widget.secondphonenumber != null &&
+          widget.secondphonenumber!.isNotEmpty)
+        _buildInfoTile(
+          Icons.phone_forwarded,
+          "Second Phone",
+          widget.secondphonenumber!,
+          showActions: true,
+        ),
+      _buildInfoTile(
+        Icons.business,
+        "Project",
+        widget.leadProject ?? 'No Project',
+      ),
+    ];
+
+    final extraTiles = [
+      _buildInfoTile(
+        Icons.work_outline,
+        "Job Description",
+        widget.jobdescription?.isNotEmpty == true
+            ? widget.jobdescription!
+            : 'No job description',
+      ),
+      _buildInfoTile(
+        Icons.email_outlined,
+        "Email",
+        widget.leadEmail ?? 'No Email',
+      ),
+      _buildInfoTile(
+        Icons.apartment,
+        "Developer",
+        widget.leaddeveloper ?? 'No Developer',
+      ),
+      _buildInfoTile(
+        Icons.campaign,
+        "Campaign",
+        widget.leadcampaign ?? 'No Campaign',
+      ),
+      if (widget.leadCreationDate != null &&
+          widget.leadCreationDate!.isNotEmpty &&
+          widget.resetcreationdate == false)
+        _buildInfoTile(
+          Icons.calendar_today,
+          "Creation Date",
+          formatDateTimeToDubai(widget.leadCreationDate!),
+        ),
+    ];
+
     return Container(
       padding: EdgeInsets.all(20.h),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -736,66 +766,67 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(
-            Icons.info_outline,
-            "Lead Information",
-            primaryColor,
+          Text(
+            "LEAD INFORMATION",
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
+              color: isDark ? Colors.white70 : const Color(0xFF5E5E6A),
+            ),
           ),
-          SizedBox(height: 16.h),
-          Wrap(
-            spacing: 16.w,
-            runSpacing: 12.h,
-            children: [
-              _buildInfoTile(
-                Icons.work_outline,
-                "Job Description",
-                widget.jobdescription?.isNotEmpty == true
-                    ? widget.jobdescription!
-                    : 'No job description',
-              ),
-              _buildInfoTile(
-                Icons.business,
-                "Project",
-                widget.leadProject ?? 'No Project',
-              ),
-              _buildInfoTile(
-                Icons.apartment,
-                "Developer",
-                widget.leaddeveloper ?? 'No Developer',
-              ),
-              _buildInfoTile(
-                Icons.campaign,
-                "Campaign",
-                widget.leadcampaign ?? 'No Campaign',
-              ),
-              _buildInfoTile(
-                Icons.wifi_tethering,
-                "Channel",
-                widget.leadChannel ?? 'No Channel',
-              ),
-              // نفس اللوجيك الأصلي – Creation Date
-              if (widget.leadCreationDate != null &&
-                  widget.leadCreationDate!.isNotEmpty)
-                _buildInfoTile(
-                  Icons.calendar_today,
-                  "Creation Date",
-                  formatDateTimeToDubai(widget.leadCreationDate!),
-                ),
-              // Questions Section
-              if (_hasQuestions()) ...[
-                SizedBox(height: 20.h),
-                Divider(color: primaryColor.withOpacity(0.2)),
-                SizedBox(height: 16.h),
-                _buildSectionHeader(
-                  Icons.quiz,
-                  "Additional Questions",
-                  primaryColor,
-                ),
-                SizedBox(height: 16.h),
-                ..._buildQuestionsList(primaryColor, isDark),
-              ],
-            ],
+          SizedBox(height: 22.h),
+          ...basicTiles,
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 300),
+            crossFadeState:
+                _showMoreDetails
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+            firstChild: const SizedBox(),
+            secondChild: Column(children: extraTiles),
           ),
+          SizedBox(height: 8.h),
+          Divider(color: Colors.grey.withOpacity(0.2)),
+          InkWell(
+            onTap: () => setState(() => _showMoreDetails = !_showMoreDetails),
+            borderRadius: BorderRadius.circular(12.r),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _showMoreDetails ? "SHOW LESS" : "SHOW MORE",
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                  SizedBox(width: 6.w),
+                  AnimatedRotation(
+                    turns: _showMoreDetails ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 300),
+                    child: Icon(Icons.keyboard_arrow_down, color: primaryColor),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_hasQuestions()) ...[
+            SizedBox(height: 20.h),
+            Divider(color: primaryColor.withOpacity(0.2)),
+            SizedBox(height: 16.h),
+            _buildSectionHeader(
+              Icons.quiz,
+              "Additional Questions",
+              primaryColor,
+            ),
+            SizedBox(height: 16.h),
+            ..._buildQuestionsList(primaryColor, isDark),
+          ],
         ],
       ),
     );
@@ -852,7 +883,8 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
     required bool isDark,
     required Color primaryColor,
   }) {
-    return Expanded(
+    return SizedBox(
+      width: 90.w,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12.r),
@@ -863,18 +895,17 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(color: primaryColor.withOpacity(0.2)),
           ),
-          child: Row(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 16.sp, color: primaryColor),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(fontSize: 12.sp),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
+              Icon(icon, size: 18.sp, color: primaryColor),
+              SizedBox(height: 6.h),
+              Text(
+                label,
+                style: TextStyle(fontSize: 12.sp),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -890,22 +921,32 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
     required bool isDark,
     required Color primaryColor,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12.r),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: primaryColor.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            FaIcon(icon, size: 14.sp, color: primaryColor),
-            SizedBox(width: 8.w),
-            Text(label, style: TextStyle(fontSize: 12.sp)),
-          ],
+    return SizedBox(
+      width: 90.w,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: primaryColor.withOpacity(0.2)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FaIcon(icon, size: 18.sp, color: primaryColor),
+              SizedBox(height: 6.h),
+              Text(
+                label,
+                style: TextStyle(fontSize: 12.sp),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -921,30 +962,35 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   }) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        padding: EdgeInsets.symmetric(vertical: 12.h),
+        padding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 16.w),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(14.r),
+          side: BorderSide(
+            color: isOutlined ? Colors.white : Constants.maincolor,
+          ),
         ),
-        backgroundColor: isOutlined ? Colors.transparent : primaryColor,
+        backgroundColor: isOutlined ? Constants.maincolor : primaryColor,
         side: isOutlined ? BorderSide(color: primaryColor, width: 1.5) : null,
         elevation: isOutlined ? 0 : 2,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
       ),
       onPressed: onPressed,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min, // 👈 مهم جدًا
         children: [
           Icon(
             icon,
             size: 18.sp,
-            color: isOutlined ? primaryColor : Colors.white,
+            color: isOutlined ? Colors.white : Constants.maincolor,
           ),
-          SizedBox(width: 8.w),
+          SizedBox(width: 6.w),
           Text(
             label,
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
-              color: isOutlined ? primaryColor : Colors.white,
+              color: isOutlined ? Colors.white : Constants.maincolor,
             ),
           ),
         ],
@@ -955,38 +1001,156 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   Widget _buildCommentBubble({
     required String title,
     required String content,
+    required String dateStr,
     required Color primaryColor,
+    required IconData icon,
+    required bool isDark,
+    bool isTimeline = false,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    if (isTimeline) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 42.w,
+                height: 42.w,
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: Colors.white, size: 20.sp),
+              ),
+              Container(
+                width: 2.w,
+                height: 90.h,
+                color: Colors.grey.withOpacity(0.2),
+              ),
+            ],
+          ),
+          SizedBox(width: 14.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: primaryColor,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                SelectableText(
+                  content,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    height: 1.6,
+                    color: isDark ? Colors.white : const Color(0xFF2B2B2E),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color:
+            isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF5F5F7),
+        borderRadius: BorderRadius.circular(22.r),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
           children: [
-            Container(width: 3.w, height: 14.h, color: primaryColor),
-            SizedBox(width: 8.w),
-            Text(
-              title,
-              style: TextStyle(
+            Container(
+              width: 5.w,
+              decoration: BoxDecoration(
                 color: primaryColor,
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(22.r),
+                  bottomLeft: Radius.circular(22.r),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(18.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(icon, color: primaryColor, size: 20.sp),
+                            SizedBox(width: 8.w),
+                            Text(
+                              title,
+                              style: TextStyle(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w700,
+                                color: primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (dateStr.isNotEmpty)
+                          Text(
+                            formatDateTimeToDubai(dateStr),
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                      ],
+                    ),
+                    SizedBox(height: 18.h),
+                    SelectableText(
+                      content,
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        height: 1.6,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white : const Color(0xFF1C1C1E),
+                      ),
+                    ),
+                    SizedBox(height: 18.h),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 14.r,
+                          backgroundColor: primaryColor.withOpacity(0.08),
+                          child: Icon(
+                            Icons.person,
+                            size: 14.sp,
+                            color: primaryColor,
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+                        Text(
+                          widget.leadName ?? 'Unknown',
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-        SizedBox(height: 8.h),
-        Container(
-          padding: EdgeInsets.all(12.h),
-          decoration: BoxDecoration(
-            color: primaryColor.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: SelectableText(
-            content,
-            style: TextStyle(fontSize: 13.sp, height: 1.5),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -1014,39 +1178,116 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String label, String value) {
-    return SizedBox(
-      width: (MediaQuery.of(context).size.width - 32.w - 40.w) / 2,
+  Widget _buildInfoTile(
+    IconData icon,
+    String label,
+    String value, {
+    bool showActions = false,
+  }) {
+    final String formattedPhone =
+        value.startsWith('+')
+            ? value
+            : (value.startsWith('0') ? '+2$value' : '+$value');
+
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: 16.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18.sp, color: Constants.maincolor),
-          SizedBox(width: 10.w),
+          Container(
+            width: 52.w,
+            height: 52.w,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Icon(icon, color: Constants.maincolor, size: 24.sp),
+          ),
+          SizedBox(width: 14.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
+                  label.toUpperCase(),
                   style: TextStyle(
                     fontSize: 11.sp,
-                    color: const Color(0xFF6A6A75),
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                    color: Colors.grey.shade600,
                   ),
                 ),
                 SizedBox(height: 4.h),
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
+          if (showActions && value.isNotEmpty)
+            Row(
+              children: [
+                InkWell(
+                  onTap: () async {
+                    final Uri callUri = Uri(
+                      scheme: 'tel',
+                      path: formattedPhone,
+                    );
+                    if (await canLaunchUrl(callUri)) await launchUrl(callUri);
+                  },
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: Container(
+                    padding: EdgeInsets.all(10.w),
+                    decoration: BoxDecoration(
+                      color: Color(0xffF2F4F7),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Icon(
+                      Icons.call,
+                      color: Color(0xff003178),
+                      size: 20.sp,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                InkWell(
+                  onTap: () async {
+                    final phone = value.replaceAll(RegExp(r'\D'), '');
+                    final url = "https://wa.me/$phone";
+                    try {
+                      await launchUrl(
+                        Uri.parse(url),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Could not open WhatsApp."),
+                        ),
+                      );
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: Container(
+                    padding: EdgeInsets.all(10.w),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: FaIcon(
+                      FontAwesomeIcons.whatsapp,
+                      color: Colors.green,
+                      size: 20.sp,
+                    ),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

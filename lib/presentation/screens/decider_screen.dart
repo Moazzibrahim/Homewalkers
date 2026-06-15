@@ -21,20 +21,32 @@ class DeciderScreen extends StatelessWidget {
 
     final token = prefs.getString('token');
     final role = prefs.getString('role');
-
-    // 🔥 تحميل الدومين
     final savedDomain = prefs.getString('company_domain');
 
-    if (savedDomain != null && savedDomain.isNotEmpty) {
-      Constants.baseUrl = "https://$savedDomain/api/v1";
-      print("✅ Loaded Base URL: ${Constants.baseUrl}");
-    } else {
-      print("❌ No saved domain");
+    // 🔥 لو مفيش token، يبقى مفيش داعي للـ domain
+    if (token == null || token.isEmpty) {
+      print("❌ No token found, ignoring saved domain");
+      // امسح domain لو موجود
+      if (savedDomain != null && savedDomain.isNotEmpty) {
+        await prefs.remove('company_domain');
+      }
+      Constants.baseUrl = "";
+      return {'hasToken': false, 'role': null};
     }
 
-    print("token: $token, role: $role");
+    // لو فيه token بس مفيش domain، ده خطأ
+    if (savedDomain == null || savedDomain.isEmpty) {
+      print("❌ Token exists but no domain, clearing token");
+      await prefs.remove('token');
+      Constants.baseUrl = "";
+      return {'hasToken': false, 'role': null};
+    }
 
-    return {'hasToken': token != null && token.isNotEmpty, 'role': role};
+    // بس كده نحدد الـ baseUrl
+    Constants.baseUrl = "https://$savedDomain/api/v1";
+    print("✅ Loaded Base URL: ${Constants.baseUrl}");
+
+    return {'hasToken': true, 'role': role};
   }
 
   @override
@@ -52,9 +64,9 @@ class DeciderScreen extends StatelessWidget {
           final role = data?['role'];
 
           // 👈 هنا نعمل update check
-          // WidgetsBinding.instance.addPostFrameCallback((_) {
-          //   UpdateService.checkForUpdate(context);
-          // });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            UpdateService.checkForUpdate(context);
+          });
 
           if (hasToken && role == 'Sales') {
             context.read<NotificationCubit>().initNotifications();

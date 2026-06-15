@@ -1,21 +1,39 @@
-import 'dart:math' as math; // ✅ للكشف عن التابلت
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // ✅ مهم للتجاوب
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/Admin_with_pagination/fetch_data_with_pagination.dart';
 import 'package:homewalkers_app/data/data_sources/fetch_admin_sales_api_service.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
+import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/adminSales/admin_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/adminSales/admin_sales_state.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:shimmer/shimmer.dart';
 
-class AdminSalesSceen extends StatelessWidget {
-  const AdminSalesSceen({super.key});
+class AdminSalesSceen extends StatefulWidget {
+  final bool showNavBar; // ← أضف ده
+
+  const AdminSalesSceen({super.key, this.showNavBar = true});
+
+  @override
+  State<AdminSalesSceen> createState() => _AdminSalesSceenState();
+}
+
+class _AdminSalesSceenState extends State<AdminSalesSceen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ كشف نوع الجهاز داخل الـ build
     final bool isTabletDevice = () {
       final data = MediaQuery.of(context);
       final physicalSize = data.size;
@@ -26,7 +44,6 @@ class AdminSalesSceen extends StatelessWidget {
       return inches >= 7.0;
     }();
 
-    // ✅ عوامل التصغير حسب الجهاز
     final double tabletScale = isTabletDevice ? 0.85 : 1.0;
     final double tabletFontScale = isTabletDevice ? 0.9 : 1.0;
     final double tabletWidthScale = isTabletDevice ? 0.85 : 1.0;
@@ -38,6 +55,10 @@ class AdminSalesSceen extends StatelessWidget {
               AdminSalesCubit(FetchAdminSalesApiService())
                 ..fetchSalesLeadsCount(),
       child: Scaffold(
+      bottomNavigationBar:
+          widget.showNavBar
+              ? SharedAdminNavBar(currentIndex: 2)
+              : null, 
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
                 ? Constants.backgroundlightmode
@@ -51,171 +72,150 @@ class AdminSalesSceen extends StatelessWidget {
             );
           },
         ),
-        body: BlocBuilder<AdminSalesCubit, AdminSalesState>(
-          builder: (context, state) {
-            if (state is AdminSalesLoading) {
-              return _buildShimmerList(
-                context,
-                isTabletDevice,
-                tabletScale,
-                tabletFontScale,
-                tabletWidthScale,
-                tabletHeightScale,
-              );
-            }
-
-            if (state is AdminSalesError) {
-              return Center(
-                child: Padding(
-                  padding: EdgeInsets.all((16 * tabletScale).r),
-                  child: Text(
-                    state.message,
-                    style: TextStyle(
-                      fontSize: (16 * tabletFontScale).sp,
-                      color:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Colors.black87
-                              : Colors.white70,
+        body: Column(
+          children: [
+            // ── Search Bar ──────────────────────────────
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                (16 * tabletWidthScale).w,
+                (16 * tabletHeightScale).h,
+                (16 * tabletWidthScale).w,
+                (8 * tabletHeightScale).h,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Color(0xffE6E8EB)
+                          : Color(0xff333333),
+                  borderRadius: BorderRadius.circular((10 * tabletScale).r),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search sales agents by name...',
+                    hintStyle: TextStyle(
+                      color: Color(0xff737783),
+                      fontSize: (14 * tabletFontScale).sp,
                     ),
-                    textAlign: TextAlign.center,
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Color(0xff737783),
+                      size: (20 * tabletFontScale).sp,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: (16 * tabletWidthScale).w,
+                      vertical: (14 * tabletHeightScale).h,
+                    ),
                   ),
                 ),
-              );
-            }
-
-            if (state is AdminSalesLoaded) {
-              final salesList = state.data.data ?? [];
-
-              // ✅ استخدام GridView للتابلت لعرض أكثر من عمود
-              if (isTabletDevice) {
-                return GridView.builder(
-                  padding: EdgeInsets.all((16 * tabletScale).r),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // ✅ تابلت: عمودين
-                    crossAxisSpacing: (16 * tabletWidthScale).w,
-                    mainAxisSpacing: (16 * tabletHeightScale).h,
-                    childAspectRatio: 1.8, // ✅ نسبة مناسبة للكارد
-                  ),
-                  itemCount: salesList.length,
-                  itemBuilder: (context, index) {
-                    final item = salesList[index];
-                    return _buildSalesCard(
-                      item.salesName ?? 'No Name',
-                      (item.activeLeadsCount ?? 0).toInt(),
-                      context,
-                      isTabletDevice,
-                      tabletScale,
-                      tabletFontScale,
-                      tabletWidthScale,
-                      tabletHeightScale,
-                    );
-                  },
-                );
-              } else {
-                // ✅ موبايل: ListView عادي
-                return ListView.builder(
-                  padding: EdgeInsets.all((16 * tabletScale).r),
-                  itemCount: salesList.length,
-                  itemBuilder: (context, index) {
-                    final item = salesList[index];
-                    return _buildSalesCard(
-                      item.salesName ?? 'No Name',
-                      (item.activeLeadsCount ?? 0).toInt(),
-                      context,
-                      isTabletDevice,
-                      tabletScale,
-                      tabletFontScale,
-                      tabletWidthScale,
-                      tabletHeightScale,
-                    );
-                  },
-                );
-              }
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-      ),
-    );
-  }
-
-  // 💳 كارد السيلز - متجاوب بالكامل
-  Widget _buildSalesCard(
-    String name,
-    int leadsCount,
-    BuildContext context,
-    bool isTabletDevice,
-    double tabletScale,
-    double tabletFontScale,
-    double tabletWidthScale,
-    double tabletHeightScale,
-  ) {
-    return Card(
-      elevation: (2 * tabletScale).r,
-      margin: EdgeInsets.symmetric(
-        vertical: (8 * tabletHeightScale).h,
-        horizontal: isTabletDevice ? 0 : (0 * tabletWidthScale).w,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular((12 * tabletScale).r),
-      ),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: (16 * tabletWidthScale).w,
-          vertical: (12 * tabletHeightScale).h,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: (16 * tabletFontScale).sp,
-                      color:
-                          Theme.of(context).brightness == Brightness.light
-                              ? const Color(0xFF0D1B2A)
-                              : Colors.white,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  SizedBox(height: (4 * tabletHeightScale).h),
-                  Text(
-                    'Sales',
-                    style: TextStyle(
-                      fontSize: (12 * tabletFontScale).sp,
-                      color:
-                          Theme.of(context).brightness == Brightness.light
-                              ? Constants.maincolor
-                              : Constants.mainDarkmodecolor,
-                    ),
-                  ),
-                ],
               ),
             ),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: (12 * tabletWidthScale).w,
-                vertical: (6 * tabletHeightScale).h,
-              ),
-              decoration: BoxDecoration(
-                color:
-                    Theme.of(context).brightness == Brightness.light
-                        ? Constants.maincolor
-                        : Constants.mainDarkmodecolor,
-                borderRadius: BorderRadius.circular((16 * tabletScale).r),
-              ),
-              child: Text(
-                '$leadsCount ${leadsCount == 1 ? 'Lead' : 'Leads'}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: (14 * tabletFontScale).sp,
-                ),
+
+            // ── List ────────────────────────────────────
+            Expanded(
+              child: BlocBuilder<AdminSalesCubit, AdminSalesState>(
+                builder: (context, state) {
+                  if (state is AdminSalesLoading) {
+                    return _buildShimmerList(
+                      context,
+                      isTabletDevice,
+                      tabletScale,
+                      tabletFontScale,
+                      tabletWidthScale,
+                      tabletHeightScale,
+                    );
+                  }
+
+                  if (state is AdminSalesError) {
+                    return Center(
+                      child: Text(
+                        state.message,
+                        style: TextStyle(fontSize: (16 * tabletFontScale).sp),
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  }
+
+                  if (state is AdminSalesLoaded) {
+                    final salesList =
+                        (state.data.data ?? []).where((item) {
+                          final name = (item.salesName ?? '').toLowerCase();
+                          return !name.contains('no sales') &&
+                              !name.startsWith('default') &&
+                              (_searchQuery.isEmpty ||
+                                  name.contains(_searchQuery));
+                        }).toList();
+
+                    if (salesList.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No sales agents found',
+                          style: TextStyle(
+                            fontSize: (14 * tabletFontScale).sp,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      );
+                    }
+
+                    if (isTabletDevice) {
+                      return GridView.builder(
+                        padding: EdgeInsets.all((16 * tabletScale).r),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: (16 * tabletWidthScale).w,
+                          mainAxisSpacing: (16 * tabletHeightScale).h,
+                          childAspectRatio: 1.8,
+                        ),
+                        itemCount: salesList.length,
+                        itemBuilder: (context, index) {
+                          final item = salesList[index];
+                          return _buildSalesCard(
+                            item.salesName ?? 'No Name',
+                            (item.activeLeadsCount ?? 0).toInt(),
+                            item.salesId ?? '', // ✅ أضف ده
+                            context,
+                            isTabletDevice,
+                            tabletScale,
+                            tabletFontScale,
+                            tabletWidthScale,
+                            tabletHeightScale,
+                          );
+                        },
+                      );
+                    } else {
+                      return ListView.builder(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: (16 * tabletWidthScale).w,
+                          vertical: (8 * tabletHeightScale).h,
+                        ),
+                        itemCount: salesList.length,
+                        itemBuilder: (context, index) {
+                          final item = salesList[index];
+                          return _buildSalesCard(
+                            item.salesName ?? 'No Name',
+                            (item.activeLeadsCount ?? 0).toInt(),
+                            item.salesId ?? '', // ✅ أضف ده
+                            context,
+                            isTabletDevice,
+                            tabletScale,
+                            tabletFontScale,
+                            tabletWidthScale,
+                            tabletHeightScale,
+                          );
+                        },
+                      );
+                    }
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
             ),
           ],
@@ -224,7 +224,181 @@ class AdminSalesSceen extends StatelessWidget {
     );
   }
 
-  // 🔆 Shimmer loading list - متجاوب بالكامل
+  Widget _buildSalesCard(
+    String name,
+    int leadsCount,
+    String salesId, // ✅ أضف ده
+    BuildContext context,
+    bool isTabletDevice,
+    double tabletScale,
+    double tabletFontScale,
+    double tabletWidthScale,
+    double tabletHeightScale,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ✅ Avatar initials
+    final initials =
+        name
+            .trim()
+            .split(' ')
+            .take(2)
+            .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
+            .join();
+
+    return Container(
+      margin: EdgeInsets.only(bottom: (12 * tabletHeightScale).h),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xff1e1e1e) : Colors.white,
+        borderRadius: BorderRadius.circular((16 * tabletScale).r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: (8 * tabletScale).r,
+            offset: Offset(0, (2 * tabletHeightScale).h),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all((16 * tabletScale).r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Row: Avatar + Name + Leads ──
+            Row(
+              children: [
+                // Avatar
+                Container(
+                  width: (56 * tabletWidthScale).w,
+                  height: (56 * tabletHeightScale).h,
+                  decoration: BoxDecoration(
+                    color: Constants.maincolor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular((12 * tabletScale).r),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: TextStyle(
+                        fontSize: (18 * tabletFontScale).sp,
+                        fontWeight: FontWeight.bold,
+                        color: Constants.maincolor,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: (12 * tabletWidthScale).w),
+
+                // Name + Role
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: (15 * tabletFontScale).sp,
+                          fontWeight: FontWeight.bold,
+                          color:
+                              isDark ? Colors.white : const Color(0xFF0D1B2A),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: (2 * tabletHeightScale).h),
+                      Text(
+                        'Sales',
+                        style: TextStyle(
+                          fontSize: (13 * tabletFontScale).sp,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Leads Badge
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: (12 * tabletWidthScale).w,
+                    vertical: (6 * tabletHeightScale).h,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        isDark
+                            ? Constants.maincolor.withOpacity(0.2)
+                            : const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular((20 * tabletScale).r),
+                  ),
+                  child: Text(
+                    '$leadsCount Leads',
+                    style: TextStyle(
+                      fontSize: (13 * tabletFontScale).sp,
+                      fontWeight: FontWeight.w600,
+                      color: Constants.maincolor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // ── Divider ──
+            Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: (12 * tabletHeightScale).h,
+              ),
+              child: Divider(
+                height: 1,
+                color: isDark ? Colors.grey[800] : Colors.grey[100],
+              ),
+            ),
+
+            // ── View Details ──
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (_) => BlocProvider(
+                          create:
+                              (_) => AllLeadsCubitWithPagination(
+                                LeadsApiServiceWithQuery(),
+                              ),
+                          child: AdminLeadsScreen(
+                            data: false,
+                            transferefromdata: true,
+                            salesIdss: [salesId],
+                            leadsCount: leadsCount,
+                          ),
+                        ),
+                  ),
+                );
+              },
+              child: Row(
+                children: [
+                  Text(
+                    'View Details',
+                    style: TextStyle(
+                      fontSize: (14 * tabletFontScale).sp,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xff003178),
+                    ),
+                  ),
+                  SizedBox(width: (4 * tabletWidthScale).w),
+                  Icon(
+                    Icons.chevron_right,
+                    size: (16 * tabletFontScale).sp,
+                    color: Constants.maincolor,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildShimmerList(
     BuildContext context,
     bool isTabletDevice,
@@ -235,91 +409,82 @@ class AdminSalesSceen extends StatelessWidget {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (isTabletDevice) {
-      // ✅ تابلت: GridView Shimmer
-      return GridView.builder(
-        padding: EdgeInsets.all((16 * tabletScale).r),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: (16 * tabletWidthScale).w,
-          mainAxisSpacing: (16 * tabletHeightScale).h,
-          childAspectRatio: 1.8,
-        ),
-        itemCount: 6,
-        itemBuilder: (context, index) {
-          return Shimmer.fromColors(
-            baseColor: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-            highlightColor: isDark ? Colors.grey[500]! : Colors.grey[100]!,
-            child: Card(
-              color: isDark ? Colors.grey[800] : Colors.white,
-              elevation: (2 * tabletScale).r,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular((12 * tabletScale).r),
-              ),
-              child: Container(
-                padding: EdgeInsets.all((16 * tabletScale).r),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(
+        horizontal: (16 * tabletWidthScale).w,
+        vertical: (8 * tabletHeightScale).h,
+      ),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+          highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+          child: Container(
+            margin: EdgeInsets.only(bottom: (12 * tabletHeightScale).h),
+            padding: EdgeInsets.all((16 * tabletScale).r),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular((16 * tabletScale).r),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
                     Container(
-                      height: (20 * tabletHeightScale).h,
-                      width: double.infinity,
-                      color: isDark ? Colors.grey[700] : Colors.white,
+                      width: (56 * tabletWidthScale).w,
+                      height: (56 * tabletHeightScale).h,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(
+                          (12 * tabletScale).r,
+                        ),
+                      ),
                     ),
-                    SizedBox(height: (8 * tabletHeightScale).h),
+                    SizedBox(width: (12 * tabletWidthScale).w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: (16 * tabletHeightScale).h,
+                            width: double.infinity,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: (6 * tabletHeightScale).h),
+                          Container(
+                            height: (12 * tabletHeightScale).h,
+                            width: (80 * tabletWidthScale).w,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ),
                     Container(
-                      height: (16 * tabletHeightScale).h,
                       width: (80 * tabletWidthScale).w,
-                      color: isDark ? Colors.grey[600] : Colors.white,
+                      height: (32 * tabletHeightScale).h,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(
+                          (20 * tabletScale).r,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ),
-          );
-        },
-      );
-    } else {
-      // ✅ موبايل: ListView Shimmer
-      return ListView.builder(
-        padding: EdgeInsets.all((16 * tabletScale).r),
-        itemCount: 6,
-        itemBuilder: (context, index) {
-          return Shimmer.fromColors(
-            baseColor: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-            highlightColor: isDark ? Colors.grey[500]! : Colors.grey[100]!,
-            child: Card(
-              color: isDark ? Colors.grey[800] : Colors.white,
-              elevation: (2 * tabletScale).r,
-              margin: EdgeInsets.symmetric(vertical: (8 * tabletHeightScale).h),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular((12 * tabletScale).r),
-              ),
-              child: ListTile(
-                title: Container(
-                  height: (16 * tabletHeightScale).h,
-                  width: double.infinity,
-                  color: isDark ? Colors.grey[700] : Colors.white,
-                ),
-                subtitle: Container(
-                  height: (12 * tabletHeightScale).h,
+                SizedBox(height: (12 * tabletHeightScale).h),
+                Container(height: 1, color: Colors.white),
+                SizedBox(height: (12 * tabletHeightScale).h),
+                Container(
+                  height: (13 * tabletHeightScale).h,
                   width: (100 * tabletWidthScale).w,
-                  margin: EdgeInsets.only(top: (8 * tabletHeightScale).h),
-                  color: isDark ? Colors.grey[600] : Colors.white,
+                  color: Colors.white,
                 ),
-                trailing: Container(
-                  width: (80 * tabletWidthScale).w,
-                  height: (32 * tabletHeightScale).h,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.grey[700] : Colors.white,
-                    borderRadius: BorderRadius.circular((16 * tabletScale).r),
-                  ),
-                ),
-              ),
+              ],
             ),
-          );
-        },
-      );
-    }
+          ),
+        );
+      },
+    );
   }
 }
