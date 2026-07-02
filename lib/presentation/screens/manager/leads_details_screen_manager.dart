@@ -629,6 +629,8 @@ class _LeadsDetailsManagerScreenState extends State<LeadsDetailsManagerScreen> {
           String firstText = 'No comment available.';
           String secondText = 'No action available.';
           String dateStr = '';
+          String salesName =
+              widget.leadSalesName ?? 'Unknown User'; // ✅ fallback
 
           if (state is NewCommentsLoaded) {
             final comments = state.newComments.comments;
@@ -637,6 +639,7 @@ class _LeadsDetailsManagerScreenState extends State<LeadsDetailsManagerScreen> {
               firstText = last.firstcomment?.text ?? 'No comment available.';
               secondText = last.secondcomment?.text ?? 'No action available.';
               dateStr = last.firstcomment?.date?.toString() ?? '';
+              salesName = last.sales?.name ?? salesName; // ✅ من الكومنت
             }
           }
 
@@ -657,6 +660,7 @@ class _LeadsDetailsManagerScreenState extends State<LeadsDetailsManagerScreen> {
                 title: widget.leadStage ?? '',
                 content: firstText,
                 dateStr: dateStr,
+                salesName: salesName, // ✅
                 primaryColor: const Color(0xFF9C6B00),
                 icon: Icons.history_toggle_off,
                 isDark: isDark,
@@ -676,6 +680,7 @@ class _LeadsDetailsManagerScreenState extends State<LeadsDetailsManagerScreen> {
                 title: widget.leadStage ?? '',
                 content: secondText,
                 dateStr: '',
+                salesName: salesName, // ✅
                 primaryColor: primaryColor,
                 icon: Icons.notifications_none,
                 isDark: isDark,
@@ -1008,6 +1013,7 @@ class _LeadsDetailsManagerScreenState extends State<LeadsDetailsManagerScreen> {
     required String title,
     required String content,
     required String dateStr,
+    required String salesName, // ✅ جديد
     required Color primaryColor,
     required IconData icon,
     required bool isDark,
@@ -1099,8 +1105,11 @@ class _LeadsDetailsManagerScreenState extends State<LeadsDetailsManagerScreen> {
                             Text(
                               title,
                               style: TextStyle(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w700,
+                                fontSize:
+                                    title.toLowerCase() ==
+                                            "follow after meeting"
+                                        ? 11.sp
+                                        : 15.sp,                                fontWeight: FontWeight.w700,
                                 color: primaryColor,
                               ),
                             ),
@@ -1110,8 +1119,14 @@ class _LeadsDetailsManagerScreenState extends State<LeadsDetailsManagerScreen> {
                           Text(
                             formatDateTimeToDubai(dateStr),
                             style: TextStyle(
-                              fontSize: 12.sp,
-                              color: Colors.grey,
+                            fontSize:
+                                (title.toLowerCase() ==
+                                            "follow after meeting" ||
+                                        title.toLowerCase() ==
+                                            "not interested" ||
+                                        title.toLowerCase() == "cancel meeting")
+                                    ? 9.sp
+                                    : 12.sp,                              color: Colors.grey,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1140,12 +1155,16 @@ class _LeadsDetailsManagerScreenState extends State<LeadsDetailsManagerScreen> {
                           ),
                         ),
                         SizedBox(width: 10.w),
-                        Text(
-                          widget.leadName ?? 'Unknown',
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
+                        Expanded(
+                          child: Text(
+                            salesName, // ✅ بدل widget.leadName
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ),
                       ],

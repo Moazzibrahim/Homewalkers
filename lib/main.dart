@@ -6,6 +6,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:homewalkers_app/core/utils/internet_connection_utils.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_for_signup_api_service.dart';
@@ -174,36 +175,38 @@ class MyApp extends StatelessWidget {
             minTextAdapt: true,
             splitScreenMode: true,
             builder: (_, __) {
-              return MaterialApp(
-                title: 'Realatix CRM',
-                navigatorKey: navigatorKey,
-                debugShowCheckedModeBanner: false,
-                theme: ThemeData.light().copyWith(
-                  textTheme: ThemeData.light().textTheme.apply(
-                    fontFamily: 'Montserrat',
+              return NoInternetWrapper(
+                child: MaterialApp(
+                  title: 'Realatix CRM',
+                  navigatorKey: navigatorKey,
+                  debugShowCheckedModeBanner: false,
+                  theme: ThemeData.light().copyWith(
+                    textTheme: ThemeData.light().textTheme.apply(
+                      fontFamily: 'Montserrat',
+                    ),
                   ),
-                ),
 
-                darkTheme: ThemeData.dark().copyWith(
-                  textTheme: ThemeData.dark().textTheme.apply(
-                    fontFamily: 'Montserrat',
+                  darkTheme: ThemeData.dark().copyWith(
+                    textTheme: ThemeData.dark().textTheme.apply(
+                      fontFamily: 'Montserrat',
+                    ),
                   ),
-                ),
 
-                themeMode: themeMode,
-                home: FutureBuilder<bool>(
-                  future: _checkFirstLaunch(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Scaffold(
-                        body: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    final isFirstLaunch = snapshot.data ?? true;
-                    return isFirstLaunch
-                        ? const SplashScreen()
-                        : const DeciderScreen();
-                  },
+                  themeMode: themeMode,
+                  home: FutureBuilder<bool>(
+                    future: _checkFirstLaunch(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final isFirstLaunch = snapshot.data ?? true;
+                      return isFirstLaunch
+                          ? const SplashScreen()
+                          : const DeciderScreen();
+                    },
+                  ),
                 ),
               );
             },

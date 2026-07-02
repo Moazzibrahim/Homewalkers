@@ -13,6 +13,9 @@ import 'package:homewalkers_app/presentation/screens/sales/sales_profile_screen.
 import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 
+// ─────────────────────────────────────────────
+// SharedSalesNavBar - بدون FAB خالص
+// ─────────────────────────────────────────────
 class SharedSalesNavBar extends StatelessWidget {
   final int currentIndex;
   const SharedSalesNavBar({super.key, required this.currentIndex});
@@ -62,6 +65,7 @@ class SharedSalesNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // ✅ Container بسيط بدون Stack أو FAB
     return Container(
       decoration: BoxDecoration(
         color: isDark ? Colors.black : Colors.white,
@@ -166,9 +170,11 @@ class SharedSalesNavBar extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────
+// SalesTabsScreen
+// ─────────────────────────────────────────────
 class SalesTabsScreen extends StatefulWidget {
   final String? name;
-
   const SalesTabsScreen({super.key, this.name});
 
   @override
@@ -208,90 +214,71 @@ class _TabsScreenState extends State<SalesTabsScreen> {
           isDarkMode
               ? Constants.backgroundDarkmode
               : Constants.backgroundlightmode,
-      body: WillPopScope(
-        onWillPop: () async {
-          return false;
-        },
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: PageView(
-                    physics: const NeverScrollableScrollPhysics(),
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentIndex = index;
-                      });
-                    },
-                    children: [
-                      SalesdashboardScreen(showNavBar: false),
 
-                      SalesLeadsScreen(
-                        data: false,
-                        transferfromdata: true,
-                        showNavBar: false,
-                      ),
-
-                      SalesAssignLeadsScreen(
-                        data: false,
-                        transferfromdata: true,
-                        showNavBar: false,
-                      ),
-
-                      BlocProvider(
-                        create: (_) => AuthCubit(LoginApiService()),
-                        child: SalesProfileScreen(showNavBar: false),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+      // ✅ FAB في الـ Scaffold بيتحسب أوتوماتيك فوق الـ bottomNavigationBar
+      floatingActionButton: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Constants.maincolor.withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
+          ],
+        ),
+        child: FloatingActionButton(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CreateLeadScreen()),
+            );
+          },
+          child: const Icon(Icons.add, size: 28, color: Colors.white),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
-            /// Floating Button نفس تصميم الادمن
-            Positioned(
-              bottom: 12,
-              right: 16,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Constants.maincolor.withOpacity(0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: FloatingActionButton(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreateLeadScreen(),
-                      ),
-                    );
-                  },
-                  child: const Icon(Icons.add, size: 28, color: Colors.white),
-                ),
-              ),
+      body: WillPopScope(
+        onWillPop: () async => false,
+        // ✅ شيلنا الـ Stack والـ Column وخلينا PageView مباشرة
+        child: PageView(
+          physics: const NeverScrollableScrollPhysics(),
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          children: [
+            SalesdashboardScreen(showNavBar: false),
+            SalesLeadsScreen(
+              data: false,
+              transferfromdata: true,
+              showNavBar: false,
+            ),
+            SalesAssignLeadsScreen(
+              data: false,
+              transferfromdata: true,
+              showNavBar: false,
+            ),
+            BlocProvider(
+              create: (_) => AuthCubit(LoginApiService()),
+              child: SalesProfileScreen(showNavBar: false),
             ),
           ],
         ),
       ),
 
-      /// Bottom Navigation نفس تصميم الادمن
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDarkMode ? Colors.black : Colors.white,
@@ -316,21 +303,18 @@ class _TabsScreenState extends State<SalesTabsScreen> {
                   activeIcon: Icons.dashboard,
                   label: 'DASHBOARD',
                 ),
-
                 _buildNavItem(
                   index: 1,
                   icon: Icons.people_outline,
                   activeIcon: Icons.people,
                   label: 'LEADS',
                 ),
-
                 _buildNavItem(
                   index: 2,
                   icon: Icons.assignment_outlined,
                   activeIcon: Icons.assignment,
                   label: 'ASSIGN',
                 ),
-
                 _buildNavItem(
                   index: 3,
                   icon: Icons.person_outline,
@@ -371,9 +355,7 @@ class _TabsScreenState extends State<SalesTabsScreen> {
                       : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
               size: 24,
             ),
-
             const SizedBox(height: 4),
-
             Text(
               label,
               style: TextStyle(

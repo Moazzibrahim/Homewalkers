@@ -8,10 +8,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/dialog_utils.dart';
 import 'package:homewalkers_app/data/data_sources/get_sales_dashboard_count_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/meeting/get_meeting_comments.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/meetingCommentsScreen.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/viewModels/meeting/cubit/meetingcomments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/cubit/sales_dashboard_count_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/cubit/sales_dashboard_count_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
@@ -215,6 +219,42 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
       child: Scaffold(
         bottomNavigationBar:
             widget.showNavBar ? SharedSalesNavBar(currentIndex: 0) : null,
+        floatingActionButton:
+            widget.showNavBar
+                ? Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Constants.maincolor.withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: FloatingActionButton(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateLeadScreen(),
+                        ),
+                      );
+                    },
+                    child: const Icon(Icons.add, size: 28, color: Colors.white),
+                  ),
+                )
+                : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
                 ? Constants.backgroundlightmode
@@ -256,10 +296,9 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                               (7 * tabletScale).r,
                             ),
                           ),
-                          child: Icon(
-                            Icons.business,
-                            color: Colors.white,
-                            size: (16 * tabletFontScale).sp,
+                          child: Image.asset(
+                            'assets/images/icon.jpeg',
+                            fit: BoxFit.cover,
                           ),
                         ),
                         SizedBox(width: (7 * tabletWidthScale).w),
@@ -273,6 +312,27 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                           ),
                         ),
                         const Spacer(),
+                        _iconBox(Icons.event_outlined, () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          final userId = prefs.getString('salesId');
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => BlocProvider(
+                                    create:
+                                        (context) => MeetingCommentsCubit(
+                                          MeetingCommentsApiService(),
+                                        ),
+                                    child: MeetingCommentsScreen(
+                                      userId: userId,
+                                    ),
+                                  ),
+                            ),
+                          );
+                        }),
+                        SizedBox(width: (12 * tabletWidthScale).w),
                         _iconBox(Icons.notifications_none, () {
                           Navigator.push(
                             context,

@@ -16,9 +16,12 @@ import 'package:homewalkers_app/presentation/viewModels/All_leads_with_paginatio
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
 
+// ─────────────────────────────────────────────
 // shared_admin_navbar.dart
+// ─────────────────────────────────────────────
 class SharedAdminNavBar extends StatelessWidget {
   final int currentIndex;
+
   const SharedAdminNavBar({super.key, required this.currentIndex});
 
   void _onTap(BuildContext context, int index) {
@@ -31,7 +34,7 @@ class SharedAdminNavBar extends StatelessWidget {
           create:
               (_) =>
                   GetAllUsersCubit(GetAllUsersApiService())..fetchStagesStats(),
-          child: const AdminDashboardScreen(showNavBar: true), // ✅ true
+          child: const AdminDashboardScreen(showNavBar: true),
         );
         break;
       case 1:
@@ -41,17 +44,17 @@ class SharedAdminNavBar extends StatelessWidget {
           child: const AdminLeadsScreen(
             data: false,
             transferefromdata: true,
-            showNavBar: true, // ✅ true
+            showNavBar: true,
           ),
         );
         break;
       case 2:
-        page = const AdminSalesSceen(showNavBar: true); // ✅ true
+        page = const AdminSalesSceen(showNavBar: true);
         break;
       case 3:
         page = BlocProvider(
           create: (_) => AuthCubit(LoginApiService()),
-          child: AdminMenuScreen(showNavBar: true), // ✅ true
+          child: AdminMenuScreen(showNavBar: true),
         );
         break;
       default:
@@ -175,6 +178,7 @@ class SharedAdminNavBar extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────
 class AdminTabsScreen extends StatefulWidget {
   final String? name;
   const AdminTabsScreen({super.key, this.name});
@@ -215,87 +219,70 @@ class _TabsScreenState extends State<AdminTabsScreen> {
           isDarkMode
               ? Constants.backgroundDarkmode
               : Constants.backgroundlightmode,
-      body: WillPopScope(
-        onWillPop: () async {
-          return false;
-        },
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: PageView(
-                    physics: const NeverScrollableScrollPhysics(),
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentIndex = index;
-                      });
-                    },
-                    children: [
-                      BlocProvider(
-                        create:
-                            (context) =>
-                                GetAllUsersCubit(GetAllUsersApiService())
-                                  ..fetchStagesStats(),
-                        child: AdminDashboardScreen(showNavBar: false),
-                      ),
-                      BlocProvider(
-                        create:
-                            (_) => AllLeadsCubitWithPagination(
-                              LeadsApiServiceWithQuery(),
-                            ),
-                        child: const AdminLeadsScreen(
-                          data: false,
-                          transferefromdata: true,
-                          showNavBar: false,
-                        ),
-                      ),
-                      AdminSalesSceen(showNavBar: false),
-                      BlocProvider(
-                        create: (context) => AuthCubit(LoginApiService()),
-                        child: AdminMenuScreen(showNavBar: false),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+      // ✅ FAB هنا في الـ Scaffold بيتحسب أوتوماتيك فوق الـ bottomNavigationBar
+      floatingActionButton: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Constants.maincolor.withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
-            Positioned(
-              bottom: 12, // فوق شريط التبويبات بشوية
-              right: 16, // في الجنب مش النص
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Constants.maincolor.withOpacity(0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: FloatingActionButton(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreateLeadScreen(),
-                      ),
-                    );
-                  },
-                  child: const Icon(Icons.add, size: 28, color: Colors.white),
-                ),
+          ],
+        ),
+        child: FloatingActionButton(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CreateLeadScreen()),
+            );
+          },
+          child: const Icon(Icons.add, size: 28, color: Colors.white),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      body: WillPopScope(
+        onWillPop: () async => false,
+        child: PageView(
+          physics: const NeverScrollableScrollPhysics(),
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          children: [
+            BlocProvider(
+              create:
+                  (context) =>
+                      GetAllUsersCubit(GetAllUsersApiService())
+                        ..fetchStagesStats(),
+              child: AdminDashboardScreen(showNavBar: false),
+            ),
+            BlocProvider(
+              create:
+                  (_) =>
+                      AllLeadsCubitWithPagination(LeadsApiServiceWithQuery()),
+              child: const AdminLeadsScreen(
+                data: false,
+                transferefromdata: true,
+                showNavBar: false,
               ),
+            ),
+            AdminSalesSceen(showNavBar: false),
+            BlocProvider(
+              create: (context) => AuthCubit(LoginApiService()),
+              child: AdminMenuScreen(showNavBar: false),
             ),
           ],
         ),

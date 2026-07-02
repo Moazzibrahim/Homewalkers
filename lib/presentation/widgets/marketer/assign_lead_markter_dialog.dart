@@ -63,6 +63,7 @@ class _AssignLeadMarkterDialogState extends State<AssignLeadMarkterDialog> {
   List<SalesData> _displayList = [];
   bool _searchActive = false;
   List<String> selectedSalesFcmTokens = []; // ✅ أضف ده
+  bool hideSalesNameOnLeadComments = false; // ✅ أضف مع باقي المتغيرات
 
   // ─── responsive ───────────────────────────────────────────────
   late bool isTabletDevice;
@@ -363,6 +364,8 @@ class _AssignLeadMarkterDialogState extends State<AssignLeadMarkterDialog> {
                             // Clear history card
                             _buildClearHistoryCard(primary),
                             SizedBox(height: 8.h),
+                            _buildHideSalesNameCard(primary), // ✅ أضف السطر ده
+                            SizedBox(height: 8.h),
 
                             // Sales tiles - safe check
                             Container(
@@ -642,6 +645,57 @@ class _AssignLeadMarkterDialogState extends State<AssignLeadMarkterDialog> {
             horizontal: 12.w,
             vertical: 14.h,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHideSalesNameCard(Color primary) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+        leading: Container(
+          width: 36.w,
+          height: 36.w,
+          decoration: BoxDecoration(
+            color: primary.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.visibility_off_rounded,
+            color: primary,
+            size: 18.sp,
+          ),
+        ),
+        title: Text(
+          'Hide sales name on comments',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14.sp,
+            color: Colors.black87,
+          ),
+        ),
+        subtitle: Text(
+          'Sales name won\'t appear on lead comments',
+          style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade500),
+        ),
+        trailing: Switch(
+          value: hideSalesNameOnLeadComments,
+          onChanged:
+              (val) => setState(() => hideSalesNameOnLeadComments = val), // ✅
+          activeColor: primary,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
     );
@@ -939,6 +993,8 @@ class _AssignLeadMarkterDialogState extends State<AssignLeadMarkterDialog> {
                                 : stageToSend,
                         assigntype: isTeamLeaderAssign,
                         resetcreationdate: resetCreationDate,
+                        hidesalesnameonleadcomments:
+                            hideSalesNameOnLeadComments,
                       );
 
                       await leadCommentsCubit.apiService.fetchLeadAssigned(

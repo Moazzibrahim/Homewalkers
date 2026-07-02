@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UpdateService {
-  static const String currentVersion = "1.0.3";
+  static const String currentVersion = "1.0.4";
 
   // static Future<void> checkForUpdate(BuildContext context) async {
   //   try {

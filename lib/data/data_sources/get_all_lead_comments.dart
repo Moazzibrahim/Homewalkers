@@ -16,6 +16,7 @@ class GetAllLeadCommentsApiService {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
+        print("url : $url");
         final jsonData = json.decode(response.body);
         print(
           'Lead Comments JSON Data: ${response.body}',
@@ -102,6 +103,7 @@ class GetAllLeadCommentsApiService {
 
       // التحقق من حالة الاستجابة
       if (response.statusCode == 200) {
+        print("url : $uri");
         final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
         return NewCommentsModel.fromJson(jsonData);
       } else {

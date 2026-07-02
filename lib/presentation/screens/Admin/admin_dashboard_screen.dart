@@ -15,6 +15,7 @@ import 'package:homewalkers_app/presentation/screens/Admin/admin_sales_sceen.dar
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/all_request_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/meetingCommentsScreen.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
@@ -607,6 +608,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     return Scaffold(
       bottomNavigationBar:
           widget.showNavBar ? SharedAdminNavBar(currentIndex: 0) : null,
+      // ✅ أضف ده
+      floatingActionButton:
+          widget.showNavBar
+              ? Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Constants.maincolor.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateLeadScreen(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add, size: 28, color: Colors.white),
+                ),
+              )
+              : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
               ? Constants.backgroundlightmode

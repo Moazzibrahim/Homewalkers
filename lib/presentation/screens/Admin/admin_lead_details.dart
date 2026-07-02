@@ -6,11 +6,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/Admin_with_pagination/fetch_data_with_pagination.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
+import 'package:homewalkers_app/data/models/assign_history_model.dart';
 import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_comments_screen.dart';
+import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/add_comment/add_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/change_stage/change_stage_cubit.dart';
@@ -77,6 +81,8 @@ class AdminLeadDetails extends StatefulWidget {
   final String? question5_text;
   final String? question5_answer;
   final List<String>? salesFcmTokens; // ✅ أضف ده
+  final String? lastcommentSales;
+  final bool? ignoredublicates;
 
   AdminLeadDetails({
     super.key,
@@ -131,6 +137,8 @@ class AdminLeadDetails extends StatefulWidget {
     this.question5_text,
     this.question5_answer,
     this.salesFcmTokens, // ✅ أضف ده
+    this.lastcommentSales,
+    this.ignoredublicates,
   });
   @override
   State<AdminLeadDetails> createState() => _SalesLeadsDetailsScreenState();
@@ -191,6 +199,12 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                   LeadCommentsCubit(GetAllLeadCommentsApiService())
                     ..fetchLeadComments(widget.leedId),
         ),
+        BlocProvider(
+          create:
+              (context) =>
+                  AllLeadsCubitWithPagination(LeadsApiServiceWithQuery())
+                    ..fetchLeadAssignHistory(leadId: widget.leedId),
+        ),
       ],
       child: Builder(
         builder: (context) {
@@ -221,6 +235,9 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                       // Lead Information Section
                       _buildInfoSection(isDark, primaryColor),
                       SizedBox(height: 16.h),
+                      _buildAssignHistorySection(isDark, primaryColor),
+                      SizedBox(height: 16.h),
+
                       // Last Comment Section
                       _buildLastCommentSection(isDark, primaryColor),
                       SizedBox(height: 16.h),
@@ -341,6 +358,274 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
     // عدّل الشرط حسب الداتا عندك
     return widget.totalsubmissions != null &&
         (int.tryParse(widget.totalsubmissions!) ?? 0) > 1;
+  }
+
+  bool _showAssignHistory = false;
+
+  Widget _buildAssignHistorySection(bool isDark, Color primaryColor) {
+    return BlocBuilder<AllLeadsCubitWithPagination, AllLeadsState>(
+      builder: (context, state) {
+        return Container(
+          padding: EdgeInsets.all(20.h),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+            borderRadius: BorderRadius.circular(24.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── HEADER ──
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(6.h),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        child: Icon(
+                          Icons.swap_horiz,
+                          size: 18.sp,
+                          color: primaryColor,
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      Text(
+                        "ASSIGN HISTORY",
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.5,
+                          color:
+                              isDark ? Colors.white70 : const Color(0xFF5E5E6A),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // ── BADGE عدد الـ assigns ──
+                  if (state is AssignHistoryLoaded)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Text(
+                        "${state.response.results}",
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w700,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── CONTENT ──
+              if (state is AssignHistoryLoading)
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    child: CircularProgressIndicator(
+                      color: primaryColor,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
+              else if (state is AssignHistoryError)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: Text(
+                    "Failed to load assign history",
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Colors.red.shade400,
+                    ),
+                  ),
+                )
+              else if (state is AssignHistoryLoaded) ...[
+                // أول item يتعرض دايماً
+                if (state.response.data.isNotEmpty)
+                  _buildAssignRow(
+                    state.response.data.first,
+                    isDark,
+                    primaryColor,
+                  ),
+
+                // باقي الـ items في show more
+                if (state.response.data.length > 1) ...[
+                  AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 300),
+                    crossFadeState:
+                        _showAssignHistory
+                            ? CrossFadeState.showSecond
+                            : CrossFadeState.showFirst,
+                    firstChild: const SizedBox(),
+                    secondChild: Column(
+                      children:
+                          state.response.data
+                              .skip(1)
+                              .map(
+                                (item) =>
+                                    _buildAssignRow(item, isDark, primaryColor),
+                              )
+                              .toList(),
+                    ),
+                  ),
+
+                  Divider(color: Colors.grey.withOpacity(0.2)),
+
+                  InkWell(
+                    onTap:
+                        () => setState(
+                          () => _showAssignHistory = !_showAssignHistory,
+                        ),
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10.h),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _showAssignHistory ? "SHOW LESS" : "SHOW MORE",
+                            style: TextStyle(
+                              color: primaryColor,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1,
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                          SizedBox(width: 6.w),
+                          AnimatedRotation(
+                            turns: _showAssignHistory ? 0.5 : 0,
+                            duration: const Duration(milliseconds: 300),
+                            child: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ] else
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: Text(
+                    "No assign history available.",
+                    style: TextStyle(fontSize: 13.sp, color: Colors.grey),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAssignRow(
+    AssignHistoryItem item,
+    bool isDark,
+    Color primaryColor,
+  ) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 14.h),
+      child: Row(
+        children: [
+          // ── FROM ──
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "FROM",
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  item.assignedFrom.name.isNotEmpty
+                      ? item.assignedFrom.name
+                      : "—",
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          // ── ARROW + DATE ──
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8.w),
+            child: Column(
+              children: [
+                Icon(Icons.arrow_forward, size: 16.sp, color: primaryColor),
+                SizedBox(height: 2.h),
+                Text(
+                  item.dateAssigned,
+                  style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+
+          // ── TO ──
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  "TO",
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  item.assignedTo.name.isNotEmpty ? item.assignedTo.name : "—",
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildHeroHeaderCard(bool isDark, Color primaryColor) {
@@ -671,9 +956,12 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
 
   Widget _buildCopyButton(bool isDark, Color primaryColor) {
     final totalSubmissions = int.tryParse(widget.totalsubmissions ?? '') ?? 0;
+    if (totalSubmissions <= 1 || widget.ignoredublicates != true) {
+      return const SizedBox.shrink();
+    }
     return InkWell(
       onTap: () {
-        if (totalSubmissions > 1) {
+        if (totalSubmissions > 1 && widget.ignoredublicates == true) {
           showDialog(
             context: context,
             builder:
@@ -1353,8 +1641,13 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
       builder: (context, state) {
         String firstCommentText = widget.lastcommentFirst?.text ?? '';
         String secondCommentText = widget.lastcommentNext?.text ?? '';
+        String salesNameFromComment = widget.leadSalesName ?? 'Unknown User';
 
-        // ✅ لو الـ widget data مش موجود → جيب من الـ cubit
+        // ✅ بعد
+        salesNameFromComment =
+            widget.lastcommentSales ?? widget.leadSalesName ?? 'Unknown User';
+
+        // جيب النص لو مش موجود من الـ widget
         if (firstCommentText.isEmpty &&
             secondCommentText.isEmpty &&
             state is LeadCommentsLoaded) {
@@ -1410,6 +1703,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                 primaryColor: const Color(0xFF9C6B00),
                 icon: Icons.history_toggle_off,
                 isDark: isDark,
+                salesNameFromComment: salesNameFromComment,
               ),
               SizedBox(height: 28.h),
               Text(
@@ -1429,6 +1723,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                 icon: Icons.notifications_none,
                 isDark: isDark,
                 isTimeline: true,
+                salesNameFromComment: salesNameFromComment,
               ),
             ],
           ),
@@ -1444,6 +1739,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
     required IconData icon,
     required bool isDark,
     bool isTimeline = false,
+    String? salesNameFromComment,
   }) {
     if (isTimeline) {
       return Row(
@@ -1541,7 +1837,17 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                             Text(
                               title,
                               style: TextStyle(
-                                fontSize: 15.sp,
+                                fontSize:
+                                    title.toLowerCase() ==
+                                                "follow after meeting" ||
+                                            title.toLowerCase() ==
+                                                "cancel meeting" ||
+                                            title.toLowerCase() ==
+                                                "not interested" ||
+                                            title.toLowerCase() ==
+                                                "schedule meeting"
+                                        ? 11.sp
+                                        : 15.sp,
                                 fontWeight: FontWeight.w700,
                                 color: primaryColor,
                               ),
@@ -1554,7 +1860,16 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                             widget.lastcommentFirst?.date?.toString() ?? '',
                           ),
                           style: TextStyle(
-                            fontSize: 12.sp,
+                            fontSize:
+                                (title.toLowerCase() ==
+                                            "follow after meeting" ||
+                                        title.toLowerCase() ==
+                                            "not interested" ||
+                                        title.toLowerCase() ==
+                                            "schedule meeting" ||
+                                        title.toLowerCase() == "cancel meeting")
+                                    ? 9.sp
+                                    : 12.sp,
                             color: Colors.grey,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1594,7 +1909,7 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
 
                         Expanded(
                           child: Text(
-                            widget.leadSalesName ?? 'Unknown User',
+                            salesNameFromComment ?? 'Unknown User',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

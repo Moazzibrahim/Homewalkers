@@ -1,11 +1,11 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, prefer_final_fields
 import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/all_users_model_for_add_users.dart';
 import 'package:http/http.dart' as http;
 
 class GetAllUsersForSignupApiService {
-  static  String _baseUrl = '${Constants.baseUrl}/Signup?active=true';
+  static  String _baseUrl = '${Constants.baseUrl}/Signup';
   static  String _baseUrlInTrash = '${Constants.baseUrl}/Signup?active=false';
   Future<AllUsersModelForAddUsers?> getUsers() async {
     try {

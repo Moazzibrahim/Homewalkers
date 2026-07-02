@@ -1,13 +1,15 @@
 // ignore_for_file: non_constant_identifier_names
 class NotificationModel {
+  final String? status; // ✅ أضفت
   final num? results;
   final Pagination? pagination;
   final List<NotificationItem>? data;
 
-  NotificationModel({this.results, this.pagination, this.data});
+  NotificationModel({this.status, this.results, this.pagination, this.data});
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
+      status: json['status'], // ✅ أضفت
       results: json['results'],
       pagination:
           json['pagination'] != null
@@ -105,6 +107,31 @@ class NotificationItem {
       v: json['__v'],
     );
   }
+  NotificationItem copyWith({
+    String? id,
+    String? message,
+    User? receiver,
+    Lead? lead,
+    String? typenotification,
+    User? userdoaction,
+    bool? isRead,
+    String? createdAt,
+    String? updatedAt,
+    num? v,
+  }) {
+    return NotificationItem(
+      id: id ?? this.id,
+      message: message ?? this.message,
+      receiver: receiver ?? this.receiver,
+      lead: lead ?? this.lead,
+      typenotification: typenotification ?? this.typenotification,
+      userdoaction: userdoaction ?? this.userdoaction,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      v: v ?? this.v,
+    );
+  }
 }
 
 class User {
@@ -178,6 +205,15 @@ class FcmToken {
   }
 }
 
+// ── Helper: يقرأ bool من أي نوع جاي من السيرفر (bool / "true" / "false" / 1 / 0 / null) ──
+bool? parseNullableBool(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is String) return value.toLowerCase() == 'true' || value == '1';
+  if (value is int) return value == 1;
+  return null;
+}
+
 class Lead {
   // Basic Info
   final String? id;
@@ -189,7 +225,7 @@ class Lead {
   final String? jobdescription;
   final String? notes;
   final String? date;
-  
+
   // Status Flags
   final bool? assign;
   final bool? ignoredublicate;
@@ -198,7 +234,7 @@ class Lead {
   final bool? transferefromdata;
   final bool? resetcreationdate;
   final String? leedtype;
-  
+
   // Dates
   final String? last_stage_date_updated;
   final String? lastdateassign;
@@ -208,7 +244,7 @@ class Lead {
   final String? updatedAt;
   final String? dayonly;
   final num? v;
-  
+
   // ✅ الأسئلة
   final String? question1_text;
   final String? question1_answer;
@@ -220,14 +256,14 @@ class Lead {
   final String? question4_answer;
   final String? question5_text;
   final String? question5_answer;
-  
+
   // ✅ الحقول الإضافية
   final String? campaignRedirectLink;
   final num? totalSubmissions;
   final num? duplicateCount;
   final num? relatedLeadsCount;
   final bool? hidesalesnameonleadcomments;
-  
+
   // ✅ الحقول المالية
   final num? budget;
   final num? revenue;
@@ -240,7 +276,7 @@ class Lead {
   final num? commissionmoney;
   final num? cashbackratio;
   final num? cashbackmoney;
-  
+
   // Nested Objects
   final Project? project;
   final Sales? sales;
@@ -252,6 +288,7 @@ class Lead {
   final Campaign? campaign;
   final List<AllVersion>? allVersions;
   final List? mergeHistory;
+  final String? leadisactive; // ✅ String مش bool (بيجي "true"/"false")
 
   Lead({
     this.id,
@@ -314,6 +351,7 @@ class Lead {
     this.campaign,
     this.allVersions,
     this.mergeHistory,
+    this.leadisactive,
   });
 
   factory Lead.fromJson(Map<String, dynamic> json) {
@@ -328,7 +366,7 @@ class Lead {
       notes: json['notes'],
       date: json['date'],
       assign: json['assign'],
-      ignoredublicate: json['ignoredublicate'],
+      ignoredublicate: parseNullableBool(json['ignoredublicate']),
       assigntype: json['assigntype'],
       data: json['data'],
       transferefromdata: json['transferefromdata'],
@@ -368,20 +406,26 @@ class Lead {
       commissionmoney: json['commissionmoney'],
       cashbackratio: json['cashbackratio'],
       cashbackmoney: json['cashbackmoney'],
-      project: json['project'] != null ? Project.fromJson(json['project']) : null,
+      project:
+          json['project'] != null ? Project.fromJson(json['project']) : null,
       sales: json['sales'] != null ? Sales.fromJson(json['sales']) : null,
       stage: json['stage'] != null ? Stage.fromJson(json['stage']) : null,
       chanel: json['chanel'] != null ? Chanel.fromJson(json['chanel']) : null,
-      communicationway: json['communicationway'] != null
-          ? CommunicationWay.fromJson(json['communicationway'])
-          : null,
+      communicationway:
+          json['communicationway'] != null
+              ? CommunicationWay.fromJson(json['communicationway'])
+              : null,
       addby: json['addby'] != null ? User.fromJson(json['addby']) : null,
-      updatedby: json['updatedby'] != null ? User.fromJson(json['updatedby']) : null,
-      campaign: json['campaign'] != null ? Campaign.fromJson(json['campaign']) : null,
-      allVersions: (json['allVersions'] as List?)
-          ?.map((e) => AllVersion.fromJson(e))
-          .toList(),
+      updatedby:
+          json['updatedby'] != null ? User.fromJson(json['updatedby']) : null,
+      campaign:
+          json['campaign'] != null ? Campaign.fromJson(json['campaign']) : null,
+      allVersions:
+          (json['allVersions'] as List?)
+              ?.map((e) => AllVersion.fromJson(e))
+              .toList(),
       mergeHistory: json['mergeHistory'],
+      leadisactive: json['leadisactive'], // ✅
     );
   }
 }
@@ -538,6 +582,16 @@ class Sales {
 }
 
 class AllVersion {
+  // ✅ أضفت الـ fields الناقصة
+  final String? name;
+  final String? email;
+  final String? phone;
+  final String? notes;
+  final num? budget;
+  final String? leedtype;
+  final String? recordedAt;
+  final num? versionNumber;
+
   final Project? project;
   final Chanel? chanel;
   final Campaign? campaign;
@@ -545,6 +599,14 @@ class AllVersion {
   final User? addby;
 
   AllVersion({
+    this.name,
+    this.email,
+    this.phone,
+    this.notes,
+    this.budget,
+    this.leedtype,
+    this.recordedAt,
+    this.versionNumber,
     this.project,
     this.chanel,
     this.campaign,
@@ -554,6 +616,14 @@ class AllVersion {
 
   factory AllVersion.fromJson(Map<String, dynamic> json) {
     return AllVersion(
+      name: json['name'],
+      email: json['email'],
+      phone: json['phone'],
+      notes: json['notes'],
+      budget: json['budget'],
+      leedtype: json['leedtype'],
+      recordedAt: json['recordedAt'],
+      versionNumber: json['versionNumber'],
       project:
           json['project'] != null ? Project.fromJson(json['project']) : null,
       chanel: json['chanel'] != null ? Chanel.fromJson(json['chanel']) : null,

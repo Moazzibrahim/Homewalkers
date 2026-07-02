@@ -1,14 +1,16 @@
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/stage_type_model.dart';
-import 'package:http/http.dart' as http;// Replace with the actual file name that contains your StageTypeResponse model
+import 'package:http/http.dart'
+    as http; // Replace with the actual file name that contains your StageTypeResponse model
 
 class StageTypeApiService {
-  final String _baseUrl = 'https://apirender8.onrender.com/api/v1';
-
   Future<StageTypeResponse?> fetchStageTypes() async {
-    final url = Uri.parse('$_baseUrl/stagetype?isstagetypeactivate=true');
+    final url = Uri.parse(
+      '${Constants.baseUrl}/stagetype?isstagetypeactivate=true',
+    );
 
     try {
       final response = await http.get(url);
@@ -17,7 +19,9 @@ class StageTypeApiService {
         final jsonData = json.decode(response.body);
         return StageTypeResponse.fromJson(jsonData);
       } else {
-        print('Failed to load stage types. Status code: ${response.statusCode}');
+        print(
+          'Failed to load stage types. Status code: ${response.statusCode}',
+        );
         return null;
       }
     } catch (e) {
@@ -25,8 +29,11 @@ class StageTypeApiService {
       return null;
     }
   }
+
   Future<StageTypeResponse?> fetchStageTypesInTrash() async {
-    final url = Uri.parse('$_baseUrl/stagetype?isstagetypeactivate=false');
+    final url = Uri.parse(
+      '${Constants.baseUrl}/stagetype?isstagetypeactivate=false',
+    );
 
     try {
       final response = await http.get(url);
@@ -35,7 +42,9 @@ class StageTypeApiService {
         final jsonData = json.decode(response.body);
         return StageTypeResponse.fromJson(jsonData);
       } else {
-        print('Failed to load stage types. Status code: ${response.statusCode}');
+        print(
+          'Failed to load stage types. Status code: ${response.statusCode}',
+        );
         return null;
       }
     } catch (e) {

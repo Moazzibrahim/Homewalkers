@@ -21,6 +21,7 @@ import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_lead_details.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/edit_lead/edit_lead_cubit.dart';
@@ -521,6 +522,17 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
     }
   }
 
+  Widget _actionDivider(double tabletHeightScale) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8.w),
+      child: Container(
+        height: (40 * tabletHeightScale).h,
+        width: 1,
+        color: Colors.grey.shade300,
+      ),
+    );
+  }
+
   // أضف هذه المتغيرات في بداية الـ State
   bool _isSearchVisible = false;
   final TextEditingController _searchController = TextEditingController();
@@ -550,6 +562,43 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
           widget.showNavBar
               ? SharedAdminNavBar(currentIndex: 1)
               : null, // ← لو جاي من tabs مش هيظهر
+      // ✅ أضف ده
+      floatingActionButton:
+          widget.showNavBar
+              ? Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Constants.maincolor.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateLeadScreen(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add, size: 28, color: Colors.white),
+                ),
+              )
+              : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
@@ -885,19 +934,29 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                 child: Row(
                   children: [
                     /// CHECK ICON
-                    Container(
-                      width: (38 * tabletWidthScale).w,
-                      height: (38 * tabletWidthScale).w,
-                      decoration: BoxDecoration(
-                        color: Constants.mainlightmodecolor,
-                        borderRadius: BorderRadius.circular(
-                          (10 * tabletScale).r,
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedLeads.clear();
+                          _selectedSalesIds.clear();
+                          _selectedLeadStagesIds.clear();
+                          _showCheckboxes = false;
+                        });
+                      },
+                      child: Container(
+                        width: (38 * tabletWidthScale).w,
+                        height: (38 * tabletWidthScale).w,
+                        decoration: BoxDecoration(
+                          color: Constants.mainlightmodecolor,
+                          borderRadius: BorderRadius.circular(
+                            (10 * tabletScale).r,
+                          ),
                         ),
-                      ),
-                      child: Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: (22 * tabletFontScale).sp,
+                        child: Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: (22 * tabletFontScale).sp,
+                        ),
                       ),
                     ),
 
@@ -935,347 +994,93 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                     SizedBox(width: (15 * tabletWidthScale).w),
 
                     Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // =========================
-                          // EXPORT / ASSIGN
-                          // =========================
-                          InkWell(
-                            onTap: () async {
-                              if (_showCheckboxes &&
-                                  _selectedLeads.isNotEmpty) {
-                                final String? selectedStageIddd =
-                                    _selectedLeadStagesIds.isNotEmpty
-                                        ? _selectedLeadStagesIds.first
-                                        : null;
-
-                                final result = await showDialog(
-                                  context: context,
-                                  builder: (dialogContext) {
-                                    return MultiBlocProvider(
-                                      providers: [
-                                        BlocProvider(
-                                          create: (_) => AssignleadCubit(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => LeadCommentsCubit(
-                                                GetAllLeadCommentsApiService(),
-                                              )..fetchLeadComments(
-                                                _selectedLeads.toList()[0],
-                                              ),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => SalesCubit(
-                                                GetAllSalesApiService(),
-                                              )..fetchAllSales(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => StagesCubit(
-                                                StagesApiService(),
-                                              )..fetchStages(),
-                                        ),
-                                      ],
-                                      child: AssignLeadMarkterDialog(
-                                        mainColor:
-                                            Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? Constants.mainlightmodecolor
-                                                : Constants.mainDarkmodecolor,
-                                        leadIds: _selectedLeads.toList(),
-                                        leadId: _selectedLeads.toList()[0],
-                                        leadStages:
-                                            _selectedLeadStagesIds.toList(),
-                                        leadSalesId: _selectedSalesIds.toList(),
-                                        leadStage: selectedStageIddd,
-                                      ),
-                                    );
-                                  },
-                                );
-
-                                if (result == true) {
-                                  setState(() {
-                                    _showCheckboxes = false;
-                                    _selectedLeads.clear();
-                                    _selectedSalesIds.clear();
-                                    _selectedLeadStagesIds.clear();
-                                  });
-                                }
-
-                                log('Assign lead result: $result');
-                              }
-                            },
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.ios_share_outlined,
-                                  color: Colors.grey.shade700,
-                                  size: (25 * tabletFontScale).sp,
-                                ),
-                                SizedBox(height: (4 * tabletHeightScale).h),
-                                Text(
-                                  "ASSIGN",
-                                  style: TextStyle(
-                                    fontSize: (10 * tabletFontScale).sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          /// DIVIDER
-                          Container(
-                            height: (50 * tabletHeightScale).h,
-                            width: 1,
-                            color: Colors.grey.shade300,
-                          ),
-
-                          // =========================
-                          // EDIT
-                          // =========================
-                          InkWell(
-                            onTap: () async {
-                              final leadsList =
-                                  context
-                                      .read<AllLeadsCubitWithPagination>()
-                                      .leads;
-
-                              final selectedLead = leadsList.firstWhere(
-                                (lead) =>
-                                    lead.id.toString() == _selectedLeads.first,
-                                orElse: () => LeadDataWithPagination(),
-                              );
-
-                              print('_selectedLeads: $_selectedLeads');
-                              print('found lead: $selectedLead');
-
-                              final result = await showDialog(
-                                context: context,
-                                builder:
-                                    (_) => MultiBlocProvider(
-                                      providers: [
-                                        BlocProvider(
-                                          create:
-                                              (_) => EditLeadCubit(
-                                                EditLeadApiService(),
-                                              ),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => ProjectsCubit(
-                                                ProjectsApiService(),
-                                              )..fetchProjects(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => StagesCubit(
-                                                StagesApiService(),
-                                              )..fetchStages(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => GetCommunicationWaysCubit(
-                                                CommunicationWayApiService(),
-                                              )..fetchCommunicationWays(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => ChannelCubit(
-                                                GetChannelsApiService(),
-                                              )..fetchChannels(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => GetCampaignsCubit(
-                                                CampaignApiService(),
-                                              )..fetchCampaigns(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => SalesCubit(
-                                                GetAllSalesApiService(),
-                                              )..fetchAllSales(),
-                                        ),
-                                      ],
-                                      child: EditLeadDialog(
-                                        userId: selectedLead.id.toString(),
-                                        initialName: selectedLead.name ?? '',
-                                        initialEmail: selectedLead.email ?? '',
-                                        initialPhone: selectedLead.phone ?? '',
-                                        initialProjectId:
-                                            selectedLead.project?.id
-                                                ?.toString(),
-                                        initialStageId:
-                                            selectedLead.stage?.id?.toString(),
-                                        initialChannelId:
-                                            selectedLead.chanel?.id?.toString(),
-                                        initialCampaignId:
-                                            selectedLead.campaign?.id
-                                                ?.toString(),
-                                        initialCommunicationWayId:
-                                            selectedLead.communicationway?.id
-                                                ?.toString(),
-                                        isCold: selectedLead.leedtype == "Cold",
-                                        onSuccess: () {
-                                          setState(() {
-                                            _showCheckboxes = false;
-                                            _selectedLeads.clear();
-                                          });
-
-                                          final leadsCubit =
-                                              context
-                                                  .read<
-                                                    AllLeadsCubitWithPagination
-                                                  >();
-
-                                          leadsCubit.fetchLeads(
-                                            stageIds:
-                                                _selectedStageFilter.isNotEmpty
-                                                    ? _selectedStageFilter
-                                                    : null,
-                                            duplicates: _showDuplicatesOnly,
-                                            ignoreDuplicate:
-                                                _showDuplicatesOnly,
-                                            data: widget.data,
-                                            transferefromdata:
-                                                widget.transferefromdata,
-                                            salesIds:
-                                                widget.salesIdss != null &&
-                                                        widget
-                                                            .salesIdss!
-                                                            .isNotEmpty
-                                                    ? widget.salesIdss
-                                                    : null,
-                                          );
-                                        },
-                                      ),
-                                    ),
-                              );
-
-                              if (result == true) {
-                                context
-                                    .read<AllLeadsCubitWithPagination>()
-                                    .fetchLeads(
-                                      stageIds:
-                                          _selectedStageFilter.isNotEmpty
-                                              ? _selectedStageFilter
-                                              : null,
-                                      duplicates: _showDuplicatesOnly,
-                                      ignoreDuplicate: _showDuplicatesOnly,
-                                      data: widget.data,
-                                      transferefromdata:
-                                          widget.transferefromdata,
-                                      salesIds:
-                                          widget.salesIdss != null &&
-                                                  widget.salesIdss!.isNotEmpty
-                                              ? widget.salesIdss
-                                              : null,
-                                    );
-
-                                _showCheckboxes = false;
-                                _selectedLeads.clear();
-                              }
-                            },
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.edit_outlined,
-                                  color: Colors.grey.shade700,
-                                  size: (25 * tabletFontScale).sp,
-                                ),
-                                SizedBox(height: (4 * tabletHeightScale).h),
-                                Text(
-                                  "EDIT",
-                                  style: TextStyle(
-                                    fontSize: (10 * tabletFontScale).sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          /// DIVIDER
-                          Container(
-                            height: (50 * tabletHeightScale).h,
-                            width: 1,
-                            color: Colors.grey.shade300,
-                          ),
-
-                          // =========================
-                          // STATUS
-                          // =========================
-                          if (widget.transferefromdata == true)
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            // =========================
+                            // EXPORT / ASSIGN
+                            // =========================
                             InkWell(
-                              onTap: () {
-                                if (_selectedLeads.isEmpty) return;
+                              onTap: () async {
+                                if (_showCheckboxes &&
+                                    _selectedLeads.isNotEmpty) {
+                                  final String? selectedStageIddd =
+                                      _selectedLeadStagesIds.isNotEmpty
+                                          ? _selectedLeadStagesIds.first
+                                          : null;
 
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (_) {
-                                    return BlocProvider(
-                                      create:
-                                          (_) => EditLeadCubit(
-                                            EditLeadApiService(),
+                                  final result = await showDialog(
+                                    context: context,
+                                    builder: (dialogContext) {
+                                      return MultiBlocProvider(
+                                        providers: [
+                                          BlocProvider(
+                                            create: (_) => AssignleadCubit(),
                                           ),
-                                      child: _ChangeLeadToDataDialog(
-                                        leadIds: _selectedLeads.toList(),
-                                        onSuccess: () {
-                                          context
-                                              .read<
-                                                AllLeadsCubitWithPagination
-                                              >()
-                                              .fetchLeads(
-                                                stageIds:
-                                                    _selectedStageFilter
-                                                            .isNotEmpty
-                                                        ? _selectedStageFilter
-                                                        : null,
-                                                duplicates: _showDuplicatesOnly,
-                                                ignoreDuplicate:
-                                                    _showDuplicatesOnly,
-                                                data: widget.data,
-                                                transferefromdata:
-                                                    widget.transferefromdata,
-                                                salesIds:
-                                                    widget.salesIdss != null &&
-                                                            widget
-                                                                .salesIdss!
-                                                                .isNotEmpty
-                                                        ? widget.salesIdss
-                                                        : null,
-                                              );
+                                          BlocProvider(
+                                            create:
+                                                (_) => LeadCommentsCubit(
+                                                  GetAllLeadCommentsApiService(),
+                                                )..fetchLeadComments(
+                                                  _selectedLeads.toList()[0],
+                                                ),
+                                          ),
+                                          BlocProvider(
+                                            create:
+                                                (_) => SalesCubit(
+                                                  GetAllSalesApiService(),
+                                                )..fetchAllSales(),
+                                          ),
+                                          BlocProvider(
+                                            create:
+                                                (_) => StagesCubit(
+                                                  StagesApiService(),
+                                                )..fetchStages(),
+                                          ),
+                                        ],
+                                        child: AssignLeadMarkterDialog(
+                                          mainColor:
+                                              Theme.of(context).brightness ==
+                                                      Brightness.light
+                                                  ? Constants.mainlightmodecolor
+                                                  : Constants.mainDarkmodecolor,
+                                          leadIds: _selectedLeads.toList(),
+                                          leadId: _selectedLeads.toList()[0],
+                                          leadStages:
+                                              _selectedLeadStagesIds.toList(),
+                                          leadSalesId:
+                                              _selectedSalesIds.toList(),
+                                          leadStage: selectedStageIddd,
+                                        ),
+                                      );
+                                    },
+                                  );
 
-                                          setState(() {
-                                            _showCheckboxes = false;
-                                            _selectedLeads.clear();
-                                          });
-                                        },
-                                      ),
-                                    );
-                                  },
-                                );
+                                  if (result == true) {
+                                    setState(() {
+                                      _showCheckboxes = false;
+                                      _selectedLeads.clear();
+                                      _selectedSalesIds.clear();
+                                      _selectedLeadStagesIds.clear();
+                                    });
+                                  }
+
+                                  log('Assign lead result: $result');
+                                }
                               },
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    Icons.logout,
+                                    Icons.ios_share_outlined,
                                     color: Colors.grey.shade700,
                                     size: (25 * tabletFontScale).sp,
                                   ),
                                   SizedBox(height: (4 * tabletHeightScale).h),
                                   Text(
-                                    "Switch",
+                                    "ASSIGN",
                                     style: TextStyle(
                                       fontSize: (10 * tabletFontScale).sp,
                                       fontWeight: FontWeight.w700,
@@ -1286,198 +1091,735 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                               ),
                             ),
 
-                          /// DIVIDER
-                          Container(
-                            height: (50 * tabletHeightScale).h,
-                            width: 1,
-                            color: Colors.grey.shade300,
-                          ),
+                            /// DIVIDER
+                            _actionDivider(tabletHeightScale),
 
-                          // =========================
-                          // DELETE
-                          // =========================
-                          InkWell(
-                            onTap: () async {
-                              final leadsList =
+                            // =========================
+                            // EDIT
+                            // =========================
+                            InkWell(
+                              onTap: () async {
+                                final leadsList =
+                                    context
+                                        .read<AllLeadsCubitWithPagination>()
+                                        .leads;
+
+                                final selectedLead = leadsList.firstWhere(
+                                  (lead) =>
+                                      lead.id.toString() ==
+                                      _selectedLeads.first,
+                                  orElse: () => LeadDataWithPagination(),
+                                );
+
+                                print('_selectedLeads: $_selectedLeads');
+                                print('found lead: $selectedLead');
+
+                                final result = await showDialog(
+                                  context: context,
+                                  builder:
+                                      (_) => MultiBlocProvider(
+                                        providers: [
+                                          BlocProvider(
+                                            create:
+                                                (_) => EditLeadCubit(
+                                                  EditLeadApiService(),
+                                                ),
+                                          ),
+                                          BlocProvider(
+                                            create:
+                                                (_) => ProjectsCubit(
+                                                  ProjectsApiService(),
+                                                )..fetchProjects(),
+                                          ),
+                                          BlocProvider(
+                                            create:
+                                                (_) => StagesCubit(
+                                                  StagesApiService(),
+                                                )..fetchStages(),
+                                          ),
+                                          BlocProvider(
+                                            create:
+                                                (
+                                                  _,
+                                                ) => GetCommunicationWaysCubit(
+                                                  CommunicationWayApiService(),
+                                                )..fetchCommunicationWays(),
+                                          ),
+                                          BlocProvider(
+                                            create:
+                                                (_) => ChannelCubit(
+                                                  GetChannelsApiService(),
+                                                )..fetchChannels(),
+                                          ),
+                                          BlocProvider(
+                                            create:
+                                                (_) => GetCampaignsCubit(
+                                                  CampaignApiService(),
+                                                )..fetchCampaigns(),
+                                          ),
+                                          BlocProvider(
+                                            create:
+                                                (_) => SalesCubit(
+                                                  GetAllSalesApiService(),
+                                                )..fetchAllSales(),
+                                          ),
+                                        ],
+                                        child: EditLeadDialog(
+                                          userId: selectedLead.id.toString(),
+                                          initialName: selectedLead.name ?? '',
+                                          initialEmail:
+                                              selectedLead.email ?? '',
+                                          initialPhone:
+                                              selectedLead.phone ?? '',
+                                          initialProjectId:
+                                              selectedLead.project?.id
+                                                  ?.toString(),
+                                          initialStageId:
+                                              selectedLead.stage?.id
+                                                  ?.toString(),
+                                          initialChannelId:
+                                              selectedLead.chanel?.id
+                                                  ?.toString(),
+                                          initialCampaignId:
+                                              selectedLead.campaign?.id
+                                                  ?.toString(),
+                                          initialCommunicationWayId:
+                                              selectedLead.communicationway?.id
+                                                  ?.toString(),
+                                          isCold:
+                                              selectedLead.leedtype == "Cold",
+                                          onSuccess: () {
+                                            setState(() {
+                                              _showCheckboxes = false;
+                                              _selectedLeads.clear();
+                                            });
+
+                                            final leadsCubit =
+                                                context
+                                                    .read<
+                                                      AllLeadsCubitWithPagination
+                                                    >();
+
+                                            leadsCubit.fetchLeads(
+                                              stageIds:
+                                                  _selectedStageFilter
+                                                          .isNotEmpty
+                                                      ? _selectedStageFilter
+                                                      : null,
+                                              duplicates: _showDuplicatesOnly,
+                                              ignoreDuplicate:
+                                                  _showDuplicatesOnly,
+                                              data: widget.data,
+                                              transferefromdata:
+                                                  widget.transferefromdata,
+                                              salesIds:
+                                                  widget.salesIdss != null &&
+                                                          widget
+                                                              .salesIdss!
+                                                              .isNotEmpty
+                                                      ? widget.salesIdss
+                                                      : null,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                );
+
+                                if (result == true) {
                                   context
                                       .read<AllLeadsCubitWithPagination>()
-                                      .leads;
+                                      .fetchLeads(
+                                        stageIds:
+                                            _selectedStageFilter.isNotEmpty
+                                                ? _selectedStageFilter
+                                                : null,
+                                        duplicates: _showDuplicatesOnly,
+                                        ignoreDuplicate: _showDuplicatesOnly,
+                                        data: widget.data,
+                                        transferefromdata:
+                                            widget.transferefromdata,
+                                        salesIds:
+                                            widget.salesIdss != null &&
+                                                    widget.salesIdss!.isNotEmpty
+                                                ? widget.salesIdss
+                                                : null,
+                                      );
 
-                              final selectedLead = leadsList.firstWhere(
-                                (lead) =>
-                                    lead.id.toString() == _selectedLeads.first,
-                                orElse: () => LeadDataWithPagination(),
-                              );
+                                  _showCheckboxes = false;
+                                  _selectedLeads.clear();
+                                }
+                              },
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.edit_outlined,
+                                    color: Colors.grey.shade700,
+                                    size: (25 * tabletFontScale).sp,
+                                  ),
+                                  SizedBox(height: (4 * tabletHeightScale).h),
+                                  Text(
+                                    "EDIT",
+                                    style: TextStyle(
+                                      fontSize: (10 * tabletFontScale).sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) {
-                                  return BlocProvider(
-                                    create:
-                                        (_) =>
-                                            EditLeadCubit(EditLeadApiService()),
-                                    child: AlertDialog(
-                                      title: Text(
-                                        "Delete Lead",
-                                        style: TextStyle(
-                                          fontSize: (18 * tabletFontScale).sp,
-                                        ),
+                            /// DIVIDER
+                            _actionDivider(tabletHeightScale),
+
+                            // =========================
+                            // STATUS
+                            // =========================
+                            if (widget.transferefromdata == true ||
+                                widget.transferefromdata == false)
+                              InkWell(
+                                onTap: () {
+                                  if (_selectedLeads.isEmpty) return;
+
+                                  // ✅ لو transferefromdata == true → نقل للداتا
+                                  if (widget.transferefromdata == true) {
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (_) {
+                                        return BlocProvider(
+                                          create:
+                                              (_) => EditLeadCubit(
+                                                EditLeadApiService(),
+                                              ),
+                                          child: _ChangeLeadToDataDialog(
+                                            leadIds: _selectedLeads.toList(),
+                                            onSuccess: () {
+                                              context
+                                                  .read<
+                                                    AllLeadsCubitWithPagination
+                                                  >()
+                                                  .fetchLeads(
+                                                    stageIds:
+                                                        _selectedStageFilter
+                                                                .isNotEmpty
+                                                            ? _selectedStageFilter
+                                                            : null,
+                                                    duplicates:
+                                                        _showDuplicatesOnly,
+                                                    ignoreDuplicate:
+                                                        _showDuplicatesOnly,
+                                                    data: widget.data,
+                                                    transferefromdata:
+                                                        widget
+                                                            .transferefromdata,
+                                                    salesIds:
+                                                        widget.salesIdss !=
+                                                                    null &&
+                                                                widget
+                                                                    .salesIdss!
+                                                                    .isNotEmpty
+                                                            ? widget.salesIdss
+                                                            : null,
+                                                  );
+                                              setState(() {
+                                                _showCheckboxes = false;
+                                                _selectedLeads.clear();
+                                              });
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    final leadsCubit =
+                                        context
+                                            .read<
+                                              AllLeadsCubitWithPagination
+                                            >();
+
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (_) {
+                                        return BlocProvider(
+                                          create:
+                                              (_) => EditLeadCubit(
+                                                EditLeadApiService(),
+                                              ),
+                                          child: BlocConsumer<
+                                            EditLeadCubit,
+                                            EditLeadState
+                                          >(
+                                            listener: (context, state) {
+                                              if (state is EditLeadSuccess) {
+                                                Navigator.pop(context);
+                                                leadsCubit.fetchLeads(
+                                                  stageIds:
+                                                      _selectedStageFilter
+                                                              .isNotEmpty
+                                                          ? _selectedStageFilter
+                                                          : null,
+                                                  duplicates:
+                                                      _showDuplicatesOnly,
+                                                  ignoreDuplicate:
+                                                      _showDuplicatesOnly,
+                                                  data: widget.data,
+                                                  transferefromdata:
+                                                      widget.transferefromdata,
+                                                  salesIds:
+                                                      widget.salesIdss !=
+                                                                  null &&
+                                                              widget
+                                                                  .salesIdss!
+                                                                  .isNotEmpty
+                                                          ? widget.salesIdss
+                                                          : null,
+                                                );
+                                                setState(() {
+                                                  _showCheckboxes = false;
+                                                  _selectedLeads.clear();
+                                                });
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      "Lead returned to original successfully",
+                                                    ),
+                                                    backgroundColor:
+                                                        Colors.green,
+                                                  ),
+                                                );
+                                              }
+                                              if (state is EditLeadFailure) {
+                                                Navigator.pop(context);
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      "Failed to return lead",
+                                                    ),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            builder: (context, state) {
+                                              final isLoading =
+                                                  state is EditLeadLoading;
+                                              return AlertDialog(
+                                                title: const Text(
+                                                  'Return Lead',
+                                                ),
+                                                content: Text(
+                                                  'Are you sure you want to return ${_selectedLeads.length} lead(s) to original?',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed:
+                                                        isLoading
+                                                            ? null
+                                                            : () =>
+                                                                Navigator.pop(
+                                                                  context,
+                                                                ),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  ElevatedButton(
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor:
+                                                          Constants
+                                                              .mainlightmodecolor,
+                                                    ),
+                                                    onPressed:
+                                                        isLoading
+                                                            ? null
+                                                            // ── bulk transfer لكل الـ leads المختارة دفعة واحدة
+                                                            : () {
+                                                              context
+                                                                  .read<
+                                                                    EditLeadCubit
+                                                                  >()
+                                                                  .bulkTransferFromDataToOriginal(
+                                                                    ids:
+                                                                        _selectedLeads
+                                                                            .toList(),
+                                                                  );
+                                                            },
+                                                    child:
+                                                        isLoading
+                                                            ? const SizedBox(
+                                                              height: 18,
+                                                              width: 18,
+                                                              child: CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                                color:
+                                                                    Colors
+                                                                        .white,
+                                                              ),
+                                                            )
+                                                            : const Text(
+                                                              'Confirm',
+                                                              style: TextStyle(
+                                                                color:
+                                                                    Colors
+                                                                        .white,
+                                                              ),
+                                                            ),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  }
+                                },
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.logout,
+                                      color: Colors.grey.shade700,
+                                      size: (25 * tabletFontScale).sp,
+                                    ),
+                                    SizedBox(height: (4 * tabletHeightScale).h),
+                                    Text(
+                                      widget.transferefromdata == true
+                                          ? "Switch"
+                                          : "Return", // ← غيّر الاسم
+                                      style: TextStyle(
+                                        fontSize: (10 * tabletFontScale).sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.grey.shade700,
                                       ),
-                                      content: Text(
-                                        "Are you sure you want to delete this lead?",
-                                        style: TextStyle(
-                                          fontSize: (14 * tabletFontScale).sp,
-                                        ),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.pop(context, false);
-                                          },
-                                          child: Text(
-                                            "Cancel",
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                            /// DIVIDER
+                            _actionDivider(tabletHeightScale),
+
+                            // بعد آخر DIVIDER قبل نهاية الـ Row actions
+                            if (_showDuplicatesOnly &&
+                                _selectedLeads.isNotEmpty) ...[
+                              // =========================
+                              // IGNORE DUPLICATE
+                              // =========================
+                              InkWell(
+                                onTap: () async {
+                                  if (_selectedLeads.isEmpty) return;
+
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder:
+                                        (ctx) => AlertDialog(
+                                          title: Text(
+                                            "Ignore Duplicates",
+                                            style: TextStyle(
+                                              fontSize:
+                                                  (16 * tabletFontScale).sp,
+                                            ),
+                                          ),
+                                          content: Text(
+                                            "Are you sure you want to ignore ${_selectedLeads.length} duplicate lead(s)?",
                                             style: TextStyle(
                                               fontSize:
                                                   (14 * tabletFontScale).sp,
                                             ),
                                           ),
-                                        ),
-
-                                        BlocConsumer<
-                                          EditLeadCubit,
-                                          EditLeadState
-                                        >(
-                                          listener: (context, state) {
-                                            if (state is EditLeadSuccess) {
-                                              Navigator.pop(context, true);
-                                            }
-
-                                            if (state is EditLeadFailure) {
-                                              Navigator.pop(context, false);
-
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    "Failed to delete the lead. Please try again.",
-                                                    style: TextStyle(
-                                                      fontSize:
-                                                          (14 * tabletFontScale)
-                                                              .sp,
-                                                    ),
-                                                  ),
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          builder: (context, state) {
-                                            return TextButton(
+                                          actions: [
+                                            TextButton(
                                               onPressed:
-                                                  state is EditLeadLoading
-                                                      ? null
-                                                      : () {
-                                                        _showCheckboxes = false;
-
-                                                        _selectedLeads.clear();
-
-                                                        context
-                                                            .read<
-                                                              EditLeadCubit
-                                                            >()
-                                                            .editLead(
-                                                              userId:
-                                                                  selectedLead
-                                                                      .id ??
-                                                                  '',
-                                                              isLeadActivte:
-                                                                  false,
-                                                            );
-
-                                                        setState(() {
-                                                          _showCheckboxes =
-                                                              false;
-
-                                                          _selectedLeads
-                                                              .clear();
-                                                        });
-                                                      },
-                                              child:
-                                                  state is EditLeadLoading
-                                                      ? SizedBox(
-                                                        height:
-                                                            (18 * tabletFontScale)
-                                                                .h,
-                                                        width:
-                                                            (18 * tabletFontScale)
-                                                                .w,
-                                                        child: CircularProgressIndicator(
-                                                          strokeWidth:
-                                                              (2 * tabletScale)
-                                                                  .w,
-                                                        ),
-                                                      )
-                                                      : Text(
-                                                        "Delete",
-                                                        style: TextStyle(
-                                                          color: Colors.red,
-                                                          fontSize:
-                                                              (14 * tabletFontScale)
-                                                                  .sp,
-                                                        ),
-                                                      ),
-                                            );
-                                          },
+                                                  () =>
+                                                      Navigator.pop(ctx, false),
+                                              child: const Text("Cancel"),
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    Constants
+                                                        .mainlightmodecolor,
+                                              ),
+                                              onPressed:
+                                                  () =>
+                                                      Navigator.pop(ctx, true),
+                                              child: const Text(
+                                                "Confirm",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                  );
+
+                                  if (confirm != true) return;
+
+                                  // ✅ احفظ العدد الأول قبل أي حاجة
+                                  final count = _selectedLeads.length;
+
+                                  // ── استخدام الـ bulk endpoint بدل ما نبعت request لكل lead لوحده
+                                  await EditLeadCubit(
+                                    EditLeadApiService(),
+                                  ).bulkIgnoreDuplicate(
+                                    ids: _selectedLeads.toList(),
+                                  );
+
+                                  if (!mounted) return;
+
+                                  setState(() {
+                                    _showCheckboxes = false;
+                                    _selectedLeads.clear();
+                                    _selectedSalesIds.clear();
+                                    _selectedLeadStagesIds.clear();
+                                  });
+
+                                  context
+                                      .read<AllLeadsCubitWithPagination>()
+                                      .fetchLeads(
+                                        stageIds:
+                                            _selectedStageFilter.isNotEmpty
+                                                ? _selectedStageFilter
+                                                : null,
+                                        duplicates: _showDuplicatesOnly,
+                                        ignoreDuplicate: _showDuplicatesOnly,
+                                        data: widget.data,
+                                        transferefromdata:
+                                            widget.transferefromdata,
+                                        salesIds:
+                                            widget.salesIdss != null &&
+                                                    widget.salesIdss!.isNotEmpty
+                                                ? widget.salesIdss
+                                                : null,
+                                      );
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        "$count lead(s) marked as ignored.",
+                                      ),
+                                      backgroundColor: Colors.green,
                                     ),
                                   );
                                 },
-                              );
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.do_not_disturb_alt_outlined,
+                                      size: (25 * tabletFontScale).sp,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                    SizedBox(height: (4 * tabletHeightScale).h),
+                                    Text(
+                                      "IGNORE",
+                                      style: TextStyle(
+                                        fontSize: (10 * tabletFontScale).sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            _actionDivider(tabletHeightScale),
 
-                              if (confirm == true) {
-                                final cubit =
-                                    context.read<AllLeadsCubitWithPagination>();
+                            // =========================
+                            // DELETE
+                            // =========================
+                            // =========================
+                            // DELETE
+                            // =========================
+                            InkWell(
+                              onTap: () async {
+                                if (_selectedLeads.isEmpty) return;
 
-                                cubit.fetchLeads(
-                                  stageIds:
-                                      _selectedStageFilter.isNotEmpty
-                                          ? _selectedStageFilter
-                                          : null,
-                                  duplicates: _showDuplicatesOnly,
-                                  ignoreDuplicate: _showDuplicatesOnly,
-                                  data: widget.data,
-                                  transferefromdata: widget.transferefromdata,
-                                  salesIds:
-                                      widget.salesIdss != null &&
-                                              widget.salesIdss!.isNotEmpty
-                                          ? widget.salesIdss
-                                          : null,
+                                final count = _selectedLeads.length;
+
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) {
+                                    return BlocProvider(
+                                      create:
+                                          (_) => EditLeadCubit(
+                                            EditLeadApiService(),
+                                          ),
+                                      child: BlocConsumer<
+                                        EditLeadCubit,
+                                        EditLeadState
+                                      >(
+                                        listener: (context, state) {
+                                          if (state is EditLeadSuccess) {
+                                            Navigator.pop(context, true);
+                                          }
+                                          if (state is EditLeadFailure) {
+                                            Navigator.pop(context, false);
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  "Failed to delete the lead(s). Please try again.",
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        builder: (context, state) {
+                                          final isLoading =
+                                              state is EditLeadLoading;
+                                          return AlertDialog(
+                                            title: Text(
+                                              "Delete Lead${count > 1 ? 's' : ''}",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    (18 * tabletFontScale).sp,
+                                              ),
+                                            ),
+                                            content: Text(
+                                              "Are you sure you want to delete $count lead(s)?",
+                                              style: TextStyle(
+                                                fontSize:
+                                                    (14 * tabletFontScale).sp,
+                                              ),
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed:
+                                                    isLoading
+                                                        ? null
+                                                        : () => Navigator.pop(
+                                                          context,
+                                                          false,
+                                                        ),
+                                                child: Text(
+                                                  "Cancel",
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        (14 * tabletFontScale)
+                                                            .sp,
+                                                  ),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed:
+                                                    isLoading
+                                                        ? null
+                                                        // ── bulk delete لكل الـ leads المختارة دفعة واحدة
+                                                        : () {
+                                                          context
+                                                              .read<
+                                                                EditLeadCubit
+                                                              >()
+                                                              .bulkDeleteLeads(
+                                                                ids:
+                                                                    _selectedLeads
+                                                                        .toList(),
+                                                              );
+                                                        },
+                                                child:
+                                                    isLoading
+                                                        ? SizedBox(
+                                                          height:
+                                                              (18 * tabletFontScale)
+                                                                  .h,
+                                                          width:
+                                                              (18 * tabletFontScale)
+                                                                  .w,
+                                                          child: CircularProgressIndicator(
+                                                            strokeWidth:
+                                                                (2 * tabletScale)
+                                                                    .w,
+                                                          ),
+                                                        )
+                                                        : Text(
+                                                          "Delete",
+                                                          style: TextStyle(
+                                                            color: Colors.red,
+                                                            fontSize:
+                                                                (14 * tabletFontScale)
+                                                                    .sp,
+                                                          ),
+                                                        ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  },
                                 );
-                              }
-                            },
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.grey.shade700,
-                                  size: (25 * tabletFontScale).sp,
-                                ),
-                                SizedBox(height: (4 * tabletHeightScale).h),
-                                Text(
-                                  "DELETE",
-                                  style: TextStyle(
-                                    fontSize: (10 * tabletFontScale).sp,
-                                    fontWeight: FontWeight.w700,
+
+                                if (confirm == true) {
+                                  if (!mounted) return;
+
+                                  setState(() {
+                                    _showCheckboxes = false;
+                                    _selectedLeads.clear();
+                                    _selectedSalesIds.clear();
+                                    _selectedLeadStagesIds.clear();
+                                  });
+
+                                  context
+                                      .read<AllLeadsCubitWithPagination>()
+                                      .fetchLeads(
+                                        stageIds:
+                                            _selectedStageFilter.isNotEmpty
+                                                ? _selectedStageFilter
+                                                : null,
+                                        duplicates: _showDuplicatesOnly,
+                                        ignoreDuplicate: _showDuplicatesOnly,
+                                        data: widget.data,
+                                        transferefromdata:
+                                            widget.transferefromdata,
+                                        salesIds:
+                                            widget.salesIdss != null &&
+                                                    widget.salesIdss!.isNotEmpty
+                                                ? widget.salesIdss
+                                                : null,
+                                      );
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        "$count lead(s) deleted successfully.",
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.delete_outline,
                                     color: Colors.grey.shade700,
+                                    size: (25 * tabletFontScale).sp,
                                   ),
-                                ),
-                              ],
+                                  SizedBox(height: (4 * tabletHeightScale).h),
+                                  Text(
+                                    "DELETE",
+                                    style: TextStyle(
+                                      fontSize: (10 * tabletFontScale).sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -2094,6 +2436,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               lead.lastComment?.firstcomment,
                                           lastcommentNext:
                                               lead.lastComment?.secondcomment,
+                                          lastcommentSales:
+                                              lead.lastComment?.sales?.name,
                                           linkCampaign:
                                               lead.campaign?.redirectLink,
                                           campaignRedirectLink:
@@ -2118,6 +2462,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   ?.map((e) => e.token ?? '')
                                                   .where((t) => t.isNotEmpty)
                                                   .toList(),
+                                          ignoredublicates:
+                                              lead.ignoredublicate,
                                         ),
                                   ),
                                 ).then((_) {
@@ -2176,6 +2522,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                     return Colors.orangeAccent;
                                                   } else if (leadStagetype ==
                                                           "Follow" &&
+                                                      isOutdated) {
+                                                    return Colors.orangeAccent;
+                                                  } else if (leadStagetype ==
+                                                          "Schedule Meeting" &&
                                                       isOutdated) {
                                                     return Colors.orangeAccent;
                                                   } else if (leadStagetype ==
@@ -2279,12 +2629,10 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                           .add(
                                                                             lead.id!,
                                                                           );
-
                                                                       _selectedSalesIds.add(
                                                                         lead.sales?.id ??
                                                                             '',
                                                                       );
-
                                                                       _selectedLeadStagesIds.add(
                                                                         lead.stage?.id ??
                                                                             '',
@@ -2294,19 +2642,20 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                           .remove(
                                                                             lead.id,
                                                                           );
-
                                                                       _selectedSalesIds.remove(
                                                                         lead.sales?.id ??
                                                                             '',
                                                                       );
-
                                                                       _selectedLeadStagesIds.remove(
                                                                         lead.stage?.id ??
                                                                             '',
                                                                       );
 
-                                                                      _showCheckboxes =
-                                                                          false;
+                                                                      if (_selectedLeads
+                                                                          .isEmpty) {
+                                                                        _showCheckboxes =
+                                                                            false;
+                                                                      }
                                                                     }
                                                                   });
                                                                 },
@@ -2372,6 +2721,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                                     lead.stage?.name ==
                                                                                         "Follow After Meeting" ||
                                                                                     lead.stage?.name ==
+                                                                                        "Schedule Meeting" ||
+                                                                                    lead.stage?.name ==
                                                                                         "Follow" ||
                                                                                     lead.stage?.name ==
                                                                                         "Meeting" ||
@@ -2421,6 +2772,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                                           "Follow Up" ||
                                                                                       lead.stage?.name ==
                                                                                           "Follow After Meeting" ||
+                                                                                      lead.stage?.name ==
+                                                                                          "Schedule Meeting" ||
                                                                                       lead.stage?.name ==
                                                                                           "Follow" ||
                                                                                       lead.stage?.name ==

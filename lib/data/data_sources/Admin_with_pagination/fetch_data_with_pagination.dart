@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print, unintended_html_in_doc_comment
 
 import 'dart:convert';
+import 'package:homewalkers_app/data/models/assign_history_model.dart';
 import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -261,6 +262,46 @@ class LeadsApiServiceWithQuery {
       }
     } catch (e) {
       print("Error fetching trash leads: $e");
+      return null;
+    }
+  }
+
+  Future<AssignHistoryResponse?> fetchLeadAssignHistory({
+    required String leadId,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      if (token.isEmpty) {
+        print("Token not found!");
+        return null;
+      }
+
+      final uri = Uri.parse(
+        "${Constants.baseUrl}/LeadAssigned",
+      ).replace(queryParameters: {"LeadId": leadId});
+
+      print("Assign History URL: ${uri.toString()}");
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        return AssignHistoryResponse.fromJson(jsonData);
+      } else {
+        print("Failed to load assign history: ${response.statusCode}");
+        print(response.body);
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching assign history: $e");
       return null;
     }
   }

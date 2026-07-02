@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/developers_api_service.dart';
@@ -12,11 +11,37 @@ import 'package:homewalkers_app/presentation/viewModels/sales/developers/develop
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/add_dialog.dart';
 
-class DevelopersTrash extends StatelessWidget {
+class DevelopersTrash extends StatefulWidget {
   const DevelopersTrash({super.key});
 
   @override
+  State<DevelopersTrash> createState() => _DevelopersTrashState();
+}
+
+class _DevelopersTrashState extends State<DevelopersTrash> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.toLowerCase());
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+
     return BlocProvider(
       create:
           (context) =>
@@ -28,102 +53,148 @@ class DevelopersTrash extends StatelessWidget {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(const SnackBar(content: Text('done successfully')));
-            // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
             context.read<DevelopersCubit>().getDevelopersInTrash();
           } else if (state is AddInMenuError) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text(' error')));
+            ).showSnackBar(const SnackBar(content: Text('error')));
           }
         },
         child: Scaffold(
           backgroundColor:
-              Theme.of(context).brightness == Brightness.light
+              isLight
                   ? Constants.backgroundlightmode
                   : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
-            title: "Developers",
-            onBack: () {
-              Navigator.pop(context);
-            },
+            title: "Developers Trash",
+            onBack: () => Navigator.pop(context),
           ),
           body: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 25),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder:
-                              (_) => BlocProvider.value(
-                                value:
-                                    context
-                                        .read<
-                                          AddInMenuCubit
-                                        >(), // استخدم نفس الـ cubit
-                                child: AddDialog(
-                                  onAdd: (value) {
-                                    context.read<AddInMenuCubit>().addDeveloper(
-                                      value,
-                                    );
-                                  },
-                                  title: "Developer",
-                                ),
-                              ),
-                        );
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text(
-                        "Add New Developer",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                        ),
+                const SizedBox(height: 16),
+
+                // ── Search Bar ───────────────────────────────────────
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: isLight ? Colors.white : Colors.grey[850],
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Constants.mainDarkmodecolor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: "Search developers...",
+                      hintStyle: TextStyle(
+                        color: isLight ? Colors.grey[400] : Colors.grey[500],
+                        fontSize: 14,
                       ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: isLight ? Colors.grey[400] : Colors.grey[500],
+                        size: 22,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 20),
+
+                // ── Section Header ───────────────────────────────────
+                Builder(
+                  builder: (context) {
+                    return Row(
+                      children: [
+                        Text(
+                          "DELETED DEVELOPERS",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isLight ? Colors.grey[500] : Colors.grey[400],
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Divider(
+                            color:
+                                isLight ? Colors.grey[300] : Colors.grey[700],
+                            thickness: 1,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // ── FAB Add Button ─────────────────────────────
+                        GestureDetector(
+                          onTap: () => _showAddDialog(context),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: mainColor,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: mainColor.withOpacity(0.35),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
                 const SizedBox(height: 16),
+
+                // ── List ─────────────────────────────────────────────
                 Expanded(
                   child: BlocBuilder<DevelopersCubit, DevelopersState>(
                     builder: (context, state) {
                       if (state is DeveloperLoading) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (state is DeveloperSuccess) {
-                        final dsvelopers = state.developersModel.data;
-                        if (dsvelopers.isEmpty) {
+                        final all = state.developersModel.data;
+                        final filtered =
+                            all.where((d) {
+                              if (_searchQuery.isEmpty) return true;
+                              return d.name.toLowerCase().contains(
+                                _searchQuery,
+                              );
+                            }).toList();
+
+                        if (filtered.isEmpty) {
                           return const Center(
-                            child: Text('No developers Found.'),
+                            child: Text('No developers found.'),
                           );
                         }
+
                         return ListView.separated(
-                          itemCount: dsvelopers.length,
+                          itemCount: filtered.length,
                           separatorBuilder:
                               (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final developer = dsvelopers[index];
-                            return _buildCommunicationCard(
-                              developer,
-                              Constants.maincolor,
-                              context,
-                            );
-                          },
+                          itemBuilder:
+                              (context, index) =>
+                                  _buildDeveloperCard(filtered[index], context),
                         );
                       } else if (state is DeveloperError) {
                         return Center(child: Text('Error: ${state.error}'));
@@ -140,109 +211,191 @@ class DevelopersTrash extends StatelessWidget {
     );
   }
 
-  Widget _buildCommunicationCard(
-    DeveloperData developerData,
-    Color mainColor,
-    BuildContext context,
-  ) {
-    final name = developerData.name;
-    final dateTime = DateTime.parse(developerData.createdAt);
-    final formattedDate = Formatters.formatDate(dateTime);
+  // ─────────────────────────────────────────────────────────────────────────
+  // DEVELOPER TRASH CARD
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildDeveloperCard(DeveloperData developer, BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+
+    final formattedDate = Formatters.formatDate(
+      DateTime.parse(developer.createdAt),
+    );
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(16, 16, 12, 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color:
-            Theme.of(context).brightness == Brightness.light
-                ? Colors
-                    .white // لون الكارت في light mode
-                : const Color(0xFF1E1E1E),
+        color: isLight ? Colors.white : const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.5),
-            blurRadius: 6,
+                isLight
+                    ? Colors.grey.withOpacity(0.12)
+                    : Colors.black.withOpacity(0.4),
+            blurRadius: 8,
             offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFFE5F4F5),
-                child: Icon(
-                  Icons.contact_mail,
-                  size: 16,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+          // ── Left: name + date ────────────────────────────────────
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  developer.name,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: isLight ? Colors.black87 : Colors.white,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "developer Name : $name",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                const SizedBox(height: 4),
+                Text(
+                  "Created $formattedDate",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isLight ? Colors.grey[500] : Colors.grey[400],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFFE5F4F5),
-                child: Icon(
-                  Icons.calendar_today,
-                  size: 16,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
+
+          const SizedBox(width: 12),
+
+          // ── Right: restore button ────────────────────────────────
+          GestureDetector(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder:
+                    (_) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      backgroundColor:
+                          isLight ? Colors.white : const Color(0xFF1E1E1E),
+                      title: Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: mainColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.restore_from_trash_rounded,
+                              color: mainColor,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "Restore Developer",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      content: RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                isLight ? Colors.grey[700] : Colors.grey[300],
+                          ),
+                          children: [
+                            const TextSpan(
+                              text: "Are you sure you want to restore ",
+                            ),
+                            TextSpan(
+                              text: developer.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isLight ? Colors.black87 : Colors.white,
+                              ),
+                            ),
+                            const TextSpan(text: "?"),
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            "Cancel",
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: mainColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            context
+                                .read<AddInMenuCubit>()
+                                .updateDeveloperStatus(
+                                  developer.id.toString(),
+                                  true,
+                                );
+                          },
+                          child: const Text(
+                            "Restore",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+              );
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: mainColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "Creation Date : $formattedDate",
-                  style: TextStyle(fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Spacer(),
-              InkWell(
-                child: Icon(
-                  Icons.restore_from_trash,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                  size: 30.0,
-                ),
-                onTap: () {
-                  context.read<AddInMenuCubit>().updateDeveloperStatus(
-                    developerData.id.toString(),
-                    true,
-                  );
-                },
-              ),
-            ],
+              child: Icon(Icons.restore_from_trash, color: mainColor, size: 20),
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Add dialog  (logic unchanged)
+  // ─────────────────────────────────────────────────────────────────────────
+  void _showAddDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => BlocProvider.value(
+            value: context.read<AddInMenuCubit>(),
+            child: AddDialog(
+              onAdd: (value) {
+                context.read<AddInMenuCubit>().addDeveloper(value);
+              },
+              title: "Developer",
+            ),
+          ),
     );
   }
 }

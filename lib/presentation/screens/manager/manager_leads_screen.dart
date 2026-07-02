@@ -231,6 +231,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
     } else if ((leadStagetype == "Follow Up" ||
             leadStagetype == "Follow" ||
             leadStagetype == "Follow After Meeting" ||
+            leadStagetype == "Schedule Meeting" ||
             leadStagetype == "No Answer" ||
             leadStagetype == "No Stage" ||
             leadStagetype == "Meeting" ||
@@ -266,6 +267,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
         (leadStagetype == "Follow Up" ||
             leadStagetype == "Follow After Meeting" ||
             leadStagetype == "Follow" ||
+            leadStagetype == "Schedule Meeting" ||
             leadStagetype == "Meeting" ||
             leadStagetype == "No Stage" ||
             leadStagetype == "No Answer" ||

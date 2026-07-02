@@ -1,11 +1,8 @@
-//
 // final Salesleadsmodelwithpagination = SalesleadsmodelwithpaginationFromJson(jsonString);
 
 // ignore_for_file: non_constant_identifier_names
 
 import 'dart:convert';
-
-import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
 
 Salesleadsmodelwithpagination SalesleadsmodelwithpaginationFromJson(
   String str,
@@ -409,6 +406,7 @@ class LeadPagination {
   String? leedtype;
   bool? assigntype;
   bool? resetcreationdate;
+  bool? hidesalesnameonleadcomments;
   num? budget;
   num? revenue;
   dynamic unitPrice;
@@ -472,6 +470,7 @@ class LeadPagination {
     this.leedtype,
     this.assigntype,
     this.resetcreationdate,
+    this.hidesalesnameonleadcomments,
     this.budget,
     this.revenue,
     this.unitPrice,
@@ -539,6 +538,7 @@ class LeadPagination {
     leedtype: json["leedtype"],
     assigntype: json["assigntype"],
     resetcreationdate: json["resetcreationdate"],
+    hidesalesnameonleadcomments: json["hidesalesnameonleadcomments"],
     budget: json["budget"],
     revenue: json["revenue"],
     unitPrice: json["unit_price"],
@@ -619,6 +619,7 @@ class LeadPagination {
     "leedtype": leedtype,
     "assigntype": assigntype,
     "resetcreationdate": resetcreationdate,
+    "hidesalesnameonleadcomments": hidesalesnameonleadcomments,
     "budget": budget,
     "revenue": revenue,
     "unit_price": unitPrice,
@@ -1014,9 +1015,9 @@ class Teamleader {
     role: json["role"],
     fcmToken: json["fcmToken"],
     fcmTokens:
-          (json['fcmTokens'] as List?)
-              ?.map((e) => FcmTokens.fromJson(e))
-              .toList(),
+        (json['fcmTokens'] as List?)
+            ?.map((e) => FcmTokens.fromJson(e))
+            .toList(),
     isMarketer: json["isMarketer"],
   );
 
@@ -1032,6 +1033,7 @@ class Teamleader {
     "isMarketer": isMarketer,
   };
 }
+
 class FcmTokens {
   final String? id;
   final String? token;

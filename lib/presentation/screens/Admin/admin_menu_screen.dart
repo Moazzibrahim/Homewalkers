@@ -24,6 +24,7 @@ import 'package:homewalkers_app/presentation/screens/marketier/communication_way
 import 'package:homewalkers_app/presentation/screens/marketier/developer_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/project_screen.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/region_screen.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
@@ -393,6 +394,43 @@ class _AdminMenuScreenState extends State<AdminMenuScreen> {
     return Scaffold(
       bottomNavigationBar:
           widget.showNavBar ? SharedAdminNavBar(currentIndex: 3) : null,
+      // ✅ أضف ده
+      floatingActionButton:
+          widget.showNavBar
+              ? Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Constants.maincolor.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateLeadScreen(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add, size: 28, color: Colors.white),
+                ),
+              )
+              : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       backgroundColor: scaffoldBg,
       body: SafeArea(
         child: Padding(

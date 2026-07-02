@@ -18,6 +18,7 @@ import 'package:homewalkers_app/data/data_sources/team_leader/get_dashboard_lead
 import 'package:homewalkers_app/data/models/stages_models.dart';
 import 'package:homewalkers_app/data/models/teamleader_pagination_leads_model.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/meetingCommentsScreen.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/leads_details_team_leader_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
@@ -46,6 +47,7 @@ class TeamLeaderAssignScreen extends StatefulWidget {
   final bool? data;
   final String? salesName;
   final String? stageId;
+  final bool showNavBar;
   const TeamLeaderAssignScreen({
     super.key,
     this.stageName,
@@ -53,6 +55,7 @@ class TeamLeaderAssignScreen extends StatefulWidget {
     this.data,
     this.salesName,
     this.stageId,
+    this.showNavBar = true,
   });
 
   @override
@@ -302,6 +305,52 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
           final double tabletHeightScale = isTabletDevice ? 0.9 : 1.0;
 
           return Scaffold(
+            bottomNavigationBar:
+                widget.transferfromdata == true
+                    ? widget.showNavBar
+                        ? SharedTeamLeaderNavBar(currentIndex: 1)
+                        : null
+                    : null,
+            floatingActionButton:
+                widget.showNavBar
+                    ? Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Constants.maincolor.withOpacity(0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CreateLeadScreen(),
+                            ),
+                          );
+                        },
+                        child: const Icon(
+                          Icons.add,
+                          size: 28,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                    : null,
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             backgroundColor:
                 Theme.of(context).brightness == Brightness.light
                     ? Constants.backgroundlightmode
@@ -829,14 +878,26 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
       child: Row(
         children: [
           /// CHECK ICON
-          Container(
-            width: 38.w,
-            height: 38.w,
-            decoration: BoxDecoration(
-              color: Constants.maincolor,
-              borderRadius: BorderRadius.circular(10.r),
+          InkWell(
+            borderRadius: BorderRadius.circular(10.r),
+            onTap: () {
+              setState(() {
+                isSelectionMode = false;
+                selectedLeadsData.clear();
+                _selectedLead = null;
+                // ✅ إعادة تصفير كل الـ checkboxes عشان لون الكارت يرجع طبيعي
+                selected = List.filled(_leads.length, false);
+              });
+            },
+            child: Container(
+              width: 38.w,
+              height: 38.w,
+              decoration: BoxDecoration(
+                color: Constants.maincolor,
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Icon(Icons.check, color: Colors.white, size: 22.sp),
             ),
-            child: Icon(Icons.check, color: Colors.white, size: 22.sp),
           ),
 
           SizedBox(width: 14.w),
@@ -1035,43 +1096,43 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                 ),
 
                 /// DIVIDER
-                // Container(height: 50.h, width: 1, color: Colors.grey.shade300),
+                Container(height: 50.h, width: 1, color: Colors.grey.shade300),
 
-                // // =========================
-                // // MEETING
-                // // =========================
-                // InkWell(
-                //   onTap:
-                //       selectedLeadsData.length == 1
-                //           ? () {
-                //             if (_selectedLead != null) {
-                //               _showAddMeetingSheet(context, _selectedLead!.id!);
-                //             }
-                //           }
-                //           : null,
-                //   child: Opacity(
-                //     opacity: selectedLeadsData.length == 1 ? 1.0 : 0.5,
-                //     child: Column(
-                //       mainAxisSize: MainAxisSize.min,
-                //       children: [
-                //         Icon(
-                //           Icons.event_outlined,
-                //           color: Colors.grey.shade700,
-                //           size: 25.sp,
-                //         ),
-                //         SizedBox(height: 4.h),
-                //         Text(
-                //           "MEETING",
-                //           style: TextStyle(
-                //             fontSize: 10.sp,
-                //             fontWeight: FontWeight.w700,
-                //             color: Colors.grey.shade700,
-                //           ),
-                //         ),
-                //       ],
-                //     ),
-                //   ),
-                // ),
+                // =========================
+                // MEETING
+                // =========================
+                InkWell(
+                  onTap:
+                      selectedLeadsData.length == 1
+                          ? () {
+                            if (_selectedLead != null) {
+                              _showAddMeetingSheet(context, _selectedLead!.id!);
+                            }
+                          }
+                          : null,
+                  child: Opacity(
+                    opacity: selectedLeadsData.length == 1 ? 1.0 : 0.5,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.event_outlined,
+                          color: Colors.grey.shade700,
+                          size: 25.sp,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          "MEETING",
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1137,6 +1198,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     } else if ((leadStagetype == "Follow Up" ||
             leadStagetype == "Follow" ||
             leadStagetype == "Follow After Meeting" ||
+            leadStagetype == "Schedule Meeting" ||
             leadStagetype == "No Answer" ||
             leadStagetype == "No Stage" ||
             leadStagetype == "Meeting" ||
@@ -1171,6 +1233,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     final bool isOutdatedStage =
         (leadStagetype == "Follow Up" ||
             leadStagetype == "Follow After Meeting" ||
+            leadStagetype == "Schedule Meeting" ||
             leadStagetype == "Follow" ||
             leadStagetype == "Meeting" ||
             leadStagetype == "No Answer" ||
@@ -1289,6 +1352,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 ?.map((e) => e.token ?? '')
                                 .where((t) => t.isNotEmpty)
                                 .toList(),
+                        hidesalesnameonleadcomments:
+                            lead.hidesalesnameonleadcomments,
                       ),
                     ),
               ),
@@ -1376,6 +1441,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                         question4_answer: lead.question4_answer,
                         question5_text: lead.question5_text,
                         question5_answer: lead.question5_answer,
+                        hidesalesnameonleadcomments:
+                            lead.hidesalesnameonleadcomments,
                       ),
                     ),
               ),
@@ -2160,6 +2227,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   creationDateTo: _currentFilterCreationDateTo,
                   stageDateFrom: _currentFilterStageDateFrom,
                   stageDateTo: _currentFilterStageDateTo,
+                  resetPagination: true,
                 );
                 ScaffoldMessenger.of(parentContext).showSnackBar(
                   const SnackBar(
@@ -2201,20 +2269,41 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   if (state is PostMeetingCommentSuccess) {
                     final parentContext = context;
                     Navigator.pop(context);
+
+                    // ✅ إلغاء الـ selection بعد نجاح إضافة الميتنج
+                    setState(() {
+                      selected = List.filled(_leads.length, false);
+                      selectedLeadsData.clear();
+                      _selectedLead = null;
+                      isSelectionMode = false;
+                    });
+
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       ScaffoldMessenger.of(parentContext).showSnackBar(
                         const SnackBar(
                           content: Text("Meeting comment added successfully"),
                         ),
                       );
-                      context
-                          .read<GetLeadsCubit>()
-                          .fetchSalesLeadsWithPagination(
-                            data: widget.data,
-                            transferefromdata: widget.transferfromdata,
-                            stageId: widget.stageId,
-                            resetPagination: true,
-                          );
+                      _cubit.fetchTeamLeaderLeadsWithPagination(
+                        data: widget.data,
+                        transferefromdata: widget.transferfromdata,
+                        stageId:
+                            _currentFilterStageId ??
+                            widget.stageId, // ✅ استخدم الفلتر
+                        search:
+                            searchController.text.isNotEmpty
+                                ? searchController.text
+                                : null,
+                        developerId: _currentFilterDeveloperId,
+                        projectId: _currentFilterProjectId,
+                        channelId: _currentFilterChannelId,
+                        salesId: _currentFilterSalesId ?? widget.salesName,
+                        creationDateFrom: _currentFilterCreationDateFrom,
+                        creationDateTo: _currentFilterCreationDateTo,
+                        stageDateFrom: _currentFilterStageDateFrom,
+                        stageDateTo: _currentFilterStageDateTo,
+                        resetPagination: true,
+                      );
                     });
                   }
                 },
@@ -2224,7 +2313,9 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
               builder: (context, setState) {
                 return Padding(
                   padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                    bottom:
+                        MediaQuery.of(context).viewInsets.bottom +
+                        25.h, // ✅ أضفنا 20 إضافية
                     left: 16,
                     right: 16,
                     top: 20,

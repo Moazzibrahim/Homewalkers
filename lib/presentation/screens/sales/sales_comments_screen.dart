@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/edit_comment_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
-import 'package:homewalkers_app/data/models/lead_comments_model.dart';
+import 'package:homewalkers_app/data/models/newCommentsModel.dart';
 import 'package:homewalkers_app/presentation/viewModels/edit_comment/cubit/edit_comment_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/leads_comments_state.dart';
@@ -18,6 +18,7 @@ class SalesCommentsScreen extends StatefulWidget {
   final String? leadName;
   final String? managerfcm;
   final String? leadLastDateAssigned;
+  final bool? hideSalesName;
 
   const SalesCommentsScreen({
     super.key,
@@ -26,6 +27,7 @@ class SalesCommentsScreen extends StatefulWidget {
     required this.leadName,
     this.managerfcm,
     this.leadLastDateAssigned,
+    this.hideSalesName,
   });
 
   @override
@@ -33,82 +35,24 @@ class SalesCommentsScreen extends StatefulWidget {
 }
 
 class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
-  final TextStyle titleStyle = const TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-  );
-  final TextStyle subtitleStyle = const TextStyle(color: Colors.grey);
-  final TextStyle commentTextStyle = const TextStyle(fontSize: 14);
-  // bool isClearHistory = false;
-  //DateTime? clearHistoryTime;
   bool isPrefsLoaded = false;
-  bool hasFetchedCommentsOnce = false;
   late final LeadCommentsCubit _commentsCubit;
   String? userRole;
 
   @override
   void initState() {
     super.initState();
-    print("[InitState] Start initState");
     _commentsCubit = LeadCommentsCubit(GetAllLeadCommentsApiService());
-    print("[InitState] Cubit initialized: $_commentsCubit");
     _initializeAndLoad();
   }
 
   Future<void> _initializeAndLoad() async {
     final prefs = await SharedPreferences.getInstance();
-    userRole = prefs.getString('role'); // ✅ خزّن الرول
-
+    userRole = prefs.getString('role');
     isPrefsLoaded = true;
-
     if (mounted) setState(() {});
-
-    await _loadComments();
+    await _commentsCubit.fetchAllLeadData(widget.leedId);
   }
-
-  Future<void> _loadComments() async {
-    print("[LoadComments] Current Cubit state: ${_commentsCubit.state}");
-    if (_commentsCubit.state is! LeadCommentsFullLoaded) {
-      print(
-        "[LoadComments] Fetching all lead data for leedId: ${widget.leedId}",
-      );
-      await _commentsCubit.fetchAllLeadData(widget.leedId);
-      print("[LoadComments] Fetch all lead data done");
-    }
-  }
-
-  // Future<void> _initialize() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final role = prefs.getString('role');
-  //   log(
-  //     " last date assigned in comments screen: ${widget.leadLastDateAssigned}",
-  //   );
-  //   // log("lead assigned status : ${widget.isleadAssigned}");
-  //   if (role != "Admin" && role != "Marketer") {
-  //     await _loadClearHistoryStatus(prefs);
-  //   } else {
-  //     setState(() {
-  //       isPrefsLoaded = true;
-  //     });
-  //   }
-  // }
-
-  // Future<void> _loadClearHistoryStatus(SharedPreferences prefs) async {
-  //   //final timeString = prefs.getString('clear_history_time');
-  //   final isCleared = prefs.getBool('clearHistory');
-
-  //   if (mounted) {
-  //     setState(() {
-  //       //clearHistoryTime =
-  //       // timeString != null ? DateTime.tryParse(timeString) : null;
-  //       isClearHistory = isCleared;
-  //       isPrefsLoaded = true;
-  //     });
-  //   }
-
-  //   //debugPrint('Clear History Time: $clearHistoryTime');
-  //   //debugPrint('Is Clear History: $isClearHistory');
-  // }
 
   Future<String> checkAuthName() async {
     final prefs = await SharedPreferences.getInstance();
@@ -118,32 +62,6 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
   Future<String> checkRoleName() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('role') ?? 'User';
-  }
-
-  /// ✅ المقارنة على First Comment فقط
-  bool isValidComment({
-    required bool isClearHistory,
-    required DateTime? firstDate,
-    required String? firstText,
-  }) {
-    /// لو مش عامل clear history → اعرض الكل
-    if (!isClearHistory) return true;
-
-    if (widget.leadLastDateAssigned == null ||
-        widget.leadLastDateAssigned!.isEmpty) {
-      return true;
-    }
-
-    final lastAssignedDate = DateTime.tryParse(
-      widget.leadLastDateAssigned!,
-    )?.toUtc().add(const Duration(hours: 4));
-
-    if (lastAssignedDate == null) return true;
-
-    /// ❗ اعتمد على first comment فقط
-    return firstDate != null &&
-        firstDate.isAfter(lastAssignedDate) &&
-        (firstText?.isNotEmpty ?? false);
   }
 
   @override
@@ -172,51 +90,18 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
               return Center(child: Text(state.message));
             }
 
-            if (state is LeadCommentsFullLoaded) {
-              hasFetchedCommentsOnce = true;
-              final bool isClearHistory =
-                  (state.assigned.data != null &&
-                          state.assigned.data!.isNotEmpty)
-                      ? state.assigned.data!.first.clearHistory ?? false
-                      : false;
+            if (state is NewCommentsLoaded) {
+              final comments = state.newComments.comments ?? [];
 
-              final List<DataItem> filteredData;
-
-              if (userRole == "Admin" || userRole == "Marketer") {
-                /// ✅ Admin & Marketer → رجّع كل الكومنتات
-                filteredData = state.comments.data!;
-              } else {
-                /// ✅ باقي الرولز → طبّق الفلترة
-                filteredData =
-                    state.comments.data!.where((item) {
-                      // 🔐 حماية من الليست الفاضية
-                      if (item.comments == null || item.comments!.isEmpty) {
-                        return false;
-                      }
-
-                      final first = item.comments!.first.firstcomment;
-
-                      final firstDate = DateTime.tryParse(
-                        first?.date?.toString() ?? '',
-                      )?.toUtc().add(const Duration(hours: 4));
-
-                      return isValidComment(
-                        isClearHistory: isClearHistory,
-                        firstDate: firstDate,
-                        firstText: first?.text,
-                      );
-                    }).toList();
-              }
-
-              if (filteredData.isEmpty) {
+              if (comments.isEmpty) {
                 return const Center(child: Text('No comments found'));
               }
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: filteredData.length,
+                itemCount: comments.length,
                 itemBuilder: (context, index) {
-                  return buildCommentCard(context, filteredData[index]);
+                  return buildCommentCard(context, comments[index]);
                 },
               );
             }
@@ -228,27 +113,23 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
     );
   }
 
-  Widget buildCommentCard(BuildContext context, DataItem dataItem) {
+  Widget buildCommentCard(BuildContext context, Commentt comment) {
     final bool isLight = Theme.of(context).brightness == Brightness.light;
     final dateFormat = DateFormat('d MMM yyyy, hh:mm a');
     final dateOnlyFormat = DateFormat('d MMM yyyy');
 
-    final firstComment = dataItem.comments?.first.firstcomment;
-    final secondComment = dataItem.comments?.first.secondcomment;
-    final reply = dataItem.comments?.first.replies;
-    final salesName = dataItem.comments?.first.sales?.name ?? "User";
-    final leadName = dataItem.leed?.name ?? "";
+    final firstComment = comment.firstcomment;
+    final secondComment = comment.secondcomment;
+    final reply = comment.replies ?? [];
+    final salesName = comment.sales?.name ?? "User";
 
-    final firstDate = DateTime.tryParse(
-      firstComment?.date?.toString() ?? '',
-    )?.toUtc().add(const Duration(hours: 4));
+    final firstDate = firstComment?.date?.toUtc().add(const Duration(hours: 4));
+    final secondDate = secondComment?.date?.toUtc().add(
+      const Duration(hours: 4),
+    );
 
-    final secondDate = DateTime.tryParse(
-      secondComment?.date?.toString() ?? '',
-    )?.toUtc().add(const Duration(hours: 4));
-
-    bool isFirstValid = firstComment?.text?.isNotEmpty ?? false;
-    bool isSecondValid = secondComment?.text?.isNotEmpty ?? false;
+    final bool isFirstValid = firstComment?.text?.isNotEmpty ?? false;
+    final bool isSecondValid = secondComment?.text?.isNotEmpty ?? false;
 
     String formatDate(DateTime? date) {
       if (date == null) return '';
@@ -262,21 +143,17 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
     final cardDateString =
         firstDate != null ? dateOnlyFormat.format(firstDate) : '';
 
-    if (!isFirstValid && !isSecondValid) {
-      return const SizedBox.shrink();
-    }
+    if (!isFirstValid && !isSecondValid) return const SizedBox.shrink();
 
-    final cardBg = isLight ? Color(0xffF0F2F5) : const Color(0xFF1E1E2C);
+    final cardBg = isLight ? const Color(0xffF0F2F5) : const Color(0xFF1E1E2C);
     final replyBg = isLight ? const Color(0xFFF2F3F5) : const Color(0xFF2A2A3A);
     final textColor = isLight ? const Color(0xFF0D0D1A) : Colors.white;
     final subColor = isLight ? Colors.grey.shade500 : Colors.grey.shade400;
 
-    // initials helper
     String initials(String name) {
       final parts = name.trim().split(' ');
-      if (parts.length >= 2) {
+      if (parts.length >= 2)
         return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-      }
       return name.isNotEmpty ? name[0].toUpperCase() : 'U';
     }
 
@@ -302,45 +179,49 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header: Avatar + Name + Lead name
+                // Header
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: const Color(0xFFE8EAF6),
-                      child: Text(
-                        initials(salesName),
-                        style: TextStyle(
-                          color: Constants.maincolor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          salesName,
+                    if (widget.hideSalesName != true) ...[
+                      // ✅
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: const Color(0xFFE8EAF6),
+                        child: Text(
+                          initials(salesName),
                           style: TextStyle(
-                            fontSize: 16,
+                            color: Constants.maincolor,
                             fontWeight: FontWeight.bold,
-                            color: textColor,
+                            fontSize: 14,
                           ),
                         ),
-                        Text(
-                          leadName,
-                          style: TextStyle(color: subColor, fontSize: 13),
-                        ),
-                      ],
-                    ),
+                      ),
+
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            salesName,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          Text(
+                            widget.leadName ?? '',
+                            style: TextStyle(color: subColor, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
 
                 const SizedBox(height: 14),
 
-                // First Action
+                // First Comment
                 if (isFirstValid) ...[
                   IntrinsicHeight(
                     child: Row(
@@ -389,7 +270,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                   const SizedBox(height: 12),
                 ],
 
-                // Second Action
+                // Second Comment
                 if (isSecondValid) ...[
                   IntrinsicHeight(
                     child: Row(
@@ -441,7 +322,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
           ),
         ),
 
-        // ── Footer row: date + Edit + Reply ────────────────
+        // ── Footer: date + Edit + Reply ────────────────────
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           child: Row(
@@ -456,7 +337,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
               ),
               const SizedBox(width: 16),
 
-              // Edit button (Admin only)
+              // Edit (Admin only)
               FutureBuilder(
                 future: checkRoleName(),
                 builder: (context, snapshot) {
@@ -471,81 +352,94 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                         );
                         showDialog(
                           context: context,
-                          builder: (ctx) {
-                            return AlertDialog(
-                              title: const Text('Edit Comment'),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TextField(
-                                    controller: firstTextController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'First Comment',
+                          builder:
+                              (ctx) => AlertDialog(
+                                title: const Text('Edit Comment'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextField(
+                                      controller: firstTextController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'First Comment',
+                                      ),
                                     ),
+                                    const SizedBox(height: 10),
+                                    TextField(
+                                      controller: secondTextController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Second Comment',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Cancel'),
                                   ),
-                                  const SizedBox(height: 10),
-                                  TextField(
-                                    controller: secondTextController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Second Comment',
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          isLight
+                                              ? Constants.maincolor
+                                              : Constants.mainDarkmodecolor,
+                                    ),
+                                    onPressed: () {
+                                      final firstText =
+                                          firstTextController.text.trim();
+                                      final secondText =
+                                          secondTextController.text.trim();
+                                      final commentId = comment.id;
+                                      if (commentId == null) {
+                                        Navigator.pop(ctx);
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "Unable to edit comment: missing id ❌",
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      Navigator.pop(ctx);
+                                      context
+                                          .read<EditCommentCubit>()
+                                          .editComment(
+                                            commentId: commentId,
+                                            firstText: firstText,
+                                            secondText: secondText,
+                                          )
+                                          .then((isSuccess) {
+                                            if (isSuccess) {
+                                              context
+                                                  .read<LeadCommentsCubit>()
+                                                  .fetchAllLeadData(
+                                                    widget.leedId,
+                                                  );
+                                            } else {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    "Failed to edit comment ❌",
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          });
+                                    },
+                                    child: const Text(
+                                      'Save',
+                                      style: TextStyle(color: Colors.white),
                                     ),
                                   ),
                                 ],
                               ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx),
-                                  child: const Text('Cancel'),
-                                ),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                        isLight
-                                            ? Constants.maincolor
-                                            : Constants.mainDarkmodecolor,
-                                  ),
-                                  onPressed: () {
-                                    final firstText =
-                                        firstTextController.text.trim();
-                                    final secondText =
-                                        secondTextController.text.trim();
-                                    Navigator.pop(ctx);
-                                    context
-                                        .read<EditCommentCubit>()
-                                        .editComment(
-                                          commentId:
-                                              dataItem.comments?.first.id ?? '',
-                                          firstText: firstText,
-                                          secondText: secondText,
-                                        )
-                                        .then((isSuccess) {
-                                          if (isSuccess) {
-                                            context
-                                                .read<LeadCommentsCubit>()
-                                                .fetchAllLeadData(
-                                                  widget.leedId,
-                                                );
-                                          } else {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  "Failed to edit comment ❌",
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        });
-                                  },
-                                  child: const Text(
-                                    'Save',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
                         );
                       },
                       child: Text(
@@ -564,50 +458,59 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
 
               const SizedBox(width: 16),
 
-              // Reply button
+              // Reply
               GestureDetector(
                 onTap: () async {
-                  final TextEditingController replyController =
-                      TextEditingController();
+                  final replyController = TextEditingController();
                   showDialog(
                     context: context,
-                    builder: (ctx) {
-                      return AlertDialog(
-                        title: const Text("Write a reply"),
-                        content: TextField(
-                          controller: replyController,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            hintText: 'Type your reply here...',
-                            border: OutlineInputBorder(),
+                    builder:
+                        (ctx) => AlertDialog(
+                          title: const Text("Write a reply"),
+                          content: TextField(
+                            controller: replyController,
+                            maxLines: 3,
+                            decoration: const InputDecoration(
+                              hintText: 'Type your reply here...',
+                              border: OutlineInputBorder(),
+                            ),
                           ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: const Text("Cancel"),
-                          ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              final replyText = replyController.text.trim();
-                              if (replyText.isEmpty) return;
-                              Navigator.pop(ctx);
-                              context
-                                  .read<LeadCommentsCubit>()
-                                  .sendReplyToComment(
-                                    commentId:
-                                        dataItem.comments?.first.id ?? '',
-                                    replyText: replyText,
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text("Cancel"),
+                            ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                final replyText = replyController.text.trim();
+                                if (replyText.isEmpty) return;
+                                final commentId = comment.id;
+                                if (commentId == null) {
+                                  Navigator.pop(ctx);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "Unable to send reply: missing comment id ❌",
+                                      ),
+                                    ),
                                   );
-                              context
-                                  .read<LeadCommentsCubit>()
-                                  .fetchAllLeadData(widget.leedId);
-                            },
-                            child: const Text("Send"),
-                          ),
-                        ],
-                      );
-                    },
+                                  return;
+                                }
+                                Navigator.pop(ctx);
+                                await context
+                                    .read<LeadCommentsCubit>()
+                                    .sendReplyToComment(
+                                      commentId: commentId,
+                                      replyText: replyText,
+                                    );
+                                context
+                                    .read<LeadCommentsCubit>()
+                                    .fetchAllLeadData(widget.leedId);
+                              },
+                              child: const Text("Send"),
+                            ),
+                          ],
+                        ),
                   );
                 },
                 child: Text(
@@ -624,27 +527,22 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
         ),
 
         // ── Replies ────────────────────────────────────────
-        // ── Replies ────────────────────────────────────────
-        if (reply != null && reply.isNotEmpty)
+        if (reply.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(left: 16, bottom: 16),
             child: FutureBuilder<String>(
-              future:
-                  checkAuthName(), // ✅ جيب اسم الـ Admin من SharedPreferences
+              future: checkAuthName(),
               builder: (context, snapshot) {
                 final adminName = snapshot.data ?? 'Admin';
-
                 return Column(
                   children:
                       reply.map((r) {
+                        final replyDate = r is Map ? r['date'] : null;
+                        final replyText = r is Map ? (r['text'] ?? '') : '';
                         return IntrinsicHeight(
                           child: Row(
-                            crossAxisAlignment:
-                                CrossAxisAlignment
-                                    .stretch, // ✅ stretch مش start
-
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // ── Vertical Line ──
                               Container(
                                 width: 3,
                                 margin: const EdgeInsets.only(
@@ -656,7 +554,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
-                              SizedBox(width: 3),
+                              const SizedBox(width: 3),
                               Expanded(
                                 child: Container(
                                   margin: const EdgeInsets.only(bottom: 8),
@@ -678,9 +576,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                           0xFFDDE1F0,
                                         ),
                                         child: Text(
-                                          initials(
-                                            adminName,
-                                          ), // ✅ initials من اسم الادمن
+                                          initials(adminName),
                                           style: TextStyle(
                                             color: Constants.maincolor,
                                             fontWeight: FontWeight.bold,
@@ -695,7 +591,7 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              adminName, // ✅ اسم الادمن
+                                              adminName,
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 13,
@@ -704,23 +600,26 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              r.text ?? '',
+                                              replyText.toString(),
                                               style: TextStyle(
                                                 fontSize: 13,
                                                 color: textColor,
                                               ),
                                             ),
-                                            const SizedBox(height: 4),
-                                            if (r.date != null)
+                                            if (replyDate != null) ...[
+                                              const SizedBox(height: 4),
                                               Text(
                                                 formatDate(
-                                                  r.date,
-                                                ), // ✅ استخدم الـ formatDate الموجودة أصلاً
+                                                  DateTime.tryParse(
+                                                    replyDate.toString(),
+                                                  ),
+                                                ),
                                                 style: TextStyle(
                                                   color: subColor,
                                                   fontSize: 11,
                                                 ),
                                               ),
+                                            ],
                                           ],
                                         ),
                                       ),

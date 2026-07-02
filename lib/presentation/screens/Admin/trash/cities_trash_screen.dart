@@ -1,7 +1,7 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/get_cities_api_service.dart';
@@ -9,12 +9,38 @@ import 'package:homewalkers_app/data/models/cities_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/Add_in_menu/cubit/add_in_menu_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/cities/cubit/get_cities_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_app_bar.dart';
-import 'package:homewalkers_app/presentation/widgets/marketer/add_dialog.dart';
 
-class CitiesTrashScreen extends StatelessWidget {
+class CitiesTrashScreen extends StatefulWidget {
   const CitiesTrashScreen({super.key});
+
+  @override
+  State<CitiesTrashScreen> createState() => _CitiesTrashScreenState();
+}
+
+class _CitiesTrashScreenState extends State<CitiesTrashScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.toLowerCase());
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+
     return BlocProvider(
       create:
           (context) =>
@@ -26,100 +52,117 @@ class CitiesTrashScreen extends StatelessWidget {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(const SnackBar(content: Text('Done successfully')));
-            // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
             context.read<GetCitiesCubit>().fetchCitiesInTrash();
           } else if (state is AddInMenuError) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text(' error')));
+            ).showSnackBar(const SnackBar(content: Text('error')));
           }
         },
         child: Scaffold(
           backgroundColor:
-              Theme.of(context).brightness == Brightness.light
+              isLight
                   ? Constants.backgroundlightmode
                   : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
-            title: "Cities",
-            onBack: () {
-              Navigator.pop(context);
-            },
+            title: "Cities Trash",
+            onBack: () => Navigator.pop(context),
           ),
           body: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 25),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder:
-                              (_) => BlocProvider.value(
-                                value:
-                                    context
-                                        .read<
-                                          AddInMenuCubit
-                                        >(), // استخدم نفس الـ cubit
-                                child: AddDialog(
-                                  onAdd: (value) {
-                                    context.read<AddInMenuCubit>().addCity(
-                                      value,
-                                    );
-                                  },
-                                  title: "City",
-                                ),
-                              ),
-                        );
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text(
-                        "Add New City",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                        ),
+                const SizedBox(height: 16),
+
+                // ── Search Bar ───────────────────────────────────────
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: isLight ? Colors.white : Colors.grey[850],
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Constants.mainDarkmodecolor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: "Search deleted cities...",
+                      hintStyle: TextStyle(
+                        color: isLight ? Colors.grey[400] : Colors.grey[500],
+                        fontSize: 14,
                       ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: isLight ? Colors.grey[400] : Colors.grey[500],
+                        size: 22,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 20),
+
+                // ── Section Header ───────────────────────────────────
+                Row(
+                  children: [
+                    Text(
+                      "DELETED CITIES",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isLight ? Colors.grey[500] : Colors.grey[400],
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Divider(
+                        color: isLight ? Colors.grey[300] : Colors.grey[700],
+                        thickness: 1,
+                      ),
+                    ),
+                  ],
+                ),
+
                 const SizedBox(height: 16),
+
+                // ── List ─────────────────────────────────────────────
                 Expanded(
                   child: BlocBuilder<GetCitiesCubit, GetCitiesState>(
                     builder: (context, state) {
                       if (state is GetCitiesLoading) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (state is GetCitiesSuccess) {
-                        final ways = state.cities;
-                        if (ways!.isEmpty) {
-                          return const Center(child: Text('No Cities Found.'));
+                        final all = state.cities ?? [];
+                        final filtered =
+                            all.where((c) {
+                              if (_searchQuery.isEmpty) return true;
+                              return (c.name ?? '').toLowerCase().contains(
+                                _searchQuery,
+                              );
+                            }).toList();
+
+                        if (filtered.isEmpty) {
+                          return const Center(
+                            child: Text('No deleted cities found.'),
+                          );
                         }
+
                         return ListView.separated(
-                          itemCount: ways.length,
+                          itemCount: filtered.length,
                           separatorBuilder:
                               (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final way = ways[index];
-                            return _buildCommunicationCard(
-                              way,
-                              Constants.maincolor,
-                              context,
-                            );
-                          },
+                          itemBuilder:
+                              (context, index) =>
+                                  _buildCard(filtered[index], context),
                         );
                       } else if (state is GetCitiesFailure) {
                         return Center(child: Text('Error: ${state.error}'));
@@ -136,103 +179,180 @@ class CitiesTrashScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCommunicationCard(
-    Cityy communicationWay,
-    Color mainColor,
-    BuildContext context,
-  ) {
-    final name = communicationWay.name ?? 'No Name';
-    final dateTime = DateTime.parse(communicationWay.createdAt!);
-    final formattedDate = Formatters.formatDate(dateTime);
+  // ─────────────────────────────────────────────────────────────────────────
+  // CARD
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildCard(Cityy city, BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+    final formattedDate = Formatters.formatDate(
+      DateTime.parse(city.createdAt!),
+    );
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(16, 16, 12, 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color:
-            Theme.of(context).brightness == Brightness.light
-                ? Colors
-                    .white // لون الكارت في light mode
-                : const Color(0xFF1E1E1E),
+        color: isLight ? Colors.white : const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.5),
-            blurRadius: 6,
+                isLight
+                    ? Colors.grey.withOpacity(0.12)
+                    : Colors.black.withOpacity(0.4),
+            blurRadius: 8,
             offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFFE5F4F5),
-                child: Icon(
-                  Icons.contact_mail,
-                  size: 16,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+          // ── Left: name + date ────────────────────────────────────
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  city.name ?? '-',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: isLight ? Colors.black87 : Colors.white,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "city Name : $name",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 13,
+                      color: isLight ? Colors.grey[400] : Colors.grey[500],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isLight ? Colors.grey[500] : Colors.grey[400],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFFE5F4F5),
-                child: Icon(
-                  Icons.calendar_today,
-                  size: 16,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
+
+          const SizedBox(width: 12),
+
+          // ── Right: restore button ────────────────────────────────
+          GestureDetector(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder:
+                    (_) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      backgroundColor:
+                          isLight ? Colors.white : const Color(0xFF1E1E1E),
+                      title: Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: mainColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.restore_from_trash_rounded,
+                              color: mainColor,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "Restore City",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      content: RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                isLight ? Colors.grey[700] : Colors.grey[300],
+                          ),
+                          children: [
+                            const TextSpan(
+                              text: "Are you sure you want to restore ",
+                            ),
+                            TextSpan(
+                              text: city.name ?? 'this city',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isLight ? Colors.black87 : Colors.white,
+                              ),
+                            ),
+                            const TextSpan(text: "?"),
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            "Cancel",
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: mainColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            context.read<AddInMenuCubit>().updateCityStatus(
+                              city.id.toString(),
+                              true,
+                            );
+                          },
+                          child: const Text(
+                            "Restore",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+              );
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: mainColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "Creation Date : $formattedDate",
-                  style: TextStyle(fontSize: 13),
-                ),
+              child: Icon(
+                Icons.restore_from_trash_rounded,
+                color: mainColor,
+                size: 20,
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Spacer(),
-              InkWell(
-                child: Icon(
-                  Icons.restore_from_trash,
-                  color: Constants.maincolor,
-                  size: 30.0,
-                ),
-                onTap: () {
-                  context.read<AddInMenuCubit>().updateCityStatus(
-                    communicationWay.id.toString(),
-                    true,
-                  );
-                },
-              ),
-            ],
+            ),
           ),
         ],
       ),

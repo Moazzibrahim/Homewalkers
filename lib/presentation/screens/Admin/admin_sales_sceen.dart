@@ -6,6 +6,7 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/Admin_with_pagination/fetch_data_with_pagination.dart';
 import 'package:homewalkers_app/data/data_sources/fetch_admin_sales_api_service.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/adminSales/admin_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/adminSales/admin_sales_state.dart';
@@ -59,6 +60,42 @@ class _AdminSalesSceenState extends State<AdminSalesSceen> {
           widget.showNavBar
               ? SharedAdminNavBar(currentIndex: 2)
               : null, 
+              // ✅ أضف ده
+  floatingActionButton: widget.showNavBar
+      ? Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Constants.maincolor.withOpacity(0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateLeadScreen(),
+                ),
+              );
+            },
+            child: const Icon(Icons.add, size: 28, color: Colors.white),
+          ),
+        )
+      : null,
+  floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
                 ? Constants.backgroundlightmode
@@ -136,7 +173,7 @@ class _AdminSalesSceenState extends State<AdminSalesSceen> {
                   if (state is AdminSalesError) {
                     return Center(
                       child: Text(
-                        state.message,
+                        "failed to load sales agents",
                         style: TextStyle(fontSize: (16 * tabletFontScale).sp),
                         textAlign: TextAlign.center,
                       ),

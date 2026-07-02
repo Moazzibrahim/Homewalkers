@@ -16,6 +16,7 @@ import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
 import 'package:homewalkers_app/data/models/salesLeadsModelWithPagination.dart';
 import 'package:homewalkers_app/data/models/stages_models.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/meetingCommentsScreen.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_leads_details_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
@@ -477,6 +478,46 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                       ? SharedSalesNavBar(currentIndex: 1)
                       : null
                   : null,
+          floatingActionButton:
+              widget.showNavBar
+                  ? Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Constants.maincolor.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: FloatingActionButton(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateLeadScreen(),
+                          ),
+                        );
+                      },
+                      child: const Icon(
+                        Icons.add,
+                        size: 28,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                  : null,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           backgroundColor:
               Theme.of(context).brightness == Brightness.light
                   ? Constants.backgroundlightmode
@@ -723,17 +764,27 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
       child: Row(
         children: [
           /// CHECK ICON
-          Container(
-            width: 38.w,
-            height: 38.w,
-            decoration: BoxDecoration(
-              color:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Constants.mainlightmodecolor
-                      : Constants.mainDarkmodecolor,
-              borderRadius: BorderRadius.circular(10.r),
+          InkWell(
+            borderRadius: BorderRadius.circular(10.r),
+            onTap: () {
+              setState(() {
+                _showCheckboxes = false;
+                _selectedLeads.clear();
+                _selectedLeadIds.clear();
+              });
+            },
+            child: Container(
+              width: 38.w,
+              height: 38.w,
+              decoration: BoxDecoration(
+                color:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Constants.mainlightmodecolor
+                        : Constants.mainDarkmodecolor,
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Icon(Icons.check, color: Colors.white, size: 22.sp),
             ),
-            child: Icon(Icons.check, color: Colors.white, size: 22.sp),
           ),
 
           SizedBox(width: 14.w),
@@ -854,6 +905,43 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+
+                /// DIVIDER
+                Container(height: 50.h, width: 1, color: Colors.grey.shade300),
+                // =========================
+                // ADD MEETING - يشتغل بس لو مختار 1
+                // =========================
+                InkWell(
+                  onTap:
+                      _selectedLeads.length == 1
+                          ? () {
+                            final selectedLead = _selectedLeads.first;
+                            _showAddMeetingSheet(context, selectedLead.id!);
+                          }
+                          : null,
+                  child: Opacity(
+                    opacity: _selectedLeads.length == 1 ? 1.0 : 0.5,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.event_available_outlined,
+                          color: Colors.grey.shade700,
+                          size: 25.sp,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          "MEETING",
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -1005,10 +1093,16 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
               BlocListener<GetLeadsCubit, GetLeadsState>(
                 listener: (context, state) {
                   if (state is PostMeetingCommentSuccess) {
-                    final parentContext =
-                        context; // أفضل طريقة: تمرر الـ context الأساسي للـ Scaffold عند فتح الـ BottomSheet
+                    final parentContext = context;
                     Navigator.pop(context); // تقفل الـ BottomSheet أولاً
-                    // بعد الإغلاق، نستخدم parent context للـ Snackbar
+
+                    // ✅ إلغاء الـ selection بعد نجاح إضافة الميتنج
+                    setState(() {
+                      _showCheckboxes = false;
+                      _selectedLeads.clear();
+                      _selectedLeadIds.clear();
+                    });
+
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       ScaffoldMessenger.of(parentContext).showSnackBar(
                         const SnackBar(
@@ -1019,7 +1113,20 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                       cubit.fetchSalesLeadsWithPagination(
                         data: widget.data,
                         transferefromdata: widget.transferfromdata,
-                        stageId: widget.stageId,
+                        stageId:
+                            _currentFilterStageId ??
+                            widget.stageId, // ✅ استخدم الفلتر الحالي
+                        search:
+                            nameController.text.isNotEmpty
+                                ? nameController.text.trim()
+                                : null,
+                        developerId: _currentFilterDeveloperId,
+                        projectId: _currentFilterProjectId,
+                        channelId: _currentFilterChannelId,
+                        creationDateFrom: _currentFilterCreationDateFrom,
+                        creationDateTo: _currentFilterCreationDateTo,
+                        stageDateFrom: _currentFilterStageDateFrom,
+                        stageDateTo: _currentFilterStageDateTo,
                         resetPagination: true,
                       );
                     });
@@ -1031,7 +1138,9 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
               builder: (context, setState) {
                 return Padding(
                   padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                    bottom:
+                        MediaQuery.of(context).viewInsets.bottom +
+                        25.h, // ✅ أضفنا 20 إضافية
                     left: 16,
                     right: 16,
                     top: 20,
@@ -1445,6 +1554,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
     } else if ((leadStagetype == "Follow Up" ||
             leadStagetype == "Follow" ||
             leadStagetype == "Follow After Meeting" ||
+            leadStagetype == "Schedule Meeting" ||
             leadStagetype == "No Answer" ||
             leadStagetype == "Meeting" ||
             leadStagetype == "No Stage" ||
@@ -1479,6 +1589,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
     final bool isOutdatedStage =
         (leadStagetype == "Follow Up" ||
             leadStagetype == "Follow After Meeting" ||
+            leadStagetype == "Schedule Meeting" ||
             leadStagetype == "Follow" ||
             leadStagetype == "No Stage" ||
             leadStagetype == "Meeting" ||
@@ -1574,6 +1685,8 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                 ?.map((e) => e.token ?? '')
                                 .where((t) => t.isNotEmpty)
                                 .toList(),
+                        hidesalesnameonleadcomments:
+                            lead.hidesalesnameonleadcomments,
                       ),
                     ),
               ),

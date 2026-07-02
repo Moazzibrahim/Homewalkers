@@ -6,7 +6,6 @@ import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:intl/intl.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
-import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 import 'package:homewalkers_app/presentation/viewModels/meeting/cubit/meetingcomments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/meeting/cubit/meetingcomments_state.dart';
 import 'package:homewalkers_app/data/models/meetingComments_model.dart';
@@ -84,10 +83,13 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
+        final theme = Theme.of(context);
+        final cs = theme.colorScheme;
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
@@ -105,17 +107,17 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           "Filters",
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E293B),
+                            color: cs.onSurface,
                           ),
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close),
+                          icon: Icon(Icons.close, color: cs.onSurface),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
@@ -129,7 +131,9 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
                       title: "Lead Name",
                       child: TextField(
                         controller: _nameController,
+                        style: TextStyle(color: cs.onSurface),
                         decoration: _buildInputDecoration(
+                          context: context,
                           hintText: "Enter lead name",
                           prefixIcon: Icons.person_outline,
                         ),
@@ -144,7 +148,9 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
                       child: TextField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
+                        style: TextStyle(color: cs.onSurface),
                         decoration: _buildInputDecoration(
+                          context: context,
                           hintText: "Enter phone number",
                           prefixIcon: Icons.phone_outlined,
                         ),
@@ -169,23 +175,28 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
 
                             return Container(
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
+                                border: Border.all(color: theme.dividerColor),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: DropdownButtonFormField<String>(
                                 value: _selectedStageIds,
-                                decoration: const InputDecoration(
+                                dropdownColor: cs.surface,
+                                style: TextStyle(color: cs.onSurface),
+                                decoration: InputDecoration(
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
+                                  contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 8,
                                   ),
                                   prefixIcon: Icon(
                                     Icons.flag_outlined,
-                                    color: Colors.grey,
+                                    color: cs.onSurfaceVariant,
                                   ),
                                 ),
-                                hint: const Text("Choose Stage"),
+                                hint: Text(
+                                  "Choose Stage",
+                                  style: TextStyle(color: cs.onSurfaceVariant),
+                                ),
                                 items:
                                     allowedStages.map((stage) {
                                       return DropdownMenuItem<String>(
@@ -296,16 +307,17 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
                             },
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              side: BorderSide(color: Colors.grey.shade400),
+                              side: BorderSide(color: theme.dividerColor),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               "Reset",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
+                                color: cs.onSurface,
                               ),
                             ),
                           ),
@@ -365,47 +377,55 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
 
   /// دالة مساعدة لبناء أقسام الفلتر بشكل موحد
   Widget _buildFilterSection({required String title, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF475569),
-          ),
-        ),
-        const SizedBox(height: 8),
-        child,
-      ],
+    return Builder(
+      builder: (context) {
+        final cs = Theme.of(context).colorScheme;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            child,
+          ],
+        );
+      },
     );
   }
 
   /// دالة مساعدة لبناء Decoration موحد لحقول الإدخال
   InputDecoration _buildInputDecoration({
+    required BuildContext context,
     required String hintText,
     required IconData prefixIcon,
   }) {
+    final cs = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerColor;
     return InputDecoration(
       hintText: hintText,
-      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
-      prefixIcon: Icon(prefixIcon, color: Colors.grey.shade500, size: 22),
+      hintStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 15),
+      prefixIcon: Icon(prefixIcon, color: cs.onSurfaceVariant, size: 22),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: dividerColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: dividerColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+        borderSide: BorderSide(color: cs.primary, width: 1.5),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: cs.surfaceContainerHighest.withOpacity(0.3),
     );
   }
 
@@ -415,87 +435,99 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
     String? value,
     Function(String?) onSelect,
   ) {
-    return GestureDetector(
-      onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
-          firstDate: DateTime(2020),
-          lastDate: DateTime(2040),
-          initialDate: DateTime.now(),
-          builder: (context, child) {
-            return Theme(
-              data: Theme.of(context).copyWith(
-                colorScheme: const ColorScheme.light(
-                  primary: Color(0xFF2563EB),
-                ),
-              ),
-              child: child!,
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final cs = theme.colorScheme;
+        return GestureDetector(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              firstDate: DateTime(2020),
+              lastDate: DateTime(2040),
+              initialDate: DateTime.now(),
+              builder: (context, child) {
+                return Theme(
+                  data: theme.copyWith(
+                    colorScheme: theme.colorScheme.copyWith(
+                      primary: theme.colorScheme.primary,
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
             );
+            if (picked != null) {
+              String dateTimeString;
+              if (label.contains("From")) {
+                dateTimeString =
+                    DateTime(
+                      picked.year,
+                      picked.month,
+                      picked.day,
+                      0,
+                      0,
+                      0,
+                    ).toIso8601String();
+              } else {
+                dateTimeString =
+                    DateTime(
+                      picked.year,
+                      picked.month,
+                      picked.day,
+                      23,
+                      59,
+                      59,
+                    ).toIso8601String();
+              }
+              onSelect(dateTimeString);
+            }
           },
-        );
-        if (picked != null) {
-          String dateTimeString;
-          if (label.contains("From")) {
-            dateTimeString =
-                DateTime(
-                  picked.year,
-                  picked.month,
-                  picked.day,
-                  0,
-                  0,
-                  0,
-                ).toIso8601String();
-          } else {
-            dateTimeString =
-                DateTime(
-                  picked.year,
-                  picked.month,
-                  picked.day,
-                  23,
-                  59,
-                  59,
-                ).toIso8601String();
-          }
-          onSelect(dateTimeString);
-        }
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.calendar_today_outlined,
-              size: 18,
-              color: Colors.grey.shade600,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.dividerColor),
+              borderRadius: BorderRadius.circular(12),
+              color: cs.surfaceContainerHighest.withOpacity(0.3),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                value != null
-                    ? DateFormat('dd MMM yyyy').format(DateTime.parse(value))
-                    : "Select $label",
-                style: TextStyle(
-                  fontSize: 15,
-                  color: value != null ? Colors.black87 : Colors.grey.shade500,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 18,
+                  color: cs.onSurfaceVariant,
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    value != null
+                        ? DateFormat(
+                          'dd MMM yyyy',
+                        ).format(DateTime.parse(value))
+                        : "Select $label",
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: value != null ? cs.onSurface : cs.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                if (value != null)
+                  IconButton(
+                    onPressed: () => onSelect(null),
+                    icon: Icon(
+                      Icons.close,
+                      size: 16,
+                      color: cs.onSurfaceVariant,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+              ],
             ),
-            if (value != null)
-              IconButton(
-                onPressed: () => onSelect(null),
-                icon: Icon(Icons.close, size: 16, color: Colors.grey.shade400),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -509,13 +541,15 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<MeetingCommentsCubit>();
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xfff3f4f6),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: cs.surface,
+        foregroundColor: cs.onSurface,
         title: const Text(
           "Meeting Comments",
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -533,7 +567,7 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (state is MeetingCommentsFailure) {
-            return Center(child: Text(state.error));
+            return Center(child: Text("Failed to load comments"));
           }
           final comments = cubit.allComments;
 
@@ -560,7 +594,7 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
-                return _buildProfessionalCard(comments[index]);
+                return _buildProfessionalCard(context, comments[index]);
               },
             ),
           );
@@ -569,7 +603,11 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
     );
   }
 
-  Widget _buildProfessionalCard(LeadHistoryData item) {
+  Widget _buildProfessionalCard(BuildContext context, LeadHistoryData item) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     final lead = item.lead;
     final project = lead?.project;
     final stage = item.stage;
@@ -579,12 +617,12 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: theme.dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.03),
+            color: isDark ? Colors.transparent : Colors.black.withOpacity(.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -600,9 +638,10 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
               Expanded(
                 child: Text(
                   lead?.name ?? "No Name",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: cs.onSurface,
                   ),
                 ),
               ),
@@ -612,42 +651,43 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: cs.primaryContainer,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   stage?.name ?? "-",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.blue,
+                    color: cs.onPrimaryContainer,
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          _infoRow("Project", project?.name),
-          _infoRow("Developer", project?.developer?.name),
-          _infoRow("Sales Developer", item.salesdeveloperName),
-          _infoRow("City", project?.city?.name),
-          _infoRow("Phone", lead?.phone),
+          _infoRow(context, "Project", project?.name),
+          _infoRow(context, "Developer", project?.developer?.name),
+          _infoRow(context, "Sales Developer", item.salesdeveloperName),
+          _infoRow(context, "City", project?.city?.name),
+          _infoRow(context, "Phone", lead?.phone),
           const SizedBox(height: 14),
-          Divider(color: Colors.grey.shade200),
+          Divider(color: theme.dividerColor),
           const SizedBox(height: 14),
           // Comment writer
           Row(
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundColor: Colors.blue.shade100,
+                backgroundColor: cs.primaryContainer,
                 child: Text(
                   commentUserName.isNotEmpty
                       ? commentUserName[0].toUpperCase()
                       : "U",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
+                    color: cs.onPrimaryContainer,
                   ),
                 ),
               ),
@@ -655,9 +695,10 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
               Expanded(
                 child: Text(
                   commentUserName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
+                    color: cs.onSurface,
                   ),
                 ),
               ),
@@ -669,22 +710,22 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: cs.surfaceContainerHighest.withOpacity(0.4),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               item.comment ?? "",
-              style: const TextStyle(fontSize: 15, height: 1.4),
+              style: TextStyle(fontSize: 15, height: 1.4, color: cs.onSurface),
             ),
           ),
           const SizedBox(height: 12),
           Text(
             "Stage Date: ${formatDate(item.stageDate)}",
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
           ),
           Text(
             "Comment Date: ${formatDateDubai(item.createdAt)}",
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
           ),
 
           if (item.replies != null && item.replies!.isNotEmpty)
@@ -692,9 +733,14 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
               padding: const EdgeInsets.only(top: 14),
               child: ExpansionTile(
                 tilePadding: EdgeInsets.zero,
+                iconColor: cs.onSurfaceVariant,
+                collapsedIconColor: cs.onSurfaceVariant,
                 title: Text(
                   "Replies (${item.replies!.length})",
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
+                  ),
                 ),
                 children:
                     item.replies!.map((reply) {
@@ -703,7 +749,7 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: cs.surfaceContainerHighest.withOpacity(0.25),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
@@ -713,14 +759,15 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
                               children: [
                                 CircleAvatar(
                                   radius: 14,
-                                  backgroundColor: Colors.green.shade100,
+                                  backgroundColor: cs.secondaryContainer,
                                   child: Text(
                                     replyUserName.isNotEmpty
                                         ? replyUserName[0].toUpperCase()
                                         : "R",
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
+                                      color: cs.onSecondaryContainer,
                                     ),
                                   ),
                                 ),
@@ -728,9 +775,10 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
                                 Expanded(
                                   child: Text(
                                     replyUserName,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
+                                      color: cs.onSurface,
                                     ),
                                   ),
                                 ),
@@ -739,14 +787,18 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
                             const SizedBox(height: 8),
                             Text(
                               reply.comment ?? "",
-                              style: const TextStyle(fontSize: 14, height: 1.4),
+                              style: TextStyle(
+                                fontSize: 14,
+                                height: 1.4,
+                                color: cs.onSurface,
+                              ),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               formatDate(reply.createdAt),
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey.shade600,
+                                color: cs.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -760,17 +812,25 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
     );
   }
 
-  Widget _infoRow(String title, String? value) {
+  Widget _infoRow(BuildContext context, String title, String? value) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
           Text(
             "$title: ",
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: cs.onSurface,
+            ),
           ),
           Expanded(
-            child: Text(value ?? "-", style: const TextStyle(fontSize: 13)),
+            child: Text(
+              value ?? "-",
+              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+            ),
           ),
         ],
       ),

@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
@@ -14,11 +13,37 @@ import 'package:homewalkers_app/presentation/widgets/marketer/add_project_dialog
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/update_project_dialog.dart';
 
-class ProjectScreen extends StatelessWidget {
+class ProjectScreen extends StatefulWidget {
   const ProjectScreen({super.key});
 
   @override
+  State<ProjectScreen> createState() => _ProjectScreenState();
+}
+
+class _ProjectScreenState extends State<ProjectScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.toLowerCase());
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+
     return BlocProvider(
       create: (context) => ProjectsCubit(ProjectsApiService())..fetchProjects(),
       child: BlocListener<AddInMenuCubit, AddInMenuState>(
@@ -28,115 +53,150 @@ class ProjectScreen extends StatelessWidget {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(const SnackBar(content: Text('Done successfully')));
-            // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
             context.read<ProjectsCubit>().fetchProjects();
           } else if (state is AddInMenuError) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text(' error')));
+            ).showSnackBar(const SnackBar(content: Text('error')));
           }
         },
         child: Scaffold(
           backgroundColor:
-              Theme.of(context).brightness == Brightness.light
+              isLight
                   ? Constants.backgroundlightmode
                   : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
-            title: "projects",
-            onBack: () {
-              Navigator.pop(context);
-            },
+            title: "Projects",
+            onBack: () => Navigator.pop(context),
           ),
           body: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 25),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder:
-                              (_) => BlocProvider.value(
-                                value:
-                                    context
-                                        .read<
-                                          AddInMenuCubit
-                                        >(), // استخدم نفس الـ cubit
-                                child: AddProjectDialog(
-                                  onAdd: (
-                                    name,
-                                    developerId,
-                                    cityId,
-                                    area,
-                                    startprice,
-                                  ) {
-                                    context.read<AddInMenuCubit>().addProject(
-                                      name,
-                                      developerId,
-                                      cityId,
-                                      area,
-                                      startprice,
-                                    );
-                                  },
-                                  title: "projects",
-                                ),
-                              ),
-                        );
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text(
-                        "Add New project",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                        ),
+                const SizedBox(height: 16),
+
+                // ── Search Bar ───────────────────────────────────────
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: isLight ? Colors.white : Colors.grey[850],
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Constants.mainDarkmodecolor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: "Search projects...",
+                      hintStyle: TextStyle(
+                        color: isLight ? Colors.grey[400] : Colors.grey[500],
+                        fontSize: 14,
                       ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: isLight ? Colors.grey[400] : Colors.grey[500],
+                        size: 22,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 20),
+
+                // ── Section Header ───────────────────────────────────
+                Builder(
+                  builder: (context) {
+                    return Row(
+                      children: [
+                        Text(
+                          "ALL PROJECTS",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isLight ? Colors.grey[500] : Colors.grey[400],
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Divider(
+                            color:
+                                isLight ? Colors.grey[300] : Colors.grey[700],
+                            thickness: 1,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () => _showAddDialog(context),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: mainColor,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: mainColor.withOpacity(0.35),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
                 const SizedBox(height: 16),
+
+                // ── List ─────────────────────────────────────────────
                 Expanded(
                   child: BlocBuilder<ProjectsCubit, ProjectsState>(
                     builder: (context, state) {
                       if (state is ProjectsLoading) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (state is ProjectsSuccess) {
-                        final projects = state.projectsModel.data;
-                        if (projects!.isEmpty) {
+                        final all = state.projectsModel.data ?? [];
+                        final filtered =
+                            all.where((p) {
+                              if (_searchQuery.isEmpty) return true;
+                              return (p.name ?? '').toLowerCase().contains(
+                                _searchQuery,
+                              );
+                            }).toList();
+
+                        if (filtered.isEmpty) {
                           return const Center(
-                            child: Text('No projects Found.'),
+                            child: Text('No projects found.'),
                           );
                         }
+
                         return ListView.separated(
-                          itemCount: projects.length,
+                          itemCount: filtered.length,
                           separatorBuilder:
                               (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final project = projects[index];
-                            return _buildCommunicationCard(
-                              project,
-                              Constants.maincolor,
-                              context,
-                            );
-                          },
+                          itemBuilder:
+                              (context, index) =>
+                                  _buildProjectCard(filtered[index], context),
                         );
                       } else if (state is ProjectsError) {
-                        return Center(child: Text('Error: ${state.error}'));
+                        return Center(child: Text('Failed to load projects'));
                       }
                       return const SizedBox.shrink();
                     },
@@ -150,139 +210,112 @@ class ProjectScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCommunicationCard(
-    ProjectData projectData,
-    Color mainColor,
-    BuildContext context,
-  ) {
-    final name = projectData.name;
-    final dateTime = DateTime.parse(projectData.createdAt!);
-    final formattedDate = Formatters.formatDate(dateTime);
-    final startPrice = projectData.startPrice;
+  // ─────────────────────────────────────────────────────────────────────────
+  // PROJECT CARD
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildProjectCard(ProjectData project, BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+    final formattedDate = Formatters.formatDate(
+      DateTime.parse(project.createdAt!),
+    );
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(16, 16, 12, 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color:
-            Theme.of(context).brightness == Brightness.light
-                ? Colors
-                    .white // لون الكارت في light mode
-                : const Color(0xFF1E1E1E),
+        color: isLight ? Colors.white : const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.5),
-            blurRadius: 6,
+                isLight
+                    ? Colors.grey.withOpacity(0.12)
+                    : Colors.black.withOpacity(0.4),
+            blurRadius: 8,
             offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFFE5F4F5),
-                child: Icon(
-                  Icons.contact_mail,
-                  size: 16,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+          // ── Left: name + price + date ────────────────────────────
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  project.name ?? '-',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: isLight ? Colors.black87 : Colors.white,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "project Name : $name",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.attach_money, size: 14, color: mainColor),
+                    const SizedBox(width: 2),
+                    Text(
+                      "${project.startPrice}",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: mainColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 13,
+                      color: isLight ? Colors.grey[400] : Colors.grey[500],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isLight ? Colors.grey[500] : Colors.grey[400],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
+
+          const SizedBox(width: 12),
+
+          // ── Right: action buttons ────────────────────────────────
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFFE5F4F5),
-                child: Icon(
-                  Icons.money,
-                  size: 16,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "start price : $startPrice",
-                  style: TextStyle(fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFFE5F4F5),
-                child: Icon(
-                  Icons.calendar_today,
-                  size: 16,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "Creation Date : $formattedDate",
-                  style: TextStyle(fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Spacer(),
-              IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
-                onPressed: () {
+              _actionButton(
+                icon: Icons.refresh_rounded,
+                color: mainColor,
+                bgColor: mainColor.withOpacity(0.08),
+                onTap: () {
                   showDialog(
                     context: context,
                     builder:
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateProjectDialog(
-                            initialValue: projectData.name,
-                            initialStartPrice: projectData.startPrice,
+                            initialValue: project.name,
+                            initialStartPrice: project.startPrice,
                             title: "project",
                             onAdd: (value, startPrice) {
                               context.read<AddInMenuCubit>().updateProject(
                                 value,
-                                projectData.developer!.id.toString(),
-                                projectData.city!.id.toString(),
-                                projectData.area ?? '',
-                                projectData.id.toString(),
+                                project.developer!.id.toString(),
+                                project.city!.id.toString(),
+                                project.area ?? '',
+                                project.id.toString(),
                                 startPrice,
                               );
                             },
@@ -291,7 +324,11 @@ class ProjectScreen extends StatelessWidget {
                   );
                 },
               ),
-              InkWell(
+              const SizedBox(width: 8),
+              _actionButton(
+                icon: Icons.delete_outline_rounded,
+                color: const Color(0xFFBA1A1A),
+                bgColor: const Color(0xFFBA1A1A).withOpacity(0.08),
                 onTap: () {
                   showDialog(
                     context: context,
@@ -301,12 +338,11 @@ class ProjectScreen extends StatelessWidget {
                           child: DeleteDialog(
                             onCancel: () => Navigator.of(context).pop(),
                             onConfirm: () {
-                              // تنفيذ الحذف
                               Navigator.of(context).pop();
                               context
                                   .read<AddInMenuCubit>()
                                   .updateDProjectStatus(
-                                    projectData.id.toString(),
+                                    project.id.toString(),
                                     false,
                                   );
                             },
@@ -315,12 +351,53 @@ class ProjectScreen extends StatelessWidget {
                         ),
                   );
                 },
-                child: Image.asset("assets/images/delete.png"),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _actionButton({
+    required IconData icon,
+    required Color color,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+    );
+  }
+
+  void _showAddDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => BlocProvider.value(
+            value: context.read<AddInMenuCubit>(),
+            child: AddProjectDialog(
+              onAdd: (name, developerId, cityId, area, startprice) {
+                context.read<AddInMenuCubit>().addProject(
+                  name,
+                  developerId,
+                  cityId,
+                  area,
+                  startprice,
+                );
+              },
+              title: "project",
+            ),
+          ),
     );
   }
 }

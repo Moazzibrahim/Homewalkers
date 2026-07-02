@@ -1,7 +1,6 @@
 // ignore_for_file: avoid_print, deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/get_stage_types_api_service.dart';
@@ -29,22 +28,32 @@ class StagesScreen extends StatefulWidget {
 class _StagesScreenState extends State<StagesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() => setState(() {}));
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.toLowerCase());
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+
     return MultiBlocProvider(
       providers: [
         BlocProvider(
@@ -72,7 +81,7 @@ class _StagesScreenState extends State<StagesScreen>
         },
         child: Scaffold(
           backgroundColor:
-              Theme.of(context).brightness == Brightness.light
+              isLight
                   ? Constants.backgroundlightmode
                   : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
@@ -80,62 +89,156 @@ class _StagesScreenState extends State<StagesScreen>
             onBack: () => Navigator.pop(context),
           ),
           body: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 16),
+
+                // ── Tab Bar (pill style) ──────────────────────────────
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: isLight ? const Color(0xFFF0F0F0) : Colors.grey[800],
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicator: BoxDecoration(
+                      color: mainColor,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelColor: Colors.white,
+                    unselectedLabelColor:
+                        isLight ? Colors.black54 : Colors.grey[400],
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                    unselectedLabelStyle: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                    dividerColor: Colors.transparent,
+                    tabs: const [Tab(text: "Stages"), Tab(text: "Types")],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // ── Search Bar ───────────────────────────────────────
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: isLight ? Colors.white : Colors.grey[850],
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText:
+                          _tabController.index == 0
+                              ? "Search stages..."
+                              : "Search types...",
+                      hintStyle: TextStyle(
+                        color: isLight ? Colors.grey[400] : Colors.grey[500],
+                        fontSize: 14,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: isLight ? Colors.grey[400] : Colors.grey[500],
+                        size: 22,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // ── Section Header ───────────────────────────────────
                 Row(
                   children: [
                     Expanded(
-                      child: TabBar(
-                        controller: _tabController,
-                        labelColor:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Colors.white, // أو أي لون مناسب للدارك مود
-                        unselectedLabelColor:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Colors.grey
-                                : Colors.grey[400],
-                        indicatorColor:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Colors.white,
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        tabs: const [Tab(text: "Stages"), Tab(text: "Types")],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _tabController.index == 0
+                                ? "Active Pipelines"
+                                : "Stage Types",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isLight ? Colors.black87 : Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _tabController.index == 0
+                                ? "Manage your property sales lifecycle"
+                                : "Manage your stage categories",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color:
+                                  isLight ? Colors.grey[500] : Colors.grey[400],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
+                    // ── FAB Add Button ─────────────────────────────
+                    GestureDetector(
+                      onTap: () {
                         if (_tabController.index == 0) {
                           _showAddStageDialog(context);
                         } else {
                           _showAddStageTypeDialog(context);
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Constants.mainDarkmodecolor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: mainColor,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: mainColor.withOpacity(0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ),
-                      child: Text(
-                        _tabController.index == 0
-                            ? "+ Add New Stage"
-                            : "+ Add New Type",
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 26,
+                        ),
                       ),
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 16),
+
+                // ── Tab Content ──────────────────────────────────────
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
-                    children: [_buildStagesTab(), _buildStageTypesTab()],
+                    children: [
+                      _buildStagesTab(context),
+                      _buildStageTypesTab(context),
+                    ],
                   ),
                 ),
               ],
@@ -146,22 +249,32 @@ class _StagesScreenState extends State<StagesScreen>
     );
   }
 
-  Widget _buildStagesTab() {
+  // ─────────────────────────────────────────────────────────────────────────
+  // STAGES TAB
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildStagesTab(BuildContext context) {
     return BlocBuilder<StagesCubit, StagesState>(
       builder: (context, state) {
         if (state is StagesLoading) {
           return const Center(child: CircularProgressIndicator());
         } else if (state is StagesLoaded) {
-          final stages = state.stages;
+          final stages =
+              state.stages.where((s) {
+                if (_searchQuery.isEmpty) return true;
+                return (s.name ?? '').toLowerCase().contains(_searchQuery) ||
+                    (s.stagetype?.name ?? '').toLowerCase().contains(
+                      _searchQuery,
+                    );
+              }).toList();
+
           if (stages.isEmpty) {
-            return const Center(child: Text('No stages Found.'));
+            return const Center(child: Text('No stages found.'));
           }
           return ListView.separated(
             itemCount: stages.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              return _buildStageCard(stages[index], context);
-            },
+            itemBuilder:
+                (context, index) => _buildStageCard(stages[index], context),
           );
         } else if (state is StagesError) {
           return Center(child: Text('Error: ${state.message}'));
@@ -171,23 +284,31 @@ class _StagesScreenState extends State<StagesScreen>
     );
   }
 
-  Widget _buildStageTypesTab() {
+  // ─────────────────────────────────────────────────────────────────────────
+  // STAGE TYPES TAB
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildStageTypesTab(BuildContext context) {
     return BlocBuilder<GetStageTypesCubit, GetStageTypesState>(
       builder: (context, state) {
         if (state is GetStageTypesLoading) {
           return const Center(child: CircularProgressIndicator());
         } else if (state is GetStageTypesSuccess) {
-          // Assuming your model is StageTypeModel which contains List<StageDatam>
-          final stageTypes = state.response.data ?? [];
+          final stageTypes =
+              (state.response.data ?? []).where((s) {
+                if (_searchQuery.isEmpty) return true;
+                return (s.name ?? '').toLowerCase().contains(_searchQuery) ||
+                    (s.comment ?? '').toLowerCase().contains(_searchQuery);
+              }).toList();
+
           if (stageTypes.isEmpty) {
-            return const Center(child: Text('No stage types Found.'));
+            return const Center(child: Text('No stage types found.'));
           }
           return ListView.separated(
             itemCount: stageTypes.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              return _buildStageTypeCard(stageTypes[index], context);
-            },
+            itemBuilder:
+                (context, index) =>
+                    _buildStageTypeCard(stageTypes[index], context),
           );
         } else if (state is GetStageTypesFailure) {
           return Center(child: Text('Error: ${state.message}'));
@@ -197,163 +318,286 @@ class _StagesScreenState extends State<StagesScreen>
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // STAGE CARD  (new design)
+  // ─────────────────────────────────────────────────────────────────────────
   Widget _buildStageCard(StageDatas stage, BuildContext context) {
-    final theme = Theme.of(context);
-    final iconColor =
-        theme.brightness == Brightness.light
-            ? Constants.maincolor
-            : Constants.mainDarkmodecolor;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+
+    // Determine icon & badge color by stage type name
+    final typeName = (stage.stagetype?.name ?? '').toLowerCase();
+    final iconData = _stageIcon(typeName);
+    final iconBgColor = _stageIconBg(typeName);
+    final badgeColor = _stageBadgeColor(typeName);
+    final badgeLabel = stage.stagetype?.name?.toUpperCase() ?? '';
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: isLight ? Colors.white : Colors.grey[850],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
         children: [
-          _buildInfoRow(
-            context,
-            Icons.label_outline,
-            "Stage Name",
-            stage.name ?? 'N/A',
+          // Icon Avatar
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(iconData, color: mainColor, size: 26),
           ),
-          const SizedBox(height: 12),
-          _buildInfoRow(
-            context,
-            Icons.layers_outlined,
-            "Stage Type",
-            stage.stagetype?.name ?? 'N/A',
-          ),
-          const SizedBox(height: 12),
-          _buildInfoRow(
-            context,
-            Icons.calendar_today_outlined,
-            "Creation Date",
-            stage.createdAt != null
-                ? Formatters.formatDate(stage.createdAt!)
-                : "N/A",
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Spacer(),
-              IconButton(
-                icon: Icon(Icons.refresh, color: iconColor),
-                onPressed: () => _showUpdateStageDialog(context, stage),
-              ),
-              InkWell(
-                child: Image.asset("assets/images/delete.png"),
-                onTap:
-                    () => _showDeleteDialog(
-                      context,
-                      stage.id.toString(),
-                      "stage",
+          const SizedBox(width: 14),
+
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        stage.name ?? 'N/A',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: isLight ? Colors.black87 : Colors.white,
+                        ),
+                      ),
                     ),
-              ),
-            ],
+                    const SizedBox(width: 8),
+                    // Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        badgeLabel,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: badgeColor,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Created: ${stage.createdAt != null ? Formatters.formatDate(stage.createdAt!) : 'N/A'}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLight ? Colors.grey[500] : Colors.grey[400],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Actions
+          _buildActionButtons(
+            context,
+            mainColor,
+            onRefresh: () => _showUpdateStageDialog(context, stage),
+            onDelete:
+                () => _showDeleteDialog(context, stage.id.toString(), "stage"),
           ),
         ],
       ),
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // STAGE TYPE CARD  (new design)
+  // ─────────────────────────────────────────────────────────────────────────
   Widget _buildStageTypeCard(StageDatam stageType, BuildContext context) {
-    final theme = Theme.of(context);
-    final iconColor =
-        theme.brightness == Brightness.light
-            ? Constants.maincolor
-            : Constants.mainDarkmodecolor;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+
+    final typeName = (stageType.name ?? '').toLowerCase();
+    final iconData = _stageIcon(typeName);
+    final iconBgColor = _stageIconBg(typeName);
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: isLight ? Colors.white : Colors.grey[850],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
         children: [
-          _buildInfoRow(
-            context,
-            Icons.layers_outlined,
-            "Stage Type Name",
-            stageType.name ?? 'N/A',
+          // Icon Avatar
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(iconData, color: mainColor, size: 26),
           ),
-          const SizedBox(height: 12),
-          _buildInfoRow(
-            context,
-            Icons.comment_outlined,
-            "Comment",
-            stageType.comment ?? '',
+          const SizedBox(width: 14),
+
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  stageType.name ?? 'N/A',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: isLight ? Colors.black87 : Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Created: ${stageType.createdAt != null ? DateFormat('yyyy-MM-dd').format(DateTime.parse(stageType.createdAt!)) : 'N/A'}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLight ? Colors.grey[500] : Colors.grey[400],
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          _buildInfoRow(
+
+          // Actions
+          _buildActionButtons(
             context,
-            Icons.calendar_today_outlined,
-            "Creation Date",
-            stageType.createdAt != null
-                ? DateFormat(
-                  'yyyy-MM-dd',
-                ).format(DateTime.parse(stageType.createdAt!))
-                : "N/A",
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Spacer(),
-              IconButton(
-                icon: Icon(Icons.refresh, color: iconColor),
-                onPressed: () {
-                  _showUpdateStageTypeDialog(context, stageType);
-                },
-              ),
-              InkWell(
-                child: Image.asset("assets/images/delete.png"),
-                onTap: () {
-                  _showDeletestageTypeDialog(
-                    context,
-                    stageType.id.toString(),
-                    "Stage Type",
-                  );
-                },
-              ),
-            ],
+            mainColor,
+            onRefresh: () => _showUpdateStageTypeDialog(context, stageType),
+            onDelete:
+                () => _showDeletestageTypeDialog(
+                  context,
+                  stageType.id.toString(),
+                  "Stage Type",
+                ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(
+  // ─────────────────────────────────────────────────────────────────────────
+  // Shared action buttons (refresh + delete)
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildActionButtons(
     BuildContext context,
-    IconData icon,
-    String label,
-    String value,
-  ) {
-    final iconColor =
-        Theme.of(context).brightness == Brightness.light
-            ? Constants.maincolor
-            : Constants.mainDarkmodecolor;
+    Color mainColor, {
+    required VoidCallback onRefresh,
+    required VoidCallback onDelete,
+  }) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        CircleAvatar(
-          radius: 14,
-          backgroundColor: const Color(0xFFE5F4F5),
-          child: Icon(icon, size: 16, color: iconColor),
+        GestureDetector(
+          onTap: onRefresh,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: mainColor.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.refresh_rounded, color: mainColor, size: 20),
+          ),
         ),
         const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            "$label : $value",
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        GestureDetector(
+          onTap: onDelete,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFBA1A1A).withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.delete_outline_rounded,
+              color: Color(0xFFBA1A1A),
+              size: 20,
+            ),
           ),
         ),
       ],
     );
   }
 
-  // --- DIALOGS ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Helpers for icon / color mapping
+  // ─────────────────────────────────────────────────────────────────────────
+  IconData _stageIcon(String typeName) {
+    if (typeName.contains('follow')) return Icons.assignment_outlined;
+    if (typeName.contains('pending') || typeName.contains('wait')) {
+      return Icons.hourglass_empty_rounded;
+    }
+    if (typeName.contains('close') ||
+        typeName.contains('done') ||
+        typeName.contains('deal')) {
+      return Icons.verified_rounded;
+    }
+    return Icons.layers_outlined;
+  }
+
+  Color _stageIconBg(String typeName) {
+    if (typeName.contains('follow')) return const Color(0xFFE8EEF9);
+    if (typeName.contains('pending') || typeName.contains('wait')) {
+      return const Color(0xFFF0F0F0);
+    }
+    if (typeName.contains('close') ||
+        typeName.contains('done') ||
+        typeName.contains('deal')) {
+      return const Color(0xFFFFF3E0);
+    }
+    return const Color(0xFFE8EEF9);
+  }
+
+  Color _stageBadgeColor(String typeName) {
+    if (typeName.contains('follow')) return const Color(0xFF4A6CF7);
+    if (typeName.contains('pending') || typeName.contains('wait')) {
+      return const Color(0xFF9E9E9E);
+    }
+    if (typeName.contains('close') ||
+        typeName.contains('done') ||
+        typeName.contains('deal')) {
+      return const Color(0xFFE65100);
+    }
+    return const Color(0xFF4A6CF7);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DIALOGS  (logic unchanged)
+  // ─────────────────────────────────────────────────────────────────────────
   void _showAddStageDialog(BuildContext context) {
     showDialog(
       context: context,

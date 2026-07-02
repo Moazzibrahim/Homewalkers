@@ -61,18 +61,18 @@ class NotificationCubit extends Cubit<NotificationState> {
 
   /// 🔔 Initializes notification system and handles listeners
   Future<void> initNotifications() async {
+    if (_isInitialized) return;
+    _isInitialized = true;
     try {
-      if (_isInitialized) return;
-
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('salesId');
 
       if (userId == null || userId.isEmpty) {
         log("⏳ Skipping notification init: No salesId found.");
+        _isInitialized = false; // ✅ سيبها تقدر تتنادى تاني لو فشلت
+
         return;
       }
-
-      _isInitialized = true;
 
       final messaging = FirebaseMessaging.instance;
 
@@ -165,6 +165,7 @@ class NotificationCubit extends Cubit<NotificationState> {
       }
     } catch (e) {
       log("⚠️ initNotifications error: $e");
+      _isInitialized = false; // ✅ ضيف السطر ده
       emit(state.copyWith(error: e.toString()));
     }
   }
@@ -780,6 +781,74 @@ class NotificationCubit extends Cubit<NotificationState> {
       log("🔕 Notification listeners stopped successfully");
     } catch (e) {
       log("❌ Error in disposeNotifications: $e");
+    }
+  }
+
+  /// ✅ Mark all notifications as read for the current user
+  Future<void> markAllNotificationsRead() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final receiverId = prefs.getString('salesId');
+
+      if (receiverId == null || receiverId.isEmpty) {
+        log("⚠️ markAllNotificationsRead: No salesId found");
+        return;
+      }
+
+      final url = Uri.parse('${Constants.baseUrl}/Notification/mark-all-read');
+
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'receiver': receiverId}),
+      );
+
+      if (response.statusCode == 200) {
+        log('✅ All notifications marked as read');
+        // ✅ Update local list
+        for (int i = 0; i < notifications.length; i++) {
+          notifications[i] = notifications[i].copyWith(isRead: true);
+        }
+        emit(state.copyWith());
+      } else {
+        log('❌ Failed to mark all read: ${response.statusCode}');
+      }
+    } catch (e) {
+      log('❌ markAllNotificationsRead error: $e');
+    }
+  }
+
+  /// ✅ Mark a single notification as read by its ID
+  Future<void> markNotificationRead(String notificationId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final url = Uri.parse(
+        '${Constants.baseUrl}/Notification/read/$notificationId',
+      );
+
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        log('✅ Notification $notificationId marked as read');
+        // ✅ Update the specific item in local list
+        final idx = notifications.indexWhere((n) => n.id == notificationId);
+        if (idx != -1) {
+          notifications[idx] = notifications[idx].copyWith(isRead: true);
+          emit(state.copyWith());
+        }
+      } else {
+        log('❌ Failed to mark read: ${response.statusCode}');
+      }
+    } catch (e) {
+      log('❌ markNotificationRead error: $e');
     }
   }
 }

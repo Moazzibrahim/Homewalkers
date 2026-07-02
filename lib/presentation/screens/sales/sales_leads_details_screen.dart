@@ -58,6 +58,7 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
   final String? question5_answer;
   final List<LeadPagination>? selectedLeads;
   final List<String>? salesFcmTokens; // ✅ أضف ده
+  final bool? hidesalesnameonleadcomments;
 
   SalesLeadsDetailsScreen({
     super.key,
@@ -98,6 +99,7 @@ class SalesLeadsDetailsScreen extends StatefulWidget {
     this.question5_answer,
     this.selectedLeads,
     this.salesFcmTokens,
+    this.hidesalesnameonleadcomments,
   });
 
   @override
@@ -109,6 +111,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   String userRole = '';
   bool? isClearHistoryy;
   DateTime? clearHistoryTimee;
+  String _currentUserName = ''; // ✅ أضف ده
 
   @override
   void initState() {
@@ -235,8 +238,10 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
   Future<void> checkRoleName() async {
     final prefs = await SharedPreferences.getInstance();
     final role = prefs.getString('role') ?? '';
+    final name = prefs.getString('name') ?? '';
     setState(() {
       userRole = role;
+      _currentUserName = name; // ✅
     });
   }
 
@@ -376,8 +381,8 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                             fcmtoken: widget.fcmtoken,
                                             leadName: widget.leadName,
                                             managerfcm: widget.managerfcmtoken,
-                                            leadLastDateAssigned:
-                                                widget.leadLastDateAssigned,
+                                            leadLastDateAssigned: widget.leadLastDateAssigned,
+                                            hideSalesName: widget.hidesalesnameonleadcomments,
                                           ),
                                         ),
                                   ),
@@ -630,6 +635,10 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
           String firstText = 'No comment available.';
           String secondText = 'No action available.';
           String dateStr = '';
+          final prefs = SharedPreferences.getInstance();
+          String salesName =
+              _currentUserName ??
+              'Unknown'; // ✅ fallback للـ sales screen هو اسم اللييد
 
           if (state is NewCommentsLoaded) {
             final comments = state.newComments.comments;
@@ -638,6 +647,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
               firstText = last.firstcomment?.text ?? 'No comment available.';
               secondText = last.secondcomment?.text ?? 'No action available.';
               dateStr = last.firstcomment?.date?.toString() ?? '';
+              salesName = last.sales?.name ?? salesName; // ✅ من الكومنت
             }
           }
 
@@ -658,6 +668,10 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                 title: widget.leadStage ?? '',
                 content: firstText,
                 dateStr: dateStr,
+                salesName:
+                    (widget.hidesalesnameonleadcomments == true)
+                        ? null
+                        : salesName, // ✅
                 primaryColor: const Color(0xFF9C6B00),
                 icon: Icons.history_toggle_off,
                 isDark: isDark,
@@ -677,6 +691,10 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                 title: widget.leadStage ?? '',
                 content: secondText,
                 dateStr: '',
+                salesName:
+                    (widget.hidesalesnameonleadcomments == true)
+                        ? null
+                        : salesName, // ✅
                 primaryColor: primaryColor,
                 icon: Icons.notifications_none,
                 isDark: isDark,
@@ -1002,6 +1020,7 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
     required String title,
     required String content,
     required String dateStr,
+    required String? salesName, // ✅ جديد
     required Color primaryColor,
     required IconData icon,
     required bool isDark,
@@ -1093,7 +1112,11 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                             Text(
                               title,
                               style: TextStyle(
-                                fontSize: 15.sp,
+                                fontSize:
+                                    title.toLowerCase() ==
+                                            "follow after meeting"
+                                        ? 11.sp
+                                        : 15.sp,
                                 fontWeight: FontWeight.w700,
                                 color: primaryColor,
                               ),
@@ -1104,7 +1127,15 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                           Text(
                             formatDateTimeToDubai(dateStr),
                             style: TextStyle(
-                              fontSize: 12.sp,
+                              fontSize:
+                                  (title.toLowerCase() ==
+                                              "follow after meeting" ||
+                                          title.toLowerCase() ==
+                                              "not interested" ||
+                                          title.toLowerCase() ==
+                                              "cancel meeting")
+                                      ? 9.sp
+                                      : 12.sp,
                               color: Colors.grey,
                               fontWeight: FontWeight.w500,
                             ),
@@ -1122,28 +1153,35 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                       ),
                     ),
                     SizedBox(height: 18.h),
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 14.r,
-                          backgroundColor: primaryColor.withOpacity(0.08),
-                          child: Icon(
-                            Icons.person,
-                            size: 14.sp,
-                            color: primaryColor,
+                    if (salesName != null) ...[
+                      // ✅ مش بيظهر لو null
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 14.r,
+                            backgroundColor: primaryColor.withOpacity(0.08),
+                            child: Icon(
+                              Icons.person,
+                              size: 14.sp,
+                              color: primaryColor,
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Text(
-                          widget.leadName ?? 'Unknown',
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
+                          SizedBox(width: 10.w),
+                          Expanded(
+                            child: Text(
+                              salesName, // ✅ بدل widget.leadName
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

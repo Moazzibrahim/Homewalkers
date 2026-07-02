@@ -80,4 +80,60 @@ class EditLeadCubit extends Cubit<EditLeadState> {
       emit(EditLeadFailure(error: e.toString()));
     }
   }
+
+  Future<void> transferLeadFromDataToOriginal({required String userId}) async {
+    emit(EditLeadLoading());
+    try {
+      await apiService.transferLeadFromDataToOriginal(userId: userId);
+      emit(EditLeadSuccess());
+    } catch (e) {
+      emit(EditLeadFailure(error: e.toString()));
+    }
+  }
+
+  Future<void> bulkUpdateField({
+    required List<String> ids,
+    required String key,
+    required dynamic value,
+  }) async {
+    emit(EditLeadLoading());
+    try {
+      await apiService.bulkUpdateField(ids: ids, key: key, value: value);
+      emit(EditLeadSuccess());
+    } catch (e) {
+      emit(EditLeadFailure(error: e.toString()));
+    }
+  }
+
+  Future<void> bulkTransferFromDataToOriginal({
+    required List<String> ids,
+  }) async {
+    emit(EditLeadLoading());
+    try {
+      await apiService.bulkTransferFromDataToOriginal(ids: ids);
+      emit(EditLeadSuccess());
+    } catch (e) {
+      emit(EditLeadFailure(error: e.toString()));
+    }
+  }
+
+  Future<void> bulkIgnoreDuplicate({required List<String> ids}) async {
+    emit(EditLeadLoading());
+    try {
+      await apiService.bulkIgnoreDuplicate(ids: ids);
+      emit(EditLeadSuccess());
+    } catch (e) {
+      emit(EditLeadFailure(error: e.toString()));
+    }
+  }
+
+  Future<void> bulkDeleteLeads({required List<String> ids}) async {
+    emit(EditLeadLoading());
+    try {
+      await apiService.bulkDeleteLeads(ids: ids);
+      emit(EditLeadSuccess());
+    } catch (e) {
+      emit(EditLeadFailure(error: e.toString()));
+    }
+  }
 }

@@ -66,22 +66,20 @@ class DeciderScreen extends StatelessWidget {
           // 👈 هنا نعمل update check
           WidgetsBinding.instance.addPostFrameCallback((_) {
             UpdateService.checkForUpdate(context);
+            if (hasToken) {
+              context.read<NotificationCubit>().initNotifications();
+            }
           });
 
           if (hasToken && role == 'Sales') {
-            context.read<NotificationCubit>().initNotifications();
             return const SalesTabsScreen(); // ✅ إذا كان الدور "sales"
           } else if (hasToken && role == 'Team Leader') {
-            context.read<NotificationCubit>().initNotifications();
             return const TeamLeaderTabsScreen();
           } else if (hasToken && role == 'Manager') {
-            context.read<NotificationCubit>().initNotifications();
             return const TabsScreenManager();
           } else if (hasToken && role == 'Marketer') {
-            context.read<NotificationCubit>().initNotifications();
             return const MarketierTabsScreen();
           } else if (hasToken && role == 'Admin') {
-            context.read<NotificationCubit>().initNotifications();
             return const AdminTabsScreen();
           } else {
             return const CompanySelectionScreen(); // ❌ إذا لم يوجد توكن أو الدور ليس "sales"

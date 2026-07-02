@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable, non_constant_identifier_names, use_build_context_synchronously, avoid_print
+// ignore_for_file: unused_local_variable, non_constant_identifier_names, use_build_context_synchronously, avoid_print, unrelated_type_equality_checks
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -200,6 +200,17 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
     _checkThenNavigate(
       leadId: lead.id,
       onAllowed: () {
+        if ((_role?.toLowerCase() == 'sales' ||
+                _role?.toLowerCase() == 'team leader') &&
+            lead.leadisactive == "false") {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You are not authorized to view this lead.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+          return;
+        }
         final firstVersion =
             (lead.allVersions != null && lead.allVersions!.isNotEmpty)
                 ? lead.allVersions!.first
@@ -494,6 +505,8 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
                       question4_answer: lead.question4_answer,
                       question5_text: lead.question5_text,
                       question5_answer: lead.question5_answer,
+                      hidesalesnameonleadcomments:
+                          lead.hidesalesnameonleadcomments,
                     ),
               ),
             );
@@ -664,7 +677,11 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    context
+                        .read<NotificationCubit>()
+                        .markAllNotificationsRead();
+                  },
                   child: const Text(
                     'Mark all read',
                     style: TextStyle(
@@ -710,7 +727,7 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (state.error != null) {
-                  return Center(child: Text('Error: ${state.error}'));
+                  return Center(child: Text('Failed to load notifications'));
                 }
                 if (allNotifications.isEmpty) {
                   return const Center(child: Text('No notifications yet.'));
@@ -932,10 +949,15 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
 
     return InkWell(
       onTap: () {
-        _checkThenNavigate(
-          leadId: item.lead?.id,
-          onAllowed: () {
-            if (item.typenotification == 'comment') {
+        if (item.isRead == false && item.id != null) {
+          context.read<NotificationCubit>().markNotificationRead(item.id!);
+        }
+
+        if (item.typenotification == 'comment') {
+          // ✅ comment محتاج check عشان يتأكد إن الـ lead لسه بتاعه
+          _checkThenNavigate(
+            leadId: item.lead?.id,
+            onAllowed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -945,14 +967,18 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
                         fcmtoken: item.lead?.sales?.userlog?.fcmToken ?? "",
                         leadName: item.lead?.name ?? "",
                         managerfcm: item.userdoaction?.fcmToken,
+                        hideSalesName:
+                            item.lead?.hidesalesnameonleadcomments ?? false,
                       ),
                 ),
               );
-            } else if (item.typenotification == 'assign') {
-              _navigateToLeadDetails(item);
-            }
-          },
-        );
+            },
+          );
+        } else if (item.typenotification == 'assign') {
+          // ✅ assign يروح مباشرة لـ _navigateToLeadDetails
+          // اللي بتعمل الـ check + leadisactive check جوّاها
+          _navigateToLeadDetails(item);
+        }
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -1141,15 +1167,19 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
 
                         // Unread dot
                         const SizedBox(width: 8),
-                        Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.only(top: 4),
-                          decoration: BoxDecoration(
-                            color: accentColor,
-                            shape: BoxShape.circle,
+                        // Unread dot — يظهر بس لو مش مقروءة
+                        if (item.isRead == false) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(top: 4),
+                            decoration: BoxDecoration(
+                              color: accentColor,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),

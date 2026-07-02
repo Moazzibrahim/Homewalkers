@@ -6,10 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/meeting/get_meeting_comments.dart';
 import 'package:homewalkers_app/data/data_sources/team_leader/get_dashboard_leads_count.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/meetingCommentsScreen.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
+import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/teamleader_data_dashboard_screen.dart';
+import 'package:homewalkers_app/presentation/viewModels/meeting/cubit/meetingcomments_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/cubit/teamleader_dashboard_cubit.dart';
@@ -121,7 +126,8 @@ Color _getProgressColor(String title) {
 }
 
 class TeamLeaderDashboardScreen extends StatefulWidget {
-  const TeamLeaderDashboardScreen({super.key});
+  final bool showNavBar;
+  const TeamLeaderDashboardScreen({super.key, this.showNavBar = false});
 
   @override
   State<TeamLeaderDashboardScreen> createState() =>
@@ -211,6 +217,44 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
     return BlocProvider.value(
       value: _dashboardCubit,
       child: Scaffold(
+        bottomNavigationBar:
+            widget.showNavBar ? SharedTeamLeaderNavBar(currentIndex: 0) : null,
+        floatingActionButton:
+            widget.showNavBar
+                ? Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Constants.maincolor.withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: FloatingActionButton(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateLeadScreen(),
+                        ),
+                      );
+                    },
+                    child: const Icon(Icons.add, size: 28, color: Colors.white),
+                  ),
+                )
+                : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
                 ? Constants.backgroundlightmode
@@ -252,10 +296,9 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                               (7 * tabletScale).r,
                             ),
                           ),
-                          child: Icon(
-                            Icons.business,
-                            color: Colors.white,
-                            size: (16 * tabletFontScale).sp,
+                          child: Image.asset(
+                            'assets/images/icon.jpeg',
+                            fit: BoxFit.cover,
                           ),
                         ),
                         SizedBox(width: (7 * tabletWidthScale).w),
@@ -269,6 +312,27 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                           ),
                         ),
                         const Spacer(),
+                        _iconBox(Icons.event_outlined, () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          final userId = prefs.getString('salesId');
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => BlocProvider(
+                                    create:
+                                        (context) => MeetingCommentsCubit(
+                                          MeetingCommentsApiService(),
+                                        ),
+                                    child: MeetingCommentsScreen(
+                                      userId: userId,
+                                    ),
+                                  ),
+                            ),
+                          );
+                        }),
+                        SizedBox(width: (12 * tabletWidthScale).w),
                         _iconBox(Icons.notifications_none, () {
                           Navigator.push(
                             context,

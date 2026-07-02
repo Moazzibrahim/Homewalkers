@@ -58,6 +58,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
   final String? question5_text;
   final String? question5_answer;
   final List<String>? salesFcmTokens; // ✅ أضف ده
+  final bool? hidesalesnameonleadcomments;
 
   LeadsDetailsTeamLeaderScreen({
     super.key,
@@ -98,6 +99,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
     this.question5_text,
     this.question5_answer,
     this.salesFcmTokens,
+    this.hidesalesnameonleadcomments,
   });
 
   @override
@@ -359,6 +361,9 @@ class _SalesLeadsDetailsScreenState
                                             managerfcm: widget.managerfcmtoken,
                                             leadLastDateAssigned:
                                                 widget.leadLastDateAssigned,
+                                            hideSalesName:
+                                                widget
+                                                    .hidesalesnameonleadcomments,
                                           ),
                                         ),
                                   ),
@@ -641,6 +646,8 @@ class _SalesLeadsDetailsScreenState
           String firstText = 'No comment available.';
           String secondText = 'No action available.';
           String dateStr = '';
+          String salesName =
+              widget.leadSalesName ?? 'Unknown User'; // ✅ fallback
 
           if (state is NewCommentsLoaded) {
             final comments = state.newComments.comments;
@@ -649,6 +656,7 @@ class _SalesLeadsDetailsScreenState
               firstText = last.firstcomment?.text ?? 'No comment available.';
               secondText = last.secondcomment?.text ?? 'No action available.';
               dateStr = last.firstcomment?.date?.toString() ?? '';
+              salesName = last.sales?.name ?? salesName; // ✅ من الكومنت
             }
           }
 
@@ -669,6 +677,10 @@ class _SalesLeadsDetailsScreenState
                 title: widget.leadStage ?? '',
                 content: firstText,
                 dateStr: dateStr,
+                salesName:
+                    (widget.hidesalesnameonleadcomments == true)
+                        ? null
+                        : salesName,
                 primaryColor: const Color(0xFF9C6B00),
                 icon: Icons.history_toggle_off,
                 isDark: isDark,
@@ -688,6 +700,10 @@ class _SalesLeadsDetailsScreenState
                 title: widget.leadStage ?? '',
                 content: secondText,
                 dateStr: '',
+                salesName:
+                    (widget.hidesalesnameonleadcomments == true)
+                        ? null
+                        : salesName, // ✅
                 primaryColor: primaryColor,
                 icon: Icons.notifications_none,
                 isDark: isDark,
@@ -1015,6 +1031,7 @@ class _SalesLeadsDetailsScreenState
     required String title,
     required String content,
     required String dateStr,
+    required String? salesName, // ✅ جديد
     required Color primaryColor,
     required IconData icon,
     required bool isDark,
@@ -1106,7 +1123,11 @@ class _SalesLeadsDetailsScreenState
                             Text(
                               title,
                               style: TextStyle(
-                                fontSize: 15.sp,
+                                fontSize:
+                                    title.toLowerCase() ==
+                                            "follow after meeting"
+                                        ? 11.sp
+                                        : 15.sp,
                                 fontWeight: FontWeight.w700,
                                 color: primaryColor,
                               ),
@@ -1117,7 +1138,15 @@ class _SalesLeadsDetailsScreenState
                           Text(
                             formatDateTimeToDubai(dateStr),
                             style: TextStyle(
-                              fontSize: 12.sp,
+                              fontSize:
+                                  (title.toLowerCase() ==
+                                              "follow after meeting" ||
+                                          title.toLowerCase() ==
+                                              "not interested" ||
+                                          title.toLowerCase() ==
+                                              "cancel meeting")
+                                      ? 9.sp
+                                      : 12.sp,
                               color: Colors.grey,
                               fontWeight: FontWeight.w500,
                             ),
@@ -1135,28 +1164,34 @@ class _SalesLeadsDetailsScreenState
                       ),
                     ),
                     SizedBox(height: 18.h),
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 14.r,
-                          backgroundColor: primaryColor.withOpacity(0.08),
-                          child: Icon(
-                            Icons.person,
-                            size: 14.sp,
-                            color: primaryColor,
+                    if (salesName != null) ...[
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 14.r,
+                            backgroundColor: primaryColor.withOpacity(0.08),
+                            child: Icon(
+                              Icons.person,
+                              size: 14.sp,
+                              color: primaryColor,
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Text(
-                          widget.leadName ?? 'Unknown',
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
+                          SizedBox(width: 10.w),
+                          Expanded(
+                            child: Text(
+                              salesName ?? '', // ✅ بدل widget.leadName
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

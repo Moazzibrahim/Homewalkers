@@ -258,6 +258,7 @@ class AssignleadCubit extends Cubit<AssignState> {
     String? stage,
     bool assigntype = false, // false = Salesman | true = Team Leader
     bool resetcreationdate = false, // false = show | true = hide
+    bool hidesalesnameonleadcomments = false,
   }) async {
     emit(AssignLoading());
 
@@ -286,6 +287,7 @@ class AssignleadCubit extends Cubit<AssignState> {
           // 🆕 NEW KEYS
           "assigntype": assigntype,
           "resetcreationdate": resetcreationdate,
+          "hidesalesnameonleadcomments":hidesalesnameonleadcomments,
         };
 
         final putResponse = await dio.put(

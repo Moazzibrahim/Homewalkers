@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/team_leader/get_leads_count.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_count_in_team_leader_cubit.dart';
@@ -14,7 +15,8 @@ import 'package:shimmer/shimmer.dart';
 import 'dart:math' as math;
 
 class TeamLeaderSalesScreen extends StatelessWidget {
-  const TeamLeaderSalesScreen({super.key});
+  final bool showNavBar;
+  const TeamLeaderSalesScreen({super.key, this.showNavBar = false});
 
   Future<String> getCurrentUserName() async {
     final prefs = await SharedPreferences.getInstance();
@@ -58,6 +60,50 @@ class TeamLeaderSalesScreen extends StatelessWidget {
           >(
             builder: (context, state) {
               return Scaffold(
+                bottomNavigationBar:
+                    showNavBar ? SharedTeamLeaderNavBar(currentIndex: 2) : null,
+                floatingActionButton:
+                    showNavBar
+                        ? Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Constants.maincolor.withOpacity(0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: FloatingActionButton(
+                            backgroundColor: Colors.transparent,
+                            elevation: 0,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => const CreateLeadScreen(),
+                                ),
+                              );
+                            },
+                            child: const Icon(
+                              Icons.add,
+                              size: 28,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                        : null,
+                floatingActionButtonLocation:
+                    FloatingActionButtonLocation.endFloat,
                 backgroundColor:
                     Theme.of(context).brightness == Brightness.light
                         ? Constants.backgroundlightmode
@@ -212,7 +258,7 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                               child: Padding(
                                 padding: EdgeInsets.all((16 * tabletScale).r),
                                 child: Text(
-                                  state.message,
+                                  "Failed to load sales agents",
                                   style: TextStyle(
                                     fontSize: (16 * tabletFontScale).sp,
                                     color:

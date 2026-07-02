@@ -444,6 +444,7 @@ class LeadDataPagination {
   String? question4_answer;
   String? question5_text;
   String? question5_answer;
+  bool? hidesalesnameonleadcomments;
 
   LeadDataPagination({
     this.id,
@@ -506,6 +507,7 @@ class LeadDataPagination {
     this.question4_answer,
     this.question5_text,
     this.question5_answer,
+    this.hidesalesnameonleadcomments,
   });
 
   factory LeadDataPagination.fromJson(Map<String, dynamic> json) {
@@ -592,6 +594,7 @@ class LeadDataPagination {
       question4_answer: json['question4_answer'] as String?,
       question5_text: json['question5_text'] as String?,
       question5_answer: json['question5_answer'] as String?,
+      hidesalesnameonleadcomments: json["hidesalesnameonleadcomments"],
     );
   }
 
@@ -657,6 +660,7 @@ class LeadDataPagination {
       'question4_answer': question4_answer,
       'question5_text': question5_text,
       'question5_answer': question5_answer,
+      'hidesalesnameonleadcomments': hidesalesnameonleadcomments,
     };
   }
 }
@@ -768,6 +772,7 @@ class Sales {
     };
   }
 }
+
 class FcmToken {
   final String? id;
   final String? token;
@@ -806,7 +811,7 @@ class UserLog {
   final String? profileImg;
   final String? role;
   final String? fcmToken;
-  final List<FcmToken>? fcmTokens; 
+  final List<FcmToken>? fcmTokens;
   final bool? isMarketer;
 
   UserLog({

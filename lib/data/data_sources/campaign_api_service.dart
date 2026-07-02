@@ -6,7 +6,8 @@ import 'package:homewalkers_app/data/models/campaign_models.dart';
 import 'package:http/http.dart' as http;
 
 class CampaignApiService {
-  final String _baseUrl = '${Constants.baseUrl}/Campain?campaignisactivatedelete=true';
+  final String _baseUrl =
+      '${Constants.baseUrl}/Campain?campaignisactivatedelete=true';
 
   Future<CampaignResponse?> getCampaigns() async {
     try {
@@ -24,15 +25,22 @@ class CampaignApiService {
       return null;
     }
   }
+
   Future<CampaignResponse?> getCampaignsInTrash() async {
     try {
-      final response = await http.get(Uri.parse("https://apirender8.onrender.com/api/v1/Campain?campaignisactivatedelete=false"));
+      final response = await http.get(
+        Uri.parse(
+          "${Constants.baseUrl}/Campain?campaignisactivatedelete=false",
+        ),
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
         return CampaignResponse.fromJson(jsonData);
       } else {
-        print('Failed to load campaigns: ${response.statusCode}');
+        print(
+          'Failed to load campaigns: ${response.statusCode} ${response.body}',
+        );
         return null;
       }
     } catch (e) {

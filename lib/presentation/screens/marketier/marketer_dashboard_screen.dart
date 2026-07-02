@@ -551,10 +551,9 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                               (7 * tabletScale).r,
                             ),
                           ),
-                          child: Icon(
-                            Icons.business,
-                            color: Colors.white,
-                            size: (16 * tabletFontScale).sp,
+                          child: Image.asset(
+                            'assets/images/icon.jpeg',
+                            fit: BoxFit.cover,
                           ),
                         ),
                         SizedBox(width: (7 * tabletWidthScale).w),

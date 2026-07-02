@@ -1411,43 +1411,43 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
                         ],
                       ),
                     ),
-                    Container(
-                      width: 50.w,
-                      height: 50.h,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Constants.maincolor,
-                            Constants.maincolor.withOpacity(0.7),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '${request.leadsids.length}',
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              'Leads',
-                              style: TextStyle(
-                                fontSize: 8.sp,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // Container(
+                    //   width: 50.w,
+                    //   height: 50.h,
+                    //   decoration: BoxDecoration(
+                    //     gradient: LinearGradient(
+                    //       colors: [
+                    //         Constants.maincolor,
+                    //         Constants.maincolor.withOpacity(0.7),
+                    //       ],
+                    //       begin: Alignment.topLeft,
+                    //       end: Alignment.bottomRight,
+                    //     ),
+                    //     shape: BoxShape.circle,
+                    //   ),
+                    //   child: Center(
+                    //     child: Column(
+                    //       mainAxisAlignment: MainAxisAlignment.center,
+                    //       children: [
+                    //         Text(
+                    //           '${request.leadsids.length}',
+                    //           style: TextStyle(
+                    //             fontSize: 18.sp,
+                    //             fontWeight: FontWeight.bold,
+                    //             color: Colors.white,
+                    //           ),
+                    //         ),
+                    //         Text(
+                    //           'Leads',
+                    //           style: TextStyle(
+                    //             fontSize: 8.sp,
+                    //             color: Colors.white70,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
                 SizedBox(height: 12.h),

@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/dialog_utils.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
@@ -16,7 +17,12 @@ class SalesAssignLeadsScreen extends StatefulWidget {
   final bool? data;
   final bool? transferfromdata;
   final bool showNavBar;
-  const SalesAssignLeadsScreen({super.key, this.data, this.transferfromdata, this.showNavBar = true});
+  const SalesAssignLeadsScreen({
+    super.key,
+    this.data,
+    this.transferfromdata,
+    this.showNavBar = true,
+  });
 
   @override
   _SalesAssignLeadsScreenState createState() => _SalesAssignLeadsScreenState();
@@ -75,8 +81,44 @@ class _SalesAssignLeadsScreenState extends State<SalesAssignLeadsScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-                    bottomNavigationBar:
+      bottomNavigationBar:
           widget.showNavBar ? SharedSalesNavBar(currentIndex: 2) : null,
+      floatingActionButton:
+          widget.showNavBar
+              ? Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Constants.maincolor.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateLeadScreen(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add, size: 28, color: Colors.white),
+                ),
+              )
+              : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       backgroundColor:
           Theme.of(context).brightness == Brightness.light
               ? Constants.backgroundlightmode

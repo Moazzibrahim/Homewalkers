@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/theme/theme_cubit.dart';
@@ -12,7 +13,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 class TeamLeaderProfileScreen extends StatelessWidget {
-  const TeamLeaderProfileScreen({super.key});
+  final bool showNavBar;
+  const TeamLeaderProfileScreen({super.key, this.showNavBar = false});
 
   // ── original logic (unchanged) ──────────────────────────────
   Future<String> checkAuthName() async {
@@ -74,6 +76,44 @@ class TeamLeaderProfileScreen extends StatelessWidget {
     final Color cardBg = isDark ? const Color(0xFF252535) : Colors.white;
 
     return Scaffold(
+      bottomNavigationBar:
+          showNavBar ? SharedTeamLeaderNavBar(currentIndex: 3) : null,
+      floatingActionButton:
+          showNavBar
+              ? Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Constants.maincolor.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateLeadScreen(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add, size: 28, color: Colors.white),
+                ),
+              )
+              : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       backgroundColor: bg,
       appBar: CustomAppBar(
         title: "Settings",

@@ -1,8 +1,7 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-//import 'package:google_fonts/google_fonts.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/core/utils/formatters.dart';
 import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart';
@@ -15,11 +14,37 @@ import 'package:homewalkers_app/presentation/widgets/marketer/add_channel_dialog
 import 'package:homewalkers_app/presentation/widgets/marketer/delete_dialog.dart';
 import 'package:homewalkers_app/presentation/widgets/marketer/update_channel_dialog.dart';
 
-class ChannelScreen extends StatelessWidget {
+class ChannelScreen extends StatefulWidget {
   const ChannelScreen({super.key});
 
   @override
+  State<ChannelScreen> createState() => _ChannelScreenState();
+}
+
+class _ChannelScreenState extends State<ChannelScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.toLowerCase());
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+
     return BlocProvider(
       create:
           (context) => ChannelCubit(GetChannelsApiService())..fetchChannels(),
@@ -29,104 +54,148 @@ class ChannelScreen extends StatelessWidget {
           if (state is AddInMenuSuccess) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text('done successfully')));
-            // اطلب من الـ GetCommunicationWaysCubit ان يعيد تحميل البيانات
+            ).showSnackBar(const SnackBar(content: Text('Done successfully')));
             context.read<ChannelCubit>().fetchChannels();
           } else if (state is AddInMenuError) {
             ScaffoldMessenger.of(
               context,
-            ).showSnackBar(const SnackBar(content: Text(' error')));
+            ).showSnackBar(const SnackBar(content: Text('error')));
           }
         },
         child: Scaffold(
           backgroundColor:
-              Theme.of(context).brightness == Brightness.light
+              isLight
                   ? Constants.backgroundlightmode
                   : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
-            title: "channels",
-            onBack: () {
-              Navigator.pop(context);
-            },
+            title: "Channels",
+            onBack: () => Navigator.pop(context),
           ),
           body: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 25),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder:
-                              (_) => BlocProvider.value(
-                                value:
-                                    context
-                                        .read<
-                                          AddInMenuCubit
-                                        >(), // استخدم نفس الـ cubit
-                                child: AddChannelDialog(
-                                  onAdd: (name, code) {
-                                    context.read<AddInMenuCubit>().addChannel(
-                                      name,
-                                      code,
-                                    );
-                                  },
-                                  title: "channel",
-                                ),
-                              ),
-                        );
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text(
-                        "Add New channel",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                        ),
+                const SizedBox(height: 16),
+
+                // ── Search Bar ───────────────────────────────────────
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: isLight ? Colors.white : Colors.grey[850],
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Constants.maincolor
-                                : Constants.mainDarkmodecolor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: "Search channels...",
+                      hintStyle: TextStyle(
+                        color: isLight ? Colors.grey[400] : Colors.grey[500],
+                        fontSize: 14,
                       ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: isLight ? Colors.grey[400] : Colors.grey[500],
+                        size: 22,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 20),
+
+                // ── Section Header ───────────────────────────────────
+                Builder(
+                  builder: (context) {
+                    return Row(
+                      children: [
+                        Text(
+                          "ALL CHANNELS",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isLight ? Colors.grey[500] : Colors.grey[400],
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Divider(
+                            color:
+                                isLight ? Colors.grey[300] : Colors.grey[700],
+                            thickness: 1,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () => _showAddDialog(context),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: mainColor,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: mainColor.withOpacity(0.35),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
                 const SizedBox(height: 16),
+
+                // ── List ─────────────────────────────────────────────
                 Expanded(
                   child: BlocBuilder<ChannelCubit, ChannelState>(
                     builder: (context, state) {
                       if (state is ChannelLoading) {
                         return const Center(child: CircularProgressIndicator());
                       } else if (state is ChannelLoaded) {
-                        final projects = state.channelResponse.data;
-                        if (projects.isEmpty) {
+                        final all = state.channelResponse.data;
+                        final filtered =
+                            all.where((c) {
+                              if (_searchQuery.isEmpty) return true;
+                              return (c.name ?? '').toLowerCase().contains(
+                                _searchQuery,
+                              );
+                            }).toList();
+
+                        if (filtered.isEmpty) {
                           return const Center(
-                            child: Text('No channels Found.'),
+                            child: Text('No channels found.'),
                           );
                         }
+
                         return ListView.separated(
-                          itemCount: projects.length,
+                          itemCount: filtered.length,
                           separatorBuilder:
                               (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final project = projects[index];
-                            return _buildCommunicationCard(
-                              project,
-                              Constants.maincolor,
-                              context,
-                            );
-                          },
+                          itemBuilder:
+                              (context, index) =>
+                                  _buildChannelCard(filtered[index], context),
                         );
                       } else if (state is ChannelError) {
                         return Center(child: Text('Error: ${state.message}'));
@@ -143,134 +212,108 @@ class ChannelScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCommunicationCard(
-    ChannelModel projectData,
-    Color mainColor,
-    BuildContext context,
-  ) {
-    final name = projectData.name;
-    final dateTime = projectData.createdAt;
-    final formattedDate = Formatters.formatDate(dateTime);
-    final code = projectData.code;
+  // ─────────────────────────────────────────────────────────────────────────
+  // CHANNEL CARD
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildChannelCard(ChannelModel channel, BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final mainColor =
+        isLight ? Constants.maincolor : Constants.mainDarkmodecolor;
+    final formattedDate = Formatters.formatDate(channel.createdAt);
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(16, 16, 12, 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color:
-            Theme.of(context).brightness == Brightness.light
-                ? Colors
-                    .white // لون الكارت في light mode
-                : const Color(0xFF1E1E1E),
+        color: isLight ? Colors.white : const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color:
-                Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.5),
-            blurRadius: 6,
+                isLight
+                    ? Colors.grey.withOpacity(0.12)
+                    : Colors.black.withOpacity(0.4),
+            blurRadius: 8,
             offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFFE5F4F5),
-                child: Icon(
-                  Icons.contact_mail,
-                  size: 16,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
+          // ── Left: name + code + date ─────────────────────────────
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  channel.name ?? '-',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: isLight ? Colors.black87 : Colors.white,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "channel Name : $name",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.code, size: 14, color: mainColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      channel.code ?? '-',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: mainColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 13,
+                      color: isLight ? Colors.grey[400] : Colors.grey[500],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isLight ? Colors.grey[500] : Colors.grey[400],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
+
+          const SizedBox(width: 12),
+
+          // ── Right: action buttons ────────────────────────────────
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFFE5F4F5),
-                child: Icon(
-                  Icons.calendar_today,
-                  size: 16,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "Creation Date : $formattedDate",
-                  style: TextStyle(fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFFE5F4F5),
-                child: Icon(
-                  Icons.code,
-                  size: 16,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text("Code : $code", style: TextStyle(fontSize: 13)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Spacer(),
-              IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Constants.maincolor
-                          : Constants.mainDarkmodecolor,
-                ),
-                onPressed: () {
+              _actionButton(
+                icon: Icons.refresh_rounded,
+                color: mainColor,
+                bgColor: mainColor.withOpacity(0.08),
+                onTap: () {
                   showDialog(
                     context: context,
                     builder:
                         (_) => BlocProvider.value(
                           value: context.read<AddInMenuCubit>(),
                           child: UpdateChannelDialog(
-                            initialCode: code,
-                            initialName: name,
+                            initialCode: channel.code,
+                            initialName: channel.name,
                             title: "channel",
                             onAdd: (value, code) {
                               context.read<AddInMenuCubit>().updateChannel(
-                                value, // new name
-                                code, // keep old code
-                                projectData.id.toString(),
+                                value,
+                                code,
+                                channel.id.toString(),
                               );
                             },
                           ),
@@ -278,7 +321,11 @@ class ChannelScreen extends StatelessWidget {
                   );
                 },
               ),
-              InkWell(
+              const SizedBox(width: 8),
+              _actionButton(
+                icon: Icons.delete_outline_rounded,
+                color: const Color(0xFFBA1A1A),
+                bgColor: const Color(0xFFBA1A1A).withOpacity(0.08),
                 onTap: () {
                   showDialog(
                     context: context,
@@ -288,12 +335,11 @@ class ChannelScreen extends StatelessWidget {
                           child: DeleteDialog(
                             onCancel: () => Navigator.of(context).pop(),
                             onConfirm: () {
-                              // تنفيذ الحذف
                               Navigator.of(context).pop();
                               context
                                   .read<AddInMenuCubit>()
                                   .updateChannelStatus(
-                                    projectData.id.toString(),
+                                    channel.id.toString(),
                                     false,
                                   );
                             },
@@ -302,12 +348,47 @@ class ChannelScreen extends StatelessWidget {
                         ),
                   );
                 },
-                child: Image.asset("assets/images/delete.png"),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _actionButton({
+    required IconData icon,
+    required Color color,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+    );
+  }
+
+  void _showAddDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => BlocProvider.value(
+            value: context.read<AddInMenuCubit>(),
+            child: AddChannelDialog(
+              onAdd: (name, code) {
+                context.read<AddInMenuCubit>().addChannel(name, code);
+              },
+              title: "channel",
+            ),
+          ),
     );
   }
 }

@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:http/http.dart' as http;
 import 'package:homewalkers_app/data/models/regions_model.dart';
 
 class RegionApiService {
-  String get baseUrl =>
-      'https://apirender8.onrender.com/api/v1/regions?active=true';
+  String get baseUrl => '${Constants.baseUrl}/regions?active=true';
 
   Future<RegionsModel> fetchRegions() async {
     try {

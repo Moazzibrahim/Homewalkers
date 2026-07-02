@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -18,7 +19,7 @@ class AddUserCubit extends Cubit<AddUserState> {
   }) async {
     emit(AddUserLoading());
 
-    final String url = 'https://apirender8.onrender.com/api/v1/Signup';
+    final String url = '${Constants.baseUrl}/api/v1/Signup';
 
     try {
       final response = await http.post(

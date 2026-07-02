@@ -150,4 +150,23 @@ class AllLeadsCubitWithPagination extends Cubit<AllLeadsState> {
       }
     } catch (_) {}
   }
+
+  /// =======================
+  /// 📋 Lead Assign History
+  /// =======================
+  Future<void> fetchLeadAssignHistory({required String leadId}) async {
+    emit(AssignHistoryLoading());
+
+    try {
+      final response = await apiService.fetchLeadAssignHistory(leadId: leadId);
+
+      if (response != null) {
+        emit(AssignHistoryLoaded(response));
+      } else {
+        emit(AssignHistoryError("Failed to fetch assign history"));
+      }
+    } catch (e) {
+      emit(AssignHistoryError("Error: $e"));
+    }
+  }
 }

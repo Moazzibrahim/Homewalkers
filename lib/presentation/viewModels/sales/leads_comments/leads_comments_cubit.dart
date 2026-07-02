@@ -48,9 +48,15 @@ class LeadCommentsCubit extends Cubit<LeadCommentsState> {
     try {
       final assigned = await apiService.fetchLeadAssigned(leedId);
       print("[Cubit] Lead assigned data fetched: ${assigned.data?.length}");
-      final comments = await apiService.fetchActionData(leedId: leedId);
-      print("[Cubit] Lead comments data fetched: ${comments.data?.length}");
-      emit(LeadCommentsFullLoaded(comments: comments, assigned: assigned));
+      final newComments = await apiService.fetchNewComments(
+        leadId: leedId,
+        page: 1,
+        limit: 100000,
+      );
+      print(
+        "[Cubit] Lead comments data fetched: ${newComments.comments?.length}",
+      );
+      emit(NewCommentsLoaded(newComments));
       print("[Cubit] Emit LeadCommentsFullLoaded done");
     } catch (e) {
       print("[Cubit] Error fetching lead data: $e");

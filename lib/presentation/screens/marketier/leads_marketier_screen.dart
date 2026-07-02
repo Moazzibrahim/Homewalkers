@@ -1,5 +1,5 @@
 // leads_marketier_screen.dart
-// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, unused_field, use_super_parameters, unnecessary_null_comparison
+// ignore_for_file: avoid_print, use_build_context_synchronously, unrelated_type_equality_checks, deprecated_member_use, unused_local_variable, unused_field, use_super_parameters, unnecessary_null_comparison, prefer_final_fields
 import 'dart:async';
 import 'dart:developer';
 import 'dart:math' as math;
@@ -316,91 +316,92 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // ✅ Animated Search Bar (Admin style)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
+              SizedBox(
                 width: _isSearchVisible ? 200.w : 45.w,
                 height: 45.h,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.r),
-                  border:
-                      _isSearchVisible
-                          ? Border.all(
-                            color:
-                                Theme.of(context).brightness == Brightness.light
-                                    ? Constants.maincolor
-                                    : Constants.mainDarkmodecolor,
-                            width: 1.5.w,
-                          )
-                          : null,
-                ),
                 child:
                     _isSearchVisible
-                        ? Row(
-                          children: [
-                            SizedBox(width: 8.w),
-                            Icon(Icons.search, size: 20.sp, color: Colors.grey),
-                            SizedBox(width: 8.w),
-                            Expanded(
-                              child: TextField(
-                                controller: _searchController,
-                                focusNode: _searchFocusNode,
-                                autofocus: true,
-                                onChanged: (value) {
-                                  _searchDebounce?.cancel();
-                                  _searchDebounce = Timer(
-                                    const Duration(milliseconds: 500),
-                                    () {
-                                      setState(() {
-                                        _searchQuery = value.trim();
-                                        _nameSearchController.text =
-                                            _searchQuery;
-                                      });
-                                      _applyCurrentFiltersWithPagination();
-                                    },
-                                  );
+                        ? DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Constants.maincolor
+                                      : Constants.mainDarkmodecolor,
+                              width: 1.5.w,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              SizedBox(width: 6.w),
+                              Icon(
+                                Icons.search,
+                                size: 18.sp,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(width: 4.w),
+                              Expanded(
+                                child: TextField(
+                                  controller: _searchController,
+                                  focusNode: _searchFocusNode,
+                                  autofocus: true,
+                                  onChanged: (value) {
+                                    _searchDebounce?.cancel();
+                                    _searchDebounce = Timer(
+                                      const Duration(milliseconds: 500),
+                                      () {
+                                        setState(() {
+                                          _searchQuery = value.trim();
+                                          _nameSearchController.text =
+                                              _searchQuery;
+                                        });
+                                        _applyCurrentFiltersWithPagination();
+                                      },
+                                    );
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: 'Search...',
+                                    hintStyle: TextStyle(
+                                      color: const Color(0xff969696),
+                                      fontSize: (13 * tabletFontScale).sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _searchQuery = '';
+                                    _nameSearchController.text = '';
+                                    _isSearchVisible = false;
+                                  });
+                                  _searchFocusNode.unfocus();
+                                  _applyCurrentFiltersWithPagination();
                                 },
-                                decoration: InputDecoration(
-                                  hintText: 'Search...',
-                                  hintStyle: TextStyle(
-                                    color: const Color(0xff969696),
-                                    fontSize: (14 * tabletFontScale).sp,
-                                    fontWeight: FontWeight.w500,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 4.w,
                                   ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 0,
-                                    horizontal: 0,
+                                  child: Icon(
+                                    Icons.clear,
+                                    size: 16.sp,
+                                    color:
+                                        Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.black
+                                            : Colors.white,
                                   ),
                                 ),
                               ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                _searchController.clear();
-                                setState(() {
-                                  _searchQuery = '';
-                                  _nameSearchController.text = '';
-                                  _isSearchVisible = false;
-                                });
-                                _searchFocusNode.unfocus();
-                                _applyCurrentFiltersWithPagination();
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.only(right: 8.w),
-                                child: Icon(
-                                  Icons.clear,
-                                  size: 18.sp,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                              Brightness.light
-                                          ? Colors.black
-                                          : Colors.white,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 8.w),
-                          ],
+                            ],
+                          ),
                         )
                         : IconButton(
                           onPressed: () {
@@ -643,19 +644,29 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                 child: Row(
                   children: [
                     /// CHECK ICON
-                    Container(
-                      width: (38 * tabletWidthScale).w,
-                      height: (38 * tabletWidthScale).w,
-                      decoration: BoxDecoration(
-                        color: Constants.maincolor,
-                        borderRadius: BorderRadius.circular(
-                          (10 * tabletScale).r,
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedLeads.clear();
+                          _selectedSalesIds.clear();
+                          _selectedLeadStagesIds.clear();
+                          _showCheckboxes = false;
+                        });
+                      },
+                      child: Container(
+                        width: (38 * tabletWidthScale).w,
+                        height: (38 * tabletWidthScale).w,
+                        decoration: BoxDecoration(
+                          color: Constants.maincolor,
+                          borderRadius: BorderRadius.circular(
+                            (10 * tabletScale).r,
+                          ),
                         ),
-                      ),
-                      child: Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: (22 * tabletFontScale).sp,
+                        child: Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: (22 * tabletFontScale).sp,
+                        ),
                       ),
                     ),
                     SizedBox(width: (14 * tabletWidthScale).w),
@@ -745,13 +756,33 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                 if (result == true) {
                                   context
                                       .read<GetLeadsMarketerCubit>()
-                                      .refreshLeadsMarketer();
+                                      .fetchLeadsMarketerWithPagination(
+                                        refresh: true,
+                                        stageIds:
+                                            widget.stageName != null &&
+                                                    widget.stageName!.isNotEmpty
+                                                ? [widget.stageName!]
+                                                : null,
+                                        ignoreDuplicate:
+                                            _showDuplicatesOnly == true
+                                                ? true
+                                                : null,
+                                        data: widget.data,
+                                        transferefromdata:
+                                            widget.transferefromdata,
+                                      );
+
                                   setState(() {
                                     _showCheckboxes = false;
                                     _selectedLeads.clear();
-                                    _selectedSalesIds.clear();
-                                    _selectedLeadStagesIds.clear();
+                                    // ✅ أضف دول
+                                    _searchQuery = '';
+                                    _nameSearchController.clear();
+                                    _searchController.clear();
+                                    _isSearchVisible = false;
                                   });
+                                  _searchFocusNode
+                                      .unfocus(); // ✅ أضف بره setState
                                 }
                                 log('Assign lead result: $result');
                               }
@@ -873,11 +904,35 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                               if (result == true) {
                                 context
                                     .read<GetLeadsMarketerCubit>()
-                                    .refreshLeadsMarketer();
+                                    .fetchLeadsMarketerWithPagination(
+                                      refresh: true,
+                                      stageIds:
+                                          widget.stageName != null &&
+                                                  widget.stageName!.isNotEmpty
+                                              ? [widget.stageName!]
+                                              : null,
+                                      ignoreDuplicate:
+                                          _showDuplicatesOnly == true
+                                              ? true
+                                              : null,
+                                      data: widget.data,
+                                      transferefromdata:
+                                          widget.transferefromdata,
+                                    );
+
                                 setState(() {
                                   _showCheckboxes = false;
                                   _selectedLeads.clear();
+                                  _selectedSalesIds.clear();
+                                  _selectedLeadStagesIds.clear();
+                                  // ✅ أضف دول
+                                  _searchQuery = '';
+                                  _nameSearchController.clear();
+                                  _searchController.clear();
+                                  _isSearchVisible = false;
                                 });
+                                _searchFocusNode
+                                    .unfocus(); // ✅ أضف بره setState
                               }
                             },
                             child: Column(
@@ -1511,6 +1566,10 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                   isOutdated) {
                                                 return Colors.orangeAccent;
                                               } else if (leadStagetype ==
+                                                      "Schedule Meeting" &&
+                                                  isOutdated) {
+                                                return Colors.orangeAccent;
+                                              } else if (leadStagetype ==
                                                       "No Answer" &&
                                                   isOutdated) {
                                                 return Colors.orangeAccent;
@@ -1674,6 +1733,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                                                 lead.stage?.name ==
                                                                                     "Follow After Meeting" ||
                                                                                 lead.stage?.name ==
+                                                                                    "Schedule Meeting" ||
+                                                                                lead.stage?.name ==
                                                                                     "Follow" ||
                                                                                 lead.stage?.name ==
                                                                                     "Meeting" ||
@@ -1724,6 +1785,8 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                                                       "Follow Up" ||
                                                                                   lead.stage?.name ==
                                                                                       "Follow After Meeting" ||
+                                                                                  lead.stage?.name ==
+                                                                                      "Schedule Meeting" ||
                                                                                   lead.stage?.name ==
                                                                                       "Follow" ||
                                                                                   lead.stage?.name ==

@@ -15,9 +15,169 @@ import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.da
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/cubit/teamleader_dashboard_cubit.dart';
 
+// ─────────────────────────────────────────────
+// SharedTeamLeaderNavBar - بدون FAB خالص
+// ─────────────────────────────────────────────
+class SharedTeamLeaderNavBar extends StatelessWidget {
+  final int currentIndex;
+  const SharedTeamLeaderNavBar({super.key, required this.currentIndex});
+
+  void _onTap(BuildContext context, int index) {
+    if (index == currentIndex) return;
+
+    Widget page;
+    switch (index) {
+      case 0:
+        page = BlocProvider(
+          create:
+              (context) =>
+                  TeamleaderDashboardCubit(TeamleaderDashboardApiService()),
+          child: const TeamLeaderDashboardScreen(showNavBar: true),
+        );
+        break;
+      case 1:
+        page = const TeamLeaderAssignScreen(
+          data: false,
+          transferfromdata: true,
+          showNavBar: true,
+        );
+        break;
+      case 2:
+        page = const TeamLeaderSalesScreen(showNavBar: true);
+        break;
+      case 3:
+        page = BlocProvider(
+          create: (context) => AuthCubit(LoginApiService()),
+          child: const TeamLeaderProfileScreen(showNavBar: true),
+        );
+        break;
+      default:
+        return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => page,
+        transitionDuration: Duration.zero,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ✅ Container بسيط بدون Stack أو FAB
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black : Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Container(
+          height: 66,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                context,
+                0,
+                Icons.dashboard_outlined,
+                Icons.dashboard,
+                'DASHBOARD',
+                isDark,
+              ),
+              _buildNavItem(
+                context,
+                1,
+                Icons.people_outline,
+                Icons.people,
+                'LEADS',
+                isDark,
+              ),
+              _buildNavItem(
+                context,
+                2,
+                Icons.business,
+                Icons.business,
+                'SALES',
+                isDark,
+              ),
+              _buildNavItem(
+                context,
+                3,
+                Icons.person_outline,
+                Icons.person,
+                'PROFILE',
+                isDark,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(
+    BuildContext context,
+    int index,
+    IconData icon,
+    IconData activeIcon,
+    String label,
+    bool isDark,
+  ) {
+    final bool isActive = currentIndex == index;
+
+    return GestureDetector(
+      onTap: () => _onTap(context, index),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isActive ? activeIcon : icon,
+              color:
+                  isActive
+                      ? Constants.mainlightmodecolor
+                      : (isDark ? Colors.grey[400] : Colors.grey[600]),
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color:
+                    isActive
+                        ? Constants.mainlightmodecolor
+                        : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// TeamLeaderTabsScreen
+// ─────────────────────────────────────────────
 class TeamLeaderTabsScreen extends StatefulWidget {
   final String? name;
-
   const TeamLeaderTabsScreen({super.key, this.name});
 
   @override
@@ -57,88 +217,72 @@ class _TabsScreenState extends State<TeamLeaderTabsScreen> {
           isDarkMode
               ? Constants.backgroundDarkmode
               : Constants.backgroundlightmode,
-      body: WillPopScope(
-        onWillPop: () async {
-          return false;
-        },
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: PageView(
-                    physics: const NeverScrollableScrollPhysics(),
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentIndex = index;
-                      });
-                    },
-                    children: [
-                      BlocProvider(
-                        create:
-                            (context) => TeamleaderDashboardCubit(
-                              TeamleaderDashboardApiService(),
-                            ),
-                        child: TeamLeaderDashboardScreen(),
-                      ),
-                      TeamLeaderAssignScreen(
-                        data: false,
-                        transferfromdata: true,
-                      ),
-                      TeamLeaderSalesScreen(),
-                      BlocProvider(
-                        create: (context) => AuthCubit(LoginApiService()),
-                        child: TeamLeaderProfileScreen(),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
 
-            /// Floating Button نفس تصميم الادمن
-            Positioned(
-              bottom: 12,
-              right: 16,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Constants.maincolor.withOpacity(0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: FloatingActionButton(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreateLeadScreen(),
-                      ),
-                    );
-                  },
-                  child: const Icon(Icons.add, size: 28, color: Colors.white),
-                ),
-              ),
+      // ✅ FAB في الـ Scaffold بيتحسب أوتوماتيك فوق الـ bottomNavigationBar
+      floatingActionButton: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Constants.maincolor.withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CreateLeadScreen()),
+            );
+          },
+          child: const Icon(Icons.add, size: 28, color: Colors.white),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
+      body: WillPopScope(
+        onWillPop: () async => false,
+        // ✅ شيلنا الـ Stack والـ Column وخلينا PageView مباشرة
+        child: PageView(
+          physics: const NeverScrollableScrollPhysics(),
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          children: [
+            BlocProvider(
+              create:
+                  (context) =>
+                      TeamleaderDashboardCubit(TeamleaderDashboardApiService()),
+              child: TeamLeaderDashboardScreen(showNavBar: false),
+            ),
+            TeamLeaderAssignScreen(
+              data: false,
+              transferfromdata: true,
+              showNavBar: false,
+            ),
+            TeamLeaderSalesScreen(showNavBar: false),
+            BlocProvider(
+              create: (context) => AuthCubit(LoginApiService()),
+              child: TeamLeaderProfileScreen(showNavBar: false),
             ),
           ],
         ),
       ),
 
-      /// Bottom Navigation نفس تصميم الادمن
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDarkMode ? Colors.black : Colors.white,

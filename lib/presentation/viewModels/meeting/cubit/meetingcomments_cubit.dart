@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/data/data_sources/meeting/get_meeting_comments.dart';
 import 'package:homewalkers_app/data/models/meetingComments_model.dart';
@@ -69,7 +71,9 @@ class MeetingCommentsCubit extends Cubit<MeetingCommentsState> {
 
       emit(MeetingCommentsSuccess(model: response, hasNextPage: hasNextPage));
     } catch (e) {
-      emit(MeetingCommentsFailure(e.toString()));
+      // ── تجاهل تام للايرور، من غير أي emit ──
+      log('❌ fetchMeetingComments error (silenced): $e');
+      // مفيش emit خالص هنا
     } finally {
       isFetching = false;
     }
