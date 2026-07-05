@@ -45,6 +45,16 @@ class CrmData {
   }
 }
 
+bool? parseNullableBool(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is String) {
+    return value.toLowerCase() == 'true';
+  }
+  if (value is num) return value != 0;
+  return null;
+}
+
 class LeadManager {
   String? id;
   String? name;
@@ -114,6 +124,7 @@ class LeadManager {
   String? question4_answer;
   String? question5_text;
   String? question5_answer;
+  bool? hidesalesnameonleadcomments;
 
   LeadManager({this.id, this.name});
 
@@ -128,8 +139,12 @@ class LeadManager {
       ..project =
           json['project'] != null ? Project.fromJson(json['project']) : null
       ..sales = json['sales'] != null ? Sales.fromJson(json['sales']) : null
-      ..assign = json['assign']
-      ..ignoredublicate = json['ignoredublicate']
+      ..assign = parseNullableBool(json['assign'])
+      ..ignoredublicate = parseNullableBool(json['ignoredublicate'])
+      ..assigntype = parseNullableBool(json['assigntype'])
+      ..resetcreationdate = parseNullableBool(json['resetcreationdate'])
+      ..data = parseNullableBool(json['data'])
+      ..transferefromdata = parseNullableBool(json['transferefromdata'])
       ..chanel =
           json['chanel'] != null ? Channel.fromJson(json['chanel']) : null
       ..communicationway =
@@ -137,8 +152,6 @@ class LeadManager {
               ? CommunicationWay.fromJson(json['communicationway'])
               : null
       ..leedtype = json['leedtype']
-      ..assigntype = json['assigntype']
-      ..resetcreationdate = json['resetcreationdate']
       ..budget = json['budget']
       ..revenue = json['revenue']
       ..unitPrice = json['unit_price']
@@ -174,8 +187,6 @@ class LeadManager {
       ..updatedAt = json['updatedAt']
       ..stage = json['stage'] != null ? Stage.fromJson(json['stage']) : null
       ..lastStageDateUpdated = json['last_stage_date_updated']
-      ..data = json['data']
-      ..transferefromdata = json['transferefromdata']
       ..question1_text = json['question1_text']
       ..question1_answer = json['question1_answer']
       ..question2_text = json['question2_text']
@@ -185,9 +196,11 @@ class LeadManager {
       ..question4_text = json['question4_text']
       ..question4_answer = json['question4_answer']
       ..question5_text = json['question5_text']
-      ..question5_answer = json['question5_answer'];
+      ..question5_answer = json['question5_answer']
+      ..hidesalesnameonleadcomments = json['hidesalesnameonleadcomments'];
   }
 }
+
 class FcmToken {
   final String? id;
   final String? token;
@@ -296,7 +309,7 @@ class SalesUser {
   String? fcmToken;
   List<FcmToken>? fcmTokens;
 
-  SalesUser({this.id, this.name,this.fcmTokens});
+  SalesUser({this.id, this.name, this.fcmTokens});
 
   factory SalesUser.fromJson(Map<String, dynamic> json) =>
       SalesUser(id: json['_id'], name: json['name'])
@@ -310,8 +323,7 @@ class SalesUser {
                 ? (json['fcmTokens'] as List)
                     .map((e) => FcmToken.fromJson(e))
                     .toList()
-                : []
-        ;
+                : [];
 }
 
 class Channel {
@@ -351,7 +363,7 @@ class Campaign {
         ..campainName = json['CampainName']
         ..date = json['Date']
         ..cost = json['Cost']
-        ..isactivate = json['isactivate']
+        ..isactivate = parseNullableBool(json['isactivate'])
         ..addby =
             json['addby'] != null ? SimpleUser.fromJson(json['addby']) : null
         ..updatedby =
@@ -429,8 +441,8 @@ class Pagination {
         ..limit = json['limit']
         ..totalPages = json['totalPages']
         ..totalItems = json['totalItems']
-        ..hasNextPage = json['hasNextPage']
-        ..hasPrevPage = json['hasPrevPage']
+        ..hasNextPage = parseNullableBool(json['hasNextPage'])
+        ..hasPrevPage = parseNullableBool(json['hasPrevPage'])
         ..nextPage = json['nextPage'];
 }
 

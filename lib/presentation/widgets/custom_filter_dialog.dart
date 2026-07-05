@@ -331,6 +331,41 @@ class _FilterDialogState extends State<FilterDialog> {
                           _lastStageUpdateStart = null;
                           _lastStageUpdateEnd = null;
                         });
+
+                        // ✅ استدعاء الـ callback بفلاتر فاضية
+                        final clearedFilters = {
+                          'name': null,
+                          'developerId': null,
+                          'projectId': null,
+                          'stageId': null,
+                          'channelId': null,
+                          'creationDateFrom': null,
+                          'creationDateTo': null,
+                          'stageDateFrom': null,
+                          'stageDateTo': null,
+                        };
+                        widget.onFiltersApplied?.call(clearedFilters);
+
+                        // ✅ رفريش الليست وراه بدون أي فلاتر
+                        context
+                            .read<GetLeadsCubit>()
+                            .fetchSalesLeadsWithPagination(
+                              search: null,
+                              developerId: null,
+                              projectId: null,
+                              channelId: null,
+                              stageId: null,
+                              stageDateFrom: null,
+                              stageDateTo: null,
+                              creationDateFrom: null,
+                              creationDateTo: null,
+                              data: widget.data,
+                              transferefromdata: widget.transferfromdata,
+                            );
+
+                        Navigator.pop(
+                          context,
+                        ); // ✅ قفل الـ dialog زي Apply بالظبط
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,

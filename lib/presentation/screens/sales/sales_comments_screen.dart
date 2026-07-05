@@ -98,7 +98,15 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
               }
 
               return ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.only(
+                  right: 16,
+                  left: 16,
+                  top: 16,
+                  bottom:
+                      16 +
+                      MediaQuery.of(context).padding.bottom +
+                      40, // ✅ تعديل هنا
+                ),
                 itemCount: comments.length,
                 itemBuilder: (context, index) {
                   return buildCommentCard(context, comments[index]);
@@ -152,8 +160,9 @@ class _SalesCommentsScreenState extends State<SalesCommentsScreen> {
 
     String initials(String name) {
       final parts = name.trim().split(' ');
-      if (parts.length >= 2)
+      if (parts.length >= 2) {
         return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      }
       return name.isNotEmpty ? name[0].toUpperCase() : 'U';
     }
 

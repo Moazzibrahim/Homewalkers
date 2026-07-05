@@ -197,7 +197,7 @@ class _DevelopersTrashState extends State<DevelopersTrash> {
                                   _buildDeveloperCard(filtered[index], context),
                         );
                       } else if (state is DeveloperError) {
-                        return Center(child: Text('Error: ${state.error}'));
+                        return Center(child: Text('failed to load developers'));
                       }
                       return const SizedBox.shrink();
                     },

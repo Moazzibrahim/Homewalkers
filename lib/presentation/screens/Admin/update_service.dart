@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UpdateService {
@@ -61,6 +60,7 @@ class UpdateService {
 
   static Future<void> checkForUpdate(BuildContext context) async {
     try {
+      debugPrint("🔄 Checking for update...");
       final res = await http
           .get(
             Uri.parse(
@@ -69,24 +69,31 @@ class UpdateService {
           )
           .timeout(const Duration(seconds: 10));
 
+      debugPrint("📦 Response status: ${res.statusCode}");
+      debugPrint("📦 Response body: ${res.body}");
+
       if (res.statusCode != 200) return;
 
       final data = jsonDecode(res.body);
       String latest = data['latest_version'];
       bool force = data['force_update'].toString() == 'true';
 
-      if (!_isUpdateAvailable(currentVersion, latest)) return;
+      debugPrint("Current: $currentVersion | Latest: $latest");
 
-      final prefs = await SharedPreferences.getInstance();
-      final lastShownVersion = prefs.getString('last_update_version');
+      if (!_isUpdateAvailable(currentVersion, latest)) {
+        debugPrint("✅ No update needed");
+        return;
+      }
 
-      if (!force && lastShownVersion == latest) return;
+      if (!context.mounted) {
+        debugPrint("⚠️ Context not mounted, skipping dialog");
+        return;
+      }
 
       await _showUpdateDialog(context, force);
-
-      await prefs.setString('last_update_version', latest);
-    } catch (e) {
-      debugPrint("Update error: $e");
+    } catch (e, st) {
+      debugPrint("❌ Update error: $e");
+      debugPrint("Stack: $st");
     }
   }
 

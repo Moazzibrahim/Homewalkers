@@ -26,7 +26,7 @@ void showFilterDialogTeamLeader(
   GetLeadsTeamLeaderCubit leadsCubit,
   bool? data,
   bool? transferedData,
-  Function(Map<String, dynamic>)? onFiltersApplied// ✅ أضف هذا الـ parameter
+  Function(Map<String, dynamic>)? onFiltersApplied, // ✅ أضف هذا الـ parameter
 ) {
   showDialog(
     context: context,
@@ -279,7 +279,15 @@ class _FilterDialogState extends State<FilterDialog> {
                   GetLeadsCountInTeamLeaderState
                 >(
                   builder: (context, state) {
-                    if (state is GetLeadsCountInTeamLeaderLoaded) {
+                    if (state is GetLeadsCountInTeamLeaderLoading) {
+                      return Center(
+                        child: SizedBox(
+                          height: (24 * tabletHeightScale).h,
+                          width: (24 * tabletWidthScale).w,
+                          child: const CircularProgressIndicator(),
+                        ),
+                      );
+                    } else if (state is GetLeadsCountInTeamLeaderLoaded) {
                       final filteredSales =
                           state.data.data?.where((sales) {
                             return sales.salesName != null;
@@ -289,13 +297,10 @@ class _FilterDialogState extends State<FilterDialog> {
                       return SizedBox(
                         child: CustomDropdownField(
                           hint: "Choose Sales",
-                          // 👇 نعرض الاسم
                           items:
                               filteredSales
                                   .map((e) => e.salesName ?? '')
                                   .toList(),
-
-                          // 👇 نجيب الاسم من خلال الـ id المختار
                           value:
                               selectedSalesId == null
                                   ? null
@@ -310,7 +315,6 @@ class _FilterDialogState extends State<FilterDialog> {
                                       )
                                       .salesName
                                   : null,
-
                           onChanged: (value) {
                             final selected = filteredSales.firstWhere(
                               (e) => e.salesName == value,
@@ -323,6 +327,14 @@ class _FilterDialogState extends State<FilterDialog> {
                             log("Selected Sales Name: ${selected.salesName}");
                             log("Selected Sales ID: ${selected.salesID}");
                           },
+                        ),
+                      );
+                    } else if (state is GetLeadsCountInTeamLeaderError) {
+                      return Text(
+                        "error: ${state.message}",
+                        style: TextStyle(
+                          fontSize: (14 * tabletFontScale).sp,
+                          color: Colors.red,
                         ),
                       );
                     }
@@ -577,12 +589,49 @@ class _FilterDialogState extends State<FilterDialog> {
                             selectedProject = null;
                             selectedStage = null;
                             selectedChannel = null;
-                            selectedSales = null;
+                            selectedSalesId = null; // ✅ اتصلح
                             _startDate = null;
                             _endDate = null;
                             _lastStageUpdateStart = null;
                             _lastStageUpdateEnd = null;
                           });
+
+                          // ✅ استدعاء الفلتر بعد المسح عشان الداتا فعلياً تترفريش
+                          final clearedFilters = {
+                            'name': null,
+                            'developerId': null,
+                            'projectId': null,
+                            'stageId': null,
+                            'channelId': null,
+                            'salesId': null,
+                            'creationDateFrom': null,
+                            'creationDateTo': null,
+                            'stageDateFrom': null,
+                            'stageDateTo': null,
+                          };
+
+                          widget.onFiltersApplied?.call(clearedFilters);
+
+                          context
+                              .read<GetLeadsTeamLeaderCubit>()
+                              .fetchTeamLeaderLeadsWithPagination(
+                                search: null,
+                                developerId: null,
+                                projectId: null,
+                                stageId: null,
+                                channelId: null,
+                                salesId: null,
+                                creationDateFrom: null,
+                                creationDateTo: null,
+                                stageDateFrom: null,
+                                stageDateTo: null,
+                                data: widget.data,
+                                transferefromdata: widget.transferedData,
+                              );
+
+                          Navigator.pop(
+                            context,
+                          ); // ✅ قفل الـ dialog زي ما بيحصل في Apply
                         },
                         child: Text(
                           "Reset",

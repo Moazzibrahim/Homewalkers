@@ -914,13 +914,20 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                 // ADD MEETING - يشتغل بس لو مختار 1
                 // =========================
                 InkWell(
-                  onTap:
-                      _selectedLeads.length == 1
-                          ? () {
-                            final selectedLead = _selectedLeads.first;
-                            _showAddMeetingSheet(context, selectedLead.id!);
-                          }
-                          : null,
+                  onTap: () {
+                    if (_selectedLeads.length != 1) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            " Please select exactly one lead to add a meeting.",
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    final selectedLead = _selectedLeads.first;
+                    _showAddMeetingSheet(context, selectedLead.id!);
+                  },
                   child: Opacity(
                     opacity: _selectedLeads.length == 1 ? 1.0 : 0.5,
                     child: Column(
@@ -1250,30 +1257,39 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                         /// 🔹 Comment
                         TextField(
                           controller: commentController,
+                          onChanged:
+                              (_) => setState(
+                                () {},
+                              ), // ✅ يحدث حالة الزرار مع كل تغيير
                           decoration: const InputDecoration(
                             labelText: "Comment",
                             border: OutlineInputBorder(),
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
-                        /// 🔹 Sales Developer Name
                         TextField(
                           controller: salesDeveloperController,
+                          onChanged:
+                              (_) => setState(
+                                () {},
+                              ), // ✅ يحدث حالة الزرار مع كل تغيير
                           decoration: const InputDecoration(
                             labelText: "Sales Developer Name",
                             border: OutlineInputBorder(),
                           ),
                         ),
-
                         const SizedBox(height: 20),
-
-                        /// 🔹 Buttons
                         BlocBuilder<GetLeadsCubit, GetLeadsState>(
                           builder: (context, state) {
-                            final isLoading =
+                            final isLoadingMeeting =
                                 state is PostMeetingCommentLoading;
+
+                            // ✅ الشرط اللي بيتحقق من امتلاء كل الحقول
+                            final bool isFormComplete =
+                                selectedStage != null &&
+                                selectedDate != null &&
+                                commentController.text.trim().isNotEmpty &&
+                                salesDeveloperController.text.trim().isNotEmpty;
 
                             return Row(
                               children: [
@@ -1281,66 +1297,15 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                   child: ElevatedButton(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Constants.maincolor,
+                                      disabledBackgroundColor:
+                                          Colors
+                                              .grey
+                                              .shade400, // ✅ شكل واضح للـ disabled
                                     ),
                                     onPressed:
-                                        isLoading
-                                            ? null
+                                        (isLoadingMeeting || !isFormComplete)
+                                            ? null // ✅ الزرار معطل لغاية ما البيانات تكتمل
                                             : () {
-                                              // ✅ تحقق من الحقول المطلوبة
-                                              if (selectedStage == null) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      "Please select a stage",
-                                                    ),
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              if (selectedDate == null) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      "Please select stage date",
-                                                    ),
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              if (commentController
-                                                  .text
-                                                  .isEmpty) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      "Please enter a comment",
-                                                    ),
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              if (salesDeveloperController
-                                                  .text
-                                                  .isEmpty) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      "Please enter Sales Developer Name",
-                                                    ),
-                                                  ),
-                                                );
-                                                return;
-                                              }
-
-                                              // تحويل التاريخ لتوقيت دبي
                                               final dubaiDate = selectedDate!
                                                   .toUtc()
                                                   .add(
@@ -1361,7 +1326,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                                   );
                                             },
                                     child:
-                                        isLoading
+                                        isLoadingMeeting
                                             ? const SizedBox(
                                               height: 18,
                                               width: 18,
@@ -1405,7 +1370,6 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                                               ),
                                         ),
                                       );
-                                      // هنا هتحدد وجهة All Comments بعدين
                                     },
                                     child: const Text(
                                       "All Comments",

@@ -165,7 +165,7 @@ class _ProjectsTrashState extends State<ProjectsTrash> {
                                   _buildProjectCard(filtered[index], context),
                         );
                       } else if (state is ProjectsError) {
-                        return Center(child: Text('Error: ${state.error}'));
+                        return Center(child: Text('failed to load projects'));
                       }
                       return const SizedBox.shrink();
                     },

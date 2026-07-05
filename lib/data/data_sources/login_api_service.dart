@@ -39,6 +39,12 @@ class LoginApiService {
     }
     try {
       final fcmToken = await FirebaseMessaging.instance.getToken();
+      final loginBody = {
+        'email': email,
+        'password': password,
+        'fcmToken': fcmToken,
+      };
+      log('📦 Login Body: ${jsonEncode(loginBody)}');
 
       // ✅ استخدام HttpClient بدلاً من http
       final response = await HttpClient.post(
@@ -55,8 +61,7 @@ class LoginApiService {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-          log('🌐 baseUrl at login time: $baseUrl'); // ✅ أضف السطر ده
-
+        log('🌐 baseUrl at login time: $baseUrl'); // ✅ أضف السطر ده
 
         final userData = responseData['data'];
         token = responseData['token'];

@@ -94,7 +94,9 @@ class _MeetingCommentsScreenState extends State<MeetingCommentsScreen> {
           builder: (context, setModalState) {
             return Container(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom +
+                    MediaQuery.of(context).padding.bottom,
                 left: 20,
                 right: 20,
                 top: 24,

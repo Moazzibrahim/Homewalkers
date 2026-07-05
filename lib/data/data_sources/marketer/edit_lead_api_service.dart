@@ -264,7 +264,7 @@ class EditLeadApiService {
 
     final prefs = await SharedPreferences.getInstance();
 
-    final body = {'ids': ids, 'key': key, 'value': value.toString()};
+    final body = {'ids': ids, 'key': key, 'value': value};
 
     print('----------------------------------------');
     print('🟦 Bulk Update Field');

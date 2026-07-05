@@ -2411,6 +2411,10 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                         const SizedBox(height: 12),
                         TextField(
                           controller: commentController,
+                          onChanged:
+                              (_) => setState(
+                                () {},
+                              ), // ✅ يحدث حالة الزرار مع كل تغيير
                           decoration: const InputDecoration(
                             labelText: "Comment",
                             border: OutlineInputBorder(),
@@ -2419,6 +2423,10 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                         const SizedBox(height: 12),
                         TextField(
                           controller: salesDeveloperController,
+                          onChanged:
+                              (_) => setState(
+                                () {},
+                              ), // ✅ يحدث حالة الزرار مع كل تغيير
                           decoration: const InputDecoration(
                             labelText: "Sales Developer Name",
                             border: OutlineInputBorder(),
@@ -2429,69 +2437,29 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                           builder: (context, state) {
                             final isLoadingMeeting =
                                 state is PostMeetingCommentLoading;
+
+                            // ✅ الشرط اللي بيتحقق من امتلاء كل الحقول
+                            final bool isFormComplete =
+                                selectedStage != null &&
+                                selectedDate != null &&
+                                commentController.text.trim().isNotEmpty &&
+                                salesDeveloperController.text.trim().isNotEmpty;
+
                             return Row(
                               children: [
                                 Expanded(
                                   child: ElevatedButton(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Constants.maincolor,
+                                      disabledBackgroundColor:
+                                          Colors
+                                              .grey
+                                              .shade400, // ✅ شكل واضح للـ disabled
                                     ),
                                     onPressed:
-                                        isLoadingMeeting
-                                            ? null
+                                        (isLoadingMeeting || !isFormComplete)
+                                            ? null // ✅ الزرار معطل لغاية ما البيانات تكتمل
                                             : () {
-                                              if (selectedStage == null) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      "Please select a stage",
-                                                    ),
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              if (selectedDate == null) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      "Please select stage date",
-                                                    ),
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              if (commentController
-                                                  .text
-                                                  .isEmpty) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      "Please enter a comment",
-                                                    ),
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              if (salesDeveloperController
-                                                  .text
-                                                  .isEmpty) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      "Please enter Sales Developer Name",
-                                                    ),
-                                                  ),
-                                                );
-                                                return;
-                                              }
                                               final dubaiDate = selectedDate!
                                                   .toUtc()
                                                   .add(

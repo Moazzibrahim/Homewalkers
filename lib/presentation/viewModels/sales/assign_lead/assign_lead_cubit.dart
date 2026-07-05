@@ -162,6 +162,7 @@ class AssignleadCubit extends Cubit<AssignState> {
     required String dateAssigned,
     required String lastDateAssign,
     required String salesId,
+    required String stageId, // ✅ جديد - زي التيم ليدر بالظبط
     bool? isClearhistory,
   }) async {
     emit(AssignLoading());
@@ -174,7 +175,7 @@ class AssignleadCubit extends Cubit<AssignState> {
     );
 
     final prefs = await SharedPreferences.getInstance();
-    final managerId = prefs.getString('managerIdspecific');
+    final managerId = prefs.getString('salesId'); // ✅ بدل managerIdspecific
     final token = prefs.getString('token');
 
     try {
@@ -185,6 +186,7 @@ class AssignleadCubit extends Cubit<AssignState> {
           "assign": "true",
           "lastdateassign": lastDateAssign,
           "sales": salesId,
+          "stage": stageId,
         };
 
         final putResponse = await dio.put(
@@ -287,7 +289,7 @@ class AssignleadCubit extends Cubit<AssignState> {
           // 🆕 NEW KEYS
           "assigntype": assigntype,
           "resetcreationdate": resetcreationdate,
-          "hidesalesnameonleadcomments":hidesalesnameonleadcomments,
+          "hidesalesnameonleadcomments": hidesalesnameonleadcomments,
         };
 
         final putResponse = await dio.put(

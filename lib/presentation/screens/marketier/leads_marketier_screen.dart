@@ -816,143 +816,167 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                           // EDIT
                           // =========================
                           InkWell(
-                            onTap: () async {
-                              final leadsList =
-                                  context
-                                      .read<GetLeadsMarketerCubit>()
-                                      .leadsDatum;
-                              final selectedLead = leadsList.firstWhere(
-                                (lead) =>
-                                    lead.id.toString() == _selectedLeads.first,
-                                orElse: () => Datum(),
-                              );
-                              final result = await showDialog(
-                                context: context,
-                                builder:
-                                    (_) => MultiBlocProvider(
-                                      providers: [
-                                        BlocProvider(
-                                          create:
-                                              (_) => EditLeadCubit(
-                                                EditLeadApiService(),
-                                              ),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => ProjectsCubit(
-                                                ProjectsApiService(),
-                                              )..fetchProjects(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => StagesCubit(
-                                                StagesApiService(),
-                                              )..fetchStages(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => GetCommunicationWaysCubit(
-                                                CommunicationWayApiService(),
-                                              )..fetchCommunicationWays(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => ChannelCubit(
-                                                GetChannelsApiService(),
-                                              )..fetchChannels(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => GetCampaignsCubit(
-                                                CampaignApiService(),
-                                              )..fetchCampaigns(),
-                                        ),
-                                        BlocProvider(
-                                          create:
-                                              (_) => SalesCubit(
-                                                GetAllSalesApiService(),
-                                              )..fetchAllSales(),
-                                        ),
-                                      ],
-                                      child: EditLeadDialog(
-                                        userId: selectedLead.id ?? '',
-                                        initialName: selectedLead.name ?? '',
-                                        initialStalesId:
-                                            selectedLead.sales?.id ?? '',
-                                        initialEmail: selectedLead.email ?? '',
-                                        initialPhone: selectedLead.phone ?? '',
-                                        initialNotes:
-                                            selectedLead.jobdescription ?? '',
-                                        initialProjectId:
-                                            selectedLead.project?.id,
-                                        initialStageId: selectedLead.stage?.id,
-                                        initialChannelId:
-                                            selectedLead.chanel?.id,
-                                        initialCampaignId:
-                                            selectedLead.campaign?.id,
-                                        initialCommunicationWayId:
-                                            selectedLead.communicationway?.id,
-                                        isCold: selectedLead.leedtype == "Cold",
-                                        onSuccess: () {
+                            onTap:
+                                _selectedLeads.length == 1
+                                    ? () async {
+                                      final leadsList =
                                           context
                                               .read<GetLeadsMarketerCubit>()
-                                              .refreshLeadsMarketer();
-                                        },
-                                      ),
-                                    ),
-                              );
-                              if (result == true) {
-                                context
-                                    .read<GetLeadsMarketerCubit>()
-                                    .fetchLeadsMarketerWithPagination(
-                                      refresh: true,
-                                      stageIds:
-                                          widget.stageName != null &&
-                                                  widget.stageName!.isNotEmpty
-                                              ? [widget.stageName!]
-                                              : null,
-                                      ignoreDuplicate:
-                                          _showDuplicatesOnly == true
-                                              ? true
-                                              : null,
-                                      data: widget.data,
-                                      transferefromdata:
-                                          widget.transferefromdata,
-                                    );
+                                              .leadsDatum;
+                                      final selectedLead = leadsList.firstWhere(
+                                        (lead) =>
+                                            lead.id.toString() ==
+                                            _selectedLeads.first,
+                                        orElse: () => Datum(),
+                                      );
+                                      final result = await showDialog(
+                                        context: context,
+                                        builder:
+                                            (_) => MultiBlocProvider(
+                                              providers: [
+                                                BlocProvider(
+                                                  create:
+                                                      (_) => EditLeadCubit(
+                                                        EditLeadApiService(),
+                                                      ),
+                                                ),
+                                                BlocProvider(
+                                                  create:
+                                                      (_) => ProjectsCubit(
+                                                        ProjectsApiService(),
+                                                      )..fetchProjects(),
+                                                ),
+                                                BlocProvider(
+                                                  create:
+                                                      (_) => StagesCubit(
+                                                        StagesApiService(),
+                                                      )..fetchStages(),
+                                                ),
+                                                BlocProvider(
+                                                  create:
+                                                      (
+                                                        _,
+                                                      ) => GetCommunicationWaysCubit(
+                                                        CommunicationWayApiService(),
+                                                      )..fetchCommunicationWays(),
+                                                ),
+                                                BlocProvider(
+                                                  create:
+                                                      (_) => ChannelCubit(
+                                                        GetChannelsApiService(),
+                                                      )..fetchChannels(),
+                                                ),
+                                                BlocProvider(
+                                                  create:
+                                                      (_) => GetCampaignsCubit(
+                                                        CampaignApiService(),
+                                                      )..fetchCampaigns(),
+                                                ),
+                                                BlocProvider(
+                                                  create:
+                                                      (_) => SalesCubit(
+                                                        GetAllSalesApiService(),
+                                                      )..fetchAllSales(),
+                                                ),
+                                              ],
+                                              child: EditLeadDialog(
+                                                userId: selectedLead.id ?? '',
+                                                initialName:
+                                                    selectedLead.name ?? '',
+                                                initialStalesId:
+                                                    selectedLead.sales?.id ??
+                                                    '',
+                                                initialEmail:
+                                                    selectedLead.email ?? '',
+                                                initialPhone:
+                                                    selectedLead.phone ?? '',
+                                                initialNotes:
+                                                    selectedLead
+                                                        .jobdescription ??
+                                                    '',
+                                                initialProjectId:
+                                                    selectedLead.project?.id,
+                                                initialStageId:
+                                                    selectedLead.stage?.id,
+                                                initialChannelId:
+                                                    selectedLead.chanel?.id,
+                                                initialCampaignId:
+                                                    selectedLead.campaign?.id,
+                                                initialCommunicationWayId:
+                                                    selectedLead
+                                                        .communicationway
+                                                        ?.id,
+                                                isCold:
+                                                    selectedLead.leedtype ==
+                                                    "Cold",
+                                                onSuccess: () {
+                                                  context
+                                                      .read<
+                                                        GetLeadsMarketerCubit
+                                                      >()
+                                                      .refreshLeadsMarketer();
+                                                },
+                                              ),
+                                            ),
+                                      );
+                                      if (result == true) {
+                                        context
+                                            .read<GetLeadsMarketerCubit>()
+                                            .fetchLeadsMarketerWithPagination(
+                                              refresh: true,
+                                              stageIds:
+                                                  widget.stageName != null &&
+                                                          widget
+                                                              .stageName!
+                                                              .isNotEmpty
+                                                      ? [widget.stageName!]
+                                                      : null,
+                                              ignoreDuplicate:
+                                                  _showDuplicatesOnly == true
+                                                      ? true
+                                                      : null,
+                                              data: widget.data,
+                                              transferefromdata:
+                                                  widget.transferefromdata,
+                                            );
 
-                                setState(() {
-                                  _showCheckboxes = false;
-                                  _selectedLeads.clear();
-                                  _selectedSalesIds.clear();
-                                  _selectedLeadStagesIds.clear();
-                                  // ✅ أضف دول
-                                  _searchQuery = '';
-                                  _nameSearchController.clear();
-                                  _searchController.clear();
-                                  _isSearchVisible = false;
-                                });
-                                _searchFocusNode
-                                    .unfocus(); // ✅ أضف بره setState
-                              }
-                            },
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.edit_outlined,
-                                  color: Colors.grey.shade700,
-                                  size: (25 * tabletFontScale).sp,
-                                ),
-                                SizedBox(height: (4 * tabletHeightScale).h),
-                                Text(
-                                  "EDIT",
-                                  style: TextStyle(
-                                    fontSize: (10 * tabletFontScale).sp,
-                                    fontWeight: FontWeight.w700,
+                                        setState(() {
+                                          _showCheckboxes = false;
+                                          _selectedLeads.clear();
+                                          _selectedSalesIds.clear();
+                                          _selectedLeadStagesIds.clear();
+                                          // ✅ أضف دول
+                                          _searchQuery = '';
+                                          _nameSearchController.clear();
+                                          _searchController.clear();
+                                          _isSearchVisible = false;
+                                        });
+                                        _searchFocusNode
+                                            .unfocus(); // ✅ أضف بره setState
+                                      }
+                                    }
+                                    : null,
+                            child: Opacity(
+                              opacity: _selectedLeads.length == 1 ? 1.0 : 0.5,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.edit_outlined,
                                     color: Colors.grey.shade700,
+                                    size: (25 * tabletFontScale).sp,
                                   ),
-                                ),
-                              ],
+                                  SizedBox(height: (4 * tabletHeightScale).h),
+                                  Text(
+                                    "EDIT",
+                                    style: TextStyle(
+                                      fontSize: (10 * tabletFontScale).sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -1352,6 +1376,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                               (leadStagetype == "Done Deal" ||
                                   leadStagetype == "Pending" ||
                                   leadStagetype == "Transfer" ||
+                                  leadStagetype == "Cancel Meeting" ||
                                   leadStagetype == "Fresh" ||
                                   leadStagetype == "Not Interested");
 
@@ -1617,7 +1642,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                   MainAxisAlignment
                                                       .spaceBetween,
                                               crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                                  CrossAxisAlignment.center,
                                               children: [
                                                 Flexible(
                                                   child: Row(

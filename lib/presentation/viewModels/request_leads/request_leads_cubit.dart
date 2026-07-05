@@ -47,7 +47,7 @@ class RequestLeadsCubit extends Cubit<RequestLeadsState> {
       }
     } catch (e) {
       log("❌ RequestLeadsCubit: Error - $e");
-      emit(RequestLeadsFailure(e.toString()));
+      emit(RequestLeadsFailure("An error occurred while requesting leads."));
     }
   }
 
@@ -156,7 +156,7 @@ class RequestLeadsCubit extends Cubit<RequestLeadsState> {
     } catch (e) {
       log("❌ RequestLeadsCubit: Error - $e");
       if (isRefresh) {
-        emit(GetAllRequestsFailure(e.toString()));
+        emit(GetAllRequestsFailure("An error occurred while requesting leads."));
       }
     } finally {
       _isLoadingMore = false;

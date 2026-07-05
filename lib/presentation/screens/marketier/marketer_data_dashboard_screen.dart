@@ -639,6 +639,7 @@ class _MarketerDashboardScreenState extends State<MarketerDataDashboardScreen>
                                               GetLeadsService(),
                                             ),
                                         child: LeadsMarketierScreen(
+                                          showDuplicatesOnly: true,
                                           data: false,
                                           transferefromdata: false,
                                           leadsCount:

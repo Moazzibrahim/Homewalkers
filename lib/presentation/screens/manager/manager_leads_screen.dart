@@ -286,10 +286,14 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
         });
       },
       onTap: () async {
-        if (_showCheckboxes) {
+        if (_showCheckboxes && _selectedLeads.isNotEmpty) {
+          // ✅ نفس شرط ظهور الـ checkbox
           setState(() {
             if (_selectedLeads.contains(lead.id)) {
               _selectedLeads.remove(lead.id);
+              if (_selectedLeads.isEmpty) {
+                _showCheckboxes = false; // ✅ إقفال وضع التحديد فورًا
+              }
             } else {
               _selectedLeads.add(lead.id!);
             }
@@ -343,6 +347,9 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                             ?.map((e) => e.token ?? '')
                             .where((t) => t.isNotEmpty)
                             .toList(),
+                    isresetcreationdate: lead.resetcreationdate ?? false,
+                    hidesalesnameonleadcomments:
+                        lead.hidesalesnameonleadcomments ?? false,
                   ),
                 ),
           ),
@@ -422,6 +429,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                           5.r,
                                         ),
                                       ),
+
                                       onChanged: (val) {
                                         setState(() {
                                           if (val == true) {
@@ -440,6 +448,9 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                                             _selectedLeadStagesIds.remove(
                                               lead.stage?.id ?? '',
                                             );
+                                            if (_selectedLeads.isEmpty) {
+                                              _showCheckboxes = false; // ✅ جديد
+                                            }
                                           }
                                         });
                                       },
@@ -917,14 +928,24 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
         child: Row(
           children: [
             /// CHECK ICON
-            Container(
-              width: 38.w,
-              height: 38.w,
-              decoration: BoxDecoration(
-                color: Constants.maincolor,
-                borderRadius: BorderRadius.circular(10.r),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedLeads.clear();
+                  _selectedSalesIds.clear();
+                  _selectedLeadStagesIds.clear();
+                  _showCheckboxes = false;
+                });
+              },
+              child: Container(
+                width: 38.w,
+                height: 38.w,
+                decoration: BoxDecoration(
+                  color: Constants.maincolor,
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Icon(Icons.check, color: Colors.white, size: 22.sp),
               ),
-              child: Icon(Icons.check, color: Colors.white, size: 22.sp),
             ),
 
             SizedBox(width: 14.w),
@@ -1015,6 +1036,8 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                               leadIds: _selectedLeads.toList(),
                               leadId: _selectedLeads.toList()[0],
                               fcmtoken: _selectedSalesFcmToken ?? '',
+                              leadsStages:
+                                  _selectedLeadStagesIds.toList(), // ✅ جديد
                               onAssignSuccess: () async {
                                 setState(() {
                                   selected.clear();

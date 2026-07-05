@@ -768,6 +768,25 @@ class _FilterDialogState extends State<FilterDialog> {
                           _lastStageUpdateStart = null;
                           _lastStageUpdateEnd = null;
                         });
+
+                        // ✅ رفريش الليست وراه بدون أي فلاتر
+                        context
+                            .read<GetManagerLeadsCubit>()
+                            .getManagerLeadsPagination(
+                              data: widget.data ?? false,
+                              search: null,
+                              salesIds: null,
+                              developerIds: null,
+                              projectIds: null,
+                              channelIds: null,
+                              stageIds: null,
+                              creationDateFrom: null,
+                              creationDateTo: null,
+                              lastStageUpdateFrom: null,
+                              lastStageUpdateTo: null,
+                            );
+
+                        Navigator.pop(context); // ✅ قفل الـ dialog زي Apply
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Constants.maincolor,
