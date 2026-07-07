@@ -3,7 +3,7 @@
 
 class GetAllRequestsResponse {
   final String status;
-  final int results;
+  final num results;
   final List<RequestLog> data;
   final PaginationInfo pagination;
 
@@ -41,10 +41,10 @@ class GetAllRequestsResponse {
 // ==================== Pagination Model ====================
 
 class PaginationInfo {
-  final int currentPage;
-  final int totalPages;
-  final int totalItems;
-  final int itemsPerPage;
+  final num currentPage;
+  final num totalPages;
+  final num totalItems;
+  final num itemsPerPage;
   final bool hasNextPage;
   final bool hasPrevPage;
 
@@ -86,14 +86,14 @@ class RequestLog {
   final String id;
   final SalesInfo salesid;
   final UserInfo userid;
-  final int requestedlimit;
-  final int actualtransferredcount;
+  final num requestedlimit;
+  final num actualtransferredcount;
   final String status;
   final List<LeadBasicInfo> leadsids;
   final String? error;
   final SalesInfo transferfrom;
   final SalesInfo transferto;
-  final int maxallowedlimit;
+  final num maxallowedlimit;
   final String notes;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -172,7 +172,7 @@ class SalesInfo {
   final String name;
   final List<CityInfo> city;
   final UserLogInfo? userlog;
-  final int? assignedLeads;
+  final num? assignedLeads;
   final SalesInfo? teamleader;
   final SalesInfo? manager;
 
@@ -221,7 +221,7 @@ class UserInfo {
   final String name;
   final String email;
   final String role;
-  final int? requestedleadslimit;
+  final num? requestedleadslimit;
 
   UserInfo({
     required this.id,
@@ -332,7 +332,7 @@ class LeadBasicInfo {
   final StageBasicInfo? stage;
   final ChanelBasicInfo? chanel;
   final CommunicationWayBasicInfo? communicationway;
-  final int budget;
+  final num budget;
   final AddByBasicInfo? addby;
   final UpdatedByBasicInfo? updatedby;
   final CampaignBasicInfo? campaign;
@@ -404,7 +404,7 @@ class ProjectBasicInfo {
   final String name;
   final DeveloperBasicInfo? developer;
   final CityInfo? city;
-  final int startprice;
+  final num startprice;
 
   ProjectBasicInfo({
     required this.id,
@@ -640,7 +640,7 @@ class CampaignBasicInfo {
   final String id;
   final String campainName;
   final String? date;
-  final int? cost;
+  final num? cost;
   final bool? isactivate;
   final AddByBasicInfo? addby;
   final UpdatedByBasicInfo? updatedby;

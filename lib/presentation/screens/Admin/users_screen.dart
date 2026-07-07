@@ -27,6 +27,23 @@ class _UsersScreenState extends State<UsersScreen> {
   String _statusFilter = 'all'; // 'all' | 'active' | 'inactive'
   String? _roleFilter; // null = all roles
 
+  // ── ترتيب عرض الرولز (Admin أول حاجة .. Accountant آخر حاجة) ─────────
+  // لو الـ role string اللي جاي من الباك اند مختلف عن ده، غيّر القيم هنا فقط
+  static const List<String> _roleOrder = [
+    'Admin',
+    'Manager',
+    'Team Leader',
+    'Sales',
+    'Marketer',
+    'Accountant',
+  ];
+
+  int _roleRank(String? role) {
+    final index = _roleOrder.indexOf(role ?? '');
+    // لو رول مش موجود في الليست، حطه في الآخر بدل ما يختفي
+    return index == -1 ? _roleOrder.length : index;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -259,13 +276,38 @@ class _UsersScreenState extends State<UsersScreen> {
                                         : Colors.grey[700],
                               ),
                               const SizedBox(width: 16),
-                              // ── Role Filter Pills ──────────────────────
+                              // ── Role Filter Pills (كل الرولز دلوقتي) ───
                               _filterPill(
                                 'All Roles',
                                 _roleFilter == null,
                                 mainColor,
                                 isLight,
                                 () => setState(() => _roleFilter = null),
+                              ),
+                              const SizedBox(width: 8),
+                              _filterPill(
+                                'Admin',
+                                _roleFilter == 'Admin',
+                                mainColor,
+                                isLight,
+                                () => setState(() => _roleFilter = 'Admin'),
+                              ),
+                              const SizedBox(width: 8),
+                              _filterPill(
+                                'Manager',
+                                _roleFilter == 'Manager',
+                                mainColor,
+                                isLight,
+                                () => setState(() => _roleFilter = 'Manager'),
+                              ),
+                              const SizedBox(width: 8),
+                              _filterPill(
+                                'Team Leader',
+                                _roleFilter == 'Team Leader',
+                                mainColor,
+                                isLight,
+                                () =>
+                                    setState(() => _roleFilter = 'Team Leader'),
                               ),
                               const SizedBox(width: 8),
                               _filterPill(
@@ -277,20 +319,20 @@ class _UsersScreenState extends State<UsersScreen> {
                               ),
                               const SizedBox(width: 8),
                               _filterPill(
-                                'Team Leader',
-                                _roleFilter == 'TeamLeader',
+                                'Marketer',
+                                _roleFilter == 'Marketer',
                                 mainColor,
                                 isLight,
-                                () =>
-                                    setState(() => _roleFilter = 'TeamLeader'),
+                                () => setState(() => _roleFilter = 'Marketer'),
                               ),
                               const SizedBox(width: 8),
                               _filterPill(
-                                'Manager',
-                                _roleFilter == 'Manager',
+                                'Accountant',
+                                _roleFilter == 'Accountant',
                                 mainColor,
                                 isLight,
-                                () => setState(() => _roleFilter = 'Manager'),
+                                () =>
+                                    setState(() => _roleFilter = 'Accountant'),
                               ),
                             ],
                           ),
@@ -338,6 +380,14 @@ class _UsersScreenState extends State<UsersScreen> {
                               }
                               return true;
                             }).toList();
+
+                        // ── ترتيب حسب الرول: Admin > Manager > TeamLeader
+                        // > Sales > Marketer > Accountant ────────────────
+                        filtered.sort(
+                          (a, b) => _roleRank(a.role).compareTo(
+                            _roleRank(b.role),
+                          ),
+                        );
 
                         if (filtered.isEmpty) {
                           return const Center(child: Text('No users found.'));

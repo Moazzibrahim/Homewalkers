@@ -19,7 +19,7 @@ class RequestLeadsCubit extends Cubit<RequestLeadsState> {
   String? _currentUserId;
   int _currentPage = 1;
   bool _isLoadingMore = false;
-  int _totalPages = 0;
+  num _totalPages = 0;
 
   // ✅ أضف هذا: عدد العناصر في كل صفحة
   static const int ITEMS_PER_PAGE = 20;
