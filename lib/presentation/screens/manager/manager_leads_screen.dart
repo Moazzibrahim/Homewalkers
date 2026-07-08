@@ -237,7 +237,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
             leadStagetype == "Meeting" ||
             leadStagetype == "Interested") &&
         isOutdated) {
-      leftBarColor = Colors.orangeAccent;
+      leftBarColor = Colors.red;
     } else {
       leftBarColor = Constants.maincolor;
     }
@@ -259,7 +259,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
           isFinalStage
               ? Constants.maincolor
               : isOutdated
-              ? const Color(0xffFEB300)
+              ? Colors.red
               : Constants.maincolor;
     }
 

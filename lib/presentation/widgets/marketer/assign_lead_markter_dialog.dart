@@ -107,7 +107,7 @@ class _AssignLeadMarkterDialogState extends State<AssignLeadMarkterDialog> {
           }
         } else {
           // بعد
-          if ((user.role == "Sales" || user.role == "Manager") &&
+          if ((user.role == "Sales" || user.role == "Manager" || user.role == "Team Leader") &&
               !(sale.name?.toLowerCase().startsWith("default") ?? false)) {
             uniqueSalesMap[sale.id!] = sale;
           }
@@ -748,69 +748,72 @@ class _AssignLeadMarkterDialogState extends State<AssignLeadMarkterDialog> {
   }
 
   Widget _buildSalesTile({
-    required SalesData sale,
-    required String userId,
-    required bool isSelected,
-    required Color primary,
-    required void Function(bool?) onChanged,
-  }) {
-    final roleLower = sale.userlog?.role?.toLowerCase() ?? '';
-    final isTeamLeader = roleLower == 'team leader';
-    final roleColor =
-        isTeamLeader ? Colors.orange.shade700 : Colors.grey.shade500;
+  required SalesData sale,
+  required String userId,
+  required bool isSelected,
+  required Color primary,
+  required void Function(bool?) onChanged,
+}) {
+  final roleLower = sale.userlog?.role?.toLowerCase() ?? '';
+  final isTeamLeader = roleLower == 'team leader';
+  final roleColor =
+      isTeamLeader ? Colors.orange.shade700 : Colors.grey.shade500;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 6.h),
-      decoration: BoxDecoration(
-        color: isSelected ? primary.withOpacity(0.05) : Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border:
-            isSelected
-                ? Border.all(color: primary.withOpacity(0.3))
-                : Border.all(color: Colors.transparent),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+  return Container(
+    margin: EdgeInsets.only(bottom: 6.h),
+    decoration: BoxDecoration(
+      color: isSelected ? primary.withOpacity(0.05) : Colors.white,
+      borderRadius: BorderRadius.circular(12.r),
+      border:
+          isSelected
+              ? Border.all(color: primary.withOpacity(0.3))
+              : Border.all(color: Colors.transparent),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: ListTile(
+      contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+      leading: _buildAvatar(
+        isTeamLeaderAssign ? 'Team ${sale.name}' : sale.name ?? '?',
       ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-        leading: _buildAvatar(
-          isTeamLeaderAssign ? 'Team ${sale.name}' : sale.name ?? '?',
-        ),
-        title: Text(
-          isTeamLeaderAssign ? 'Team: ${sale.name}' : sale.name ?? '',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14.sp,
-            color: Colors.black87,
-          ),
-        ),
-        subtitle: Text(
-          sale.userlog?.role?.toUpperCase() ?? '',
-          style: TextStyle(
-            color: roleColor,
-            fontSize: 11.sp,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
-        ),
-        trailing: Checkbox(
-          activeColor: primary,
-          value: isSelected,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4.r),
-          ),
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          visualDensity: VisualDensity.compact,
-          onChanged: onChanged,
+      title: Text(
+        isTeamLeaderAssign ? 'Team: ${sale.name}' : sale.name ?? '',
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 14.sp,
+          color: Colors.black87,
         ),
       ),
-    );
-  }
+      // ✅ الـ subtitle (الـ role) يظهر بس في تبويب Salesman، مش في Team Leader
+      subtitle: isTeamLeaderAssign
+          ? null
+          : Text(
+              sale.userlog?.role?.toUpperCase() ?? '',
+              style: TextStyle(
+                color: roleColor,
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+      trailing: Checkbox(
+        activeColor: primary,
+        value: isSelected,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4.r),
+        ),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        onChanged: onChanged,
+      ),
+    ),
+  );
+}
 
   Widget _buildToggleTile({
     required Color primary,

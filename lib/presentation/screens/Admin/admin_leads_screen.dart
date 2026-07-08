@@ -2549,35 +2549,35 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   } else if (leadStagetype ==
                                                           "Follow Up" &&
                                                       isOutdated) {
-                                                    return Colors.orangeAccent;
+                                                    return Colors.red;
                                                   } else if (leadStagetype ==
                                                           "Follow" &&
                                                       isOutdated) {
-                                                    return Colors.orangeAccent;
+                                                    return Colors.red;
                                                   } else if (leadStagetype ==
                                                           "Schedule Meeting" &&
                                                       isOutdated) {
-                                                    return Colors.orangeAccent;
+                                                    return Colors.red;
                                                   } else if (leadStagetype ==
                                                           "Follow After Meeting" &&
                                                       isOutdated) {
-                                                    return Colors.orangeAccent;
+                                                    return Colors.red;
                                                   } else if (leadStagetype ==
                                                           "No Answer" &&
                                                       isOutdated) {
-                                                    return Colors.orangeAccent;
+                                                    return Colors.red;
                                                   } else if (leadStagetype ==
                                                           "No Stage" &&
                                                       isOutdated) {
-                                                    return Colors.orangeAccent;
+                                                    return Colors.red;
                                                   } else if (leadStagetype ==
                                                           "Meeting" &&
                                                       isOutdated) {
-                                                    return Colors.orangeAccent;
+                                                    return Colors.red;
                                                   } else if (leadStagetype ==
                                                           "Interested" &&
                                                       isOutdated) {
-                                                    return Colors.orangeAccent;
+                                                    return Colors.red;
                                                   } else if (leadStagetype ==
                                                           "Not Interested" ||
                                                       leadStagetype ==
@@ -2725,9 +2725,8 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                                         ? Constants
                                                                             .mainlightmodecolor
                                                                         : isOutdated
-                                                                        ? const Color(
-                                                                          0xffFEB300,
-                                                                        )
+                                                                        ? Colors
+                                                                            .red
                                                                         : Constants
                                                                             .mainlightmodecolor;
                                                               }

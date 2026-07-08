@@ -1524,7 +1524,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
             leadStagetype == "No Stage" ||
             leadStagetype == "Interested") &&
         isOutdated) {
-      leftBarColor = Colors.orangeAccent;
+      leftBarColor = Colors.red;
     } else {
       leftBarColor = Constants.mainlightmodecolor;
     }
@@ -1546,7 +1546,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
           isFinalStage
               ? Constants.mainlightmodecolor
               : isOutdated
-              ? const Color(0xffFEB300)
+              ? Colors.red
               : Constants.mainlightmodecolor;
     }
 
