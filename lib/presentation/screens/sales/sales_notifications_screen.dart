@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable, non_constant_identifier_names, use_build_context_synchronously, avoid_print, unrelated_type_equality_checks
+// ignore_for_file: unused_local_variable, non_constant_identifier_names, use_build_context_synchronously, avoid_print, unrelated_type_equality_checks, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -105,6 +105,11 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
     _assignScrollController.dispose();
     _createdScrollController.dispose();
     super.dispose();
+  }
+
+  bool hasRealReceiver(NotificationItem item) {
+    final receiver = item.receiver?.name?.toLowerCase() ?? '';
+    return receiver.isNotEmpty && receiver != 'no sales';
   }
 
   String _formatDay(DateTime date) {
@@ -621,14 +626,17 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
                 .toList();
         final assigns =
             allNotifications
-                .where((n) => n.typenotification == 'assign')
+                .where(
+                  (n) => n.typenotification == 'assign' && hasRealReceiver(n),
+                )
                 .toList();
         final created =
             allNotifications
                 .where(
                   (n) =>
-                      n.typenotification != 'comment' &&
-                      n.typenotification != 'assign',
+                      (n.typenotification != 'comment' &&
+                          n.typenotification != 'assign') ||
+                      (n.typenotification == 'assign' && !hasRealReceiver(n)),
                 )
                 .toList();
 
@@ -871,12 +879,14 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
           final item = notifications[index];
           final type = item.typenotification;
 
-          if (type == 'comment' || type == 'assign') {
+          if (type == 'comment') {
             return _buildCommentOrAssignTile(item, isLight);
-          } else if (type == 'event') {
+          } else if (type == 'assign' && hasRealReceiver(item)) {
+            return _buildCommentOrAssignTile(item, isLight);
+          } else {
+            // ✅ event عادي، أو assign بـ receiver == "no sales" بيتعامل معاه كـ Created
             return _buildEventTile(item, isLight);
           }
-          return _buildCommentOrAssignTile(item, isLight);
         },
       ),
     );
@@ -1089,7 +1099,7 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
                                             ),
                                             TextSpan(
                                               text:
-                                                  item.lead?.sales?.name ??
+                                                  item.receiver?.name ??
                                                   'Unknown',
                                               style: const TextStyle(
                                                 color: _blue,
@@ -1194,101 +1204,132 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
 
   // ─── EVENT TILE ───────────────────────────────────────────────
 
+  // ─── EVENT TILE (Created) ────────────────────────────────────
+
   Widget _buildEventTile(NotificationItem item, bool isLight) {
     final titleColor = isLight ? Colors.black : Colors.white;
     final subColor = isLight ? Colors.grey[600] : Colors.grey[300];
     final cardColor = isLight ? Colors.white : const Color(0xFF1E1E1E);
 
-    final eventName = item.message ?? "Meeting With Ahmed Younes";
-    final description = "Ahmed Younes has";
-    const status = "accepted";
+    // ✅ دي أصلاً notification نوعها assign بس receiver.name == "no sales"
+    final isCreatedFromAssign = item.typenotification == 'assign';
+    final leadName = item.lead?.name ?? 'Lead';
+
+    final eventName =
+        isCreatedFromAssign ? 'New Lead Created' : (item.message ?? 'Event');
 
     final date = DateTime.tryParse(item.createdAt ?? '') ?? DateTime.now();
     final month = DateFormat('MMM').format(date).toUpperCase();
     final day = '${date.day}';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.13)),
+    // ✅ نفس منطق الوقت واليوم المستخدم في الكروت التانية
+    final timeStr = DateFormat('h:mm a').format(
+      (DateTime.tryParse(item.createdAt ?? '') ?? DateTime.now()).toUtc().add(
+        const Duration(hours: 4),
       ),
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 52,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEEF3FB),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  month,
-                  style: const TextStyle(
-                    color: _blue,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                Text(
-                  day,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: _blue,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  eventName,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: titleColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                RichText(
-                  text: TextSpan(
-                    style: TextStyle(
-                      color: subColor,
-                      fontSize: 13,
-                      fontFamily:
-                          Theme.of(context).textTheme.bodyLarge?.fontFamily,
+    );
+    final dayStr = _formatDay(
+      DateTime.tryParse(item.createdAt ?? '') ?? DateTime.now(),
+    );
+
+    return InkWell(
+      onTap: () {
+        if (item.isRead == false && item.id != null) {
+          context.read<NotificationCubit>().markNotificationRead(item.id!);
+        }
+
+        // ✅ لو معاها lead، روح لتفاصيل الليد زي الـ assign بالظبط
+        if (item.lead != null) {
+          _navigateToLeadDetails(item);
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withOpacity(0.13)),
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 46,
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEEF3FB),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    month,
+                    style: const TextStyle(
+                      color: _blue,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
+                  ),
+                  Text(
+                    day,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: _blue,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    eventName,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: titleColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (isCreatedFromAssign)
+                    Text(
+                      'Lead $leadName has been created.',
+                      style: TextStyle(color: subColor, fontSize: 13),
+                    )
+                  else
+                    Text(
+                      item.message ?? '',
+                      style: TextStyle(color: subColor, fontSize: 13),
+                    ),
+                  const SizedBox(height: 10),
+                  // ✅ صف الوقت/اليوم زي باقي الكروت
+                  Row(
                     children: [
-                      TextSpan(text: '$description '),
-                      TextSpan(
-                        text: status,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color:
-                              status == 'accepted'
-                                  ? Colors.green[600]
-                                  : Colors.red[600],
-                        ),
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 13,
+                        color: Colors.grey[400],
                       ),
-                      const TextSpan(text: ' this event'),
+                      const SizedBox(width: 3),
+                      Text(
+                        '$dayStr · $timeStr',
+                        style: TextStyle(fontSize: 12, color: subColor),
+                      ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

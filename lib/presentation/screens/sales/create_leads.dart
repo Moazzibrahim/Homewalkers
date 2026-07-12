@@ -1,6 +1,5 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 import 'dart:developer';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
@@ -128,10 +127,8 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
           final r = sales.userlog?.role?.toLowerCase();
           final n = sales.name;
 
-          // أولاً استبعد default m دايماً
           if (n?.toLowerCase() == 'default m') return false;
 
-          // لو team leader، اظهر بس السيلز اللي teamLeaderName بتاعهم = اسم اليوزر الحالي
           if (isTeamLeader) {
             return r == 'sales' &&
                 (sales.teamleader?.name?.toLowerCase() == name?.toLowerCase());
@@ -142,7 +139,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                 (sales.manager?.name?.toLowerCase() == name?.toLowerCase());
           }
 
-          // غير كده اظهر الكل (admin, marketer, etc.)
           return r == 'sales' || r == 'team leader' || r == 'manager';
         }).toList() ??
         [];
@@ -153,8 +149,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
       return 0;
     });
 
-    List<String> tempIds = List.from(_selectedSalesIds);
-    List<String> tempNames = List.from(_selectedSalesNames);
+    // ✅ Single-select: عنصر واحد بس مش List
+    String? tempId =
+        _selectedSalesIds.isNotEmpty ? _selectedSalesIds.first : null;
+    String? tempName =
+        _selectedSalesNames.isNotEmpty ? _selectedSalesNames.first : null;
     List<String> tempTokens = List.from(_selectedSalesFcmTokens);
 
     showModalBottomSheet(
@@ -259,23 +258,19 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           ),
                       itemBuilder: (_, index) {
                         final sale = filtered[index];
-                        final isSelected = tempIds.contains(sale.id);
+                        final isSelected = tempId == sale.id; // ✅ single-select
+
                         return InkWell(
                           onTap: () {
                             setModalState(() {
                               if (isSelected) {
-                                tempIds.remove(sale.id);
-                                tempNames.remove(sale.name);
-                                tempTokens.removeWhere(
-                                  (t) =>
-                                      sale.userlog?.fcmTokens
-                                          ?.map((e) => e.token ?? '')
-                                          .contains(t) ??
-                                      false,
-                                );
+                                // دوس على نفس العنصر تاني = إلغاء الاختيار
+                                tempId = null;
+                                tempName = null;
+                                tempTokens = [];
                               } else {
-                                tempIds.add(sale.id!);
-                                tempNames.add(sale.name!);
+                                tempId = sale.id;
+                                tempName = sale.name;
                                 final tokens =
                                     sale.userlog?.fcmTokens
                                         ?.map((e) => e.token ?? '')
@@ -284,9 +279,9 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                     [];
                                 if (tokens.isEmpty &&
                                     sale.userlog?.fcmtoken != null) {
-                                  tempTokens.add(sale.userlog!.fcmtoken!);
+                                  tempTokens = [sale.userlog!.fcmtoken!];
                                 } else {
-                                  tempTokens.addAll(tokens);
+                                  tempTokens = tokens;
                                 }
                               }
                             });
@@ -348,7 +343,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       16,
                       12,
                       16,
-                      24 + MediaQuery.of(context).padding.bottom, // ✅
+                      24 + MediaQuery.of(context).padding.bottom,
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -356,12 +351,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            _selectedSalesIds = List.from(tempIds);
-                            _selectedSalesNames = List.from(tempNames);
-                            _selectedSalesId =
-                                _selectedSalesIds.isNotEmpty
-                                    ? _selectedSalesIds.first
-                                    : null;
+                            // ✅ بتفضل List في المتغير الأصلي عشان باقي الكود مايتكسرش
+                            _selectedSalesIds = tempId != null ? [tempId!] : [];
+                            _selectedSalesNames =
+                                tempName != null ? [tempName!] : [];
+                            _selectedSalesId = tempId;
                             _selectedSalesFcmTokens = List.from(tempTokens);
                           });
                           Navigator.pop(ctx);
@@ -394,9 +388,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   }
 
   void _openChannelSelectionPanel(BuildContext context, ChannelLoaded state) {
-    final searchController = TextEditingController(); // 👈 أضفنا search
-    List<String> tempIds = List.from(_selectedChannelIds);
-    List<String> tempNames = List.from(_selectedChannelNames);
+    final searchController = TextEditingController();
+    String? tempId =
+        _selectedChannelIds.isNotEmpty ? _selectedChannelIds.first : null;
+    String? tempName =
+        _selectedChannelNames.isNotEmpty ? _selectedChannelNames.first : null;
 
     showModalBottomSheet(
       context: context,
@@ -455,7 +451,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       ],
                     ),
                   ),
-                  // 👇 Search field جديد
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -499,16 +494,18 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           ),
                       itemBuilder: (_, index) {
                         final channel = filtered[index];
-                        final isSelected = tempIds.contains(channel.id);
+                        final isSelected =
+                            tempId == channel.id; // ✅ single-select
+
                         return InkWell(
                           onTap: () {
                             setModalState(() {
                               if (isSelected) {
-                                tempIds.remove(channel.id);
-                                tempNames.remove(channel.name);
+                                tempId = null;
+                                tempName = null;
                               } else {
-                                tempIds.add(channel.id!);
-                                tempNames.add(channel.name);
+                                tempId = channel.id;
+                                tempName = channel.name;
                               }
                             });
                           },
@@ -569,7 +566,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       16,
                       12,
                       16,
-                      24 + MediaQuery.of(context).padding.bottom, // ✅
+                      24 + MediaQuery.of(context).padding.bottom,
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -577,12 +574,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            _selectedChannelIds = List.from(tempIds);
-                            _selectedChannelNames = List.from(tempNames);
-                            _selectedChannelId =
-                                _selectedChannelIds.isNotEmpty
-                                    ? _selectedChannelIds.first
-                                    : null;
+                            _selectedChannelIds =
+                                tempId != null ? [tempId!] : [];
+                            _selectedChannelNames =
+                                tempName != null ? [tempName!] : [];
+                            _selectedChannelId = tempId;
                           });
                           Navigator.pop(ctx);
                         },
@@ -681,8 +677,10 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
 
   void _openProjectSelectionPanel(BuildContext context, ProjectsSuccess state) {
     final searchController = TextEditingController();
-    List<String> tempSelectedIds = List.from(_selectedProjectIds);
-    List<String> tempSelectedNames = List.from(_selectedProjectNames);
+    String? tempId =
+        _selectedProjectIds.isNotEmpty ? _selectedProjectIds.first : null;
+    String? tempName =
+        _selectedProjectNames.isNotEmpty ? _selectedProjectNames.first : null;
 
     showModalBottomSheet(
       context: context,
@@ -709,7 +707,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
               height: MediaQuery.of(context).size.height * 0.75,
               child: Column(
                 children: [
-                  // ── Header ──────────────────────────────────────────
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                     child: Row(
@@ -745,8 +742,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       ],
                     ),
                   ),
-
-                  // ── Search ──────────────────────────────────────────
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -778,8 +773,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       ),
                     ),
                   ),
-
-                  // ── List ────────────────────────────────────────────
                   Expanded(
                     child: ListView.separated(
                       itemCount: filtered.length,
@@ -792,16 +785,18 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           ),
                       itemBuilder: (_, index) {
                         final project = filtered[index];
-                        final isSelected = tempSelectedIds.contains(project.id);
+                        final isSelected =
+                            tempId == project.id; // ✅ single-select
+
                         return InkWell(
                           onTap: () {
                             setModalState(() {
                               if (isSelected) {
-                                tempSelectedIds.remove(project.id);
-                                tempSelectedNames.remove(project.name);
+                                tempId = null;
+                                tempName = null;
                               } else {
-                                tempSelectedIds.add(project.id!);
-                                tempSelectedNames.add(project.name!);
+                                tempId = project.id;
+                                tempName = project.name;
                               }
                             });
                           },
@@ -857,14 +852,12 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       },
                     ),
                   ),
-
-                  // ── Confirm Button ───────────────────────────────────
                   Padding(
                     padding: EdgeInsets.fromLTRB(
                       16,
                       12,
                       16,
-                      24 + MediaQuery.of(context).padding.bottom, // ✅
+                      24 + MediaQuery.of(context).padding.bottom,
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -872,14 +865,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            _selectedProjectIds = List.from(tempSelectedIds);
-                            _selectedProjectNames = List.from(
-                              tempSelectedNames,
-                            );
-                            selectedProjectId =
-                                _selectedProjectIds.isNotEmpty
-                                    ? _selectedProjectIds.first
-                                    : null;
+                            _selectedProjectIds =
+                                tempId != null ? [tempId!] : [];
+                            _selectedProjectNames =
+                                tempName != null ? [tempName!] : [];
+                            selectedProjectId = tempId;
                           });
                           Navigator.pop(ctx);
                         },
@@ -915,8 +905,10 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
     GetCampaignsSuccess state,
   ) {
     final searchController = TextEditingController();
-    List<String> tempIds = List.from(_selectedCampaignIds);
-    List<String> tempNames = List.from(_selectedCampaignNames);
+    String? tempId =
+        _selectedCampaignIds.isNotEmpty ? _selectedCampaignIds.first : null;
+    String? tempName =
+        _selectedCampaignNames.isNotEmpty ? _selectedCampaignNames.first : null;
 
     showModalBottomSheet(
       context: context,
@@ -1023,16 +1015,18 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                           ),
                       itemBuilder: (_, index) {
                         final campaign = filtered[index];
-                        final isSelected = tempIds.contains(campaign.id);
+                        final isSelected =
+                            tempId == campaign.id; // ✅ single-select
+
                         return InkWell(
                           onTap: () {
                             setModalState(() {
                               if (isSelected) {
-                                tempIds.remove(campaign.id);
-                                tempNames.remove(campaign.campainName);
+                                tempId = null;
+                                tempName = null;
                               } else {
-                                tempIds.add(campaign.id!);
-                                tempNames.add(campaign.campainName!);
+                                tempId = campaign.id;
+                                tempName = campaign.campainName;
                               }
                             });
                           },
@@ -1093,7 +1087,7 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       16,
                       12,
                       16,
-                      24 + MediaQuery.of(context).padding.bottom, // ✅
+                      24 + MediaQuery.of(context).padding.bottom,
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -1101,12 +1095,11 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            _selectedCampaignIds = List.from(tempIds);
-                            _selectedCampaignNames = List.from(tempNames);
-                            _selectedCampaignId =
-                                _selectedCampaignIds.isNotEmpty
-                                    ? _selectedCampaignIds.first
-                                    : null;
+                            _selectedCampaignIds =
+                                tempId != null ? [tempId!] : [];
+                            _selectedCampaignNames =
+                                tempName != null ? [tempName!] : [];
+                            _selectedCampaignId = tempId;
                           });
                           Navigator.pop(ctx);
                         },
