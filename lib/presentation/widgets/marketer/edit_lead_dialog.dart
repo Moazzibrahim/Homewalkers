@@ -867,7 +867,7 @@ class _EditLeadDialogState extends State<EditLeadDialog> {
                                 ),
                               ),
                               Switch(
-                                activeThumbColor: _mainColor,
+                                activeColor: _mainColor,
                                 value: isCold,
                                 onChanged:
                                     (value) => setState(() => isCold = value),
