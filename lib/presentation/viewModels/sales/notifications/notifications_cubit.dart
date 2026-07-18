@@ -188,53 +188,69 @@ class NotificationCubit extends Cubit<NotificationState> {
     return result;
   }
 
+  /// 🔁 يتنادى كل مرة التطبيق يرجع من الخلفية (resumed) — مش init كامل
+  Future<void> resyncToken() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        log("🔁 Resyncing token on app resume...");
+        await _saveAndSendToken(token);
+      }
+    } catch (e) {
+      log('❌ resyncToken error: $e');
+    }
+  }
+
   Future<void> _saveAndSendToken(String? token) async {
     if (token == null || token.isEmpty) return;
 
     final prefs = await SharedPreferences.getInstance();
-    // final oldToken = prefs.getString('NewfcmToken');
-    final oldToken = prefs.getString('fcm_token'); // ✅ نفس الـ key
+    final oldToken = prefs.getString('fcm_token');
+    final deviceId = prefs.getString('deviceId'); // ✅ ضيف السطر ده
+
     log("📌 Current FCM Token: $token");
     log("📌 Saved Old Token: $oldToken");
 
+    // ✅ خزّن محليًا بس لو فعلاً اتغير (نفس المنطق القديم)
     if (oldToken != token) {
       await prefs.setString('fcm_token', token);
       emit(state.copyWith(token: token));
       log("🔁 Token changed. Old: $oldToken → New: $token");
-
-      try {
-        final userId = prefs.getString('salesId');
-        if (userId == null || userId.isEmpty) {
-          log("⚠️ No userId found. Skipping token send.");
-          return;
-        }
-
-        final url = Uri.parse(
-          '${Constants.baseUrl}/Notification/updatefcmtoken',
-        );
-        final body = jsonEncode({'userId': userId, 'fcmToken': token});
-
-        log("📤 Sending token update: $body");
-
-        final response = await http.put(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: body,
-        );
-        log(
-          "📨 Response from server: ${response.statusCode} - ${response.body}",
-        );
-
-        if (response.statusCode == 200) {
-          log('✅ New FCM token sent to server.');
-        } else {
-          log('❌ Failed to update FCM token: ${response.statusCode}');
-        }
-      } catch (e) {
-        log('❌ Error sending token to server: $e');
-      }
     } else {
-      log("♻️ FCM token unchanged. Skipping update.");
+      log("♻️ FCM token unchanged locally, but syncing with server anyway...");
+    }
+
+    // ✅ ابعت للسيرفر دايمًا، سواء اتغير أو لأ — عشان تظمن التزامن
+    try {
+      final userId = prefs.getString('salesId');
+      if (userId == null || userId.isEmpty) {
+        log("⚠️ No userId found. Skipping token send.");
+        return;
+      }
+
+      final url = Uri.parse('${Constants.baseUrl}/Notification/updatefcmtoken');
+      final body = jsonEncode({
+        'userId': userId,
+        'fcmToken': token,
+        'deviceId': deviceId, // ✅ ابعته مع الريكوست
+      });
+
+      log("📤 Sending token sync: $body");
+
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+      log("📨 Response from server: ${response.statusCode} - ${response.body}");
+
+      if (response.statusCode == 200) {
+        log('✅ FCM token synced with server.');
+      } else {
+        log('❌ Failed to sync FCM token: ${response.statusCode}');
+      }
+    } catch (e) {
+      log('❌ Error sending token to server: $e');
     }
   }
 

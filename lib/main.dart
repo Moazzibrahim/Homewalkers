@@ -130,22 +130,52 @@ Future<bool> _checkFirstLaunch() async {
   return isFirstLaunch;
 }
 
-class MyApp extends StatelessWidget {
+// ✅ اتحول من StatelessWidget لـ StatefulWidget عشان نقدر نستخدم WidgetsBindingObserver
+class MyApp extends StatefulWidget {
   final ThemeMode initialTheme;
 
   const MyApp({super.key, required this.initialTheme});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  // ✅ نحتفظ بمرجع للـ cubit عشان نقدر ننادي resyncToken() عليه لما الاب يرجع من الخلفية
+  NotificationCubit? _notificationCubit;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // ✅ بينادى تلقائيًا لما حالة الاب تتغير (foreground/background/resumed/paused...)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      log("📱 App resumed — resyncing FCM token");
+      _notificationCubit?.resyncToken();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => ThemeCubit(initialTheme)),
+        BlocProvider(create: (_) => ThemeCubit(widget.initialTheme)),
         BlocProvider(create: (_) => StagesCubit(StagesApiService())),
         BlocProvider(
           create: (_) {
             final cubit = NotificationCubit();
             cubit.initNotifications();
-            return cubit;
+            _notificationCubit = cubit; // ✅ يتخزن في الـ nullable field
+            return cubit; // ✅ ده بيترجع النوع الأصلي NotificationCubit مش nullable
           },
         ),
         BlocProvider(create: (_) => GetLeadsCubit(GetLeadsService())),

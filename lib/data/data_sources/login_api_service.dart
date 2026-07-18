@@ -235,7 +235,7 @@ class LoginApiService {
         log("✅ Logout successful");
 
         // ✅ حذف FCM Token من Firebase
-        await FirebaseMessaging.instance.deleteToken();
+       // await FirebaseMessaging.instance.deleteToken();
         log("🧹 FCM Token Deleted ✅");
 
         // 🗑️ امسح كل البيانات من SharedPreferences
@@ -244,6 +244,8 @@ class LoginApiService {
         await prefs.remove('role');
         await prefs.remove('salesId');
         await prefs.remove('company_domain'); // ✅ أضف السطر ده
+        await prefs.remove('fcm_token'); // ✅ ضيف السطر ده
+
         Constants.baseUrl = ""; // ✅ وكمان امسح الـ baseUrl في الميموري
         HttpClientWithInterceptor().reset(); // 🔥 إضافة هذا السطر
 

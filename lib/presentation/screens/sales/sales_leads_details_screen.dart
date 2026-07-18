@@ -381,8 +381,11 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                             fcmtoken: widget.fcmtoken,
                                             leadName: widget.leadName,
                                             managerfcm: widget.managerfcmtoken,
-                                            leadLastDateAssigned: widget.leadLastDateAssigned,
-                                            hideSalesName: widget.hidesalesnameonleadcomments,
+                                            leadLastDateAssigned:
+                                                widget.leadLastDateAssigned,
+                                            hideSalesName:
+                                                widget
+                                                    .hidesalesnameonleadcomments,
                                           ),
                                         ),
                                   ),
@@ -425,27 +428,37 @@ class _SalesLeadsDetailsScreenState extends State<SalesLeadsDetailsScreen> {
                                         ),
                                       ),
                                 );
-
                                 if (result == true) {
                                   context
                                       .read<LeadCommentsCubit>()
                                       .fetchLeadComments(widget.leedId);
 
-                                  final tokens =
-                                      (widget.salesFcmTokens?.isNotEmpty ==
-                                              true)
-                                          ? widget.salesFcmTokens!
-                                          : (widget.fcmtoken != null
-                                              ? [widget.fcmtoken!]
-                                              : <String>[]);
-                                  if (tokens.isNotEmpty) {
+                                  // ✅ اجمع كل التوكنات: sales + team leader مع بعض ومن غير تكرار
+                                  final Set<String> allTokens = {};
+
+                                  if (widget.salesFcmTokens?.isNotEmpty ==
+                                      true) {
+                                    allTokens.addAll(widget.salesFcmTokens!);
+                                  } else if (widget.fcmtoken != null &&
+                                      widget.fcmtoken!.isNotEmpty) {
+                                    allTokens.add(widget.fcmtoken!);
+                                  }
+
+                                  if (widget.teamleaderfcmtoken != null &&
+                                      widget.teamleaderfcmtoken!.isNotEmpty) {
+                                    allTokens.add(
+                                      widget.teamleaderfcmtoken!,
+                                    ); // ✅ ضيف توكن التيم ليدر
+                                  }
+
+                                  if (allTokens.isNotEmpty) {
                                     context
                                         .read<NotificationCubit>()
                                         .sendNotificationToTokens(
                                           title: "Lead Comment",
                                           body:
                                               "New comment added on ${widget.leadName} ✅",
-                                          fcmTokens: tokens,
+                                          fcmTokens: allTokens.toList(),
                                         );
                                   }
                                 }

@@ -734,7 +734,8 @@ class _SalesNotificationsScreenState extends State<SalesNotificationsScreen> {
                 if (state.isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (state.error != null) {
+                // ✅ اعرض شاشة الخطأ الكاملة بس لو مفيش بيانات أصلاً اتحملت من الأول
+                if (state.error != null && allNotifications.isEmpty) {
                   return Center(child: Text('Failed to load notifications'));
                 }
                 if (allNotifications.isEmpty) {
