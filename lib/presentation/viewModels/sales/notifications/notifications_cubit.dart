@@ -17,9 +17,10 @@ class NotificationState {
   final String? token;
   final String? error;
   final bool isLoading;
-  final bool isLoadingMore; // ✅ NEW: loading more pages
-  final bool hasMore; // ✅ NEW: are there more pages?
-  final int currentPage; // ✅ NEW: current page number
+  final bool isLoadingMore;
+  final bool hasMore;
+  final int currentPage;
+  final int unreadCount; // ✅ جديد
 
   NotificationState({
     this.token,
@@ -28,6 +29,7 @@ class NotificationState {
     this.isLoadingMore = false,
     this.hasMore = true,
     this.currentPage = 1,
+    this.unreadCount = 0, // ✅ جديد
   });
 
   NotificationState copyWith({
@@ -37,6 +39,7 @@ class NotificationState {
     bool? isLoadingMore,
     bool? hasMore,
     int? currentPage,
+    int? unreadCount, // ✅ جديد
   }) {
     return NotificationState(
       token: token ?? this.token,
@@ -45,6 +48,7 @@ class NotificationState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasMore: hasMore ?? this.hasMore,
       currentPage: currentPage ?? this.currentPage,
+      unreadCount: unreadCount ?? this.unreadCount, // ✅ جديد
     );
   }
 }
@@ -58,6 +62,49 @@ class NotificationCubit extends Cubit<NotificationState> {
 
   // ✅ Pagination constants
   static const int _pageSize = 10;
+
+  static const int _refreshIntervalDays = 2;
+
+  Future<void> _checkAndForceRefreshIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastRefreshStr = prefs.getString('last_fcm_force_refresh');
+    final now = DateTime.now();
+
+    bool shouldRefresh = true;
+    if (lastRefreshStr != null) {
+      final lastRefresh = DateTime.tryParse(lastRefreshStr);
+      if (lastRefresh != null) {
+        final daysSince = now.difference(lastRefresh).inDays;
+        shouldRefresh = daysSince >= _refreshIntervalDays;
+      }
+    }
+
+    if (shouldRefresh) {
+      log(
+        "🔄 Force refreshing FCM token (last refresh was ${lastRefreshStr ?? 'never'})",
+      );
+      try {
+        await FirebaseMessaging.instance.deleteToken();
+        final newToken = await FirebaseMessaging.instance.getToken();
+
+        // ✅ لازم نعيد الاشتراك بعد الـ delete
+        await FirebaseMessaging.instance.subscribeToTopic('all_users');
+
+        if (newToken != null) {
+          await _saveAndSendToken(newToken);
+          await prefs.setString(
+            'last_fcm_force_refresh',
+            now.toIso8601String(),
+          );
+          log("✅ Force refresh done. New token: $newToken");
+        }
+      } catch (e) {
+        log('❌ Force refresh error: $e');
+      }
+    } else {
+      log("⏭️ Skipping force refresh, last one was recent enough.");
+    }
+  }
 
   /// 🔔 Initializes notification system and handles listeners
   Future<void> initNotifications() async {
@@ -110,13 +157,15 @@ class NotificationCubit extends Cubit<NotificationState> {
 
       await _saveAndSendToken(token);
 
+      // ✅ ضيف السطر ده هنا
+      await _checkAndForceRefreshIfNeeded();
+
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
         log("🔁 FCM Token updated: $newToken");
         await _saveAndSendToken(newToken);
       });
 
       final role = prefs.getString('role');
-      log("🔑 FCM Token: $token");
       log("👤 User ID: $userId");
       log("🧑‍💼 Role: $role");
 
@@ -196,6 +245,7 @@ class NotificationCubit extends Cubit<NotificationState> {
         log("🔁 Resyncing token on app resume...");
         await _saveAndSendToken(token);
       }
+      await _checkAndForceRefreshIfNeeded();
     } catch (e) {
       log('❌ resyncToken error: $e');
     }
@@ -233,6 +283,7 @@ class NotificationCubit extends Cubit<NotificationState> {
         'userId': userId,
         'fcmToken': token,
         'deviceId': deviceId, // ✅ ابعته مع الريكوست
+        'platform': Platform.isIOS ? 'ios' : 'android',
       });
 
       log("📤 Sending token sync: $body");
@@ -599,10 +650,17 @@ class NotificationCubit extends Cubit<NotificationState> {
         notifications = newItems;
 
         // ✅ If returned less than pageSize → no more pages
-        final hasMore = newItems.length >= _pageSize;
+        final total = model.pagination?.totalResults ?? 0;
+        final hasMore = notifications.length < total;
+        final unread = model.pagination?.unreadCount?.toInt() ?? 0; // ✅
 
         emit(
-          state.copyWith(isLoading: false, currentPage: 1, hasMore: hasMore),
+          state.copyWith(
+            isLoading: false,
+            currentPage: 1,
+            hasMore: hasMore,
+            unreadCount: unread, // ← أضف السطر ده
+          ),
         );
 
         log("📦 Page 1 loaded: ${newItems.length} items | hasMore: $hasMore");
@@ -621,12 +679,10 @@ class NotificationCubit extends Cubit<NotificationState> {
 
   /// 📥 Load next page (pagination) for specific salesId
   Future<void> fetchMoreNotifications() async {
-    // ✅ Guard: don't load if already loading or no more pages
     if (state.isLoadingMore || !state.hasMore) return;
 
     try {
       final nextPage = state.currentPage + 1;
-
       emit(state.copyWith(isLoadingMore: true, error: null));
 
       final prefs = await SharedPreferences.getInstance();
@@ -642,30 +698,45 @@ class NotificationCubit extends Cubit<NotificationState> {
       );
 
       log("📥 Fetching page $nextPage: $url");
-      final response = await http.get(url);
+
+      final response = await http
+          .get(url)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              log("⏱️ TIMEOUT fetching page $nextPage");
+              throw Exception('Request timed out');
+            },
+          );
+
+      log("📨 Response status for page $nextPage: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         final model = NotificationModel.fromJson(decoded);
         final newItems = model.data ?? [];
 
-        // ✅ Append new items to existing list
         notifications = [...notifications, ...newItems];
-
-        final hasMore = newItems.length >= _pageSize;
+        final total = model.pagination?.totalResults ?? 0;
+        final hasMore = notifications.length < total;
+        final unread = model.pagination?.unreadCount?.toInt() ?? 0; // ✅
 
         emit(
           state.copyWith(
             isLoadingMore: false,
             currentPage: nextPage,
             hasMore: hasMore,
+            unreadCount: unread, // ← أضف السطر ده
           ),
         );
 
         log(
-          "📦 Page $nextPage loaded: ${newItems.length} items | hasMore: $hasMore",
+          "📦 Page $nextPage loaded: ${newItems.length} items | total loaded: ${notifications.length}/$total | hasMore: $hasMore",
         );
       } else {
+        log(
+          "❌ Failed page $nextPage: ${response.statusCode} - ${response.body}",
+        );
         emit(
           state.copyWith(
             isLoadingMore: false,
@@ -673,7 +744,9 @@ class NotificationCubit extends Cubit<NotificationState> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      log('❌ fetchMoreNotifications EXCEPTION: $e');
+      log('❌ StackTrace: $st');
       emit(state.copyWith(isLoadingMore: false, error: e.toString()));
     }
   }
@@ -704,10 +777,17 @@ class NotificationCubit extends Cubit<NotificationState> {
 
         notifications = newItems;
 
-        final hasMore = newItems.length >= _pageSize;
+        final total = model.pagination?.totalResults ?? 0;
+        final hasMore = notifications.length < total;
+        final unread = model.pagination?.unreadCount?.toInt() ?? 0; // ✅
 
         emit(
-          state.copyWith(isLoading: false, currentPage: 1, hasMore: hasMore),
+          state.copyWith(
+            isLoading: false,
+            currentPage: 1,
+            hasMore: hasMore,
+            unreadCount: unread, // ← أضف السطر ده
+          ),
         );
 
         log(
@@ -749,13 +829,16 @@ class NotificationCubit extends Cubit<NotificationState> {
 
         notifications = [...notifications, ...newItems];
 
-        final hasMore = newItems.length >= _pageSize;
+        final total = model.pagination?.totalResults ?? 0;
+        final hasMore = notifications.length < total;
+        final unread = model.pagination?.unreadCount?.toInt() ?? 0; // ✅
 
         emit(
           state.copyWith(
             isLoadingMore: false,
             currentPage: nextPage,
             hasMore: hasMore,
+            unreadCount: unread, // ← أضف السطر ده
           ),
         );
 
@@ -825,7 +908,7 @@ class NotificationCubit extends Cubit<NotificationState> {
         for (int i = 0; i < notifications.length; i++) {
           notifications[i] = notifications[i].copyWith(isRead: true);
         }
-        emit(state.copyWith());
+        emit(state.copyWith(unreadCount: 0)); // ✅ صفّر العداد
       } else {
         log('❌ Failed to mark all read: ${response.statusCode}');
       }
@@ -857,8 +940,16 @@ class NotificationCubit extends Cubit<NotificationState> {
         // ✅ Update the specific item in local list
         final idx = notifications.indexWhere((n) => n.id == notificationId);
         if (idx != -1) {
+          final wasUnread = notifications[idx].isRead != true;
           notifications[idx] = notifications[idx].copyWith(isRead: true);
-          emit(state.copyWith());
+          emit(
+            state.copyWith(
+              unreadCount:
+                  wasUnread && state.unreadCount > 0
+                      ? state.unreadCount - 1
+                      : state.unreadCount,
+            ),
+          );
         }
       } else {
         log('❌ Failed to mark read: ${response.statusCode}');

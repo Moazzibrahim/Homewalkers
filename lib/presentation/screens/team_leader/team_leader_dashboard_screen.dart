@@ -159,6 +159,7 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
     });
 
     context.read<NotificationCubit>().initNotifications();
+    context.read<NotificationCubit>().fetchNotifications(); // ✅ ضيف السطر ده
   }
 
   @override
@@ -188,6 +189,9 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
     if (state == AppLifecycleState.resumed) {
       Future.delayed(const Duration(milliseconds: 300), () {
         _dashboardCubit.fetchDashboard();
+        context
+            .read<NotificationCubit>()
+            .fetchNotifications(); // ✅ ضيف السطر ده
       });
     }
   }
@@ -333,15 +337,24 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                           );
                         }),
                         SizedBox(width: (12 * tabletWidthScale).w),
-                        _iconBox(Icons.notifications_none, () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => const SalesNotificationsScreen(),
-                            ),
-                          );
-                        }),
+                        BlocBuilder<NotificationCubit, NotificationState>(
+                          builder: (context, notifState) {
+                            return _iconBox(
+                              Icons.notifications_none,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const SalesNotificationsScreen(),
+                                  ),
+                                );
+                              },
+                              badgeCount: notifState.unreadCount, // ✅
+                            );
+                          },
+                        ),
                       ],
                     ),
 
@@ -505,14 +518,14 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                                           : isTablet
                                           ? 3
                                           : 2,
-                                  crossAxisSpacing: (10 * tabletWidthScale).w,
-                                  mainAxisSpacing: (10 * tabletHeightScale).h,
+                                  crossAxisSpacing: (8 * tabletWidthScale).w,
+                                  mainAxisSpacing: (8 * tabletHeightScale).h,
                                   childAspectRatio:
                                       isLargeTablet
-                                          ? 1.6
+                                          ? 1.85
                                           : isTablet
-                                          ? 1.5
-                                          : 1.78,
+                                          ? 1.75
+                                          : 2,
                                 ),
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -680,8 +693,8 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
   }
 
   // ✅ IconBox Widget
-  Widget _iconBox(IconData icon, void Function() onPressed) {
-    return Container(
+  Widget _iconBox(IconData icon, void Function() onPressed, {int? badgeCount}) {
+    final Widget button = Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular((12 * tabletScale).r),
@@ -709,6 +722,43 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
           minHeight: (40 * tabletHeightScale).h,
         ),
       ),
+    );
+
+    if (badgeCount == null || badgeCount <= 0) return button;
+
+    final String badgeText = badgeCount > 99 ? '+99' : '$badgeCount';
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        Positioned(
+          right: -2,
+          top: -2,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: (5 * tabletScale).r,
+              vertical: (2 * tabletScale).r,
+            ),
+            constraints: BoxConstraints(minWidth: (18 * tabletScale).r),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular((10 * tabletScale).r),
+              border: Border.all(color: Colors.white, width: 1.2),
+            ),
+            child: Text(
+              badgeText,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: (9 * tabletFontScale).sp,
+                fontWeight: FontWeight.w700,
+                height: 1,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

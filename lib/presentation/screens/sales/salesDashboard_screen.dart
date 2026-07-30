@@ -1,7 +1,6 @@
-// ignore_for_file: file_names, camel_case_types, deprecated_member_use, avoid_print
+// ignore_for_file: file_names, camel_case_types, deprecated_member_use, avoid_print, use_build_context_synchronously
 
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -159,6 +158,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
     });
 
     context.read<NotificationCubit>().initNotifications();
+    context.read<NotificationCubit>().fetchNotifications(); // ✅ ضيف السطر ده
   }
 
   @override
@@ -188,6 +188,9 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
     if (state == AppLifecycleState.resumed) {
       Future.delayed(const Duration(milliseconds: 300), () {
         _dashboardCubit.fetchDashboard();
+        context
+            .read<NotificationCubit>()
+            .fetchNotifications(); // ✅ ضيف السطر ده
       });
     }
   }
@@ -333,15 +336,24 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                           );
                         }),
                         SizedBox(width: (12 * tabletWidthScale).w),
-                        _iconBox(Icons.notifications_none, () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => const SalesNotificationsScreen(),
-                            ),
-                          );
-                        }),
+                        BlocBuilder<NotificationCubit, NotificationState>(
+                          builder: (context, notifState) {
+                            return _iconBox(
+                              Icons.notifications_none,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const SalesNotificationsScreen(),
+                                  ),
+                                );
+                              },
+                              badgeCount: notifState.unreadCount, // ✅
+                            );
+                          },
+                        ),
                       ],
                     ),
 
@@ -416,9 +428,9 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                               ? 3
                                               : 2,
                                       crossAxisSpacing:
-                                          (10 * tabletWidthScale).w,
+                                          (8 * tabletWidthScale).w,
                                       mainAxisSpacing:
-                                          (10 * tabletHeightScale).h,
+                                          (8 * tabletHeightScale).h,
                                       childAspectRatio:
                                           isLargeTablet
                                               ? 1.6
@@ -472,14 +484,14 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                           : isTablet
                                           ? 3
                                           : 2,
-                                  crossAxisSpacing: (10 * tabletWidthScale).w,
-                                  mainAxisSpacing: (10 * tabletHeightScale).h,
+                                  crossAxisSpacing: (8 * tabletWidthScale).w,
+                                  mainAxisSpacing: (8 * tabletHeightScale).h,
                                   childAspectRatio:
                                       isLargeTablet
-                                          ? 1.6
+                                          ? 1.85
                                           : isTablet
-                                          ? 1.5
-                                          : 1.78,
+                                          ? 1.75
+                                          : 2,
                                 ),
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -546,8 +558,8 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                           : isTablet
                                           ? 3
                                           : 2,
-                                  crossAxisSpacing: (10 * tabletWidthScale).w,
-                                  mainAxisSpacing: (10 * tabletHeightScale).h,
+                                  crossAxisSpacing: (8 * tabletWidthScale).w,
+                                  mainAxisSpacing: (8 * tabletHeightScale).h,
                                   childAspectRatio:
                                       isLargeTablet
                                           ? 1.6
@@ -582,8 +594,8 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
   }
 
   // ✅ IconBox Widget
-  Widget _iconBox(IconData icon, void Function() onPressed) {
-    return Container(
+  Widget _iconBox(IconData icon, void Function() onPressed, {int? badgeCount}) {
+    final Widget button = Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular((12 * tabletScale).r),
@@ -611,6 +623,43 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
           minHeight: (40 * tabletHeightScale).h,
         ),
       ),
+    );
+
+    if (badgeCount == null || badgeCount <= 0) return button;
+
+    final String badgeText = badgeCount > 99 ? '+99' : '$badgeCount';
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        Positioned(
+          right: -2,
+          top: -2,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: (5 * tabletScale).r,
+              vertical: (2 * tabletScale).r,
+            ),
+            constraints: BoxConstraints(minWidth: (18 * tabletScale).r),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular((10 * tabletScale).r),
+              border: Border.all(color: Colors.white, width: 1.2),
+            ),
+            child: Text(
+              badgeText,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: (9 * tabletFontScale).sp,
+                fontWeight: FontWeight.w700,
+                height: 1,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -695,7 +744,13 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
       onTap: onTap,
       borderRadius: BorderRadius.circular((14 * tabletScale).r),
       child: Container(
-        padding: EdgeInsets.all((12 * tabletScale).r),
+        // لده:
+        padding: EdgeInsets.fromLTRB(
+          (10 * tabletScale).r,
+          (10 * tabletScale).r,
+          (10 * tabletScale).r,
+          (4 * tabletScale).r,
+        ),
         decoration: BoxDecoration(
           color: isDarkMode ? const Color(0xff1e1e1e) : Colors.white,
           borderRadius: BorderRadius.circular((14 * tabletScale).r),
@@ -712,7 +767,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             // ── Icon (left) + Title & Number (right) ──
@@ -721,8 +776,8 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
               children: [
                 // Icon box
                 Container(
-                  height: (38 * tabletHeightScale).h,
-                  width: (38 * tabletWidthScale).w,
+                  height: (40 * tabletHeightScale).h,
+                  width: (40 * tabletWidthScale).w,
                   decoration: BoxDecoration(
                     color: isDarkMode ? iconColor.withOpacity(0.15) : iconBg,
                     borderRadius: BorderRadius.circular((10 * tabletScale).r),
@@ -730,7 +785,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                   child: Icon(
                     selectedIcon,
                     color: iconColor,
-                    size: (19 * tabletFontScale).sp,
+                    size: (20 * tabletFontScale).sp,
                   ),
                 ),
                 SizedBox(width: (8 * tabletWidthScale).w),
@@ -769,13 +824,13 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                 ),
               ],
             ),
-            SizedBox(height: (12 * tabletHeightScale).h),
+            SizedBox(height: (18 * tabletHeightScale).h),
             // ── Progress Bar ──────────────────────────
             ClipRRect(
               borderRadius: BorderRadius.circular((4 * tabletScale).r),
               child: LinearProgressIndicator(
                 value: progress,
-                minHeight: (3.5 * tabletHeightScale).h,
+                minHeight: (4 * tabletHeightScale).h,
                 backgroundColor: Colors.grey.withOpacity(0.15),
                 valueColor: AlwaysStoppedAnimation<Color>(progressColor),
               ),

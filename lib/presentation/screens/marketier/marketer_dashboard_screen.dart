@@ -213,6 +213,7 @@ class MarketerDashboardScreen extends StatefulWidget {
       _MarketerDashboardScreenState();
 
   // ── Icon Box ──────────────────────────────────
+
   static Widget _iconBox(
     IconData icon,
     void Function() onPressed,
@@ -222,8 +223,9 @@ class MarketerDashboardScreen extends StatefulWidget {
     required double tabletFontScale,
     required double tabletWidthScale,
     required double tabletHeightScale,
+    int? badgeCount, // ✅ جديد
   }) {
-    return Container(
+    final Widget button = Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular((12 * tabletScale).r),
@@ -251,6 +253,43 @@ class MarketerDashboardScreen extends StatefulWidget {
           minHeight: (40 * tabletHeightScale).h,
         ),
       ),
+    );
+
+    if (badgeCount == null || badgeCount <= 0) return button;
+
+    final String badgeText = badgeCount > 99 ? '+99' : '$badgeCount';
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        Positioned(
+          right: -2,
+          top: -2,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: (5 * tabletScale).r,
+              vertical: (2 * tabletScale).r,
+            ),
+            constraints: BoxConstraints(minWidth: (18 * tabletScale).r),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular((10 * tabletScale).r),
+              border: Border.all(color: Colors.white, width: 1.2),
+            ),
+            child: Text(
+              badgeText,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: (9 * tabletFontScale).sp,
+                fontWeight: FontWeight.w700,
+                height: 1,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -392,6 +431,8 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
       ..fetchMarketerDashboard();
 
     context.read<NotificationCubit>().initNotifications();
+    context.read<NotificationCubit>().fetchNotifications(); // ✅ ضيف السطر ده
+
     print("init notifications called");
   }
 
@@ -407,6 +448,7 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
     if (state == AppLifecycleState.resumed) {
       print("App resumed — refreshing marketer dashboard...");
       _marketerCubit.fetchMarketerDashboard();
+      context.read<NotificationCubit>().fetchNotifications(); // ✅ ضيف السطر ده
     }
   }
 
@@ -567,24 +609,29 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
                           ),
                         ),
                         const Spacer(),
-                        MarketerDashboardScreen._iconBox(
-                          Icons.notifications_none,
-                          () {
-                            Navigator.push(
+                        BlocBuilder<NotificationCubit, NotificationState>(
+                          builder: (context, notifState) {
+                            return MarketerDashboardScreen._iconBox(
+                              Icons.notifications_none,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const SalesNotificationsScreen(),
+                                  ),
+                                );
+                              },
                               context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) =>
-                                        const SalesNotificationsScreen(),
-                              ),
+                              isTabletDevice: isTabletDevice,
+                              tabletScale: tabletScale,
+                              tabletFontScale: tabletFontScale,
+                              tabletWidthScale: tabletWidthScale,
+                              tabletHeightScale: tabletHeightScale,
+                              badgeCount: notifState.unreadCount, // ✅
                             );
                           },
-                          context,
-                          isTabletDevice: isTabletDevice,
-                          tabletScale: tabletScale,
-                          tabletFontScale: tabletFontScale,
-                          tabletWidthScale: tabletWidthScale,
-                          tabletHeightScale: tabletHeightScale,
                         ),
                       ],
                     ),

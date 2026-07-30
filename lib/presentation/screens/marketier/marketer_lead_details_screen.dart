@@ -71,6 +71,7 @@ class MarketerLeadDetailsScreen extends StatefulWidget {
   final String? question5_text;
   final String? question5_answer;
   final List<String>? salesFcmTokens; // ✅ أضف ده
+  final bool? leadassign; // ✅ أضف ده
 
   MarketerLeadDetailsScreen({
     super.key,
@@ -117,6 +118,7 @@ class MarketerLeadDetailsScreen extends StatefulWidget {
     this.question5_text,
     this.question5_answer,
     this.salesFcmTokens,
+    this.leadassign,
   });
 
   @override
@@ -1215,6 +1217,14 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
                   letterSpacing: 1.5,
                   color: isDark ? Colors.white70 : const Color(0xFF5E5E6A),
                 ),
+              ),
+              Icon(
+                Icons.done_all,
+                size: 18.sp,
+                color:
+                    widget.leadassign == true
+                        ? Colors.grey
+                        : Constants.maincolor,
               ),
             ],
           ),

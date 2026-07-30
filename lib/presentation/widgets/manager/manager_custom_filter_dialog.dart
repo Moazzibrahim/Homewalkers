@@ -87,6 +87,19 @@ class _FilterDialogState extends State<FilterDialog> {
   bool _showChannels = false;
   bool _showStages = false;
 
+  final TextEditingController _salesSearchController = TextEditingController();
+  final TextEditingController _developersSearchController =
+      TextEditingController();
+  final TextEditingController _projectsSearchController =
+      TextEditingController();
+  final TextEditingController _channelsSearchController =
+      TextEditingController();
+
+  String _salesSearchQuery = '';
+  String _developersSearchQuery = '';
+  String _projectsSearchQuery = '';
+  String _channelsSearchQuery = '';
+
   @override
   void initState() {
     super.initState();
@@ -118,7 +131,21 @@ class _FilterDialogState extends State<FilterDialog> {
     required VoidCallback onToggle,
     required Function(String) onItemTapped,
     Color? iconColor,
+    TextEditingController? searchController,
+    String searchQuery = '',
+    Function(String)? onSearchChanged,
   }) {
+    // ✅ فلترة العناصر حسب نص البحث
+    final filteredItems =
+        searchQuery.isEmpty
+            ? items
+            : items
+                .where(
+                  (item) =>
+                      item.toLowerCase().contains(searchQuery.toLowerCase()),
+                )
+                .toList();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -137,7 +164,7 @@ class _FilterDialogState extends State<FilterDialog> {
       ),
       child: Column(
         children: [
-          // Header
+          // Header (زي ما هو من غير تغيير)
           ListTile(
             leading: Container(
               padding: const EdgeInsets.all(8),
@@ -191,7 +218,7 @@ class _FilterDialogState extends State<FilterDialog> {
             onTap: onToggle,
           ),
 
-          // Selected Chips
+          // Selected Chips (زي ما هو)
           if (selectedItems.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -222,53 +249,108 @@ class _FilterDialogState extends State<FilterDialog> {
               ),
             ),
 
-          // Expanded Items List
+          // ✅ حقل البحث - يظهر بس لما القائمة تكون مفتوحة
+          if (isExpanded && searchController != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                controller: searchController,
+                onChanged: onSearchChanged,
+                style: const TextStyle(fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: 'Search...',
+                  hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  suffixIcon:
+                      searchQuery.isNotEmpty
+                          ? IconButton(
+                            icon: const Icon(Icons.clear, size: 16),
+                            onPressed: () {
+                              searchController.clear();
+                              onSearchChanged?.call('');
+                            },
+                          )
+                          : null,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Constants.maincolor),
+                  ),
+                ),
+              ),
+            ),
+
+          // Expanded Items List - استخدم filteredItems بدل items
           if (isExpanded)
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
-              child: ListView.separated(
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: items.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  final isSelected = selectedItems.contains(item);
-                  return InkWell(
-                    onTap: () => onItemTapped(item),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isSelected ? Constants.maincolor : null,
-                                fontWeight: isSelected ? FontWeight.w500 : null,
-                              ),
-                            ),
+              child:
+                  filteredItems.isEmpty
+                      ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Center(
+                          child: Text(
+                            'No results found',
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
                           ),
-                          if (isSelected)
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Constants.maincolor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 12,
+                        ),
+                      )
+                      : ListView.separated(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: filteredItems.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          final isSelected = selectedItems.contains(item);
+                          return InkWell(
+                            onTap: () => onItemTapped(item),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color:
+                                            isSelected
+                                                ? Constants.maincolor
+                                                : null,
+                                        fontWeight:
+                                            isSelected ? FontWeight.w500 : null,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Constants.maincolor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: 12,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                        ],
+                          );
+                        },
                       ),
-                    ),
-                  );
-                },
-              ),
             ),
         ],
       ),
@@ -515,6 +597,11 @@ class _FilterDialogState extends State<FilterDialog> {
                                 filteredSales.map((e) => e.name ?? '').toList(),
                             selectedItems: selectedSalesPersons,
                             isExpanded: _showSales,
+                            searchController: _salesSearchController,
+                            searchQuery: _salesSearchQuery,
+                            onSearchChanged:
+                                (value) =>
+                                    setState(() => _salesSearchQuery = value),
                             onToggle:
                                 () => setState(() => _showSales = !_showSales),
                             onItemTapped: (item) {
@@ -547,6 +634,12 @@ class _FilterDialogState extends State<FilterDialog> {
                             items: items,
                             selectedItems: selectedDevelopers,
                             isExpanded: _showDevelopers,
+                            searchController: _developersSearchController,
+                            searchQuery: _developersSearchQuery,
+                            onSearchChanged:
+                                (value) => setState(
+                                  () => _developersSearchQuery = value,
+                                ),
                             onToggle:
                                 () => setState(
                                   () => _showDevelopers = !_showDevelopers,
@@ -581,6 +674,12 @@ class _FilterDialogState extends State<FilterDialog> {
                             items: items,
                             selectedItems: selectedChannels,
                             isExpanded: _showChannels,
+                            searchController: _channelsSearchController,
+                            searchQuery: _channelsSearchQuery,
+                            onSearchChanged:
+                                (value) => setState(
+                                  () => _channelsSearchQuery = value,
+                                ),
                             onToggle:
                                 () => setState(
                                   () => _showChannels = !_showChannels,
@@ -615,6 +714,12 @@ class _FilterDialogState extends State<FilterDialog> {
                             items: items,
                             selectedItems: selectedProjects,
                             isExpanded: _showProjects,
+                            searchController: _projectsSearchController,
+                            searchQuery: _projectsSearchQuery,
+                            onSearchChanged:
+                                (value) => setState(
+                                  () => _projectsSearchQuery = value,
+                                ),
                             onToggle:
                                 () => setState(
                                   () => _showProjects = !_showProjects,

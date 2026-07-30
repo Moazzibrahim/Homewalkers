@@ -3,8 +3,9 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_lead_comments.dart';
+import 'package:homewalkers_app/data/data_sources/get_all_sales_api_service.dart';
+import 'package:homewalkers_app/data/models/all_sales_model.dart';
 import 'package:homewalkers_app/data/models/leads_model.dart' hide Sales;
-import 'package:homewalkers_app/data/models/manager_new/manager_dashboard_pagination_model.dart';
 import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manager_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/assign_lead/assign_lead_state.dart';
@@ -12,6 +13,8 @@ import 'package:homewalkers_app/presentation/viewModels/sales/leads_comments/lea
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_state.dart';
 
 class AssignLeadDialogManager extends StatefulWidget {
   final Color mainColor;
@@ -20,7 +23,7 @@ class AssignLeadDialogManager extends StatefulWidget {
   final String? leadId;
   final String fcmtoken;
   final Function? onAssignSuccess;
-  final List? leadsStages; // ✅ جديد
+  final List? leadsStages;
 
   const AssignLeadDialogManager({
     super.key,
@@ -30,7 +33,7 @@ class AssignLeadDialogManager extends StatefulWidget {
     this.leadIds,
     required this.fcmtoken,
     this.onAssignSuccess,
-    this.leadsStages, // ✅ جديد
+    this.leadsStages,
   });
 
   @override
@@ -43,18 +46,23 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
   bool clearHistory = false;
   String? managerId;
 
-  // 1️⃣ بحث
   final TextEditingController searchController = TextEditingController();
   String searchQuery = '';
   bool isSearching = false;
   String selectedOption = 'same';
   String? selectedStageId;
   String? selectedFcmToken;
-  List<String> selectedFcmTokens = []; // ✅ أضف ده
+  List<String> selectedFcmTokens = [];
+  List<Map<String, dynamic>> _cachedUsers = [];
+  bool _isLoadingUsers = true; // ✅ ابدأ بـ true عشان يظهر تحميل فوراً
 
   @override
   void initState() {
     super.initState();
+    // ✅ تحميل المستخدمين فوراً
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUsers();
+    });
   }
 
   Future<void> saveClearHistoryTime() async {
@@ -64,35 +72,6 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
     log('Clear history time saved (Dubai): $dubaiTime');
   }
 
-  // 🟢 دالة جديدة لتحميل بيانات المدير إذا لم تكن موجودة
-  Future<void> _ensureDashboardDataLoaded() async {
-    final managerCubit = context.read<GetManagerLeadsCubit>();
-
-    // إذا كانت البيانات غير موجودة، قم بتحميلها
-    if (managerCubit.dashboardDataS == null) {
-      log("📊 Loading manager dashboard data from dialog...");
-      await managerCubit.getManagerDashboardCounts();
-    }
-  }
-
-  // 🟢 دالة للبحث عن الـ sales.id المناسب للـ Team Leader
-  String? _getSalesIdForTeamLeader(TeamLeader teamLeader) {
-    if (teamLeader.teamLeaderInfo == null) return null;
-
-    final teamLeaderEmail = teamLeader.teamLeaderInfo!.email;
-
-    // البحث في قائمة الـ sales عن مندوب له نفس email الـ Team Leader
-    for (var sale in teamLeader.sales ?? []) {
-      if (sale.userlog?.email == teamLeaderEmail) {
-        return sale.id; // 🟢 نرجع الـ sales.id
-      }
-    }
-
-    // إذا لم نجد، نرجع null (يعني هذا الـ Team Leader ليس له حساب مندوب)
-    return null;
-  }
-
-  // ── UI helper بحت: بيرجع initials للاسم عشان الـ avatar (مفيش أي تأثير على اللوجيك) ──
   String _getInitials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty || parts.first.isEmpty) return '?';
@@ -102,6 +81,63 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
           .toUpperCase();
     }
     return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  Future<void> _loadUsers() async {
+    setState(() => _isLoadingUsers = true);
+
+    final salesState = context.read<SalesCubit>().state;
+    if (salesState is SalesLoaded) {
+      final users = await _buildDisplayUsers(salesState.salesData.data);
+      setState(() {
+        _cachedUsers = users;
+        _isLoadingUsers = false;
+      });
+    } else {
+      // ✅ إذا لم تكن البيانات محملة، انتظر حتى يتم تحميلها
+      setState(() => _isLoadingUsers = true);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _buildDisplayUsers(
+    List<SalesData>? salesList,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final managerId = prefs.getString('salesId') ?? '';
+
+    final List<Map<String, dynamic>> displayUsers = [];
+
+    for (var sale in salesList ?? []) {
+      final saleManagerId = sale.manager?.id;
+      if (saleManagerId != managerId) continue;
+      if (sale.id == null || sale.userlog == null) continue;
+
+      final tokensList = <String>[];
+      if (sale.userlog?.fcmTokens != null) {
+        for (var token in sale.userlog!.fcmTokens!) {
+          if (token.token != null && token.token!.isNotEmpty) {
+            tokensList.add(token.token!);
+          }
+        }
+      }
+
+      displayUsers.add({
+        'displayId': sale.id!,
+        'name': sale.userlog?.name ?? 'Unnamed',
+        'role': sale.userlog?.role ?? 'Sales',
+        'email': sale.userlog?.email,
+        'fcmtoken': sale.userlog?.fcmtoken,
+        'fcmTokens': tokensList,
+        'originalId': sale.id,
+      });
+    }
+
+    final uniqueUsersMap = <String, Map<String, dynamic>>{};
+    for (var user in displayUsers) {
+      uniqueUsersMap[user['displayId'] as String] = user;
+    }
+
+    return uniqueUsersMap.values.toList();
   }
 
   TextStyle get _sectionLabelStyle => TextStyle(
@@ -115,7 +151,6 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
   Widget build(BuildContext context) {
     final stagesCubit = context.read<StagesCubit>();
 
-    // 🔥 إضافة اختيارات Stage هنا
     if (stagesCubit.state is! StagesLoaded) {
       stagesCubit.fetchStages();
     }
@@ -125,6 +160,9 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
       providers: [
         BlocProvider(create: (_) => AssignleadCubit()),
         BlocProvider(
+          create: (_) => SalesCubit(GetAllSalesApiService())..fetchAllSales(),
+        ),
+        BlocProvider(
           create:
               (_) =>
                   LeadCommentsCubit(GetAllLeadCommentsApiService())
@@ -133,6 +171,17 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
       ],
       child: Builder(
         builder: (dialogContext) {
+          final salesState = dialogContext.watch<SalesCubit>().state;
+
+          // ✅ تحميل المستخدمين عند تغير حالة الـ Sales
+          if (salesState is SalesLoaded &&
+              _cachedUsers.isEmpty &&
+              _isLoadingUsers) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _loadUsers();
+            });
+          }
+
           return Dialog(
             insetPadding: const EdgeInsets.symmetric(
               horizontal: 18,
@@ -259,418 +308,247 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                           ),
                           const SizedBox(height: 10),
 
-                          // 🔹 قائمة Sales و Team Leaders من GetManagerLeadsCubit
+                          // 🔹 قائمة Sales و Team Leaders
                           SizedBox(
                             height: 260,
-                            child: FutureBuilder(
-                              future: _ensureDashboardDataLoaded(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
+                            child: BlocListener<SalesCubit, SalesState>(
+                              listener: (context, state) {
+                                if (state is SalesLoaded) {
+                                  _loadUsers();
                                 }
+                              },
+                              child: BlocBuilder<SalesCubit, SalesState>(
+                                builder: (context, state) {
+                                  // ✅ عرض التحميل أولاً
+                                  if (state is SalesLoading ||
+                                      _isLoadingUsers) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  }
 
-                                return BlocBuilder<
-                                  GetManagerLeadsCubit,
-                                  GetManagerLeadsState
-                                >(
-                                  builder: (context, state) {
-                                    final managerCubit =
-                                        context.read<GetManagerLeadsCubit>();
-                                    final dashboardData =
-                                        managerCubit.dashboardDataS;
+                                  if (state is SalesError) {
+                                    return Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            "Failed to load data: ${state.message}",
+                                            style: const TextStyle(
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              context
+                                                  .read<SalesCubit>()
+                                                  .fetchAllSales();
+                                              _loadUsers();
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: widget.mainColor,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              "Retry",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
 
-                                    if (state is GetManagerLeadsLoading &&
-                                        dashboardData == null) {
-                                      return const Center(
-                                        child: CircularProgressIndicator(),
-                                      );
+                                  // ✅ عرض القائمة بعد التحميل
+                                  if (state is SalesLoaded) {
+                                    List<Map<String, dynamic>> usersList =
+                                        _cachedUsers;
+
+                                    if (searchQuery.isNotEmpty) {
+                                      usersList =
+                                          usersList
+                                              .where(
+                                                (user) =>
+                                                    (user['name'] as String)
+                                                        .toLowerCase()
+                                                        .contains(searchQuery),
+                                              )
+                                              .toList();
                                     }
 
-                                    if (state is GetManagerLeadsFailure &&
-                                        dashboardData == null) {
+                                    // ✅ عرض رسالة فقط إذا انتهى التحميل ولم يوجد مستخدمين
+                                    if (usersList.isEmpty && !_isLoadingUsers) {
                                       return Center(
                                         child: Text(
-                                          "Failed to load data: ${state.message}",
-                                          style: const TextStyle(
-                                            color: Colors.red,
+                                          "No sales or team leaders available.",
+                                          style: TextStyle(
+                                            color: Colors.grey.shade500,
                                           ),
                                         ),
                                       );
                                     }
 
-                                    if (dashboardData != null &&
-                                        dashboardData.data != null) {
-                                      // 🟢 قائمة لعرض المستخدمين (كل عنصر يحتوي على الاسم والدور والمعرّف الذي سنستخدمه للتعيين)
-                                      final List<Map<String, dynamic>>
-                                      displayUsers = [];
-
-                                      // 1. إضافة المندوبين المباشرين للمدير (Direct Manager Sales)
-                                      final directSales =
-                                          dashboardData
-                                              .data!
-                                              .directManagerSales ??
-                                          [];
-                                      for (var sale in directSales) {
-                                        if (sale.id != null) {
-                                          displayUsers.add({
-                                            'displayId':
-                                                sale.id, // 🟢 نستخدم sales.id للتعيين
-                                            'name':
-                                                sale.userlog?.name ?? 'Unnamed',
-                                            'role':
-                                                sale.userlog?.role ?? 'Sales',
-                                            'email': sale.userlog?.email,
-                                            'fcmtoken': sale.userlog?.fcmToken,
-                                            'fcmTokens':
-                                                sale
-                                                    .userlog
-                                                    ?.fcmTokens // ✅ أضف ده
-                                                    ?.map((e) => e.token ?? '')
-                                                    .where((t) => t.isNotEmpty)
-                                                    .toList() ??
-                                                [],
-                                            'originalId': sale.id,
-                                          });
-                                          for (var u in displayUsers) {
-                                            log(
-                                              "USER: ${u['name']}  TOKEN: ${u['fcmtoken']}",
-                                            );
-                                          }
-                                        }
-                                      }
-
-                                      // 2. إضافة الـ Team Leaders (مع البحث عن الـ sales.id المناسب)
-                                      final teamLeaders =
-                                          dashboardData.data!.teamLeaders ?? [];
-                                      for (var teamLeader in teamLeaders) {
-                                        if (teamLeader.teamLeaderInfo != null) {
-                                          // 🟢 البحث عن الـ sales.id المناسب لهذا الـ Team Leader
-                                          final salesIdForTeamLeader =
-                                              _getSalesIdForTeamLeader(
-                                                teamLeader,
-                                              );
-
-                                          // إذا وجدنا sales.id، نضيف الـ Team Leader للقائمة
-                                          if (salesIdForTeamLeader != null) {
-                                            displayUsers.add({
-                                              'displayId':
-                                                  salesIdForTeamLeader, // 🟢 نستخدم sales.id للتعيين
-                                              'name':
-                                                  teamLeader
-                                                      .teamLeaderInfo!
-                                                      .name ??
-                                                  'Unnamed',
-                                              'role': 'Team Leader (Sales)',
-                                              'email':
-                                                  teamLeader
-                                                      .teamLeaderInfo!
-                                                      .email,
-                                              'originalId':
-                                                  teamLeader.teamLeaderInfo!.id,
-                                              'fcmtoken':
-                                                  teamLeader
-                                                      .teamLeaderInfo
-                                                      ?.fcmToken,
-                                              'fcmTokens':
-                                                  teamLeader
-                                                      .teamLeaderInfo
-                                                      ?.fcmTokens // ✅ أضف ده
-                                                      ?.map(
-                                                        (e) => e.token ?? '',
-                                                      )
-                                                      .where(
-                                                        (t) => t.isNotEmpty,
-                                                      )
-                                                      .toList() ??
-                                                  [],
-                                              'salesId': salesIdForTeamLeader,
-                                            });
-                                          }
-                                          for (var u in displayUsers) {
-                                            log(
-                                              "USER: ${u['name']}  TOKEN: ${u['fcmtoken']}",
-                                            );
-                                          }
-                                        }
-
-                                        // إضافة المندوبين العاديين تحت هذا الـ Team Leader
-                                        final salesUnderTeamLeader =
-                                            teamLeader.sales ?? [];
-                                        for (var sale in salesUnderTeamLeader) {
-                                          if (sale.id != null) {
-                                            displayUsers.add({
-                                              'displayId':
-                                                  sale.id, // 🟢 نستخدم sales.id للتعيين
-                                              'name':
-                                                  sale.userlog?.name ??
-                                                  'Unnamed',
-                                              'role':
-                                                  sale.userlog?.role ?? 'Sales',
-                                              'email': sale.userlog?.email,
-                                              'fcmtoken':
-                                                  sale.userlog?.fcmToken,
-                                              'fcmTokens':
-                                                  sale
-                                                      .userlog
-                                                      ?.fcmTokens // ✅ أضف ده
-                                                      ?.map(
-                                                        (e) => e.token ?? '',
-                                                      )
-                                                      .where(
-                                                        (t) => t.isNotEmpty,
-                                                      )
-                                                      .toList() ??
-                                                  [],
-                                              'originalId': sale.id,
-                                            });
-                                          }
-                                          for (var u in displayUsers) {
-                                            log(
-                                              "USER: ${u['name']}  TOKEN: ${u['fcmtoken']}",
-                                            );
-                                          }
-                                        }
-                                      }
-
-                                      // 🟢 إزالة التكرار بناءً على displayId
-                                      final uniqueUsersMap =
-                                          <String, Map<String, dynamic>>{};
-                                      for (var user in displayUsers) {
+                                    return ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      itemCount: usersList.length,
+                                      itemBuilder: (context, index) {
+                                        final user = usersList[index];
                                         final displayId =
                                             user['displayId'] as String;
-                                        if (!uniqueUsersMap.containsKey(
-                                          displayId,
-                                        )) {
-                                          uniqueUsersMap[displayId] = user;
-                                        }
-                                      }
-                                      List<Map<String, dynamic>> usersList =
-                                          uniqueUsersMap.values.toList();
+                                        final name = user['name'] as String;
+                                        final role = user['role'] as String;
+                                        final isItemSelected =
+                                            selectedSales[displayId] ?? false;
 
-                                      // 🟢 فلترة البحث
-                                      if (searchQuery.isNotEmpty) {
-                                        usersList =
-                                            usersList
-                                                .where(
-                                                  (user) => (user['name']
-                                                          as String)
-                                                      .toLowerCase()
-                                                      .contains(searchQuery),
-                                                )
-                                                .toList();
-                                      }
-
-                                      if (usersList.isEmpty) {
-                                        return Center(
-                                          child: Text(
-                                            "No sales or team leaders available.",
-                                            style: TextStyle(
-                                              color: Colors.grey.shade500,
-                                            ),
+                                        return Container(
+                                          margin: const EdgeInsets.only(
+                                            bottom: 8,
                                           ),
-                                        );
-                                      }
-
-                                      return ListView.builder(
-                                        padding: EdgeInsets.zero,
-                                        itemCount: usersList.length,
-                                        itemBuilder: (context, index) {
-                                          final user = usersList[index];
-                                          final displayId =
-                                              user['displayId'] as String;
-                                          final name = user['name'] as String;
-                                          final role = user['role'] as String;
-                                          final isItemSelected =
-                                              selectedSales[displayId] ?? false;
-
-                                          return Container(
-                                            margin: const EdgeInsets.only(
-                                              bottom: 8,
+                                          decoration: BoxDecoration(
+                                            color:
+                                                isItemSelected
+                                                    ? widget.mainColor
+                                                        .withOpacity(0.08)
+                                                    : Colors.grey.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              14,
                                             ),
-                                            decoration: BoxDecoration(
+                                            border: Border.all(
                                               color:
                                                   isItemSelected
                                                       ? widget.mainColor
-                                                          .withOpacity(0.08)
-                                                      : Colors.grey.shade50,
+                                                      : Colors.grey.shade200,
+                                              width: isItemSelected ? 1.4 : 1,
+                                            ),
+                                          ),
+                                          child: ListTile(
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 2,
+                                                ),
+                                            shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(14),
-                                              border: Border.all(
-                                                color:
-                                                    isItemSelected
-                                                        ? widget.mainColor
-                                                        : Colors.grey.shade200,
-                                                width: isItemSelected ? 1.4 : 1,
+                                            ),
+                                            leading: CircleAvatar(
+                                              radius: 20,
+                                              backgroundColor: widget.mainColor
+                                                  .withOpacity(0.15),
+                                              child: Text(
+                                                _getInitials(name),
+                                                style: TextStyle(
+                                                  color: widget.mainColor,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 13,
+                                                ),
                                               ),
                                             ),
-                                            child: ListTile(
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 2,
-                                                  ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(14),
+                                            title: Text(
+                                              name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 14,
                                               ),
-                                              leading: CircleAvatar(
-                                                radius: 20,
-                                                backgroundColor: widget
-                                                    .mainColor
-                                                    .withOpacity(0.15),
+                                            ),
+                                            subtitle: Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 4,
+                                              ),
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 3,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: widget.mainColor
+                                                      .withOpacity(0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
                                                 child: Text(
-                                                  _getInitials(name),
+                                                  role,
                                                   style: TextStyle(
                                                     color: widget.mainColor,
-                                                    fontWeight: FontWeight.w800,
-                                                    fontSize: 13,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
                                                   ),
                                                 ),
-                                              ),
-                                              title: Text(
-                                                name,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                              subtitle: Padding(
-                                                padding: const EdgeInsets.only(
-                                                  top: 4,
-                                                ),
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 3,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: widget.mainColor
-                                                        .withOpacity(0.1),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          6,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    role,
-                                                    style: TextStyle(
-                                                      color: widget.mainColor,
-                                                      fontSize: 11,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              trailing: Checkbox(
-                                                activeColor: widget.mainColor,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(5),
-                                                ),
-                                                value:
-                                                    selectedSales[displayId] ??
-                                                    false,
-                                                onChanged: (val) {
-                                                  setState(() {
-                                                    selectedSales.clear();
-                                                    selectedSales[displayId] =
-                                                        val ?? false;
-                                                    selectedSalesId =
-                                                        val == true
-                                                            ? displayId
-                                                            : null;
-                                                    selectedFcmToken =
-                                                        val == true
-                                                            ? user['fcmtoken']
-                                                            : null;
-
-                                                    // ✅ اجمع الـ fcmTokens
-                                                    if (val == true) {
-                                                      final tokensList =
-                                                          (user['fcmTokens']
-                                                                  as List<
-                                                                    dynamic
-                                                                  >?)
-                                                              ?.map(
-                                                                (e) =>
-                                                                    e.toString(),
-                                                              )
-                                                              .where(
-                                                                (t) =>
-                                                                    t.isNotEmpty,
-                                                              )
-                                                              .toList() ??
-                                                          [];
-
-                                                      selectedFcmTokens =
-                                                          tokensList.isNotEmpty
-                                                              ? tokensList
-                                                              : (selectedFcmToken !=
-                                                                      null
-                                                                  ? [
-                                                                    selectedFcmToken!,
-                                                                  ]
-                                                                  : []);
-                                                    } else {
-                                                      selectedFcmTokens = [];
-                                                    }
-                                                  });
-                                                },
                                               ),
                                             ),
-                                          );
-                                        },
-                                      );
-                                    } else {
-                                      return Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              "No data available for assignment.",
-                                              style: TextStyle(
-                                                color: Colors.grey.shade600,
+                                            trailing: Checkbox(
+                                              activeColor: widget.mainColor,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
                                               ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            ElevatedButton(
-                                              onPressed: () {
-                                                context
-                                                    .read<
-                                                      GetManagerLeadsCubit
-                                                    >()
-                                                    .getManagerDashboardCounts();
+                                              value:
+                                                  selectedSales[displayId] ??
+                                                  false,
+                                              onChanged: (val) {
+                                                setState(() {
+                                                  selectedSales.clear();
+                                                  selectedSales[displayId] =
+                                                      val ?? false;
+                                                  selectedSalesId =
+                                                      val == true
+                                                          ? displayId
+                                                          : null;
+                                                  selectedFcmToken =
+                                                      val == true
+                                                          ? user['fcmtoken']
+                                                          : null;
+
+                                                  if (val == true) {
+                                                    final tokensList =
+                                                        (user['fcmTokens']
+                                                                as List<
+                                                                  dynamic
+                                                                >?)
+                                                            ?.map(
+                                                              (e) =>
+                                                                  e.toString(),
+                                                            )
+                                                            .where(
+                                                              (t) =>
+                                                                  t.isNotEmpty,
+                                                            )
+                                                            .toList() ??
+                                                        [];
+                                                    selectedFcmTokens =
+                                                        tokensList.isNotEmpty
+                                                            ? tokensList
+                                                            : (selectedFcmToken !=
+                                                                    null
+                                                                ? [
+                                                                  selectedFcmToken!,
+                                                                ]
+                                                                : []);
+                                                  } else {
+                                                    selectedFcmTokens = [];
+                                                  }
+                                                });
                                               },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    widget.mainColor,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
-                                              ),
-                                              child: const Text(
-                                                "Retry",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
                                             ),
-                                          ],
-                                        ),
-                                      );
-                                    }
-                                  },
-                                );
-                              },
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  }
+
+                                  return const SizedBox.shrink();
+                                },
+                              ),
                             ),
                           ),
 
@@ -678,7 +556,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                           Text("OPTIONS", style: _sectionLabelStyle),
                           const SizedBox(height: 8),
 
-                          // 🔹 Clear History checkbox (نفس اللوجيك بشكل جديد)
+                          // 🔹 Clear History checkbox
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.grey.shade50,
@@ -714,7 +592,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                           Text("STAGE OPTION", style: _sectionLabelStyle),
                           const SizedBox(height: 8),
 
-                          // 🔹 خيارات الـ Stage (نفس اللوجيك بشكل جديد)
+                          // 🔹 خيارات الـ Stage
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.grey.shade50,
@@ -786,7 +664,6 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                   },
                                 ),
 
-                                // Dropdown يظهر فقط عند اختيار "Change Stage"
                                 if (selectedOption == 'change' &&
                                     stageState is StagesLoaded)
                                   Padding(
@@ -844,37 +721,44 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                     child: BlocListener<AssignleadCubit, AssignState>(
                       listener: (context, state) async {
                         if (state is AssignSuccess) {
+                          final notificationCubit =
+                              context.read<NotificationCubit>();
+                          final managerCubit =
+                              context.read<GetManagerLeadsCubit>();
+
                           if (Navigator.canPop(dialogContext)) {
                             Navigator.pop(dialogContext, true);
                           }
                           if (widget.onAssignSuccess != null) {
                             widget.onAssignSuccess!();
                           }
-                          final cubit = context.read<GetManagerLeadsCubit>();
-                          await cubit.getManagerLeadsPagination();
 
-                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          await managerCubit.getManagerLeadsPagination();
+
+                          ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text("Lead assigned successfully! ✅"),
                             ),
                           );
 
+                          log("🔔 selectedFcmTokens: $selectedFcmTokens");
                           if (selectedFcmTokens.isNotEmpty) {
-                            context
-                                .read<NotificationCubit>()
-                                .sendNotificationToTokens(
-                                  title: "Lead",
-                                  body: "New Lead assigned successfully ✅",
-                                  fcmTokens: selectedFcmTokens,
-                                );
+                            log(
+                              "📤 Sending notification to ${selectedFcmTokens.length} tokens",
+                            );
+                            notificationCubit.sendNotificationToTokens(
+                              title: "Lead",
+                              body: "New Lead assigned successfully ✅",
+                              fcmTokens: selectedFcmTokens,
+                            );
+                          } else {
+                            log(
+                              "⚠️ selectedFcmTokens EMPTY - notification not sent",
+                            );
                           }
                         } else if (state is AssignFailure) {
-                          ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Failed to assign lead: ${state.error} ❌",
-                              ),
-                            ),
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Failed to assign lead")),
                           );
                         }
                       },
@@ -919,41 +803,63 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                   if (clearHistory) {
                                     await saveClearHistoryTime();
                                   }
-                                          final prefs = await SharedPreferences.getInstance();
-        final freshStageId = prefs.getString('fresh_stage_id');
-        final transferStageId = prefs.getString('transfer_stage_id');
-        final pendingStageId = prefs.getString('pending_stage_id');
-        String stageToSend = '';
-        if (selectedOption == 'as_fresh') {
-          stageToSend = pendingStageId!;
-        } else if (selectedOption == 'change') {
-          if (selectedStageId == null || selectedStageId!.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Please select a stage")),
-            );
-            return;
-          }
-          stageToSend = selectedStageId!;
-        } else {
-          // ✅ Same Stage - مع التحقق من وجود leadsStages
-          if (widget.leadsStages != null && widget.leadsStages!.isNotEmpty) {
-            stageToSend = widget.leadsStages!.last.toString();
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  final freshStageId = prefs.getString(
+                                    'fresh_stage_id',
+                                  );
+                                  final transferStageId = prefs.getString(
+                                    'transfer_stage_id',
+                                  );
+                                  final pendingStageId = prefs.getString(
+                                    'pending_stage_id',
+                                  );
+                                  String stageToSend = '';
+                                  if (selectedOption == 'as_fresh') {
+                                    stageToSend = pendingStageId!;
+                                  } else if (selectedOption == 'change') {
+                                    if (selectedStageId == null ||
+                                        selectedStageId!.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Please select a stage",
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    stageToSend = selectedStageId!;
+                                  } else {
+                                    if (widget.leadsStages != null &&
+                                        widget.leadsStages!.isNotEmpty) {
+                                      stageToSend =
+                                          widget.leadsStages!.last.toString();
 
-            if (stageToSend == transferStageId || stageToSend == freshStageId) {
-              stageToSend = pendingStageId!;
-            }
-          } else {
-            stageToSend = pendingStageId!;
-            log("⚠️ leadsStages is null or empty, using pendingStageId as default");
+                                      if (stageToSend == transferStageId ||
+                                          stageToSend == freshStageId) {
+                                        stageToSend = pendingStageId!;
+                                      }
+                                    } else {
+                                      stageToSend = pendingStageId!;
+                                      log(
+                                        "⚠️ leadsStages is null or empty, using pendingStageId as default",
+                                      );
 
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("No stage available, using default stage"),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-        }
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "No stage available, using default stage",
+                                          ),
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  }
 
                                   log(
                                     "📤 Assigning lead to sales ID: $selectedSalesId",
@@ -975,7 +881,7 @@ class _AssignDialogState extends State<AssignLeadDialogManager> {
                                         "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}",
                                     salesId: selectedSalesId!,
                                     isClearhistory: clearHistory,
-                                     stageId: stageToSend, // ✅ جديد
+                                    stageId: stageToSend,
                                   );
                                 } else {
                                   ScaffoldMessenger.of(

@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/all_request_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/manager_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/manager_team_leader_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
@@ -134,6 +135,8 @@ class _ManagerDashboardDataScreenState extends State<ManagerDashboardDataScreen>
       ..getManagerDashboardDataCounts();
 
     context.read<NotificationCubit>().initNotifications();
+    context.read<NotificationCubit>().fetchNotifications(); // ✅ ضيف السطر ده
+
     print("init notifications called");
   }
 
@@ -173,6 +176,9 @@ class _ManagerDashboardDataScreenState extends State<ManagerDashboardDataScreen>
       print("App resumed — refreshing manager dashboard data counts...");
       Future.delayed(const Duration(milliseconds: 300), () {
         _managerCubit.getManagerDashboardDataCounts();
+        context
+            .read<NotificationCubit>()
+            .fetchNotifications(); // ✅ ضيف السطر ده
       });
     }
   }
@@ -256,14 +262,31 @@ class _ManagerDashboardDataScreenState extends State<ManagerDashboardDataScreen>
                 ],
               ),
               const Spacer(),
-              _iconBox(Icons.notifications_none, () {
+              _iconBox(Icons.history, () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const SalesNotificationsScreen(),
+                    builder: (context) => const RequestsHistoryScreen(),
                   ),
                 );
               }),
+              const SizedBox(width: 8),
+              BlocBuilder<NotificationCubit, NotificationState>(
+                builder: (context, notifState) {
+                  return _iconBox(
+                    Icons.notifications_none,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SalesNotificationsScreen(),
+                        ),
+                      );
+                    },
+                    badgeCount: notifState.unreadCount, // ✅
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -468,14 +491,14 @@ class _ManagerDashboardDataScreenState extends State<ManagerDashboardDataScreen>
                                           : isTablet
                                           ? 3
                                           : 2,
-                                  crossAxisSpacing: (10 * tabletWidthScale).w,
-                                  mainAxisSpacing: (10 * tabletHeightScale).h,
+                                  crossAxisSpacing: (8 * tabletWidthScale).w,
+                                  mainAxisSpacing: (8 * tabletHeightScale).h,
                                   childAspectRatio:
                                       isLargeTablet
-                                          ? 1.6
+                                          ? 1.85
                                           : isTablet
-                                          ? 1.5
-                                          : 1.78,
+                                          ? 1.75
+                                          : 2,
                                 ),
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -509,8 +532,8 @@ class _ManagerDashboardDataScreenState extends State<ManagerDashboardDataScreen>
 
   // ── Widgets ───────────────────────────────────────────────────────────────
 
-  Widget _iconBox(IconData icon, void Function() onPressed) {
-    return Container(
+  Widget _iconBox(IconData icon, void Function() onPressed, {int? badgeCount}) {
+    final Widget button = Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular((12 * tabletScale).r),
@@ -538,6 +561,43 @@ class _ManagerDashboardDataScreenState extends State<ManagerDashboardDataScreen>
           minHeight: (40 * tabletHeightScale).h,
         ),
       ),
+    );
+
+    if (badgeCount == null || badgeCount <= 0) return button;
+
+    final String badgeText = badgeCount > 99 ? '+99' : '$badgeCount';
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        Positioned(
+          right: -2,
+          top: -2,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: (5 * tabletScale).r,
+              vertical: (2 * tabletScale).r,
+            ),
+            constraints: BoxConstraints(minWidth: (18 * tabletScale).r),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular((10 * tabletScale).r),
+              border: Border.all(color: Colors.white, width: 1.2),
+            ),
+            child: Text(
+              badgeText,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: (9 * tabletFontScale).sp,
+                fontWeight: FontWeight.w700,
+                height: 1,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

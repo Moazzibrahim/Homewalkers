@@ -1,14 +1,13 @@
-// ignore_for_file: avoid_print, use_build_context_synchronously, unused_local_variable
+// ignore_for_file: avoid_print, use_build_context_synchronously, unused_local_variable, unnecessary_null_comparison
 
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
-import 'package:homewalkers_app/presentation/screens/company_name_screen.dart';
-import 'package:homewalkers_app/presentation/screens/decider_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
@@ -17,6 +16,7 @@ import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tab
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:homewalkers_app/presentation/widgets/http_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class LoginApiService {
   String? token;
@@ -39,10 +39,14 @@ class LoginApiService {
     }
     try {
       final fcmToken = await FirebaseMessaging.instance.getToken();
+      final localDeviceId = await _getOrCreateDeviceId();
+      final platform = Platform.isIOS ? 'ios' : 'android';
       final loginBody = {
         'email': email,
         'password': password,
         'fcmToken': fcmToken,
+        'deviceId': localDeviceId,
+        'platform': platform,
       };
       log('📦 Login Body: ${jsonEncode(loginBody)}');
 
@@ -54,6 +58,8 @@ class LoginApiService {
           'email': email,
           'password': password,
           'fcmToken': fcmToken,
+          'deviceId': localDeviceId,
+          'platform': platform,
         }),
       );
 
@@ -65,8 +71,7 @@ class LoginApiService {
 
         final userData = responseData['data'];
         token = responseData['token'];
-        deviceId = responseData['deviceId'] ?? '';
-
+        deviceId = localDeviceId; // fallback لو السيرفر مبعتش
         if (userData == null || token == null || deviceId == null) {
           log('❌ Missing token or deviceId or user in response');
           throw Exception('Login failed: Missing required data');
@@ -93,6 +98,7 @@ class LoginApiService {
         log('✔️ Active: $active');
         log('📲 New FCM Token: $newFcmToken');
         log('📱 deviceId: $deviceId');
+        log('📧 platform: $platform');
 
         // Save to SharedPreferences
         final prefs = await SharedPreferences.getInstance();
@@ -165,6 +171,16 @@ class LoginApiService {
     }
   }
 
+  Future<String> _getOrCreateDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? deviceId = prefs.getString('fcm_device_id');
+    if (deviceId == null) {
+      deviceId = 'mobile-${const Uuid().v4()}';
+      await prefs.setString('fcm_device_id', deviceId);
+    }
+    return deviceId;
+  }
+
   static Future<String?> refreshToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -235,7 +251,7 @@ class LoginApiService {
         log("✅ Logout successful");
 
         // ✅ حذف FCM Token من Firebase
-       // await FirebaseMessaging.instance.deleteToken();
+        // await FirebaseMessaging.instance.deleteToken();
         log("🧹 FCM Token Deleted ✅");
 
         // 🗑️ امسح كل البيانات من SharedPreferences

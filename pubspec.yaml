@@ -2,7 +2,7 @@ name: homewalkers_app
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.3+119
+version: 1.0.3+120
 
 environment:
   sdk: ^3.7.0
@@ -41,6 +41,7 @@ dependencies:
   shimmer: ^3.0.0
   timeago: ^3.7.1
   url_launcher: ^6.3.1
+  uuid: ^4.6.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4

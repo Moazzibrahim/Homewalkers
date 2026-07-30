@@ -200,6 +200,13 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
     }
   }
 
+  int? _getLeadsCount(GetManagerLeadsState state) {
+    if (state is GetManagerCrmLeadsSuccess) {
+      return context.read<GetManagerLeadsCubit>().totalLeadsCount;
+    }
+    return null;
+  }
+
   // ─────────────────────────────────────────────
   // NEW CARD DESIGN (matches the screenshot)
   // ─────────────────────────────────────────────
@@ -350,6 +357,7 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                     isresetcreationdate: lead.resetcreationdate ?? false,
                     hidesalesnameonleadcomments:
                         lead.hidesalesnameonleadcomments ?? false,
+                    leadassign: lead.assign ?? false,
                   ),
                 ),
           ),
@@ -363,7 +371,12 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
       },
       // borderRadius: BorderRadius.circular(22.r),
       child: Container(
-        margin: EdgeInsets.symmetric(vertical: 14.h, horizontal: 14.w),
+        margin: EdgeInsets.only(
+          top: 5.h,
+          right: 7.w,
+          left: 7.w,
+          bottom: 5.h,
+        ), //keda tmam
         decoration: BoxDecoration(
           color:
               isSelected
@@ -400,7 +413,8 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                 child: Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: 22.w,
-                    vertical: 22.h,
+                    vertical: 13.h,
+                    //keda tmam
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,9 +618,9 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                         ],
                       ),
 
-                      SizedBox(height: 10.h),
+                      SizedBox(height: 5.h),
                       Divider(color: Colors.grey.shade300, thickness: 1),
-                      SizedBox(height: 10.h),
+                      SizedBox(height: 5.h),
 
                       // ── PHONE + ACTION BUTTONS ──
                       Row(
@@ -1309,6 +1323,10 @@ class _ManagerLeadsScreenState extends State<ManagerLeadsScreen> {
                   : Constants.backgroundDarkmode,
           appBar: CustomAppBar(
             title: _isSearchVisible ? null : "Leads",
+            count:
+                _isSearchVisible
+                    ? null
+                    : _getLeadsCount(state), // ✅ ضيف السطر ده
             onBack: () {
               if (widget.data == true) {
                 Navigator.pushReplacement(

@@ -25,6 +25,7 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
   List<LeadPagination> paginatedLeads = [];
   bool hasMoreData = true;
   bool isFetchingMore = false;
+  int totalLeadsCount = 0; // ✅ لتخزين العدد الإجمالي للـ Leads
 
   bool get isLoading => _isLoading;
   bool get cachedLeadsHasData =>
@@ -178,6 +179,9 @@ class GetLeadsCubit extends Cubit<GetLeadsState> {
 
       if (result != null && result.data != null) {
         final newData = result.data!;
+        totalLeadsCount =
+            result.pagination?.totalItems?.toInt() ??
+            0; // ✅ تحديث العدد الإجمالي للـ Leads
 
         if (newData.isEmpty) {
           // ✅ لو البيانات اللي رجعت فاضية

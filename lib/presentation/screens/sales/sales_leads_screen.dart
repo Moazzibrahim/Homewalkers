@@ -403,7 +403,18 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
               limit: 10,
               data: widget.data,
               transferefromdata: widget.transferfromdata,
-              stageId: widget.stageId,
+              stageId: _currentFilterStageId ?? widget.stageId, // ✅
+              search:
+                  nameController.text.isNotEmpty
+                      ? nameController.text.trim()
+                      : null, // ✅
+              developerId: _currentFilterDeveloperId, // ✅
+              projectId: _currentFilterProjectId, // ✅
+              channelId: _currentFilterChannelId, // ✅
+              creationDateFrom: _currentFilterCreationDateFrom, // ✅
+              creationDateTo: _currentFilterCreationDateTo, // ✅
+              stageDateFrom: _currentFilterStageDateFrom, // ✅
+              stageDateTo: _currentFilterStageDateTo, // ✅
             )
             .then((_) {
               if (mounted) setState(() => _isFetchingMore = false);
@@ -527,6 +538,8 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                 _isSearchVisible
                     ? null // إذا كان البحث ظاهراً، لا نريد عرض النص
                     : "Leads",
+            count: _isSearchVisible ? null : _getLeadsCount(state), // ✅ جديد
+
             onBack: () {
               if (widget.transferfromdata == true) {
                 Navigator.pushReplacement(
@@ -552,6 +565,14 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
         );
       },
     );
+  }
+
+  int? _getLeadsCount(GetLeadsState state) {
+    if (state is GetSalesLeadsWithPaginationSuccess) {
+      final cubit = context.read<GetLeadsCubit>();
+      return cubit.totalLeadsCount;
+    }
+    return null;
   }
 
   Widget _buildBody(GetLeadsState state) {
@@ -1420,7 +1441,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
           controller: _scrollController,
           itemCount: leads.length + (_isFetchingMore ? 1 : 0),
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.all(_responsive.horizontalPadding.w),
+          // padding: EdgeInsets.all(_responsive.horizontalPadding.w),
           itemBuilder: (context, index) {
             if (index == leads.length) {
               return Padding(
@@ -1699,7 +1720,7 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
         },
         borderRadius: BorderRadius.circular(22.r),
         child: Container(
-          margin: EdgeInsets.symmetric(vertical: 10.h, horizontal: 10.w),
+          margin: EdgeInsets.only(top: 5.h, right: 9.w, left: 9.w, bottom: 5.h),
           decoration: BoxDecoration(
             color:
                 Theme.of(context).brightness == Brightness.light
@@ -1733,8 +1754,8 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                 Expanded(
                   child: Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: 18.w,
-                      vertical: 18.h,
+                      horizontal: 12.w,
+                      vertical: 13.h,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1940,9 +1961,9 @@ class _SalesLeadsScreenState extends State<SalesLeadsScreen> {
                           ],
                         ),
 
-                        SizedBox(height: 10.h),
+                        SizedBox(height: 5.h),
                         Divider(color: Colors.grey.shade300, thickness: 1),
-                        SizedBox(height: 10.h),
+                        SizedBox(height: 5.h),
 
                         // ── PHONE + ACTION BUTTONS ────────────────────
                         Row(

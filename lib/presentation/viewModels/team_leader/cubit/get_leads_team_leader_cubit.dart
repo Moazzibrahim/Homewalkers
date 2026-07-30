@@ -1,4 +1,4 @@
-// ignore_for_file: unused_element
+// ignore_for_file: unused_element, prefer_final_fields
 
 import 'dart:developer';
 import 'package:bloc/bloc.dart';
@@ -23,6 +23,7 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
   bool hasMoreData = true;
   bool isFetchingMore = false;
   int currentPage = 1;
+  int? totalLeadsCount;
 
   GetLeadsTeamLeaderCubit(this._getLeadsService)
     : super(GetLeadsTeamLeaderInitial());
@@ -111,6 +112,7 @@ class GetLeadsTeamLeaderCubit extends Cubit<GetLeadsTeamLeaderState> {
 
       if (result != null && result.data != null) {
         final newData = result.data!;
+        totalLeadsCount = result.pagination?.totalItems?.toInt();
 
         if (newData.isEmpty) {
           // No more data

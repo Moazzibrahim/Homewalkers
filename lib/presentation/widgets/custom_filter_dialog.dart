@@ -11,7 +11,6 @@ import 'package:homewalkers_app/presentation/viewModels/sales/developers/develop
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
-import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
 import 'package:country_picker/country_picker.dart';
 
@@ -19,7 +18,7 @@ void showFilterDialog(
   BuildContext context,
   bool? data,
   bool? transferfromdata,
-  Function(Map<String, dynamic>)? onFiltersApplied, // ✅ أضف هذا
+  Function(Map<String, dynamic>)? onFiltersApplied,
 ) {
   showDialog(
     context: context,
@@ -46,7 +45,7 @@ void showFilterDialog(
           child: FilterDialog(
             data: data,
             transferfromdata: transferfromdata,
-            onFiltersApplied: onFiltersApplied, // ✅ تمرير الـ callback
+            onFiltersApplied: onFiltersApplied,
           ),
         ),
   );
@@ -55,13 +54,13 @@ void showFilterDialog(
 class FilterDialog extends StatefulWidget {
   final bool? data;
   final bool? transferfromdata;
-  final Function(Map<String, dynamic>)? onFiltersApplied; // ✅ أضف هذا
+  final Function(Map<String, dynamic>)? onFiltersApplied;
 
   const FilterDialog({
     super.key,
     this.data,
     this.transferfromdata,
-    this.onFiltersApplied, // ✅ أضف هذا
+    this.onFiltersApplied,
   });
 
   @override
@@ -79,6 +78,194 @@ class _FilterDialogState extends State<FilterDialog> {
   DateTime? _endDate;
   DateTime? _lastStageUpdateStart;
   DateTime? _lastStageUpdateEnd;
+
+  // ─────────────────────────────────────────────
+  // ✅ Bottom sheet بحث قابل لإعادة الاستخدام لأي ليستة
+  // ─────────────────────────────────────────────
+  Future<String?> _showSearchableList({
+    required String title,
+    required List<String> items,
+    required String? selectedValue,
+  }) async {
+    String query = '';
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setModalState) {
+            final filtered =
+                items
+                    .where((e) => e.toLowerCase().contains(query.toLowerCase()))
+                    .toList();
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 12,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (selectedValue != null)
+                        TextButton(
+                          onPressed: () => Navigator.pop(sheetContext, ''),
+                          child: const Text("Clear"),
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(sheetContext),
+                      ),
+                    ],
+                  ),
+                  TextField(
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: "Search...",
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      isDense: true,
+                    ),
+                    onChanged: (v) => setModalState(() => query = v),
+                  ),
+                  const SizedBox(height: 8),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(sheetContext).size.height * 0.4,
+                    ),
+                    child:
+                        filtered.isEmpty
+                            ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 24),
+                              child: Text(
+                                "No results",
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                            : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) {
+                                final item = filtered[index];
+                                final isSelected = item == selectedValue;
+                                return ListTile(
+                                  title: Text(item),
+                                  trailing:
+                                      isSelected
+                                          ? Icon(
+                                            Icons.check,
+                                            color: Constants.maincolor,
+                                          )
+                                          : null,
+                                  onTap:
+                                      () => Navigator.pop(sheetContext, item),
+                                );
+                              },
+                            ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // ✅ حقل الفلتر اللي بيفتح البحث
+  // ─────────────────────────────────────────────
+  Widget _buildSearchableDropdown({
+    required String hint,
+    required List<String> items,
+    required String? value,
+    required Function(String?) onChanged,
+    required bool isTablet7,
+    required bool isTablet10,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () async {
+        final result = await _showSearchableList(
+          title: hint,
+          items: items,
+          selectedValue: value,
+        );
+        if (result == '') {
+          onChanged(null); // ✅ تم مسح الفلتر
+        } else if (result != null) {
+          onChanged(result);
+        }
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(
+            fontSize:
+                isTablet10
+                    ? 16
+                    : isTablet7
+                    ? 15
+                    : 14,
+            color: const Color.fromRGBO(143, 146, 146, 1),
+            fontWeight: FontWeight.w400,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xffE1E1E1)),
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical:
+                isTablet10
+                    ? 20
+                    : isTablet7
+                    ? 18
+                    : 16,
+          ),
+          suffixIcon: const Icon(Icons.arrow_drop_down),
+        ),
+        child: Text(
+          value ?? hint,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize:
+                isTablet10
+                    ? 16
+                    : isTablet7
+                    ? 15
+                    : 14,
+            fontWeight: FontWeight.w400,
+            color:
+                value == null
+                    ? const Color.fromRGBO(143, 146, 146, 1)
+                    : Theme.of(context).brightness == Brightness.light
+                    ? const Color(0xff080719)
+                    : Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget buildDateField(
     String label,
@@ -212,19 +399,23 @@ class _FilterDialogState extends State<FilterDialog> {
               CustomTextField(hint: "Full Name", controller: nameController),
               const SizedBox(height: 12),
 
-              /// Developers
+              /// ✅ Developers - قابل للبحث
               BlocBuilder<DevelopersCubit, DevelopersState>(
                 builder: (context, state) {
                   if (state is DeveloperSuccess) {
-                    return CustomDropdownField(
+                    final items =
+                        state.developersModel.data
+                            .map((e) => e.name ?? '')
+                            .where((e) => e.isNotEmpty)
+                            .toList();
+                    return _buildSearchableDropdown(
                       hint: "Choose Developer",
-                      items:
-                          state.developersModel.data
-                              .map((e) => e.name)
-                              .toList(),
+                      items: items,
                       value: selectedDeveloper,
                       onChanged:
                           (val) => setState(() => selectedDeveloper = val),
+                      isTablet7: isTablet7,
+                      isTablet10: isTablet10,
                     );
                   }
                   return const SizedBox.shrink();
@@ -232,16 +423,22 @@ class _FilterDialogState extends State<FilterDialog> {
               ),
               const SizedBox(height: 12),
 
-              /// Projects
+              /// ✅ Projects - قابل للبحث
               BlocBuilder<ProjectsCubit, ProjectsState>(
                 builder: (context, state) {
                   if (state is ProjectsSuccess) {
-                    return CustomDropdownField(
+                    final items =
+                        (state.projectsModel.data ?? [])
+                            .map((e) => e.name ?? '')
+                            .where((e) => e.isNotEmpty)
+                            .toList();
+                    return _buildSearchableDropdown(
                       hint: "Choose Project",
-                      items:
-                          state.projectsModel.data!.map((e) => e.name).toList(),
+                      items: items,
                       value: selectedProject,
                       onChanged: (val) => setState(() => selectedProject = val),
+                      isTablet7: isTablet7,
+                      isTablet10: isTablet10,
                     );
                   }
                   return const SizedBox.shrink();
@@ -249,18 +446,22 @@ class _FilterDialogState extends State<FilterDialog> {
               ),
               const SizedBox(height: 12),
 
-              /// Channels
+              /// ✅ Channels - قابل للبحث
               BlocBuilder<ChannelCubit, ChannelState>(
                 builder: (context, state) {
                   if (state is ChannelLoaded) {
-                    return CustomDropdownField(
+                    final items =
+                        state.channelResponse.data
+                            .map((e) => e.name ?? '')
+                            .where((e) => e.isNotEmpty)
+                            .toList();
+                    return _buildSearchableDropdown(
                       hint: "Choose channel",
-                      items:
-                          state.channelResponse.data
-                              .map((e) => e.name)
-                              .toList(),
+                      items: items,
                       value: selectedChannel,
                       onChanged: (val) => setState(() => selectedChannel = val),
+                      isTablet7: isTablet7,
+                      isTablet10: isTablet10,
                     );
                   }
                   return const SizedBox.shrink();
@@ -268,15 +469,22 @@ class _FilterDialogState extends State<FilterDialog> {
               ),
               const SizedBox(height: 12),
 
-              /// Stages
+              /// ✅ Stages - قابل للبحث
               BlocBuilder<StagesCubit, StagesState>(
                 builder: (context, state) {
                   if (state is StagesLoaded) {
-                    return CustomDropdownField(
+                    final items =
+                        state.stages
+                            .map((e) => e.name ?? '')
+                            .where((e) => e.isNotEmpty)
+                            .toList();
+                    return _buildSearchableDropdown(
                       hint: "Choose Stage",
-                      items: state.stages.map((e) => e.name).toList(),
+                      items: items,
                       value: selectedStage,
                       onChanged: (val) => setState(() => selectedStage = val),
+                      isTablet7: isTablet7,
+                      isTablet10: isTablet10,
                     );
                   }
                   return const SizedBox.shrink();
@@ -332,7 +540,6 @@ class _FilterDialogState extends State<FilterDialog> {
                           _lastStageUpdateEnd = null;
                         });
 
-                        // ✅ استدعاء الـ callback بفلاتر فاضية
                         final clearedFilters = {
                           'name': null,
                           'developerId': null,
@@ -346,7 +553,6 @@ class _FilterDialogState extends State<FilterDialog> {
                         };
                         widget.onFiltersApplied?.call(clearedFilters);
 
-                        // ✅ رفريش الليست وراه بدون أي فلاتر
                         context
                             .read<GetLeadsCubit>()
                             .fetchSalesLeadsWithPagination(
@@ -361,11 +567,10 @@ class _FilterDialogState extends State<FilterDialog> {
                               creationDateTo: null,
                               data: widget.data,
                               transferefromdata: widget.transferfromdata,
+                              resetPagination: true, // ✅ ضروري
                             );
 
-                        Navigator.pop(
-                          context,
-                        ); // ✅ قفل الـ dialog زي Apply بالظبط
+                        Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -410,44 +615,55 @@ class _FilterDialogState extends State<FilterDialog> {
                         String? stageId;
                         String? channelId;
 
+                        // ✅ orElse أضيفت لمنع الـ crash لو العنصر مش موجود
                         if (developersState is DeveloperSuccess &&
                             selectedDeveloper != null) {
-                          developerId =
+                          final match =
                               developersState.developersModel.data
-                                  .firstWhere(
-                                    (e) => e.name == selectedDeveloper,
-                                  )
-                                  .id
-                                  .toString();
+                                  .where((e) => e.name == selectedDeveloper)
+                                  .toList();
+                          developerId =
+                              match.isNotEmpty
+                                  ? match.first.id.toString()
+                                  : null;
                         }
 
                         if (projectsState is ProjectsSuccess &&
                             selectedProject != null) {
+                          final match =
+                              (projectsState.projectsModel.data ?? [])
+                                  .where((e) => e.name == selectedProject)
+                                  .toList();
                           projectId =
-                              projectsState.projectsModel.data!
-                                  .firstWhere((e) => e.name == selectedProject)
-                                  .id
-                                  .toString();
+                              match.isNotEmpty
+                                  ? match.first.id.toString()
+                                  : null;
                         }
 
                         if (channelsState is ChannelLoaded &&
                             selectedChannel != null) {
-                          channelId =
+                          final match =
                               channelsState.channelResponse.data
-                                  .firstWhere((e) => e.name == selectedChannel)
-                                  .id
-                                  .toString();
+                                  .where((e) => e.name == selectedChannel)
+                                  .toList();
+                          channelId =
+                              match.isNotEmpty
+                                  ? match.first.id.toString()
+                                  : null;
                         }
 
                         if (stagesState is StagesLoaded &&
                             selectedStage != null) {
-                          stageId =
+                          final match =
                               stagesState.stages
-                                  .firstWhere((e) => e.name == selectedStage)
-                                  .id
-                                  .toString();
+                                  .where((e) => e.name == selectedStage)
+                                  .toList();
+                          stageId =
+                              match.isNotEmpty
+                                  ? match.first.id.toString()
+                                  : null;
                         }
-                        // ✅ جمع قيم الفلاتر
+
                         final appliedFilters = {
                           'name':
                               nameController.text.trim().isEmpty
@@ -463,7 +679,6 @@ class _FilterDialogState extends State<FilterDialog> {
                           'stageDateTo': _lastStageUpdateEnd,
                         };
 
-                        // ✅ استدعاء الـ callback
                         widget.onFiltersApplied?.call(appliedFilters);
 
                         context
@@ -483,6 +698,7 @@ class _FilterDialogState extends State<FilterDialog> {
                               creationDateTo: _endDate,
                               data: widget.data,
                               transferefromdata: widget.transferfromdata,
+                              resetPagination: true, // ✅ ضروري
                             );
 
                         Navigator.pop(context);

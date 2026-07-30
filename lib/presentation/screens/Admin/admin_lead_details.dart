@@ -83,6 +83,7 @@ class AdminLeadDetails extends StatefulWidget {
   final List<String>? salesFcmTokens; // ✅ أضف ده
   final String? lastcommentSales;
   final bool? ignoredublicates;
+  final bool? leadassign;
 
   AdminLeadDetails({
     super.key,
@@ -139,6 +140,7 @@ class AdminLeadDetails extends StatefulWidget {
     this.salesFcmTokens, // ✅ أضف ده
     this.lastcommentSales,
     this.ignoredublicates,
+    this.leadassign,
   });
   @override
   State<AdminLeadDetails> createState() => _SalesLeadsDetailsScreenState();
@@ -1361,6 +1363,14 @@ class _SalesLeadsDetailsScreenState extends State<AdminLeadDetails> {
                   letterSpacing: 1.5,
                   color: isDark ? Colors.white70 : const Color(0xFF5E5E6A),
                 ),
+              ),
+              Icon(
+                Icons.done_all,
+                size: 18.sp,
+                color:
+                    widget.leadassign == true
+                        ? Colors.grey
+                        : Constants.maincolor,
               ),
             ],
           ),

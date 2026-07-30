@@ -113,7 +113,7 @@ class SharedAdminNavBar extends StatelessWidget {
                 2,
                 Icons.business,
                 Icons.business,
-                'Sales',
+                'SALES',
                 isDark,
               ),
               _buildNavItem(
@@ -321,7 +321,7 @@ class _TabsScreenState extends State<AdminTabsScreen> {
                   index: 2,
                   icon: Icons.business,
                   activeIcon: Icons.business,
-                  label: 'Sales',
+                  label: 'SALES',
                 ),
                 _buildNavItem(
                   index: 3,

@@ -606,7 +606,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: (16 * tabletWidthScale).w,
+          horizontal: (12 * tabletWidthScale).w,
           vertical: (10 * tabletHeightScale).h,
         ),
         child: Column(
@@ -1532,6 +1532,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                                   ?.map((e) => e.token ?? '')
                                                   .where((t) => t.isNotEmpty)
                                                   .toList(),
+                                          leadassign: lead.assign,
                                         ),
                                   ),
                                 );
@@ -1539,7 +1540,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                             },
                             child: Container(
                               margin: EdgeInsets.symmetric(
-                                vertical: (10 * tabletHeightScale).h,
+                                vertical: (4 * tabletHeightScale).h,
                               ),
                               decoration: BoxDecoration(
                                 color:
@@ -1628,7 +1629,7 @@ class _ManagerLeadsScreenState extends State<LeadsMarketierScreen> {
                                       child: Padding(
                                         padding: EdgeInsets.symmetric(
                                           horizontal: (18 * tabletWidthScale).w,
-                                          vertical: (18 * tabletHeightScale).h,
+                                          vertical: (14 * tabletHeightScale).h,
                                         ),
                                         child: Column(
                                           crossAxisAlignment:

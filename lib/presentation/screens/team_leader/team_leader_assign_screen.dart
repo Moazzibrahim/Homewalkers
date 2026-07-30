@@ -239,12 +239,20 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
               limit: 10,
               data: widget.data,
               transferefromdata: widget.transferfromdata,
-              stageId: widget.stageId,
+              // ✅ تمرير جميع الفلاتر المخزنة
+              stageId: _currentFilterStageId ?? widget.stageId,
               salesId: _currentFilterSalesId ?? widget.salesName,
               search:
                   searchController.text.isNotEmpty
                       ? searchController.text
                       : null,
+              developerId: _currentFilterDeveloperId,
+              projectId: _currentFilterProjectId,
+              channelId: _currentFilterChannelId,
+              creationDateFrom: _currentFilterCreationDateFrom,
+              creationDateTo: _currentFilterCreationDateTo,
+              stageDateFrom: _currentFilterStageDateFrom,
+              stageDateTo: _currentFilterStageDateTo,
             )
             .then((_) {
               if (mounted) setState(() => _isFetchingMore = false);
@@ -288,6 +296,13 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
     );
     final inches = diagonal / (data.devicePixelRatio * 160);
     return inches >= 7.0;
+  }
+
+  int? _getLeadsCount(GetLeadsTeamLeaderState state) {
+    if (state is GetLeadsTeamLeaderPaginationSuccess) {
+      return _cubit.totalLeadsCount;
+    }
+    return null;
   }
 
   @override
@@ -357,6 +372,12 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                     : Constants.backgroundDarkmode,
             appBar: CustomAppBar(
               title: _isSearchVisible ? null : "Leads",
+              count:
+                  _isSearchVisible
+                      ? null
+                      : _getLeadsCount(
+                        context.watch<GetLeadsTeamLeaderCubit>().state,
+                      ), // ✅ جديد// ✅ جديد
               onBack: () {
                 if (widget.transferfromdata == true) {
                   Navigator.pushReplacement(
@@ -1354,6 +1375,7 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                                 .toList(),
                         hidesalesnameonleadcomments:
                             lead.hidesalesnameonleadcomments,
+                        leadassign: lead.assign ?? false,
                       ),
                     ),
               ),
@@ -1451,7 +1473,12 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
         },
         borderRadius: BorderRadius.circular(22.r),
         child: Container(
-          margin: EdgeInsets.symmetric(vertical: 14.h, horizontal: 14.w),
+          margin: EdgeInsets.only(
+            top: 5.h,
+            right: 7.w,
+            left: 7.w,
+            bottom: 5.h,
+          ), //keda tmam
           decoration: BoxDecoration(
             color:
                 selected[index]
@@ -1488,7 +1515,8 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                   child: Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 22.w,
-                      vertical: 22.h,
+                      vertical: 13.h,
+                      //keda tmam
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1715,9 +1743,9 @@ class _SalesAssignLeadsScreenState extends State<TeamLeaderAssignScreen> {
                           ],
                         ),
 
-                        SizedBox(height: 10.h),
+                        SizedBox(height: 5.h),
                         Divider(color: Colors.grey.shade300, thickness: 1),
-                        SizedBox(height: 10.h),
+                        SizedBox(height: 5.h),
 
                         // ── PHONE + ACTION BUTTONS ──
                         Row(

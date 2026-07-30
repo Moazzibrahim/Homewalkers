@@ -22,6 +22,28 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
   int _currentPage = 1;
   bool _hasNextPage = true;
   bool _isFetching = false;
+  int? totalLeadsCount; // ✅ ضيف السطر ده
+  // ✅ حفظ آخر فلاتر متستخدمة عشان الـ pagination يفضل يحترمها
+  bool? _lastData;
+  String? _lastSearch;
+  List<String>? _lastSalesIds;
+  List<String>? _lastDeveloperIds;
+  List<String>? _lastProjectIds;
+  List<String>? _lastChannelIds;
+  List<String>? _lastCampaignIds;
+  List<String>? _lastCommunicationWayIds;
+  List<String>? _lastStageIds;
+  DateTime? _lastStageDateFrom;
+  DateTime? _lastStageDateTo;
+  DateTime? _lastCreationDateFrom;
+  DateTime? _lastCreationDateTo;
+  DateTime? _lastLastStageUpdateFrom;
+  DateTime? _lastLastStageUpdateTo;
+  DateTime? _lastLastCommentDateFrom;
+  DateTime? _lastLastCommentDateTo;
+  bool? _lastIgnoreDuplicate;
+  bool? _lastTransferefromdata;
+
   List<LeadManager> _allLeads = [];
   List<LeadManager> get allLeads => _allLeads;
   bool _isFetchingMore = false; // ✅ جديد
@@ -111,6 +133,25 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
 
     // ✅ لو أول صفحة، ننظف البيانات ونظهر الـ Loading
     if (page == 1) {
+      _lastData = data;
+      _lastSearch = search;
+      _lastSalesIds = salesIds;
+      _lastDeveloperIds = developerIds;
+      _lastProjectIds = projectIds;
+      _lastChannelIds = channelIds;
+      _lastCampaignIds = campaignIds;
+      _lastCommunicationWayIds = communicationWayIds;
+      _lastStageIds = stageIds;
+      _lastStageDateFrom = stageDateFrom;
+      _lastStageDateTo = stageDateTo;
+      _lastCreationDateFrom = creationDateFrom;
+      _lastCreationDateTo = creationDateTo;
+      _lastLastStageUpdateFrom = lastStageUpdateFrom;
+      _lastLastStageUpdateTo = lastStageUpdateTo;
+      _lastLastCommentDateFrom = lastCommentDateFrom;
+      _lastLastCommentDateTo = lastCommentDateTo;
+      _lastIgnoreDuplicate = ignoreDuplicate;
+      _lastTransferefromdata = transferefromdata;
       emit(GetManagerLeadsLoading());
       _allLeads.clear();
     }
@@ -151,6 +192,7 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
 
       _currentPage = response.data!.pagination?.currentPage?.toInt() ?? page;
       _hasNextPage = response.data!.pagination?.hasNextPage ?? false;
+      totalLeadsCount = response.data!.pagination?.totalItems?.toInt();
 
       _allLeads.addAll(newLeads);
       _crmLeadsResponse = response;
@@ -175,11 +217,33 @@ class GetManagerLeadsCubit extends Cubit<GetManagerLeadsState> {
   }
 
   // ✅ دالة تحميل المزيد
+  // ✅ دالة تحميل المزيد - بتحترم آخر فلترة متعملة
   Future<void> loadMoreManagerLeads({required bool data}) async {
     // ✅ منع التكرار لو مفيش صفحات تاني أو بنجلب دلوقتي
     if (!_hasNextPage || _isFetching || _isFetchingMore) return;
 
-    await getManagerLeadsPagination(data: data, page: _currentPage + 1);
+    await getManagerLeadsPagination(
+      data: _lastData ?? data,
+      page: _currentPage + 1,
+      search: _lastSearch,
+      salesIds: _lastSalesIds,
+      developerIds: _lastDeveloperIds,
+      projectIds: _lastProjectIds,
+      channelIds: _lastChannelIds,
+      campaignIds: _lastCampaignIds,
+      communicationWayIds: _lastCommunicationWayIds,
+      stageIds: _lastStageIds,
+      stageDateFrom: _lastStageDateFrom,
+      stageDateTo: _lastStageDateTo,
+      creationDateFrom: _lastCreationDateFrom,
+      creationDateTo: _lastCreationDateTo,
+      lastStageUpdateFrom: _lastLastStageUpdateFrom,
+      lastStageUpdateTo: _lastLastStageUpdateTo,
+      lastCommentDateFrom: _lastLastCommentDateFrom,
+      lastCommentDateTo: _lastLastCommentDateTo,
+      ignoreDuplicate: _lastIgnoreDuplicate,
+      transferefromdata: _lastTransferefromdata,
+    );
   }
 
   void filterLeadsByNameInManager(String query) {

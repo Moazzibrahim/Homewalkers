@@ -82,77 +82,99 @@ class AssignleadCubit extends Cubit<AssignState> {
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
+    final String? salesIdFromPrefs = prefs.getString('salesId');
+
+    log("🔑 token: $token");
+    log("🔑 salesIdFromPrefs: $salesIdFromPrefs");
 
     try {
       for (String leadId in leadIds) {
-        // ===== PUT =====
-        final putUrl = '${Constants.baseUrl}/users/$leadId';
+        // ===== PUT (الراوت الجديد) =====
+        final putUrl =
+            '${Constants.baseUrl}/users/assign/simple/$leadId/$salesIdFromPrefs/$salesId';
         final putBody = {
-          "assign": "true",
-          "lastdateassign": lastDateAssign,
-          "sales": salesId,
+          "clearHistory": clearhistory,
           "stage": stageId,
-          "assigntype": false, // false = Salesman | true = Team Leader
         };
 
-        final putResponse = await dio.put(
-          putUrl,
-          data: putBody,
-          options: Options(
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-          ),
-        );
+        log("➡️ PUT URL: $putUrl");
+        log("➡️ PUT BODY: $putBody");
 
-        if (putResponse.statusCode != 200 && putResponse.statusCode != 201) {
-          emit(AssignFailure('❌ Failed to assign lead in PUT: $leadId'));
+        try {
+          final putResponse = await dio.put(
+            putUrl,
+            data: putBody,
+            options: Options(
+              headers: {
+                'Authorization': 'Bearer $token',
+                'Content-Type': 'application/json',
+              },
+            ),
+          );
+
+          if (putResponse.statusCode != 200 && putResponse.statusCode != 201) {
+            log("❌ PUT failed for lead $leadId => ${putResponse.statusCode}");
+            log("❌ Response data: ${putResponse.data}");
+            emit(AssignFailure('❌ Failed to assign lead in PUT: $leadId'));
+            return;
+          }
+
+          log("✅ PUT success for lead $leadId => ${putResponse.statusCode}");
+        } on DioException catch (dioError) {
+          log("❌ DioException while assigning lead $leadId");
+          log("❌ Type: ${dioError.type}");
+          log("❌ Message: ${dioError.message}");
+          log("❌ Status code: ${dioError.response?.statusCode}");
+          log("❌ Response data: ${dioError.response?.data}");
+          log("❌ Request URL: ${dioError.requestOptions.uri}");
+
+          emit(
+            AssignFailure(
+              '❌ Error assigning lead $leadId: '
+              '${dioError.response?.data ?? dioError.message}',
+            ),
+          );
           return;
         }
 
-        log("✅ PUT success for lead $leadId");
+        // // ===== POST ===== (Fire & Forget)
+        // final postUrl = '${Constants.baseUrl}/LeadAssigned';
+        // final postBody = {
+        //   "LeadId": leadId,
+        //   "date_Assigned": dateAssigned,
+        //   "Assigned_From": teamleadersId,
+        //   "Assigned_to": salesId,
+        //   "clearHistory": clearhistory,
+        // };
 
-        // ===== POST ===== (Fire & Forget)
-        final postUrl = '${Constants.baseUrl}/LeadAssigned';
-        final postBody = {
-          "LeadId": leadId,
-          "date_Assigned": dateAssigned,
-          "Assigned_From": teamleadersId,
-          "Assigned_to": salesId,
-          "clearHistory": clearhistory,
-        };
+        // unawaited(
+        //   dio
+        //       .post(
+        //         postUrl,
+        //         data: postBody,
+        //         options: Options(headers: {'Content-Type': 'application/json'}),
+        //       )
+        //       .then((res) {
+        //         log("📩 POST success for lead $leadId => ${res.statusCode}");
+        //       })
+        //       .catchError((e) {
+        //         log("⚠️ POST failed for lead $leadId => $e");
+        //       }),
+        // );
 
-        // نخليه unawaited (مش يوقف العملية)
-        unawaited(
-          dio
-              .post(
-                postUrl,
-                data: postBody,
-                options: Options(headers: {'Content-Type': 'application/json'}),
-              )
-              .then((res) {
-                log("📩 POST success for lead $leadId => ${res.statusCode}");
-              })
-              .catchError((e) {
-                log("⚠️ POST failed for lead $leadId => $e");
-              }),
-        );
-
-        // ✅ Save clearHistory locally (once is enough, بس نعملها هنا عشان تبقى مضمونة)
         if (clearhistory != null) {
           await prefs.setBool('clearHistory', clearhistory);
         }
       }
 
-      // ===== كله نجح =====
       log('🎉 All leads assigned successfully');
-      log("teamleadersId: $teamleadersId");
       log("salesId: $salesId");
       log("clearhistory: $clearhistory");
 
       emit(AssignSuccess());
-    } catch (e) {
+    } catch (e, stackTrace) {
+      log("❌ Unexpected Error: $e");
+      log("❌ StackTrace: $stackTrace");
       emit(AssignFailure('❌ Error during combined assignment: $e'));
     }
   }
@@ -181,7 +203,8 @@ class AssignleadCubit extends Cubit<AssignState> {
     try {
       for (String leadId in leadIds) {
         // ===== PUT =====
-        final putUrl = '${Constants.baseUrl}/users/$leadId';
+        final putUrl =
+            '${Constants.baseUrl}/users/leads/assign/$leadId/$managerId/$salesId';
         final putBody = {
           "assign": "true",
           "lastdateassign": lastDateAssign,

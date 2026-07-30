@@ -206,7 +206,16 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
           }
 
           if (state is SalesLoaded) {
-            final salesList = state.salesData.data ?? [];
+            final salesList =
+                (state.salesData.data ?? [])
+                    .where(
+                      (s) =>
+                          !(s.name?.trim().toLowerCase().startsWith(
+                                'default',
+                              ) ??
+                              false),
+                    )
+                    .toList();
 
             if (_selectedSales != null) {
               final isStillValid = salesList.any(
@@ -672,17 +681,24 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
             color: Constants.maincolor,
             size: 20.sp,
           ),
-          // في onSelected للـ PopupMenuButton
-          onSelected: (value) {
+          onSelected: (value) async {
             setState(() => _selectedFilter = value);
 
-            // ✅ جلب userId المحدد إذا وجد
-            final selectedUserId = _selectedSales?.userlog?.id;
+            String? selectedUserId;
+
+            if (_userRole.toLowerCase() == 'admin') {
+              // ✅ الأدمن: من غير fallback لـ salesId المخزنة في SharedPreferences
+              selectedUserId = _selectedSales?.userlog?.id;
+            } else {
+              // باقي الرولز: fallback لـ salesId المخزنة (زي منطق الـ chips)
+              final prefs = await SharedPreferences.getInstance();
+              final salesIdFromPrefs = prefs.getString('salesId');
+              selectedUserId = _selectedSales?.userlog?.id ?? salesIdFromPrefs;
+            }
 
             switch (value) {
               case 'all':
                 _requestLeadsCubit.clearFilters();
-                // إذا كان فيه سيلز محدد، نطبق الفلتر عليه
                 if (selectedUserId != null && selectedUserId.isNotEmpty) {
                   _requestLeadsCubit.filterByUserId(selectedUserId);
                 }
@@ -776,11 +792,19 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
                 selected: isSelected,
                 onSelected: (_) async {
                   final value = filter['value'] as String;
-                  final prefs = await SharedPreferences.getInstance();
-                  final salesIdFromPrefs = prefs.getString('salesId');
 
-                  final selectedUserId =
-                      _selectedSales?.userlog?.id ?? salesIdFromPrefs;
+                  String? selectedUserId;
+
+                  if (_userRole.toLowerCase() == 'admin') {
+                    // ✅ الأدمن: من غير fallback لـ salesId المخزنة في SharedPreferences
+                    selectedUserId = _selectedSales?.userlog?.id;
+                  } else {
+                    // باقي الرولز: زي الكود القديم بالظبط
+                    final prefs = await SharedPreferences.getInstance();
+                    final salesIdFromPrefs = prefs.getString('salesId');
+                    selectedUserId =
+                        _selectedSales?.userlog?.id ?? salesIdFromPrefs;
+                  }
 
                   print(
                     "🔍 FilterChip clicked: $value, Selected Sales ID: $selectedUserId",
@@ -788,12 +812,10 @@ class _RequestsHistoryScreenState extends State<RequestsHistoryScreen> {
 
                   if (value == 'all') {
                     _requestLeadsCubit.clearFilters();
-                    // إذا كان فيه سيلز محدد، نطبق الفلتر عليه بعد المسح
                     if (selectedUserId != null && selectedUserId.isNotEmpty) {
                       _requestLeadsCubit.filterByUserId(selectedUserId);
                     }
                   } else {
-                    // ✅ استخدام الدوال المخصصة مع تمرير userId
                     switch (value) {
                       case 'completed':
                         if (selectedUserId != null &&

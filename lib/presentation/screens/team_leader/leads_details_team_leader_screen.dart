@@ -59,6 +59,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
   final String? question5_answer;
   final List<String>? salesFcmTokens; // ✅ أضف ده
   final bool? hidesalesnameonleadcomments;
+  final bool? leadassign; // ✅ أضف ده
 
   LeadsDetailsTeamLeaderScreen({
     super.key,
@@ -100,6 +101,7 @@ class LeadsDetailsTeamLeaderScreen extends StatefulWidget {
     this.question5_answer,
     this.salesFcmTokens,
     this.hidesalesnameonleadcomments,
+    this.leadassign,
   });
 
   @override
@@ -795,14 +797,28 @@ class _SalesLeadsDetailsScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "LEAD INFORMATION",
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.5,
-              color: isDark ? Colors.white70 : const Color(0xFF5E5E6A),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+            children: [
+              Text(
+                "LEAD INFORMATION",
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: isDark ? Colors.white70 : const Color(0xFF5E5E6A),
+                ),
+              ),
+              Icon(
+                Icons.done_all,
+                size: 18.sp,
+                color:
+                    widget.leadassign == true
+                        ? Colors.grey
+                        : Constants.maincolor,
+              ),
+            ],
           ),
           SizedBox(height: 22.h),
           ...basicTiles,

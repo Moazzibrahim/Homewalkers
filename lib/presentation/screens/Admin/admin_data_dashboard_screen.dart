@@ -12,6 +12,7 @@ import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dar
 import 'package:homewalkers_app/presentation/screens/sales/sales_notifications_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
+import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notifications_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -242,8 +243,9 @@ class AdminDataDashboardScreen extends StatefulWidget {
     required double tabletFontScale,
     required double tabletWidthScale,
     required double tabletHeightScale,
+    int? badgeCount, // ✅ جديد
   }) {
-    return Container(
+    final Widget button = Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular((12 * tabletScale).r),
@@ -271,6 +273,43 @@ class AdminDataDashboardScreen extends StatefulWidget {
           minHeight: (40 * tabletHeightScale).h,
         ),
       ),
+    );
+
+    if (badgeCount == null || badgeCount <= 0) return button;
+
+    final String badgeText = badgeCount > 99 ? '+99' : '$badgeCount';
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        Positioned(
+          right: -2,
+          top: -2,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: (5 * tabletScale).r,
+              vertical: (2 * tabletScale).r,
+            ),
+            constraints: BoxConstraints(minWidth: (18 * tabletScale).r),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular((10 * tabletScale).r),
+              border: Border.all(color: Colors.white, width: 1.2),
+            ),
+            child: Text(
+              badgeText,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: (9 * tabletFontScale).sp,
+                fontWeight: FontWeight.w700,
+                height: 1,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -466,6 +505,8 @@ class _AdminDataDashboardScreenState extends State<AdminDataDashboardScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     context.read<GetAllUsersCubit>().fetchLeadStagesSummary();
+    context.read<NotificationCubit>().fetchAllNotifications(); // ✅ ضيف السطر ده
+
     _loadUserName();
   }
 
@@ -488,6 +529,9 @@ class _AdminDataDashboardScreenState extends State<AdminDataDashboardScreen>
     if (state == AppLifecycleState.resumed) {
       print("App resumed — refreshing admin dashboard data...");
       context.read<GetAllUsersCubit>().fetchLeadStagesSummary();
+      context
+          .read<NotificationCubit>()
+          .fetchAllNotifications(); // ✅ ضيف السطر ده
     }
   }
 
@@ -558,22 +602,27 @@ class _AdminDataDashboardScreenState extends State<AdminDataDashboardScreen>
               ],
             ),
             const Spacer(),
-            AdminDataDashboardScreen._iconBox(
-              Icons.notifications_none,
-              () {
-                Navigator.push(
+            BlocBuilder<NotificationCubit, NotificationState>(
+              builder: (context, notifState) {
+                return AdminDataDashboardScreen._iconBox(
+                  Icons.notifications_none,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SalesNotificationsScreen(),
+                      ),
+                    );
+                  },
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const SalesNotificationsScreen(),
-                  ),
+                  isTabletDevice: isTabletDevice,
+                  tabletScale: tabletScale,
+                  tabletFontScale: tabletFontScale,
+                  tabletWidthScale: tabletWidthScale,
+                  tabletHeightScale: tabletHeightScale,
+                  badgeCount: notifState.unreadCount, // ✅
                 );
               },
-              context,
-              isTabletDevice: isTabletDevice,
-              tabletScale: tabletScale,
-              tabletFontScale: tabletFontScale,
-              tabletWidthScale: tabletWidthScale,
-              tabletHeightScale: tabletHeightScale,
             ),
           ],
         ),

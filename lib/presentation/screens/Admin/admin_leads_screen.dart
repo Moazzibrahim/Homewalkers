@@ -896,7 +896,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       // باقي الـ body
       body: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: (16 * tabletWidthScale).w,
+          horizontal: (12 * tabletWidthScale).w,
           vertical: (10 * tabletHeightScale).h,
         ),
         child: Column(
@@ -2494,6 +2494,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                                   .toList(),
                                           ignoredublicates:
                                               lead.ignoredublicate,
+                                          leadassign: lead.assign,
                                         ),
                                   ),
                                 ).then((_) {
@@ -2509,7 +2510,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                               children: [
                                 Container(
                                   margin: EdgeInsets.symmetric(
-                                    vertical: (10 * tabletHeightScale).h,
+                                    vertical: (4 * tabletHeightScale).h,
                                   ),
                                   decoration: BoxDecoration(
                                     color:
@@ -2605,7 +2606,7 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
                                               horizontal:
                                                   (18 * tabletWidthScale).w,
                                               vertical:
-                                                  (18 * tabletHeightScale).h,
+                                                  (14 * tabletHeightScale).h,
                                             ),
                                             child: Column(
                                               crossAxisAlignment:

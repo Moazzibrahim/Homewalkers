@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:developer';
 import 'dart:math' as math; // ✅ للكشف عن التابلت
 import 'package:flutter/material.dart';
@@ -16,7 +18,6 @@ import 'package:homewalkers_app/presentation/viewModels/sales/projects/projects_
 import 'package:homewalkers_app/presentation/viewModels/sales/stages/stages_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_count_in_team_leader_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/team_leader/cubit/get_leads_team_leader_cubit.dart';
-import 'package:homewalkers_app/presentation/widgets/custom_dropdown_widget.dart';
 import 'package:homewalkers_app/presentation/widgets/custom_text_field_widget.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -85,18 +86,42 @@ class FilterDialog extends StatefulWidget {
 class _FilterDialogState extends State<FilterDialog> {
   final TextEditingController nameController = TextEditingController();
   Country? selectedCountry;
+
+  // ✅ single-select values (بدل الـ Sets)
   String? selectedDeveloper;
   String? selectedProject;
   String? selectedStage;
   String? selectedChannel;
   String? selectedSalesId;
+  String? selectedSales; // اسم السيلز المختار (للعرض)
+
   List<Country> countries = [];
-  String? selectedSales;
   String? teamleaderid;
   DateTime? _startDate;
   DateTime? _endDate;
   DateTime? _lastStageUpdateStart;
   DateTime? _lastStageUpdateEnd;
+
+  bool _showSales = false;
+  bool _showDevelopers = false;
+  bool _showProjects = false;
+  bool _showStages = false;
+  bool _showChannels = false;
+
+  final TextEditingController _salesSearchController = TextEditingController();
+  final TextEditingController _developersSearchController =
+      TextEditingController();
+  final TextEditingController _projectsSearchController =
+      TextEditingController();
+  final TextEditingController _channelsSearchController =
+      TextEditingController();
+  final TextEditingController _stagesSearchController = TextEditingController();
+
+  String _salesSearchQuery = '';
+  String _developersSearchQuery = '';
+  String _projectsSearchQuery = '';
+  String _channelsSearchQuery = '';
+  String _stagesSearchQuery = '';
 
   @override
   void initState() {
@@ -116,66 +141,257 @@ class _FilterDialogState extends State<FilterDialog> {
     debugPrint("teamleaderid: $teamleaderid");
   }
 
+  /// ✅ Section بحث + اختيار عنصر واحد بس (single-select)
+  Widget buildSingleSelectSection({
+    required String title,
+    required IconData icon,
+    required List<String> items,
+    required String? selectedItem,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+    required Function(String) onItemTapped,
+    required VoidCallback onClearSelection,
+    required TextEditingController searchController,
+    required String searchQuery,
+    required Function(String) onSearchChanged,
+    Color? iconColor,
+    bool isTabletDevice = false,
+    double tabletScale = 1.0,
+    double tabletFontScale = 1.0,
+  }) {
+    final filteredItems =
+        searchQuery.isEmpty
+            ? items
+            : items
+                .where(
+                  (item) =>
+                      item.toLowerCase().contains(searchQuery.toLowerCase()),
+                )
+                .toList();
+
+    return Container(
+      margin: EdgeInsets.only(bottom: (12 * tabletScale).r),
+      decoration: BoxDecoration(
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors.white
+                : const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular((10 * tabletScale).r),
+        border: Border.all(color: const Color(0xffE1E1E1)),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            leading: Container(
+              padding: EdgeInsets.all((8 * tabletScale).r),
+              decoration: BoxDecoration(
+                color: (iconColor ?? Constants.maincolor).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: iconColor ?? Constants.maincolor,
+                size: (18 * tabletFontScale).sp,
+              ),
+            ),
+            title: Text(
+              title,
+              style: TextStyle(
+                fontSize: (14 * tabletFontScale).sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            subtitle:
+                selectedItem != null
+                    ? Text(
+                      selectedItem,
+                      style: TextStyle(
+                        fontSize: (12 * tabletFontScale).sp,
+                        color: Constants.maincolor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    )
+                    : null,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (selectedItem != null)
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                    onPressed: onClearSelection,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                SizedBox(width: (4 * tabletScale).w),
+                Icon(
+                  isExpanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: Colors.grey,
+                ),
+              ],
+            ),
+            onTap: onToggle,
+          ),
+          if (isExpanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                controller: searchController,
+                onChanged: onSearchChanged,
+                style: const TextStyle(fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: 'Search...',
+                  hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  suffixIcon:
+                      searchQuery.isNotEmpty
+                          ? IconButton(
+                            icon: const Icon(Icons.clear, size: 16),
+                            onPressed: () {
+                              searchController.clear();
+                              onSearchChanged('');
+                            },
+                          )
+                          : null,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+              ),
+            ),
+          if (isExpanded)
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              child:
+                  filteredItems.isEmpty
+                      ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Center(
+                          child: Text(
+                            'No results found',
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                        ),
+                      )
+                      : ListView.separated(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: filteredItems.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          final isSelected = item == selectedItem;
+                          return InkWell(
+                            onTap: () => onItemTapped(item),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color:
+                                            isSelected
+                                                ? Constants.maincolor
+                                                : null,
+                                        fontWeight:
+                                            isSelected ? FontWeight.w500 : null,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Constants.maincolor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: 12,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+            ),
+        ],
+      ),
+    );
+  }
+
   // ✅ دالة متجاوبة لبناء حقل التاريخ
-  Widget buildDateField(
-    String label,
-    DateTime? value,
-    Function(DateTime) onDatePicked,
-    bool isTabletDevice,
-    double tabletScale,
-    double tabletFontScale,
-    double tabletWidthScale,
-    double tabletHeightScale,
-  ) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: (8 * tabletHeightScale).h),
-      child: GestureDetector(
+  Widget buildDateField({
+    required String label,
+    required IconData icon,
+    required DateTime? value,
+    required Function(DateTime) onDatePicked,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color:
+            Theme.of(context).brightness == Brightness.light
+                ? Colors.white
+                : const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Constants.maincolor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Constants.maincolor, size: 20),
+        ),
+        title: Text(
+          value != null ? "${value.day}/${value.month}/${value.year}" : label,
+          style: TextStyle(
+            fontSize: 14,
+            color: value != null ? Constants.maincolor : Colors.grey,
+            fontWeight: value != null ? FontWeight.w500 : FontWeight.normal,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.calendar_today,
+          size: 18,
+          color: Colors.grey,
+        ),
         onTap: () async {
           final picked = await showDatePicker(
             context: context,
             initialDate: value ?? DateTime.now(),
             firstDate: DateTime(2000),
             lastDate: DateTime.now().add(const Duration(days: 365)),
+            builder: (context, child) {
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: ColorScheme.light(primary: Constants.maincolor),
+                ),
+                child: child!,
+              );
+            },
           );
           if (picked != null) onDatePicked(picked);
         },
-        child: InputDecorator(
-          decoration: InputDecoration(
-            hintText: label,
-            hintStyle: TextStyle(
-              fontSize: (14 * tabletFontScale).sp,
-              color: const Color.fromRGBO(143, 146, 146, 1),
-              fontWeight: FontWeight.w400,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular((8 * tabletScale).r),
-              borderSide: BorderSide(
-                color: const Color(0xffE1E1E1),
-                width: (1 * tabletScale).r,
-              ),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: (12 * tabletWidthScale).w,
-              vertical: (16 * tabletHeightScale).h,
-            ),
-            suffixIcon: Icon(
-              Icons.calendar_today,
-              size: (20 * tabletFontScale).sp,
-            ),
-          ),
-          child: Text(
-            value != null ? "${value.toLocal()}".split(' ')[0] : label,
-            style: TextStyle(
-              fontSize: (14 * tabletFontScale).sp,
-              fontWeight: FontWeight.w400,
-              color:
-                  Theme.of(context).brightness == Brightness.light
-                      ? const Color(0xff080719)
-                      : const Color(0xffFFFFFF),
-              fontFamily: 'Montserrat',
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -265,154 +481,153 @@ class _FilterDialogState extends State<FilterDialog> {
                   child: CustomTextField(
                     hint: "Full Name",
                     controller: nameController,
-                    // textStyle: TextStyle(fontSize: (14 * tabletFontScale).sp),
                   ),
                 ),
                 SizedBox(height: (12 * tabletHeightScale).h),
-
-                // 🌍 Country Picker - متجاوب
                 SizedBox(height: (12 * tabletHeightScale).h),
 
-                // 👤 Sales Dropdown - متجاوب
+                // 👤 Sales - single select
                 BlocBuilder<
                   GetLeadsCountInTeamLeaderCubit,
                   GetLeadsCountInTeamLeaderState
                 >(
                   builder: (context, state) {
                     if (state is GetLeadsCountInTeamLeaderLoading) {
-                      return Center(
-                        child: SizedBox(
-                          height: (24 * tabletHeightScale).h,
-                          width: (24 * tabletWidthScale).w,
-                          child: const CircularProgressIndicator(),
-                        ),
-                      );
+                      return const Center(child: CircularProgressIndicator());
                     } else if (state is GetLeadsCountInTeamLeaderLoaded) {
                       final filteredSales =
-                          state.data.data?.where((sales) {
-                            return sales.salesName != null;
-                          }).toList() ??
+                          state.data.data
+                              ?.where((s) => s.salesName != null)
+                              .toList() ??
                           [];
+                      final items =
+                          filteredSales.map((e) => e.salesName!).toList();
 
-                      return SizedBox(
-                        child: CustomDropdownField(
-                          hint: "Choose Sales",
-                          items:
-                              filteredSales
-                                  .map((e) => e.salesName ?? '')
-                                  .toList(),
-                          value:
-                              selectedSalesId == null
-                                  ? null
-                                  : filteredSales
-                                      .where(
-                                        (e) => e.salesID == selectedSalesId,
-                                      )
-                                      .isNotEmpty
-                                  ? filteredSales
-                                      .firstWhere(
-                                        (e) => e.salesID == selectedSalesId,
-                                      )
-                                      .salesName
-                                  : null,
-                          onChanged: (value) {
-                            final selected = filteredSales.firstWhere(
-                              (e) => e.salesName == value,
-                            );
-
-                            setState(() {
-                              selectedSalesId = selected.salesID;
-                            });
-
-                            log("Selected Sales Name: ${selected.salesName}");
-                            log("Selected Sales ID: ${selected.salesID}");
-                          },
-                        ),
+                      return buildSingleSelectSection(
+                        title: "Sales",
+                        icon: Icons.person_outline,
+                        items: items,
+                        selectedItem: selectedSales,
+                        isExpanded: _showSales,
+                        onToggle:
+                            () => setState(() => _showSales = !_showSales),
+                        onItemTapped: (name) {
+                          final matched = filteredSales.firstWhere(
+                            (e) => e.salesName == name,
+                          );
+                          setState(() {
+                            if (selectedSales == name) {
+                              // إلغاء الاختيار لو دوس على نفس العنصر
+                              selectedSales = null;
+                              selectedSalesId = null;
+                            } else {
+                              selectedSales = name;
+                              selectedSalesId = matched.salesID;
+                            }
+                          });
+                        },
+                        onClearSelection: () {
+                          setState(() {
+                            selectedSales = null;
+                            selectedSalesId = null;
+                          });
+                        },
+                        searchController: _salesSearchController,
+                        searchQuery: _salesSearchQuery,
+                        onSearchChanged:
+                            (v) => setState(() => _salesSearchQuery = v),
+                        isTabletDevice: isTabletDevice,
+                        tabletScale: tabletScale,
+                        tabletFontScale: tabletFontScale,
                       );
                     } else if (state is GetLeadsCountInTeamLeaderError) {
-                      return Text(
-                        "error: ${state.message}",
-                        style: TextStyle(
-                          fontSize: (14 * tabletFontScale).sp,
-                          color: Colors.red,
-                        ),
-                      );
+                      return Text("error: ${state.message}");
                     }
                     return const SizedBox();
                   },
                 ),
                 SizedBox(height: (12 * tabletHeightScale).h),
 
-                // 🏗️ Developer Dropdown - متجاوب
+                // 🏗️ Developers - single select
                 BlocBuilder<DevelopersCubit, DevelopersState>(
                   builder: (context, state) {
                     if (state is DeveloperLoading) {
-                      return Center(
-                        child: SizedBox(
-                          height: (24 * tabletHeightScale).h,
-                          width: (24 * tabletWidthScale).w,
-                          child: const CircularProgressIndicator(),
-                        ),
-                      );
+                      return const Center(child: CircularProgressIndicator());
                     } else if (state is DeveloperSuccess) {
                       final items =
                           state.developersModel.data
-                              .map((dev) => dev.name)
+                              .map((dev) => dev.name ?? '')
                               .toList();
-                      return SizedBox(
-                        height:
-                            isTabletDevice ? (50 * tabletHeightScale).h : null,
-                        child: CustomDropdownField(
-                          hint: "Choose Developer",
-                          items: items,
-                          value: selectedDeveloper,
-                          onChanged:
-                              (val) => setState(() => selectedDeveloper = val),
-                          //   textStyle: TextStyle(fontSize: (14 * tabletFontScale).sp),
-                        ),
+                      return buildSingleSelectSection(
+                        title: "Developers",
+                        icon: Icons.business,
+                        items: items,
+                        selectedItem: selectedDeveloper,
+                        isExpanded: _showDevelopers,
+                        onToggle:
+                            () => setState(
+                              () => _showDevelopers = !_showDevelopers,
+                            ),
+                        onItemTapped: (item) {
+                          setState(() {
+                            selectedDeveloper =
+                                selectedDeveloper == item ? null : item;
+                          });
+                        },
+                        onClearSelection: () {
+                          setState(() => selectedDeveloper = null);
+                        },
+                        searchController: _developersSearchController,
+                        searchQuery: _developersSearchQuery,
+                        onSearchChanged:
+                            (v) => setState(() => _developersSearchQuery = v),
+                        isTabletDevice: isTabletDevice,
+                        tabletScale: tabletScale,
+                        tabletFontScale: tabletFontScale,
                       );
                     } else if (state is DeveloperError) {
-                      return Text(
-                        "error: ${state.error}",
-                        style: TextStyle(
-                          fontSize: (14 * tabletFontScale).sp,
-                          color: Colors.red,
-                        ),
-                      );
-                    } else {
-                      return const SizedBox.shrink();
+                      return Text("error: ${state.error}");
                     }
+                    return const SizedBox.shrink();
                   },
                 ),
                 SizedBox(height: (12 * tabletHeightScale).h),
 
-                // 📡 Channel Dropdown - متجاوب
+                // 📢 Channels - single select
                 BlocBuilder<ChannelCubit, ChannelState>(
                   builder: (context, state) {
                     if (state is ChannelLoading) {
-                      return Center(
-                        child: SizedBox(
-                          height: (24 * tabletHeightScale).h,
-                          width: (24 * tabletWidthScale).w,
-                          child: const CircularProgressIndicator(),
-                        ),
-                      );
+                      return const Center(child: CircularProgressIndicator());
                     } else if (state is ChannelLoaded) {
                       final items =
                           state.channelResponse.data
-                              .map((dev) => dev.name)
+                              .map((channel) => channel.name ?? '')
                               .toList();
-                      return SizedBox(
-                        height:
-                            isTabletDevice ? (50 * tabletHeightScale).h : null,
-                        child: CustomDropdownField(
-                          hint: "Choose channel",
-                          items: items,
-                          value: selectedChannel,
-                          onChanged:
-                              (val) => setState(() => selectedChannel = val),
-                          //   textStyle: TextStyle(fontSize: (14 * tabletFontScale).sp),
-                        ),
+                      return buildSingleSelectSection(
+                        title: "Channels",
+                        icon: Icons.campaign,
+                        items: items,
+                        selectedItem: selectedChannel,
+                        isExpanded: _showChannels,
+                        onToggle:
+                            () =>
+                                setState(() => _showChannels = !_showChannels),
+                        onItemTapped: (item) {
+                          setState(() {
+                            selectedChannel =
+                                selectedChannel == item ? null : item;
+                          });
+                        },
+                        onClearSelection: () {
+                          setState(() => selectedChannel = null);
+                        },
+                        searchController: _channelsSearchController,
+                        searchQuery: _channelsSearchQuery,
+                        onSearchChanged:
+                            (v) => setState(() => _channelsSearchQuery = v),
+                        isTabletDevice: isTabletDevice,
+                        tabletScale: tabletScale,
+                        tabletFontScale: tabletFontScale,
                       );
                     } else if (state is ChannelError) {
                       return Text(
@@ -429,33 +644,41 @@ class _FilterDialogState extends State<FilterDialog> {
                 ),
                 SizedBox(height: (12 * tabletHeightScale).h),
 
-                // 🏢 Project Dropdown - متجاوب
+                // 🏢 Projects - single select
                 BlocBuilder<ProjectsCubit, ProjectsState>(
                   builder: (context, state) {
                     if (state is ProjectsLoading) {
-                      return Center(
-                        child: SizedBox(
-                          height: (24 * tabletHeightScale).h,
-                          width: (24 * tabletWidthScale).w,
-                          child: const CircularProgressIndicator(),
-                        ),
-                      );
+                      return const Center(child: CircularProgressIndicator());
                     } else if (state is ProjectsSuccess) {
                       final items =
                           state.projectsModel.data!
-                              .map((project) => project.name)
+                              .map((project) => project.name ?? '')
                               .toList();
-                      return SizedBox(
-                        height:
-                            isTabletDevice ? (50 * tabletHeightScale).h : null,
-                        child: CustomDropdownField(
-                          hint: "Choose Project",
-                          items: items,
-                          value: selectedProject,
-                          onChanged:
-                              (val) => setState(() => selectedProject = val),
-                          // textStyle: TextStyle(fontSize: (14 * tabletFontScale).sp),
-                        ),
+                      return buildSingleSelectSection(
+                        title: "Projects",
+                        icon: Icons.apartment,
+                        items: items,
+                        selectedItem: selectedProject,
+                        isExpanded: _showProjects,
+                        onToggle:
+                            () =>
+                                setState(() => _showProjects = !_showProjects),
+                        onItemTapped: (item) {
+                          setState(() {
+                            selectedProject =
+                                selectedProject == item ? null : item;
+                          });
+                        },
+                        onClearSelection: () {
+                          setState(() => selectedProject = null);
+                        },
+                        searchController: _projectsSearchController,
+                        searchQuery: _projectsSearchQuery,
+                        onSearchChanged:
+                            (v) => setState(() => _projectsSearchQuery = v),
+                        isTabletDevice: isTabletDevice,
+                        tabletScale: tabletScale,
+                        tabletFontScale: tabletFontScale,
                       );
                     } else if (state is ProjectsError) {
                       return Text(
@@ -472,89 +695,76 @@ class _FilterDialogState extends State<FilterDialog> {
                 ),
                 SizedBox(height: (12 * tabletHeightScale).h),
 
-                // 🎯 Stage Dropdown - متجاوب
+                // 🗺️ Stages - single select
                 BlocBuilder<StagesCubit, StagesState>(
                   builder: (context, state) {
                     if (state is StagesLoading) {
-                      return Center(
-                        child: SizedBox(
-                          height: (24 * tabletHeightScale).h,
-                          width: (24 * tabletWidthScale).w,
-                          child: const CircularProgressIndicator(),
-                        ),
-                      );
+                      return const Center(child: CircularProgressIndicator());
                     } else if (state is StagesLoaded) {
                       final items =
-                          state.stages.map((stage) => stage.name).toList();
-                      return SizedBox(
-                        height:
-                            isTabletDevice ? (50 * tabletHeightScale).h : null,
-                        child: CustomDropdownField(
-                          hint: "Choose Stage",
-                          items: items,
-                          value: selectedStage,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedStage = value;
-                            });
-                          },
-                        ),
+                          state.stages.map((s) => s.name ?? '').toList();
+                      return buildSingleSelectSection(
+                        title: "Stages",
+                        icon: Icons.schema,
+                        items: items,
+                        selectedItem: selectedStage,
+                        isExpanded: _showStages,
+                        onToggle:
+                            () => setState(() => _showStages = !_showStages),
+                        onItemTapped: (item) {
+                          setState(() {
+                            selectedStage = selectedStage == item ? null : item;
+                          });
+                        },
+                        onClearSelection: () {
+                          setState(() => selectedStage = null);
+                        },
+                        searchController: _stagesSearchController,
+                        searchQuery: _stagesSearchQuery,
+                        onSearchChanged:
+                            (v) => setState(() => _stagesSearchQuery = v),
+                        isTabletDevice: isTabletDevice,
+                        tabletScale: tabletScale,
+                        tabletFontScale: tabletFontScale,
                       );
                     } else if (state is StagesError) {
-                      return Text(
-                        "error: ${state.message}",
-                        style: TextStyle(
-                          fontSize: (14 * tabletFontScale).sp,
-                          color: Colors.red,
-                        ),
-                      );
-                    } else {
-                      return const SizedBox.shrink();
+                      return Text("error: ${state.message}");
                     }
+                    return const SizedBox.shrink();
                   },
                 ),
                 SizedBox(height: (12 * tabletHeightScale).h),
-
-                // 📅 Date Fields - متجاوبة
                 buildDateField(
-                  "Last Stage Update (Start)",
-                  _lastStageUpdateStart,
-                  (picked) => setState(() => _lastStageUpdateStart = picked),
-                  isTabletDevice,
-                  tabletScale,
-                  tabletFontScale,
-                  tabletWidthScale,
-                  tabletHeightScale,
+                  label: "Last Stage Update (Start)",
+                  icon: Icons.update,
+                  value: _lastStageUpdateStart,
+                  onDatePicked: (picked) {
+                    setState(() => _lastStageUpdateStart = picked);
+                  },
                 ),
                 buildDateField(
-                  "Last Stage Update (End)",
-                  _lastStageUpdateEnd,
-                  (picked) => setState(() => _lastStageUpdateEnd = picked),
-                  isTabletDevice,
-                  tabletScale,
-                  tabletFontScale,
-                  tabletWidthScale,
-                  tabletHeightScale,
+                  label: "Last Stage Update (End)",
+                  icon: Icons.update,
+                  value: _lastStageUpdateEnd,
+                  onDatePicked: (picked) {
+                    setState(() => _lastStageUpdateEnd = picked);
+                  },
                 ),
                 buildDateField(
-                  "Creation Date (Start)",
-                  _startDate,
-                  (picked) => setState(() => _startDate = picked),
-                  isTabletDevice,
-                  tabletScale,
-                  tabletFontScale,
-                  tabletWidthScale,
-                  tabletHeightScale,
+                  label: "Creation Date (Start)",
+                  icon: Icons.assignment_add,
+                  value: _startDate,
+                  onDatePicked: (picked) {
+                    setState(() => _startDate = picked);
+                  },
                 ),
                 buildDateField(
-                  "Creation Date (End)",
-                  _endDate,
-                  (picked) => setState(() => _endDate = picked),
-                  isTabletDevice,
-                  tabletScale,
-                  tabletFontScale,
-                  tabletWidthScale,
-                  tabletHeightScale,
+                  label: "Creation Date (End)",
+                  icon: Icons.assignment_add,
+                  value: _endDate,
+                  onDatePicked: (picked) {
+                    setState(() => _endDate = picked);
+                  },
                 ),
                 SizedBox(height: (20 * tabletHeightScale).h),
 
@@ -589,14 +799,14 @@ class _FilterDialogState extends State<FilterDialog> {
                             selectedProject = null;
                             selectedStage = null;
                             selectedChannel = null;
-                            selectedSalesId = null; // ✅ اتصلح
+                            selectedSalesId = null;
+                            selectedSales = null;
                             _startDate = null;
                             _endDate = null;
                             _lastStageUpdateStart = null;
                             _lastStageUpdateEnd = null;
                           });
 
-                          // ✅ استدعاء الفلتر بعد المسح عشان الداتا فعلياً تترفريش
                           final clearedFilters = {
                             'name': null,
                             'developerId': null,
@@ -609,29 +819,15 @@ class _FilterDialogState extends State<FilterDialog> {
                             'stageDateFrom': null,
                             'stageDateTo': null,
                           };
-
                           widget.onFiltersApplied?.call(clearedFilters);
 
                           context
                               .read<GetLeadsTeamLeaderCubit>()
                               .fetchTeamLeaderLeadsWithPagination(
-                                search: null,
-                                developerId: null,
-                                projectId: null,
-                                stageId: null,
-                                channelId: null,
-                                salesId: null,
-                                creationDateFrom: null,
-                                creationDateTo: null,
-                                stageDateFrom: null,
-                                stageDateTo: null,
                                 data: widget.data,
                                 transferefromdata: widget.transferedData,
                               );
-
-                          Navigator.pop(
-                            context,
-                          ); // ✅ قفل الـ dialog زي ما بيحصل في Apply
+                          Navigator.pop(context);
                         },
                         child: Text(
                           "Reset",
@@ -707,7 +903,8 @@ class _FilterDialogState extends State<FilterDialog> {
                           }
 
                           log("selectedDeveloper: $selectedDeveloper");
-                          log("selectedsales: $selectedSales");
+                          log("selectedSales: $selectedSales");
+
                           // ✅ جمع قيم الفلاتر
                           final appliedFilters = {
                             'name':
@@ -749,28 +946,6 @@ class _FilterDialogState extends State<FilterDialog> {
                               );
 
                           Navigator.pop(context);
-
-                          // context
-                          //     .read<GetLeadsTeamLeaderCubit>()
-                          //     .fetchTeamLeaderLeadsWithPagination(
-                          //       search:
-                          //           nameController.text.trim().isEmpty
-                          //               ? null
-                          //               : nameController.text.trim(),
-
-                          //       developerId: selectedDeveloper,
-                          //       projectId: selectedProject,
-                          //       stageId: selectedStage,
-                          //       channelId: selectedChannel,
-                          //       salesId: selectedSalesId,
-                          //       creationDateFrom: _startDate,
-                          //       creationDateTo: _endDate,
-                          //       stageDateFrom: _lastStageUpdateStart,
-                          //       stageDateTo: _lastStageUpdateEnd,
-                          //       data: widget.data,
-                          //       transferefromdata: widget.transferedData,
-                          //     );
-                          // Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
