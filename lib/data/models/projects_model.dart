@@ -7,15 +7,17 @@ class ProjectsModel {
 
   factory ProjectsModel.fromJson(Map<String, dynamic> json) {
     return ProjectsModel(
-      results: json['results'],
+      results: json['results'] as num?,
       pagination:
           json['pagination'] != null
-              ? Pagination.fromJson(json['pagination'])
+              ? Pagination.fromJson(json['pagination'] as Map<String, dynamic>)
               : null,
       data:
           json['data'] != null
               ? List<ProjectData>.from(
-                json['data'].map((x) => ProjectData.fromJson(x)),
+                (json['data'] as List).map(
+                  (x) => ProjectData.fromJson(x as Map<String, dynamic>),
+                ),
               )
               : null,
     );
@@ -26,14 +28,24 @@ class Pagination {
   final num? currentPage;
   final num? limit;
   final num? numberOfPages;
+  final num? totalItems; // إجمالي عدد العناصر
+  final num? next; // رقم الصفحة الجاية (ممكن ميبقاش موجود لو دي آخر صفحة)
 
-  Pagination({this.currentPage, this.limit, this.numberOfPages});
+  Pagination({
+    this.currentPage,
+    this.limit,
+    this.numberOfPages,
+    this.totalItems,
+    this.next,
+  });
 
   factory Pagination.fromJson(Map<String, dynamic> json) {
     return Pagination(
-      currentPage: json['currentPage'],
-      limit: json['limit'],
-      numberOfPages: json['NumberOfPages'],
+      currentPage: json['currentPage'] as num?,
+      limit: json['limit'] as num?,
+      numberOfPages: json['NumberOfPages'] as num?,
+      totalItems: json['totalItems'] as num?,
+      next: json['next'] as num?,
     );
   }
 }
@@ -65,19 +77,22 @@ class ProjectData {
 
   factory ProjectData.fromJson(Map<String, dynamic> json) {
     return ProjectData(
-      id: json['_id'],
-      name: json['name'],
-      startPrice: json['startprice'],
+      id: json['_id'] as String?,
+      name: json['name'] as String?,
+      startPrice: json['startprice'] as num?,
       developer:
           json['developer'] != null
-              ? Developer.fromJson(json['developer'])
+              ? Developer.fromJson(json['developer'] as Map<String, dynamic>)
               : null,
-      city: json['city'] != null ? City.fromJson(json['city']) : null,
-      area: json['area'],
-      createdAt: json['createdAt'],
-      updatedAt: json['updatedAt'],
-      v: json['__v'],
-      isProjectActivate: json['isprojectactivate'],
+      city:
+          json['city'] != null
+              ? City.fromJson(json['city'] as Map<String, dynamic>)
+              : null,
+      area: json['area'] as String?,
+      createdAt: json['createdAt'] as String?,
+      updatedAt: json['updatedAt'] as String?,
+      v: json['__v'] as num?,
+      isProjectActivate: json['isprojectactivate'] as String?,
     );
   }
 }
@@ -89,7 +104,7 @@ class Developer {
   Developer({this.id, this.name});
 
   factory Developer.fromJson(Map<String, dynamic> json) {
-    return Developer(id: json['_id'], name: json['name']);
+    return Developer(id: json['_id'] as String?, name: json['name'] as String?);
   }
 }
 
@@ -100,6 +115,6 @@ class City {
   City({this.id, this.name});
 
   factory City.fromJson(Map<String, dynamic> json) {
-    return City(id: json['_id'], name: json['name']);
+    return City(id: json['_id'] as String?, name: json['name'] as String?);
   }
 }

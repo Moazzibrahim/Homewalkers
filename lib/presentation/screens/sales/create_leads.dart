@@ -663,15 +663,21 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
     super.dispose();
   }
 
+  // ✅ 1) في init() اعمل trim للقيم عشان تتجنب مشاكل المسافات
   void init() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      role = prefs.getString('role');
-      id = prefs.getString('savedid');
-      name = prefs.getString('name');
+      role = prefs.getString('role')?.trim();
+      id = prefs.getString('savedid')?.trim();
+      name = prefs.getString('name')?.trim();
       log("Role: $role, ID: $id, Name: $name");
     });
   }
+
+  // ✅ 2) ضيف getters موحّدة تستخدمها في كل مكان بدل المقارنة المباشرة بـ role
+  String get _normalizedRole => (role ?? '').toLowerCase().trim();
+  bool get _isSalesRole => _normalizedRole == 'sales';
+  bool get _isTeamLeaderRole => _normalizedRole == 'team leader';
 
   // ─── Project Selection Panel ───────────────────────────────────────────────
 
@@ -1539,7 +1545,8 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                       const SizedBox(height: 4),
 
                       // ── Sales ────────────────────────────────────────
-                      if (role != "Sales") _buildSalesField(context),
+                      // كان: if (role != "Sales") _buildSalesField(context),
+                      if (!_isSalesRole) _buildSalesField(context),
 
                       // ── Channel ──────────────────────────────────────
                       _buildChannelField(context),
