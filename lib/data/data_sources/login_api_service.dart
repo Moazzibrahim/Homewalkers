@@ -259,6 +259,7 @@ class LoginApiService {
         await prefs.remove('deviceId');
         await prefs.remove('role');
         await prefs.remove('salesId');
+        await prefs.remove('savedid'); // id اليوزر القديم
         await prefs.remove('company_domain'); // ✅ أضف السطر ده
         await prefs.remove('fcm_token'); // ✅ ضيف السطر ده
 

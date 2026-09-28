@@ -664,15 +664,49 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   }
 
   // ✅ 1) في init() اعمل trim للقيم عشان تتجنب مشاكل المسافات
-  void init() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      role = prefs.getString('role')?.trim();
-      id = prefs.getString('savedid')?.trim();
-      name = prefs.getString('name')?.trim();
-      log("Role: $role, ID: $id, Name: $name");
-    });
+  // بقت Future عشان نقدر نستنّاها وقت الحاجة
+  // Future<void> init() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   await prefs.reload(); // يجيب آخر قيمة متخزنة فعلياً (مش cache قديم)
+  //   if (!mounted) return;
+  //   setState(() {
+  //     role = prefs.getString('role')?.trim();
+  //     id = prefs.getString('savedid')?.trim();
+  //     name = prefs.getString('name')?.trim();
+  //     log("Role: $role, ID: $id, Name: $name");
+  //   });
+  // } 
+  // بقت Future عشان نقدر نستنّاها وقت الحاجة
+Future<void> init() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.reload();
+  if (!mounted) return;
+
+  final userlogId = prefs.getString('salesId')?.trim(); // id اليوزر من الـ login
+  String? salesDocId = prefs.getString('savedid')?.trim(); // القيمة المخزنة (ممكن تكون قديمة)
+
+  // نجيب الـ Sales id الحالي من السيرفر ونستنّاه (بيتخزن في savedid تلقائياً)
+  if (userlogId != null && userlogId.isNotEmpty) {
+    try {
+      final result = await GetAllSalesApiService()
+          .fetchSalesDataofSpecificUser(userlogId);
+      final data = result?.data;
+      if (data != null && data.isNotEmpty && data.first.id != null) {
+        salesDocId = data.first.id; // أحدث قيمة من السيرفر
+      }
+    } catch (e) {
+      log("Failed to fetch sales id: $e"); // نكمل بالقيمة المخزنة كـ fallback
+    }
   }
+
+  if (!mounted) return;
+  setState(() {
+    role = prefs.getString('role')?.trim();
+    id = salesDocId;
+    name = prefs.getString('name')?.trim();
+    log("Role: $role, ID: $id, Name: $name");
+  });
+}
 
   // ✅ 2) ضيف getters موحّدة تستخدمها في كل مكان بدل المقارنة المباشرة بـ role
   String get _normalizedRole => (role ?? '').toLowerCase().trim();
@@ -1414,6 +1448,14 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                     backgroundColor: Colors.green,
                   ),
                 );
+
+                if (_selectedSalesFcmTokens.isNotEmpty) {
+                  context.read<NotificationCubit>().sendNotificationToTokens(
+                    title: "Lead",
+                    body: "Lead has been created ✅",
+                    fcmTokens: _selectedSalesFcmTokens,
+                  );
+                }
                 Future.delayed(const Duration(milliseconds: 1500), () {
                   Navigator.pop(context);
                 });
@@ -1792,6 +1834,10 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                       isLoading
                                           ? null
                                           : () async {
+                                            if ((id == null || id!.isEmpty) ||
+                                                role == null) {
+                                              await init();
+                                            }
                                             if (_nameController.text.isEmpty ||
                                                 _phoneController.text.isEmpty ||
                                                 _budgetController
@@ -1884,20 +1930,6 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
                                                   qaData['question5_answer'] ??
                                                   '',
                                             );
-                                            if (state is CreateLeadSuccess) {
-                                              if (_selectedSalesFcmTokens
-                                                  .isNotEmpty) {
-                                                context
-                                                    .read<NotificationCubit>()
-                                                    .sendNotificationToTokens(
-                                                      title: "Lead",
-                                                      body:
-                                                          "Lead has been created ✅",
-                                                      fcmTokens:
-                                                          _selectedSalesFcmTokens,
-                                                    );
-                                              }
-                                            }
                                           },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: _mainColor,
