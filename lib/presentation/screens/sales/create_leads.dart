@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use, unused_field
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -711,7 +711,6 @@ Future<void> init() async {
   // ✅ 2) ضيف getters موحّدة تستخدمها في كل مكان بدل المقارنة المباشرة بـ role
   String get _normalizedRole => (role ?? '').toLowerCase().trim();
   bool get _isSalesRole => _normalizedRole == 'sales';
-  bool get _isTeamLeaderRole => _normalizedRole == 'team leader';
 
   // ─── Project Selection Panel ───────────────────────────────────────────────
 
