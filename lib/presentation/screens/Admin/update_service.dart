@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 class UpdateService {
-  static const String currentVersion = "1.0.9";
+  static const String currentVersion = "1.0.10";
   
 
   // static Future<void> checkForUpdate(BuildContext context) async {

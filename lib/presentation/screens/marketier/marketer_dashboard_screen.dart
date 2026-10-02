@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/core/constants/event_handler.dart';
 import 'package:homewalkers_app/data/data_sources/leads_api_service.dart';
 import 'package:homewalkers_app/data/models/marketer_dashboard_model.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/leads_marketier_screen.dart';
@@ -421,10 +422,19 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
   late GetLeadsMarketerCubit _marketerCubit;
   String _userName = 'User';
 
+  void _onLeadCreated() {
+    if (!mounted) return;
+    print("lead created signal -> refreshing marketer dashboard");
+    _marketerCubit.fetchMarketerDashboard(); // كان _managerCubit (غلط)
+    context.read<NotificationCubit>().fetchNotifications();
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    LeadEvents.leadCreated.addListener(_onLeadCreated); // ✅ اسمع للإشارة
+
     _loadUserName();
 
     _marketerCubit = GetLeadsMarketerCubit(GetLeadsService())
@@ -455,6 +465,7 @@ class _MarketerDashboardScreenState extends State<MarketerDashboardScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    LeadEvents.leadCreated.removeListener(_onLeadCreated); // ✅ مهم
     _marketerCubit.close();
     super.dispose();
   }

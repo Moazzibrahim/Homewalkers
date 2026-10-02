@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/core/constants/event_handler.dart';
 import 'package:homewalkers_app/data/data_sources/meeting/get_meeting_comments.dart';
 import 'package:homewalkers_app/data/data_sources/team_leader/get_dashboard_leads_count.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/meetingCommentsScreen.dart';
@@ -146,10 +147,19 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
   late double tabletWidthScale;
   late double tabletHeightScale;
 
+  void _onLeadCreated() {
+    if (!mounted) return;
+    print("lead created signal -> refreshing sales dashboard");
+    _dashboardCubit.fetchDashboard();
+    context.read<NotificationCubit>().fetchNotifications();
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    LeadEvents.leadCreated.addListener(_onLeadCreated); // ✅ اسمع للإشارة
+
     _checkAuth();
 
     _dashboardCubit = TeamleaderDashboardCubit(TeamleaderDashboardApiService());
@@ -209,6 +219,7 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+      LeadEvents.leadCreated.removeListener(_onLeadCreated); // ✅ مهم
     _dashboardCubit.close();
     super.dispose();
   }

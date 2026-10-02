@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/core/constants/event_handler.dart';
 import 'package:homewalkers_app/core/utils/dialog_utils.dart';
 import 'package:homewalkers_app/data/data_sources/get_sales_dashboard_count_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/meeting/get_meeting_comments.dart';
@@ -145,11 +146,19 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
   late double tabletWidthScale;
   late double tabletHeightScale;
 
+  void _onLeadCreated() {
+    if (!mounted) return;
+    print("lead created signal -> refreshing sales dashboard");
+    _dashboardCubit.fetchDashboard();
+    context.read<NotificationCubit>().fetchNotifications();
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkAuth();
+    LeadEvents.leadCreated.addListener(_onLeadCreated); // ✅ اسمع للإشارة
 
     _dashboardCubit = SalesDashboardCubit(SalesDashboardApiService());
 
@@ -208,6 +217,7 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    LeadEvents.leadCreated.removeListener(_onLeadCreated); // ✅ مهم
     _dashboardCubit.close();
     super.dispose();
   }
@@ -457,9 +467,9 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                         } else if (state is SalesDashboardError) {
                           return const Center(child: Text("No Data Found"));
                         } else if (state is SalesDashboardSuccess) {
-                          final cubit = context.read<SalesDashboardCubit>();
-                          final stages = cubit.getVisibleStages(state.response);
-
+                          // ✅ كل الـ stages من الـ response مباشرة (حتى لو leadsCount = 0)
+                          // غيّر اسم الـ field لو مختلف عندك (مثلاً stages / stageStats)
+                          final stages = state.response.data?.stages ?? [];
                           // check لو فيه Fresh
                           final hasFresh = stages.any(
                             (e) => e.stageName == 'Fresh',

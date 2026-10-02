@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/core/constants/event_handler.dart';
 import 'package:homewalkers_app/data/data_sources/Admin_with_pagination/fetch_data_with_pagination.dart';
 import 'package:homewalkers_app/data/data_sources/get_all_users_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/meeting/get_meeting_comments.dart';
@@ -517,10 +518,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   String _userName = 'User';
   Timer? _autoRefreshTimer;
 
+  void _onLeadCreated() {
+    if (!mounted) return;
+    print("lead created signal -> refreshing dashboard");
+    context.read<GetAllUsersCubit>().fetchStagesStats();
+    context.read<NotificationCubit>().fetchAllNotifications();
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    LeadEvents.leadCreated.addListener(_onLeadCreated); // ✅ اسمع للإشارة
     context.read<GetAllUsersCubit>().fetchStagesStats();
     context.read<NotificationCubit>().fetchAllNotifications(); // ✅ جديد
 
@@ -536,6 +545,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   @override
   void dispose() {
+    LeadEvents.leadCreated.removeListener(_onLeadCreated); // ✅ مهم
     WidgetsBinding.instance.removeObserver(this);
     _autoRefreshTimer?.cancel();
     super.dispose();
@@ -1060,7 +1070,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     );
                   },
                 ),
-
                 SizedBox(height: (20 * tabletHeightScale).h),
               ],
             ),

@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/core/constants/event_handler.dart';
 import 'package:homewalkers_app/data/data_sources/campaign_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/communication_way_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/create_lead_api_service.dart';
@@ -675,38 +676,40 @@ class _CreateLeadScreenState extends State<CreateLeadScreen> {
   //     name = prefs.getString('name')?.trim();
   //     log("Role: $role, ID: $id, Name: $name");
   //   });
-  // } 
+  // }
   // بقت Future عشان نقدر نستنّاها وقت الحاجة
-Future<void> init() async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.reload();
-  if (!mounted) return;
+  Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+    if (!mounted) return;
 
-  final userlogId = prefs.getString('salesId')?.trim(); // id اليوزر من الـ login
-  String? salesDocId = prefs.getString('savedid')?.trim(); // القيمة المخزنة (ممكن تكون قديمة)
+    final userlogId =
+        prefs.getString('salesId')?.trim(); // id اليوزر من الـ login
+    String? salesDocId =
+        prefs.getString('savedid')?.trim(); // القيمة المخزنة (ممكن تكون قديمة)
 
-  // نجيب الـ Sales id الحالي من السيرفر ونستنّاه (بيتخزن في savedid تلقائياً)
-  if (userlogId != null && userlogId.isNotEmpty) {
-    try {
-      final result = await GetAllSalesApiService()
-          .fetchSalesDataofSpecificUser(userlogId);
-      final data = result?.data;
-      if (data != null && data.isNotEmpty && data.first.id != null) {
-        salesDocId = data.first.id; // أحدث قيمة من السيرفر
+    // نجيب الـ Sales id الحالي من السيرفر ونستنّاه (بيتخزن في savedid تلقائياً)
+    if (userlogId != null && userlogId.isNotEmpty) {
+      try {
+        final result = await GetAllSalesApiService()
+            .fetchSalesDataofSpecificUser(userlogId);
+        final data = result?.data;
+        if (data != null && data.isNotEmpty && data.first.id != null) {
+          salesDocId = data.first.id; // أحدث قيمة من السيرفر
+        }
+      } catch (e) {
+        log("Failed to fetch sales id: $e"); // نكمل بالقيمة المخزنة كـ fallback
       }
-    } catch (e) {
-      log("Failed to fetch sales id: $e"); // نكمل بالقيمة المخزنة كـ fallback
     }
-  }
 
-  if (!mounted) return;
-  setState(() {
-    role = prefs.getString('role')?.trim();
-    id = salesDocId;
-    name = prefs.getString('name')?.trim();
-    log("Role: $role, ID: $id, Name: $name");
-  });
-}
+    if (!mounted) return;
+    setState(() {
+      role = prefs.getString('role')?.trim();
+      id = salesDocId;
+      name = prefs.getString('name')?.trim();
+      log("Role: $role, ID: $id, Name: $name");
+    });
+  }
 
   // ✅ 2) ضيف getters موحّدة تستخدمها في كل مكان بدل المقارنة المباشرة بـ role
   String get _normalizedRole => (role ?? '').toLowerCase().trim();
@@ -1456,7 +1459,9 @@ Future<void> init() async {
                   );
                 }
                 Future.delayed(const Duration(milliseconds: 1500), () {
-                  Navigator.pop(context);
+                  if (!mounted) return;
+                  LeadEvents.leadCreated.value++; // ✅ ابعت الإشارة قبل الرجوع
+                  Navigator.pop(context, true);
                 });
               } else if (state is CreateLeadFailure) {
                 ScaffoldMessenger.of(context).showSnackBar(
