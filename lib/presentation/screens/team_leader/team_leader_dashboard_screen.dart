@@ -219,7 +219,7 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-      LeadEvents.leadCreated.removeListener(_onLeadCreated); // ✅ مهم
+    LeadEvents.leadCreated.removeListener(_onLeadCreated); // ✅ مهم
     _dashboardCubit.close();
     super.dispose();
   }
@@ -499,9 +499,9 @@ class _TeamLeaderDashboardScreenState extends State<TeamLeaderDashboardScreen>
                               teamLeaderPending?.leadsCount ?? 0;
 
                           /// ✅ نخفي أي stage عددها = 0
+                          /// ✅ نظهر كل الـ stages حتى لو عددها = 0 (ما عدا fresh لأنه بيتعرض لوحده)
                           final visibleStages =
                               dashboard
-                                  .where((e) => (e.leadsCount ?? 0) > 0)
                                   .where(
                                     (e) =>
                                         e.stageName?.toLowerCase() != 'fresh',
