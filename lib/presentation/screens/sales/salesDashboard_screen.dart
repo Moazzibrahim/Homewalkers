@@ -469,18 +469,73 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                         } else if (state is SalesDashboardSuccess) {
                           // ✅ كل الـ stages من الـ response مباشرة (حتى لو leadsCount = 0)
                           // غيّر اسم الـ field لو مختلف عندك (مثلاً stages / stageStats)
+                          // ✅ دمج No Stage جوه Fresh بدل ما نشيله
                           final stages = state.response.data?.stages ?? [];
-                          // check لو فيه Fresh
+
+                          // مجموع leads بتاعة No Stage (أو أي stage اسمها فاضي)
+                          final noStageCount = stages
+                              .where((e) => e.stageName == 'No Stage')
+                              .fold<int>(
+                                0,
+                                (sum, e) => sum + (e.leadsCount ?? 0).toInt(),
+                              );
+
                           final hasFresh = stages.any(
                             (e) => e.stageName == 'Fresh',
                           );
+                          // ✅ id بتاع No Stage (هو اللي هنبعته لما ندوس على كارت Fresh)
+                          final noStageId =
+                              stages
+                                  .where((e) => e.stageName == 'No Stage')
+                                  .map((e) => e.stageId)
+                                  .firstOrNull;
 
-                          final filteredStages =
-                              hasFresh
-                                  ? stages
-                                      .where((e) => e.stageName != 'No Stage')
-                                      .toList()
-                                  : stages;
+                          // نبني قايمة جديدة: Fresh (معدّل) + باقي الـ stages من غير No Stage
+                          final List<_StageItem> filteredStages = [];
+
+                          // لو مفيش Fresh في الـ response بس فيه No Stage، نضيف Fresh بعدد No Stage
+                          if (!hasFresh && noStageCount > 0) {
+                            final noStage = stages.firstWhere(
+                              (e) => e.stageName == 'No Stage',
+                            );
+                            filteredStages.add(
+                              _StageItem(
+                                name: 'Fresh',
+                                count: noStageCount,
+                                id: noStage.stageId, // نستخدم id بتاع No Stage
+                                isNoStage: true,
+                              ),
+                            );
+                          }
+
+                          for (final e in stages) {
+                            if (e.stageName == 'No Stage') {
+                              continue; // متعرضش كارت منفصل
+                            }
+
+                            if (e.stageName == 'Fresh') {
+                              filteredStages.add(
+                                _StageItem(
+                                  name: 'Fresh',
+                                  count:
+                                      (e.leadsCount ?? 0).toInt() +
+                                      noStageCount,
+                                  // ✅ نبعت id بتاع No Stage، ولو مش موجود نرجع لـ id بتاع Fresh
+                                  id: noStageId ?? e.stageId,
+                                  isNoStage: false,
+                                ),
+                              );
+                            } else {
+                              filteredStages.add(
+                                _StageItem(
+                                  name: e.stageName ?? '',
+                                  count: (e.leadsCount ?? 0).toInt(),
+                                  id: e.stageId,
+                                  isNoStage: false,
+                                ),
+                              );
+                            }
+                          }
                           final totalLeads =
                               state.response.data?.summary?.totalLeads ?? 0;
 
@@ -531,11 +586,12 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                               }
 
                               // باقي الـ items = stages
+                              // باقي الـ items = stages
                               final stage = filteredStages[index - 1];
-                              final stageName = stage.stageName ?? '';
+
                               return _dashboardCard(
-                                stageName == 'No Stage' ? 'Fresh' : stageName,
-                                '${stage.leadsCount ?? 0}',
+                                stage.name,
+                                '${stage.count}',
                                 Icons.timeline,
                                 totalCount: totalLeads.toInt(),
                                 onTap: () {
@@ -545,10 +601,12 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
                                       builder:
                                           (_) => SalesLeadsScreen(
                                             stageName:
-                                                stageName == 'Fresh'
+                                                stage.name == 'Fresh'
                                                     ? 'No Stage'
-                                                    : stageName,
-                                            stageId: stage.stageId,
+                                                    : stage.name,
+                                            stageId:
+                                                stage
+                                                    .id, // ✅ كل كارت بـ id بتاعه، وFresh بـ id بتاع No Stage
                                             data: false,
                                             transferfromdata: true,
                                           ),
@@ -913,4 +971,19 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
       ),
     );
   }
+}
+
+// ✅ موديل بسيط لعرض الكارت
+class _StageItem {
+  final String name;
+  final int count;
+  final String? id;
+  final bool isNoStage;
+
+  _StageItem({
+    required this.name,
+    required this.count,
+    required this.id,
+    required this.isNoStage,
+  });
 }

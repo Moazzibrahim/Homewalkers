@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/models/Data/sales_data_dashboard_count_model.dart';
@@ -41,6 +43,7 @@ class SalesDashboardApiService {
       );
 
       if (response.statusCode == 200) {
+        print('Sales Dashboard API url: ${url.toString()}');
         final jsonData = json.decode(response.body);
         return SalesStagesResponse.fromJson(jsonData);
       } else {
