@@ -1,174 +1,290 @@
-// ignore_for_file: use_build_context_synchronously, unused_local_variable
+// // ignore_for_file: use_build_context_synchronously, unused_local_variable
+
+// import 'dart:convert';
+// import 'package:flutter/material.dart';
+// import 'package:flutter/foundation.dart';
+// import 'package:homewalkers_app/core/constants/constants.dart';
+// import 'package:http/http.dart' as http;
+// import 'package:url_launcher/url_launcher.dart';
+
+// class UpdateService {
+//   static const String currentVersion = "1.0.12";
+  
+
+//   // static Future<void> checkForUpdate(BuildContext context) async {
+//   //   try {
+//   //     final prefs = await SharedPreferences.getInstance();
+
+//   //     // 📅 آخر مرة ظهر فيها البوب أب
+//   //     final lastShownString = prefs.getString('last_update_shown');
+//   //     DateTime? lastShown =
+//   //         lastShownString != null ? DateTime.parse(lastShownString) : null;
+
+//   //     // 🏷️ آخر نسخة تم عرض البوب أب لها
+//   //     final lastShownVersion = prefs.getString('last_update_version');
+
+//   //     DateTime now = DateTime.now();
+
+//   //     // 🌐 جلب JSON بدون كاش
+//   //     final res = await http
+//   //         .get(
+//   //           Uri.parse(
+//   //             "https://raw.githubusercontent.com/Moazzibrahim/Homewalkers/main/lib/presentation/screens/Admin/version.json?${DateTime.now().millisecondsSinceEpoch}",
+//   //           ),
+//   //         )
+//   //         .timeout(const Duration(seconds: 10));
+
+//   //     if (res.statusCode != 200) return;
+
+//   //     final data = jsonDecode(res.body);
+
+//   //     String latest = data['latest_version'];
+//   //     bool force = data['force_update'].toString() == 'true';
+
+//   //     // 🚫 لو نفس النسخة → مفيش داعي للبوب أب
+//   //     // 🚫 لو نفس النسخة → مفيش داعي للبوب أب
+//   //     if (currentVersion == latest) return;
+
+//   //     // ✅ تحقق من وجود تحديث
+//   //     if (_isUpdateAvailable(currentVersion, latest)) {
+//   //       await _showUpdateDialog(context, force);
+
+//   //       // 💾 حفظ بعد العرض لو حابب بس مش شرط للظهور أكتر من مرة
+//   //       final prefs = await SharedPreferences.getInstance();
+//   //       prefs.setString('last_update_shown', DateTime.now().toIso8601String());
+//   //       prefs.setString('last_update_version', latest);
+//   //     }
+//   //   } catch (e) {
+//   //     debugPrint("Update error: $e");
+//   //   }
+//   // }
+
+//   static Future<void> checkForUpdate(BuildContext context) async {
+//     try {
+//       debugPrint("🔄 Checking for update...");
+//       final res = await http
+//           .get(
+//             Uri.parse(
+//               "https://raw.githubusercontent.com/Moazzibrahim/Homewalkers/main/lib/presentation/screens/Admin/version.json?${DateTime.now().millisecondsSinceEpoch}",
+//             ),
+//           )
+//           .timeout(const Duration(seconds: 10));
+
+//       debugPrint("📦 Response status: ${res.statusCode}");
+//       debugPrint("📦 Response body: ${res.body}");
+
+//       if (res.statusCode != 200) return;
+
+//       final data = jsonDecode(res.body);
+//       String latest = data['latest_version'];
+//       bool force = data['force_update'].toString() == 'true';
+
+//       debugPrint("Current: $currentVersion | Latest: $latest");
+
+//       if (!_isUpdateAvailable(currentVersion, latest)) {
+//         debugPrint("✅ No update needed");
+//         return;
+//       }
+
+//       if (!context.mounted) {
+//         debugPrint("⚠️ Context not mounted, skipping dialog");
+//         return;
+//       }
+
+//       await _showUpdateDialog(context, force);
+//     } catch (e, st) {
+//       debugPrint("❌ Update error: $e");
+//       debugPrint("Stack: $st");
+//     }
+//   }
+
+//   // ✅ مقارنة آمنة للفيرجن
+//   static bool _isUpdateAvailable(String current, String latest) {
+//     List<int> c = current.split('.').map(int.parse).toList();
+//     List<int> l = latest.split('.').map(int.parse).toList();
+
+//     int maxLength = c.length > l.length ? c.length : l.length;
+
+//     for (int i = 0; i < maxLength; i++) {
+//       int cv = i < c.length ? c[i] : 0;
+//       int lv = i < l.length ? l[i] : 0;
+
+//       if (lv > cv) return true;
+//       if (lv < cv) return false;
+//     }
+//     return false;
+//   }
+
+//   static Future<void> _showUpdateDialog(
+//     BuildContext context,
+//     bool force,
+//   ) async {
+//     await showDialog(
+//       context: context,
+//       barrierDismissible: !force,
+//       builder:
+//           (_) => AlertDialog(
+//             title: const Text("Update Available"),
+//             content: const Text(
+//               "A new version of the app is available. Please update to the latest version.",
+//             ),
+//             actions: [
+//               if (!force)
+//                 ElevatedButton(
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: Constants.maincolor,
+//                   ),
+//                   onPressed: () => Navigator.pop(context),
+//                   child: const Text(
+//                     "Later",
+//                     style: TextStyle(color: Colors.white),
+//                   ),
+//                 ),
+//               ElevatedButton(
+//                 style: ElevatedButton.styleFrom(
+//                   backgroundColor: Constants.maincolor,
+//                 ),
+//                 onPressed: () async {
+//                   String url = "";
+
+//                   // ✅ تحديد المنصة بشكل صحيح
+//                   if (defaultTargetPlatform == TargetPlatform.android) {
+//                     url =
+//                         "https://play.google.com/store/apps/details?id=com.realatixcrm.app";
+//                   } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+//                     url = "https://apps.apple.com/app/id6758859624";
+//                   } else {
+//                     return;
+//                   }
+
+//                   final uri = Uri.parse(url);
+
+//                   if (await canLaunchUrl(uri)) {
+//                     await launchUrl(uri, mode: LaunchMode.externalApplication);
+//                   }
+//                 },
+//                 child: const Text(
+//                   "Update",
+//                   style: TextStyle(color: Colors.white),
+//                 ),
+//               ),
+//             ],
+//           ),
+//     );
+//   }
+// }
+
+// ignore_for_file: use_build_context_synchronously
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:http/http.dart' as http;
+import 'package:new_version_plus/new_version_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UpdateService {
-  static const String currentVersion = "1.0.12";
-  
-
-  // static Future<void> checkForUpdate(BuildContext context) async {
-  //   try {
-  //     final prefs = await SharedPreferences.getInstance();
-
-  //     // 📅 آخر مرة ظهر فيها البوب أب
-  //     final lastShownString = prefs.getString('last_update_shown');
-  //     DateTime? lastShown =
-  //         lastShownString != null ? DateTime.parse(lastShownString) : null;
-
-  //     // 🏷️ آخر نسخة تم عرض البوب أب لها
-  //     final lastShownVersion = prefs.getString('last_update_version');
-
-  //     DateTime now = DateTime.now();
-
-  //     // 🌐 جلب JSON بدون كاش
-  //     final res = await http
-  //         .get(
-  //           Uri.parse(
-  //             "https://raw.githubusercontent.com/Moazzibrahim/Homewalkers/main/lib/presentation/screens/Admin/version.json?${DateTime.now().millisecondsSinceEpoch}",
-  //           ),
-  //         )
-  //         .timeout(const Duration(seconds: 10));
-
-  //     if (res.statusCode != 200) return;
-
-  //     final data = jsonDecode(res.body);
-
-  //     String latest = data['latest_version'];
-  //     bool force = data['force_update'].toString() == 'true';
-
-  //     // 🚫 لو نفس النسخة → مفيش داعي للبوب أب
-  //     // 🚫 لو نفس النسخة → مفيش داعي للبوب أب
-  //     if (currentVersion == latest) return;
-
-  //     // ✅ تحقق من وجود تحديث
-  //     if (_isUpdateAvailable(currentVersion, latest)) {
-  //       await _showUpdateDialog(context, force);
-
-  //       // 💾 حفظ بعد العرض لو حابب بس مش شرط للظهور أكتر من مرة
-  //       final prefs = await SharedPreferences.getInstance();
-  //       prefs.setString('last_update_shown', DateTime.now().toIso8601String());
-  //       prefs.setString('last_update_version', latest);
-  //     }
-  //   } catch (e) {
-  //     debugPrint("Update error: $e");
-  //   }
-  // }
+  // ✅ علشان الدايالوج ميظهرش أكتر من مرة في نفس الجلسة
+  static bool _checked = false;
 
   static Future<void> checkForUpdate(BuildContext context) async {
+    if (_checked) return;
+    _checked = true;
+
     try {
-      debugPrint("🔄 Checking for update...");
-      final res = await http
-          .get(
-            Uri.parse(
-              "https://raw.githubusercontent.com/Moazzibrahim/Homewalkers/main/lib/presentation/screens/Admin/version.json?${DateTime.now().millisecondsSinceEpoch}",
-            ),
-          )
-          .timeout(const Duration(seconds: 10));
+      // ✅ بيقرا نسخة التطبيق الحالية تلقائي من pubspec (مفيش currentVersion يدوي)
+      final newVersion = NewVersionPlus(
+        androidId: 'com.realatixcrm.app',
+        iOSId: 'com.example.homewalkersApp', // ✅ الـ Bundle ID
+        iOSAppStoreCountry: 'ae', // ✏️ غيّرها لدولة الـ App Store بتاعتك
+      );
 
-      debugPrint("📦 Response status: ${res.statusCode}");
-      debugPrint("📦 Response body: ${res.body}");
+      // ✅ بيسأل الستور نفسه عن آخر نسخة منشورة
+      final status = await newVersion.getVersionStatus();
+      debugPrint(
+        '📦 Local: ${status?.localVersion} | Store: ${status?.storeVersion}',
+      );
+      if (status == null || !status.canUpdate) return;
 
-      if (res.statusCode != 200) return;
+      final force = await _isForceUpdate(status.storeVersion);
 
-      final data = jsonDecode(res.body);
-      String latest = data['latest_version'];
-      bool force = data['force_update'].toString() == 'true';
-
-      debugPrint("Current: $currentVersion | Latest: $latest");
-
-      if (!_isUpdateAvailable(currentVersion, latest)) {
-        debugPrint("✅ No update needed");
-        return;
-      }
-
-      if (!context.mounted) {
-        debugPrint("⚠️ Context not mounted, skipping dialog");
-        return;
-      }
-
-      await _showUpdateDialog(context, force);
-    } catch (e, st) {
-      debugPrint("❌ Update error: $e");
-      debugPrint("Stack: $st");
+      if (!context.mounted) return;
+      await _showUpdateDialog(context, force, status.appStoreLink);
+    } catch (e) {
+      debugPrint('❌ Update error: $e');
     }
   }
 
-  // ✅ مقارنة آمنة للفيرجن
-  static bool _isUpdateAvailable(String current, String latest) {
-    List<int> c = current.split('.').map(int.parse).toList();
-    List<int> l = latest.split('.').map(int.parse).toList();
-
-    int maxLength = c.length > l.length ? c.length : l.length;
-
-    for (int i = 0; i < maxLength; i++) {
-      int cv = i < c.length ? c[i] : 0;
-      int lv = i < l.length ? l[i] : 0;
-
-      if (lv > cv) return true;
-      if (lv < cv) return false;
+  // ✅ اختياري: لو عايز تفرض التحديث، خلي في version.json: "force_update": true
+  // لو الفايل مش موجود أو حصل error، التحديث بيبقى اختياري
+  static Future<bool> _isForceUpdate(String storeVersion) async {
+    try {
+      final res = await http
+          .get(
+            Uri.parse(
+              'https://raw.githubusercontent.com/Moazzibrahim/Homewalkers/main/lib/presentation/screens/Admin/version.json?${DateTime.now().millisecondsSinceEpoch}',
+            ),
+          )
+          .timeout(const Duration(seconds: 5));
+      if (res.statusCode != 200) return false;
+      final data = jsonDecode(res.body);
+      // بنفرض التحديث بس لو الـ JSON بيشاور على نفس نسخة الستور
+      return data['force_update'].toString() == 'true' &&
+          data['latest_version'].toString() == storeVersion;
+    } catch (_) {
+      return false;
     }
-    return false;
   }
 
   static Future<void> _showUpdateDialog(
     BuildContext context,
     bool force,
+    String storeLink,
   ) async {
     await showDialog(
       context: context,
       barrierDismissible: !force,
       builder:
-          (_) => AlertDialog(
-            title: const Text("Update Available"),
-            content: const Text(
-              "A new version of the app is available. Please update to the latest version.",
-            ),
-            actions: [
-              if (!force)
+          (dialogContext) => PopScope(
+            canPop: !force, // ✅ يمنع زرار الرجوع في الـ force update
+            child: AlertDialog(
+              title: const Text('Update Available'),
+              content: const Text(
+                'A new version of the app is available. Please update to the latest version.',
+              ),
+              actions: [
+                if (!force)
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Constants.maincolor,
+                    ),
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text(
+                      'Later',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Constants.maincolor,
                   ),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () async {
+                    // ✅ اللينك جاي جاهز من الستور حسب المنصة
+                    final uri = Uri.parse(storeLink);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    }
+                  },
                   child: const Text(
-                    "Later",
+                    'Update',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Constants.maincolor,
-                ),
-                onPressed: () async {
-                  String url = "";
-
-                  // ✅ تحديد المنصة بشكل صحيح
-                  if (defaultTargetPlatform == TargetPlatform.android) {
-                    url =
-                        "https://play.google.com/store/apps/details?id=com.realatixcrm.app";
-                  } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-                    url = "https://apps.apple.com/app/id6758859624";
-                  } else {
-                    return;
-                  }
-
-                  final uri = Uri.parse(url);
-
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
-                },
-                child: const Text(
-                  "Update",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
     );
   }
