@@ -30,10 +30,26 @@
 	<true/>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>The app needs local network permission for Flutter development tools and internal networking.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires access to your camera to take photos of documents and properties.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app requires access to your photo library to select and upload photos and attachments.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires access to your microphone when recording audio or video attachments.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>https</string>
+		<string>http</string>
+		<string>mailto</string>
+		<string>whatsapp</string>
+		<string>sms</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
