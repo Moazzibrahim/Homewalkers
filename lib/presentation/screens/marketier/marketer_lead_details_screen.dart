@@ -838,7 +838,7 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
   }
 
   Widget _buildActionChip({
-    required IconData icon,
+    required dynamic icon,
     required String label,
     required VoidCallback onTap,
     required bool isDark,
@@ -859,7 +859,9 @@ class _SalesLeadsDetailsScreenState extends State<MarketerLeadDetailsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FaIcon(icon, size: 18.sp, color: primaryColor),
+              icon is IconData
+                  ? Icon(icon, size: 18.sp, color: primaryColor)
+                  : FaIcon(icon, size: 18.sp, color: primaryColor),
               SizedBox(height: 6.h),
               Text(
                 label,

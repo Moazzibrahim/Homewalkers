@@ -2,7 +2,7 @@ name: homewalkers_app
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.3+127
+version: 1.1.27+226
 
 environment:
   sdk: ^3.7.0
@@ -19,8 +19,6 @@ dependencies:
   firebase_core: ^3.1.0
   firebase_messaging: ^15.0.0
   dropdown_button2: ^2.3.9
-  package_info_plus: ^8.0.0
-  new_version_plus: ^0.1.0
 
 
 
@@ -31,7 +29,7 @@ dependencies:
   flutter_local_notifications: ^17.1.0
   flutter_screenutil: ^5.9.3
   flutter_svg: 2.1.0
-  font_awesome_flutter: ^10.8.0
+  font_awesome_flutter: ^11.0.0
   http: ^1.4.0
   image_picker: ^1.1.2
   intl: ^0.20.2
@@ -46,6 +44,7 @@ dependencies:
   timeago: ^3.7.1
   url_launcher: ^6.3.1
   uuid: ^4.6.0
+  firebase_remote_config: ^5.5.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4

@@ -21,6 +21,7 @@ import 'package:homewalkers_app/presentation/viewModels/Manager/cubit/get_manage
 import 'package:homewalkers_app/presentation/viewModels/Marketer/leads/cubit/get_leads_marketer_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users/cubit/get_all_users_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/get_all_users_signup/cubit/getalluserssignup_cubit.dart';
+import 'package:homewalkers_app/presentation/screens/Admin/update_service.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_all_sales/get_all_sales_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/get_leads_sales/get_leads_cubit.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/notifications/notification_helper.dart';
@@ -58,6 +59,11 @@ void main() async {
     if (Firebase.apps.isEmpty) {
       debugPrint("⚠️ No Firebase apps configured after initializeApp()");
     }
+
+    // Initialize Remote Config for app updates (non-blocking)
+    UpdateService.initRemoteConfig().catchError((e) {
+      debugPrint("⚠️ Remote Config init error: $e");
+    });
   } catch (e) {
     debugPrint("❌ Firebase initialization or token retrieval failed: $e");
   }
@@ -159,8 +165,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      log("📱 App resumed — resyncing FCM token");
+      log("📱 App resumed — resyncing FCM token and checking update");
       _notificationCubit?.resyncToken();
+      final ctx = navigatorKey.currentContext;
+      if (ctx != null) {
+        UpdateService.checkForUpdate(ctx);
+      }
     }
   }
 
