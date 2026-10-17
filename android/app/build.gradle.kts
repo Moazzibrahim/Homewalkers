@@ -3,6 +3,8 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services") // ✅ apply here instead of apply(plugin=...) at the bottom
+
 }
 import java.util.Properties
 
@@ -65,7 +67,7 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4") // ← تم إضافة هذا السطر
      // ✅ أضف Firebase Analytics
     implementation("com.google.firebase:firebase-analytics-ktx")
-    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    // implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
 
 }
-apply(plugin = "com.google.gms.google-services")
+// apply(plugin = "com.google.gms.google-services")
