@@ -10,9 +10,6 @@ import 'wa_api.dart';
 import 'wa_chat_room_screen.dart';
 import 'wa_inbox_cubit.dart';
 import 'wa_models.dart';
-
-import 'package:flutter/material.dart';
-
 class WaColors {
   // Light
   static const bgLight = Color(0xFFEFEAE2);
