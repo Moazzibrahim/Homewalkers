@@ -9,6 +9,7 @@ import 'package:homewalkers_app/core/constants/event_handler.dart';
 import 'package:homewalkers_app/core/utils/dialog_utils.dart';
 import 'package:homewalkers_app/data/data_sources/get_sales_dashboard_count_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/meeting/get_meeting_comments.dart';
+import 'package:homewalkers_app/data/data_sources/whatsapp_chat/whatsapp_chat/wa_chats_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/meetingCommentsScreen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales/sales_data_dashboard_screen.dart';
@@ -234,37 +235,88 @@ class _SalesdashboardScreenState extends State<SalesdashboardScreen>
             widget.showNavBar ? SharedSalesNavBar(currentIndex: 0) : null,
         floatingActionButton:
             widget.showNavBar
-                ? Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF003178), Color(0xFF0D47A1)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Constants.maincolor.withOpacity(0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: FloatingActionButton(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateLeadScreen(),
+                ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // ── WhatsApp (فوق) ──
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF25D366), Color(0xFF00A884)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      );
-                    },
-                    child: const Icon(Icons.add, size: 28, color: Colors.white),
-                  ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF25D366).withOpacity(0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: FloatingActionButton(
+                        heroTag: 'wa_chats_fab',
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const WhatsAppChatsScreen(),
+                            ),
+                          );
+                        },
+                        child: const Icon(
+                          Icons.chat_bubble_outline,
+                          size: 26,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // ── Add lead (تحت) ──
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Constants.maincolor.withOpacity(0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: FloatingActionButton(
+                        heroTag: 'add_lead_fab',
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CreateLeadScreen(),
+                            ),
+                          );
+                        },
+                        child: const Icon(
+                          Icons.add,
+                          size: 28,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 )
                 : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

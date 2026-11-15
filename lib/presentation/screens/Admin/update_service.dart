@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class UpdateService {
   /// The current version of this app release (matches pubspec.yaml: 1.1.27)
-  static const String currentAppVersion = '1.1.27';
+  static const String currentAppVersion = '1.1.28';
 
   // Remote Config Keys
   static const String keyShowUpdateDialog = 'show_update_dialog';

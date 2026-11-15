@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/Admin_with_pagination/fetch_data_with_pagination.dart';
 import 'package:homewalkers_app/data/data_sources/fetch_admin_sales_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/whatsapp_chat/whatsapp_chat/wa_chats_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_leads_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/viewModels/All_leads_with_pagination/cubit/all_leads_cubit_with_pagination_cubit.dart';
@@ -56,46 +57,96 @@ class _AdminSalesSceenState extends State<AdminSalesSceen> {
               AdminSalesCubit(FetchAdminSalesApiService())
                 ..fetchSalesLeadsCount(),
       child: Scaffold(
-      bottomNavigationBar:
-          widget.showNavBar
-              ? SharedAdminNavBar(currentIndex: 2)
-              : null, 
-              // ✅ أضف ده
-  floatingActionButton: widget.showNavBar
-      ? Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF003178), Color(0xFF0D47A1)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Constants.maincolor.withOpacity(0.4),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: FloatingActionButton(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateLeadScreen(),
-                ),
-              );
-            },
-            child: const Icon(Icons.add, size: 28, color: Colors.white),
-          ),
-        )
-      : null,
-  floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        bottomNavigationBar:
+            widget.showNavBar ? SharedAdminNavBar(currentIndex: 2) : null,
+        // ✅ أضف ده
+        floatingActionButton:
+            widget.showNavBar
+                ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // ── WhatsApp (فوق) ──
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF25D366), Color(0xFF00A884)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF25D366).withOpacity(0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: FloatingActionButton(
+                        heroTag: 'wa_chats_fab',
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const WhatsAppChatsScreen(),
+                            ),
+                          );
+                        },
+                        child: const Icon(
+                          Icons.chat_bubble_outline,
+                          size: 26,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // ── Add lead (تحت) ──
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Constants.maincolor.withOpacity(0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: FloatingActionButton(
+                        heroTag: 'add_lead_fab',
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CreateLeadScreen(),
+                            ),
+                          );
+                        },
+                        child: const Icon(
+                          Icons.add,
+                          size: 28,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+                : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         backgroundColor:
             Theme.of(context).brightness == Brightness.light
                 ? Constants.backgroundlightmode

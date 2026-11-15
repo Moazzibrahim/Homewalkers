@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/whatsapp_chat/whatsapp_chat/wa_chats_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/sales_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/viewModels/sales/auth/auth_cubit.dart';
@@ -79,41 +80,85 @@ class SalesProfileScreen extends StatelessWidget {
       backgroundColor: bg,
       bottomNavigationBar:
           showNavBar ? SharedSalesNavBar(currentIndex: 3) : null,
-      floatingActionButton:
-          showNavBar
-              ? Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // ── WhatsApp (فوق) ──
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF25D366), Color(0xFF00A884)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF25D366).withOpacity(0.4),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: FloatingActionButton(
+              heroTag: 'wa_chats_fab',
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const WhatsAppChatsScreen(),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Constants.maincolor.withOpacity(0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                );
+              },
+              child: const Icon(
+                Icons.chat_bubble_outline,
+                size: 26,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // ── Add lead (تحت) ──
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Constants.maincolor.withOpacity(0.4),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
-                child: FloatingActionButton(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreateLeadScreen(),
-                      ),
-                    );
-                  },
-                  child: const Icon(Icons.add, size: 28, color: Colors.white),
-                ),
-              )
-              : null,
+              ],
+            ),
+            child: FloatingActionButton(
+              heroTag: 'add_lead_fab',
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateLeadScreen(),
+                  ),
+                );
+              },
+              child: const Icon(Icons.add, size: 28, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       appBar: CustomAppBar(
         title: "Settings",

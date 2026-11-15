@@ -17,6 +17,7 @@ import 'package:homewalkers_app/data/data_sources/get_channels_api_service.dart'
 import 'package:homewalkers_app/data/data_sources/marketer/edit_lead_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/projects_api_service.dart';
 import 'package:homewalkers_app/data/data_sources/stages_api_service.dart';
+import 'package:homewalkers_app/data/data_sources/whatsapp_chat/whatsapp_chat/wa_chats_screen.dart';
 import 'package:homewalkers_app/data/models/leadsAdminModelWithPagination.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_data_dashboard_screen.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_lead_details.dart';
@@ -565,37 +566,88 @@ class _ManagerLeadsScreenState extends State<AdminLeadsScreen> {
       // ✅ أضف ده
       floatingActionButton:
           widget.showNavBar
-              ? Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF003178), Color(0xFF0D47A1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Constants.maincolor.withOpacity(0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: FloatingActionButton(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreateLeadScreen(),
+              ? Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // ── WhatsApp (فوق) ──
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF25D366), Color(0xFF00A884)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    );
-                  },
-                  child: const Icon(Icons.add, size: 28, color: Colors.white),
-                ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF25D366).withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: FloatingActionButton(
+                      heroTag: 'wa_chats_fab',
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WhatsAppChatsScreen(),
+                          ),
+                        );
+                      },
+                      child: const Icon(
+                        Icons.chat_bubble_outline,
+                        size: 26,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // ── Add lead (تحت) ──
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF003178), Color(0xFF0D47A1)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Constants.maincolor.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: FloatingActionButton(
+                      heroTag: 'add_lead_fab',
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateLeadScreen(),
+                          ),
+                        );
+                      },
+                      child: const Icon(
+                        Icons.add,
+                        size: 28,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               )
               : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

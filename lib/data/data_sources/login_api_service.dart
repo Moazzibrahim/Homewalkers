@@ -7,6 +7,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
+import 'package:homewalkers_app/data/data_sources/whatsapp_chat/whatsapp_chat/wa_socket.dart';
 import 'package:homewalkers_app/presentation/screens/Admin/admin_tabs_screen.dart';
 import 'package:homewalkers_app/presentation/screens/manager/tabs_screen_manager.dart';
 import 'package:homewalkers_app/presentation/screens/marketier/marketier_tabs_screen.dart';
@@ -264,6 +265,8 @@ class LoginApiService {
         await prefs.remove('fcm_token'); // ✅ ضيف السطر ده
 
         Constants.baseUrl = ""; // ✅ وكمان امسح الـ baseUrl في الميموري
+        HttpClientWithInterceptor().reset();
+        WaSocketService.instance.disconnect();
         HttpClientWithInterceptor().reset(); // 🔥 إضافة هذا السطر
 
         context.read<NotificationCubit>().disposeNotifications();

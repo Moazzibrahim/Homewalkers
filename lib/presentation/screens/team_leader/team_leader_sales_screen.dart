@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:homewalkers_app/core/constants/constants.dart';
 import 'package:homewalkers_app/data/data_sources/team_leader/get_leads_count.dart';
+import 'package:homewalkers_app/data/data_sources/whatsapp_chat/whatsapp_chat/wa_chats_screen.dart';
 import 'package:homewalkers_app/presentation/screens/sales/create_leads.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_assign_screen.dart';
 import 'package:homewalkers_app/presentation/screens/team_leader/team_leader_tabs_screen.dart';
@@ -64,42 +65,98 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                     showNavBar ? SharedTeamLeaderNavBar(currentIndex: 2) : null,
                 floatingActionButton:
                     showNavBar
-                        ? Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF003178), Color(0xFF0D47A1)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Constants.maincolor.withOpacity(0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: FloatingActionButton(
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => const CreateLeadScreen(),
+                        ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            // ── WhatsApp (فوق) ──
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF25D366),
+                                    Color(0xFF00A884),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                              );
-                            },
-                            child: const Icon(
-                              Icons.add,
-                              size: 28,
-                              color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF25D366,
+                                    ).withOpacity(0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: FloatingActionButton(
+                                heroTag: 'wa_chats_fab',
+                                backgroundColor: Colors.transparent,
+                                elevation: 0,
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => const WhatsAppChatsScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 26,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 12),
+                            // ── Add lead (تحت) ──
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF003178),
+                                    Color(0xFF0D47A1),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Constants.maincolor.withOpacity(0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: FloatingActionButton(
+                                heroTag: 'add_lead_fab',
+                                backgroundColor: Colors.transparent,
+                                elevation: 0,
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => const CreateLeadScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Icon(
+                                  Icons.add,
+                                  size: 28,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         )
                         : null,
                 floatingActionButtonLocation:
@@ -167,7 +224,6 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     // 📃 List
                     Expanded(
                       child: Builder(
@@ -195,7 +251,6 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                                 ),
                               );
                             }
-
                             if (isTabletDevice) {
                               return GridView.builder(
                                 padding: EdgeInsets.all((16 * tabletScale).r),
@@ -272,7 +327,6 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                               ),
                             );
                           }
-
                           return const SizedBox.shrink();
                         },
                       ),
@@ -434,7 +488,6 @@ class TeamLeaderSalesScreen extends StatelessWidget {
                 color: isDark ? Colors.grey[800] : Colors.grey[100],
               ),
             ),
-
             // ── Sales label row ──
             InkWell(
               onTap: () {
